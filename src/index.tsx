@@ -95,7 +95,27 @@ function Home() {
   return (
     <div className="lgme">
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
-        <div className="flex flex-nowrap items-center gap-2 sm:gap-5">
+        <div className="relative">
+          <video
+            className="pointer-events-none w-full rounded-2xl bg-black"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            poster="/lgme-fishbowl.jpg"
+          >
+            <source src="/lgme-fishbowl.mp4" type="video/mp4" />
+          </video>
+          <a
+            href="https://youtu.be/X1DRDcGlSsE?is=Z318yqkOop9oJi3H"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Fish tank. Opens in a new window."
+            className="absolute inset-0"
+          />
+        </div>
+        <div className="mt-6 flex flex-nowrap items-center gap-2 sm:gap-5">
           {SEALS.map(([src, alt]) => (
             <img key={src} src={src} alt={alt} className="aspect-square min-w-0 flex-1 rounded-full object-cover" />
           ))}
