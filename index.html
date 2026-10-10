@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>lgme.app · Egonomic performance</title>
+  <meta name="description" content="Live egonomic performance. The book is stopped. Future performances are recorded here." />
+  <style>
+    :root { color-scheme: dark; }
+    body { margin: 0; background: #10140f; color: #e7efe4; font: 18px/1.5 Georgia, "Times New Roman", serif; }
+    main { max-width: 40rem; margin: 0 auto; padding: 3rem 1.25rem 4rem; }
+    p.kicker { font: 12px/1 ui-monospace, monospace; letter-spacing: 0.16em; text-transform: uppercase; color: #8ea892; }
+    h1 { font-weight: 500; font-size: 3rem; line-height: 1; margin: 0.6rem 0 1rem; }
+    a { color: #d7f5c8; }
+    .order { font: 14px/1.4 ui-monospace, monospace; color: #c9e7cf; }
+    dl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #2a382c; border: 1px solid #2a382c; margin: 1.5rem 0; }
+    dl div { background: #10140f; padding: 1rem; }
+    dt { font: 11px/1 ui-monospace, monospace; letter-spacing: 0.14em; text-transform: uppercase; color: #8ea892; }
+    dd { margin: 0.4rem 0 0; font-size: 2rem; }
+    dd span { display: block; margin-top: 0.35rem; font-size: 0.85rem; color: #b7c7b8; }
+    ol { padding-left: 1.2rem; }
+    li { margin: 0.7rem 0; }
+    .green { color: #39e36a; }
+    .muted { color: #b7c7b8; }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="kicker">Egonomic · live performance</p>
+    <h1>lgme.app</h1>
+    <p>The book at <a href="https://www.egonomicanonymous.live">egonomicanonymous.live</a> keeps the record. Its live execution is stopped. What happens next is written here.</p>
+    <p class="order" id="order">Floor → Mint → Issue → Tape → Charge → Agent → Thin → Desert</p>
+    <dl>
+      <div><dt>Basket</dt><dd>100<span>Already named.</span></dd></div>
+      <div><dt>Fee</dt><dd>1<span>Same charge.</span></dd></div>
+      <div><dt>Remainder</dt><dd>5<span>In hand. Not sent.</span></dd></div>
+    </dl>
+    <p class="muted">One help stays locked: read the tape and show the five lines. Pay 5 from the remainder. Expenses 0. Desert 0. Not accepted. Not sent.</p>
+    <h2>Performances</h2>
+    <p class="muted">Newest first. A line that is not on this page is not a performance.</p>
+    <ol id="tape" class="green"></ol>
+  </main>
+  <script>
+    fetch("/performance.json")
+      .then((res) => res.json())
+      .then((book) => {
+        const tape = document.querySelector("#tape");
+        book.performances.slice().reverse().forEach((line) => {
+          const item = document.createElement("li");
+          item.textContent = line.at + " — " + line.act;
+          tape.appendChild(item);
+        });
+      });
+  </script>
+</body>
+</html>

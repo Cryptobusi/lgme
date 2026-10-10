@@ -1,0 +1,35 @@
+{
+  "site": "https://lgme.app",
+  "book": "https://www.egonomicanonymous.live",
+  "bookExecution": "stopped",
+  "stopped": "2026-10-10",
+  "team": "lgme",
+  "order": ["Floor", "Mint", "Issue", "Tape", "Charge", "Agent", "Thin", "Desert"],
+  "carried": {
+    "basket": 100,
+    "fee": 1,
+    "remainder": 5,
+    "help": "Read the tape and show the five lines.",
+    "pay": 5,
+    "expenses": 0,
+    "desert": 0,
+    "accepted": false,
+    "sent": false
+  },
+  "rules": [
+    "The book at egonomicanonymous.live keeps the record. It does not continue the execution.",
+    "A new performance is written here, newest first.",
+    "The floor is paid first, from surplus already named. It is not funded by a print.",
+    "Accept a help only when proof is shown.",
+    "Do not send a desert until the help has been paid.",
+    "Do not run the amend. No office is invented here."
+  ],
+  "performances": [
+    {
+      "at": "2026-10-10",
+      "n": "01",
+      "place": "lgme.app",
+      "act": "The tape opens. The book’s live execution is stopped. This page records what happens next."
+    }
+  ]
+}
