@@ -3,54 +3,97 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>lgme.app · Egonomic performance</title>
-  <meta name="description" content="Live egonomic performance. The book is stopped. Future performances are recorded here." />
+  <title>lgme</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bangers&family=Cormorant+Garamond:wght@500;600&family=Figtree:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" />
   <style>
     :root { color-scheme: dark; }
-    body { margin: 0; background: #10140f; color: #e7efe4; font: 18px/1.5 Georgia, "Times New Roman", serif; }
-    main { max-width: 40rem; margin: 0 auto; padding: 3rem 1.25rem 4rem; }
-    p.kicker { font: 12px/1 ui-monospace, monospace; letter-spacing: 0.16em; text-transform: uppercase; color: #8ea892; }
-    h1 { font-weight: 500; font-size: 3rem; line-height: 1; margin: 0.6rem 0 1rem; }
-    a { color: #d7f5c8; }
-    .order { font: 14px/1.4 ui-monospace, monospace; color: #c9e7cf; }
-    dl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #2a382c; border: 1px solid #2a382c; margin: 1.5rem 0; }
-    dl div { background: #10140f; padding: 1rem; }
-    dt { font: 11px/1 ui-monospace, monospace; letter-spacing: 0.14em; text-transform: uppercase; color: #8ea892; }
-    dd { margin: 0.4rem 0 0; font-size: 2rem; }
-    dd span { display: block; margin-top: 0.35rem; font-size: 0.85rem; color: #b7c7b8; }
-    ol { padding-left: 1.2rem; }
-    li { margin: 0.7rem 0; }
-    .green { color: #39e36a; }
+    body { margin: 0; background: #10140f; color: #e7efe4; font: 18px/1.5 Figtree, sans-serif; }
+    main { max-width: 72rem; margin: 0 auto; padding: 2rem 1rem 4rem; }
+    .row { display: flex; flex-wrap: nowrap; gap: 0.6rem; align-items: center; }
+    .row img { width: 33%; aspect-ratio: 1; object-fit: cover; border-radius: 999px; }
+    .slogan { font-family: Bangers, cursive; font-size: clamp(2.6rem, 6.8vw, 6rem); line-height: 0.9; text-align: center; color: #39e36a; margin: 1.2rem 0 0; }
+    @media (min-width: 720px) { .slogan { white-space: nowrap; } }
+    .heart { display: block; max-width: 48rem; margin: 1.4rem auto 0; }
+    video { width: 100%; border-radius: 1rem; transform-origin: center; animation: heart-pump 1.15s ease-in-out infinite; }
+    @keyframes heart-pump { 0%,100%{transform:scale(1)} 14%{transform:scale(1.045)} 28%{transform:scale(1)} 42%{transform:scale(1.08)} 58%{transform:scale(1)} }
+    @media (prefers-reduced-motion: reduce) { video { animation: none; } }
+    h1,h2 { font-family: "Cormorant Garamond", serif; font-weight: 500; }
+    h1 { font-size: 3rem; line-height: 1.05; margin: 0.4rem 0 0; }
+    h2 { font-size: 2rem; margin: 2.2rem 0 0; }
+    .kicker { font: 12px/1 "IBM Plex Mono", monospace; letter-spacing: 0.16em; text-transform: uppercase; color: #8ea892; }
     .muted { color: #b7c7b8; }
+    a { color: #e7efe4; }
+    ol.order { list-style: none; padding: 0; margin: 1rem 0 0; border-top: 1px solid #2c3b2e; }
+    ol.order li { display: grid; grid-template-columns: 7rem 1fr; gap: 0.5rem; padding: 0.7rem 0; border-bottom: 1px solid #2c3b2e; }
+    ol.tape, ul.tape { color: #39e36a; }
+    form input { width: 100%; min-height: 2.75rem; margin-top: 0.4rem; background: transparent; color: #e7efe4; border: 1px solid #2c3b2e; padding: 0 0.7rem; }
+    button { min-height: 2.75rem; margin-top: 0.7rem; background: #39e36a; color: #10140f; border: 0; padding: 0 1.1rem; cursor: pointer; }
+    .perf { margin-top: 3rem; border-top: 1px solid #2c3b2e; padding-top: 2rem; }
   </style>
 </head>
 <body>
   <main>
-    <p class="kicker">Egonomic · live performance</p>
-    <h1>lgme.app</h1>
-    <p>The book at <a href="https://www.egonomicanonymous.live">egonomicanonymous.live</a> keeps the record. Its live execution is stopped. What happens next is written here.</p>
-    <p class="order" id="order">Floor → Mint → Issue → Tape → Charge → Agent → Thin → Desert</p>
-    <dl>
-      <div><dt>Basket</dt><dd>100<span>Already named.</span></dd></div>
-      <div><dt>Fee</dt><dd>1<span>Same charge.</span></dd></div>
-      <div><dt>Remainder</dt><dd>5<span>In hand. Not sent.</span></dd></div>
-    </dl>
-    <p class="muted">One help stays locked: read the tape and show the five lines. Pay 5 from the remainder. Expenses 0. Desert 0. Not accepted. Not sent.</p>
-    <h2>Performances</h2>
-    <p class="muted">Newest first. A line that is not on this page is not a performance.</p>
-    <ol id="tape" class="green"></ol>
+    <div class="row">
+      <img src="seals/legomiego-coin.jpg" alt="Gold coin. #legomiego on a burst." />
+      <img src="seals/hederica.jpg" alt="Hederica seal with #legomiego and @trancesage." />
+      <img src="seals/legomiego-burst.jpg" alt="Gold seal. #legomiego on a burst." />
+    </div>
+    <p class="slogan">Debit Credit ØtØh IDIDIT!</p>
+    <a class="heart" href="https://www.egonomicanonymous.live" aria-label="I am keeping the book. Opens egonomicanonymous.live">
+      <video autoplay muted loop playsinline poster="keeping-the-book.jpg">
+        <source src="keeping-the-book.mp4" type="video/mp4" />
+      </video>
+    </a>
+    <article>
+      <p class="kicker">Copied from the live status</p>
+      <h1>Site Status — 10 October 2026</h1>
+      <p class="muted">Beta (#LeGoMiEgo). Public bookkeeping and visibility rules. The person is the third seat.</p>
+      <h2>Central thesis</h2>
+      <p style="font-family:'Cormorant Garamond',serif;font-size:1.7rem">“They printed the money. I am keeping the book.”</p>
+      <ul class="muted">
+        <li>Same rails. Anyone may issue. No one may hide the print.</li>
+        <li>If it cannot be shown, it is not policy.</li>
+        <li>Sovereignty is the refusal.</li>
+      </ul>
+      <h2>The order</h2>
+      <ol class="order">
+        <li><span>Floor</span><span class="muted">Basket paid first from named surplus (~$1,470 example).</span></li>
+        <li><span>Mint</span><span class="muted">Public schedule only. No private window.</span></li>
+        <li><span>Issue</span><span class="muted">Named credit. Not cash at the register.</span></li>
+        <li><span>Tape</span><span class="muted">Title, mint, lien, conversion, agent act must be shown.</span></li>
+        <li><span>Charge</span><span class="muted">Discount and risk named before residual.</span></li>
+        <li><span>Agent</span><span class="muted">Clerk of the rules. Does not mint.</span></li>
+        <li><span>Thin</span><span class="muted">Width is information. No invented tight price.</span></li>
+        <li><span>Desert</span><span class="muted">Remainder titled, including zero.</span></li>
+      </ol>
+      <h2>Status tape</h2>
+      <p class="muted">Record of the ten recommended steps. Each is a public line.</p>
+      <ol class="tape">
+        <li>Done — Dated Status block published.</li>
+        <li>Done — Notes stabilized as the single bound order.</li>
+        <li>Done — Worked invoice shows all five tape lines.</li>
+        <li>Done — Current basket figure, source, and schedule published on Floor.</li>
+        <li>Done — Four agent duties listed as a public checklist.</li>
+        <li>Done — Public contribution split (half floor / half development) posted.</li>
+        <li>Done — Third Seat sitting checklist published.</li>
+        <li>Done — Thin-book rule noted on Market.</li>
+        <li>Done — Zero remainder and named-debt retirement clarified on Desert.</li>
+        <li>In force — Status remains the running public tape. An unpublished change is not a change.</li>
+      </ol>
+      <p class="muted">No new mint. No quieter standard for any seat. Floor stays senior. Same rules bind state, firm, and person.</p>
+      <h2>10 October 2026</h2>
+      <ul class="tape">
+        <li>Done — The clapper control is off the open book. The book picture remains.</li>
+        <li>Done — The slot reel is off the book.</li>
+        <li>In force — Observed stays open under the book. The poem, the prose, and #LEGOMIEGO are the public line.</li>
+        <li>Checked — www.egonomicanonymous.live answers.</li>
+        <li>Blocked — The connected Vercel account can read the project. It cannot enter the team that owns it.</li>
+        <li>Stopped — Live execution of the book ends on that site. The record stays. Future performances are written here.</li>
+      </ul>
+      <p class="muted">No new mint. Floor stays senior. An unpublished change is not a change.</p>
+      <p class="muted"><a href="https://www.egonomicanonymous.live/status">The live status</a> · <a href="https://www.egonomicanonymous.live/status-2026-10-10.md">Full report</a></p>
+    </article>
   </main>
-  <script>
-    fetch("/performance.json")
-      .then((res) => res.json())
-      .then((book) => {
-        const tape = document.querySelector("#tape");
-        book.performances.slice().reverse().forEach((line) => {
-          const item = document.createElement("li");
-          item.textContent = line.at + " — " + line.act;
-          tape.appendChild(item);
-        });
-      });
-  </script>
 </body>
 </html>

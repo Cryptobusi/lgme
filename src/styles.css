@@ -1,0 +1,67 @@
+@import "./live.css";
+
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+.lgme {
+  --color-bg: #10140f;
+  --color-fg: #e7efe4;
+  --color-muted: #b7c7b8;
+  --color-subtle: #8ea892;
+  --color-gold: #39e36a;
+  --color-border: #2c3b2e;
+  --color-surface: #172018;
+  --color-primary: #39e36a;
+  --color-primary-fg: #10140f;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  min-height: 100dvh;
+}
+
+.lgme-slogan {
+  font-family: "Bangers", "Rye", cursive;
+  font-size: clamp(2.6rem, 6.8vw, 6rem);
+  line-height: 0.9;
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+
+@media (min-width: 720px) {
+  .lgme-slogan {
+    white-space: nowrap;
+  }
+}
+
+@keyframes heart-pump {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  14% {
+    transform: scale(1.045);
+  }
+  28% {
+    transform: scale(1);
+  }
+  42% {
+    transform: scale(1.08);
+  }
+  58% {
+    transform: scale(1);
+  }
+}
+
+.heart-pump {
+  transform-origin: center;
+  animation: heart-pump 1.15s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heart-pump {
+    animation: none;
+  }
+}
