@@ -13,7 +13,10 @@
     .tank { position: relative; display: block; }
     .tank video { width: 100%; border-radius: 1rem; background: #000; pointer-events: none; }
     .row { display: flex; flex-wrap: nowrap; gap: 0.6rem; align-items: center; }
-    .row img { width: 33%; aspect-ratio: 1; object-fit: cover; border-radius: 999px; }
+    .row img, .row a { width: 33%; }
+    .row img, .row a img { aspect-ratio: 1; object-fit: cover; border-radius: 999px; }
+    .row a { display: block; }
+    .row a img { width: 100%; }
     .slogan { font-family: Bangers, cursive; font-size: clamp(2.6rem, 6.8vw, 6rem); line-height: 0.9; text-align: center; color: #39e36a; margin: 1.2rem 0 0; }
     @media (min-width: 720px) { .slogan { white-space: nowrap; } }
     .heart { display: block; max-width: 48rem; margin: 1.4rem auto 0; }
@@ -44,7 +47,9 @@
     <div class="row">
       <img src="seals/legomiego-coin.jpg" alt="Gold coin. #legomiego on a burst." />
       <img src="seals/hederica.jpg" alt="Hederica seal with #legomiego and @trancesage." />
-      <img src="seals/legomiego-burst.jpg" alt="Gold seal. #legomiego on a burst." />
+      <a href="https://youtu.be/nJtP3bpmS5U?is=dgTwaShouLxcOlBs" target="_blank" rel="noreferrer" aria-label="Gold seal. Opens in a new window.">
+        <img src="seals/legomiego-burst.jpg" alt="Gold seal. #legomiego on a burst." />
+      </a>
     </div>
     <p class="slogan">Debit Credit ØtØh IDIDIT!</p>
     <a class="heart" href="https://www.egonomicanonymous.live" aria-label="I am keeping the book. Opens egonomicanonymous.live">
