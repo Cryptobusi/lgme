@@ -10,14 +10,16 @@
     :root { color-scheme: dark; }
     body { margin: 0; background: #10140f; color: #e7efe4; font: 18px/1.5 Figtree, sans-serif; }
     main { max-width: 72rem; margin: 0 auto; padding: 2rem 1rem 4rem; }
+    .tank { position: relative; display: block; }
+    .tank video { width: 100%; border-radius: 1rem; background: #000; pointer-events: none; }
     .row { display: flex; flex-wrap: nowrap; gap: 0.6rem; align-items: center; }
     .row img { width: 33%; aspect-ratio: 1; object-fit: cover; border-radius: 999px; }
     .slogan { font-family: Bangers, cursive; font-size: clamp(2.6rem, 6.8vw, 6rem); line-height: 0.9; text-align: center; color: #39e36a; margin: 1.2rem 0 0; }
     @media (min-width: 720px) { .slogan { white-space: nowrap; } }
     .heart { display: block; max-width: 48rem; margin: 1.4rem auto 0; }
-    video { width: 100%; border-radius: 1rem; transform-origin: center; animation: heart-pump 1.15s ease-in-out infinite; }
+    .heart video { width: 100%; border-radius: 1rem; transform-origin: center; animation: heart-pump 1.15s ease-in-out infinite; }
     @keyframes heart-pump { 0%,100%{transform:scale(1)} 14%{transform:scale(1.045)} 28%{transform:scale(1)} 42%{transform:scale(1.08)} 58%{transform:scale(1)} }
-    @media (prefers-reduced-motion: reduce) { video { animation: none; } }
+    @media (prefers-reduced-motion: reduce) { .heart video { animation: none; } }
     h1,h2 { font-family: "Cormorant Garamond", serif; font-weight: 500; }
     h1 { font-size: 3rem; line-height: 1.05; margin: 0.4rem 0 0; }
     h2 { font-size: 2rem; margin: 2.2rem 0 0; }
@@ -34,6 +36,11 @@
 </head>
 <body>
   <main>
+    <a class="tank" href="https://youtu.be/X1DRDcGlSsE?is=Z318yqkOop9oJi3H" target="_blank" rel="noreferrer" aria-label="Fish tank. Opens in a new window.">
+      <video autoplay muted loop playsinline preload="auto" poster="lgme-fishbowl.mp4#t=0.1">
+        <source src="lgme-fishbowl.mp4" type="video/mp4" />
+      </video>
+    </a>
     <div class="row">
       <img src="seals/legomiego-coin.jpg" alt="Gold coin. #legomiego on a burst." />
       <img src="seals/hederica.jpg" alt="Hederica seal with #legomiego and @trancesage." />
