@@ -37,9 +37,13 @@ const TEN = [
 ];
 
 const SEALS = [
-  ["/seals/legomiego-coin.jpg", "Gold coin. #legomiego on a burst. Egonomic Anonymous along the rim."],
-  ["/seals/hederica.jpg", "Gold seal. Hederica, #legomiego, and @trancesage."],
-  ["/seals/legomiego-burst.jpg", "Gold seal. #legomiego on a burst. Egonomic Anonymous along the rim."],
+  ["/seals/legomiego-coin.jpg", "Gold coin. #legomiego on a burst. Egonomic Anonymous along the rim.", ""],
+  ["/seals/hederica.jpg", "Gold seal. Hederica, #legomiego, and @trancesage.", ""],
+  [
+    "/seals/legomiego-burst.jpg",
+    "Gold seal. #legomiego on a burst. Egonomic Anonymous along the rim.",
+    "https://youtu.be/nJtP3bpmS5U?is=dgTwaShouLxcOlBs",
+  ],
 ];
 
 const SEED = [
@@ -116,9 +120,22 @@ function Home() {
           />
         </div>
         <div className="mt-6 flex flex-nowrap items-center gap-2 sm:gap-5">
-          {SEALS.map(([src, alt]) => (
-            <img key={src} src={src} alt={alt} className="aspect-square min-w-0 flex-1 rounded-full object-cover" />
-          ))}
+          {SEALS.map(([src, alt, href]) =>
+            href ? (
+              <a
+                key={src}
+                href={href}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`${alt} Opens in a new window.`}
+                className="min-w-0 flex-1"
+              >
+                <img src={src} alt={alt} className="aspect-square w-full rounded-full object-cover" />
+              </a>
+            ) : (
+              <img key={src} src={src} alt={alt} className="aspect-square min-w-0 flex-1 rounded-full object-cover" />
+            ),
+          )}
         </div>
         <p className="lgme-slogan mt-5 text-gold">Debit Credit ØtØh IDIDIT!</p>
         <a
