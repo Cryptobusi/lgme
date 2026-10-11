@@ -767,6 +767,44 @@ function Home() {
             ))}
           </ol>
           <p className="mt-4 text-muted">The means are these facilities. The truer way is the one that can be read twice and still say the same thing.</p>
+          <h3 className="mt-8 font-display text-2xl">Where there is no mathematics, there is no freedom</h3>
+          <p className="mt-3 font-mono text-xs tracking-widest text-subtle uppercase">Editorial — on Frenkel, bad math, and the third seat</p>
+          <p className="mt-4 text-muted">
+            Edward Frenkel’s warning is not that mathematics is dangerous. It is that bad mathematics, kept in a few hands, is a way to spend other people’s lives. In <em>Love and Math</em> he writes that where there is no mathematics, there is no freedom, and that people need the tools to protect themselves from arbitrary decisions by the powerful few in a math-driven world. He has said the powers that be exploit ignorance, and manipulate us more when we are less able to read the formula. The account of his argument after 2008 is plain: inadequate models, used by bankers and traders, were allowed to stand in for the market. A formula for the cost of living can be revised the same way, and a pension moves while the public is still looking at the fence.
+          </p>
+          <p className="mt-4 text-muted">
+            That is the economic ramification. A bad model does not stay in the paper. It prices a thin room off a thick one. It folds a charge into a discount so a privilege looks like a rate. It books a flattering profit, then sends the tail to someone who never signed it. The crisis was that pattern at full size. The firm kept the model. The state arrived later to socialize what the model would not hold. The person was not in the room.
+          </p>
+          <p className="mt-4 text-muted">
+            The third seat is that room. The state may tax. The firm may issue. The person sits beside them and may refuse a line that cannot be shown. lgme.app is the small desk where that refusal is practiced. It is not a plan for the whole economy. It is the means by which a broader economic life stops taking a formula on faith.
+          </p>
+          <p className="mt-4 text-muted">
+            It can do this, and it must. A model that cannot be refused will be written by whoever is paid to make it flattering. The desk has already watched that happen in miniature. A hub price of 97 offered itself in place of Amy’s 92. A swapped charge offered itself as a friend rate. Both had to write nothing. That discipline is not a demo to leave behind. It is the step.
+          </p>
+          <ol className="mt-4 divide-y divide-border border-y border-border">
+            {[
+              ["Show", "Every facility that moves a person’s basket must be readable by that person. Conversion, charge, and floor are three numbers. One blended rate is how the fence gets paid."],
+              ["Refuse", "A copied hub price, a friend rate, a missing name: nothing is written. The person does not have to out-argue the model. The line fails its own dictionary."],
+              ["Hold", "The floor stays senior and is paid from surplus already named. A clever remainder does not reach backward into survival. That is the opposite of socializing the tail."],
+              ["Vote", "One person, one vote. A stack of tokens must not buy a louder reading of the formula. Bad math loves a weighted room."],
+              ["Stop", "The seat must not become a second sovereign, a moral score, or a private bureau of the cost of living. It does not set the nation’s prices. It refuses to let a local life be governed by a number the person cannot check."],
+            ].map(([name, line]) => (
+              <li key={name} className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr]">
+                <span className="font-display text-xl">{name}</span>
+                <span className="text-sm text-muted">{line}</span>
+              </li>
+            ))}
+          </ol>
+          <p className="mt-4 text-muted">
+            Broader economic life is credit, wages, prices, and the old age that a formula can quietly thin. The third seat cannot repair all of that from one desk. It must still step, because the alternative is the life Frenkel described: decisions made in a language the public is not invited to read. The improvement is not a kinder model. It is a model that can be read twice, by the person it would move, before it moves them.
+          </p>
+          <p className="mt-4 text-sm text-muted">
+            <a className="text-fg underline decoration-border underline-offset-4" href="https://www.motherjones.com/environment/2014/02/inquiring-minds-edward-frenkel-math-doesnt-suck/" target="_blank" rel="noreferrer">Mother Jones, 2014</a>
+            {" · "}
+            <a className="text-fg underline decoration-border underline-offset-4" href="https://www.edwardfrenkel.com/" target="_blank" rel="noreferrer">Frenkel</a>
+            {" · "}
+            <em>Love and Math</em>, 2013. This page does not copy the book.
+          </p>
         </section>
 
         <section className="mt-14 border-t border-border pt-10">
