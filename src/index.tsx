@@ -42,6 +42,9 @@ const ELEVEN = [
   "In force — A thin room is not priced off a thick one. The floor is untouched.",
   "Test — Bob accepts at 96, charge 1. Amy accepts at 92, charge 2. Basket 188. A missing name writes nothing.",
   "Learned — The hub price would have left 6 unpriced across the pair. Keep that gap on the write. Do not add the open 90 to the closed 188.",
+  "Second test — Local = face × (1 − d). Bob ordinary, 96, gap 1, charge 1. Amy thin, 92, gap 5, charge 2. Basket 188, not 194.",
+  "Better — Width class sets the charge before the write. The gap does not choose it afterward.",
+  "Next — Swap Bob’s charge with Amy’s. A friend rate writes nothing.",
 ];
 
 const SEALS = [
@@ -107,6 +110,12 @@ function HedgeDesk() {
     "2026-10-11 — Amy. Person accepts. Conversion 92. Charge 2. Basket closed in 188. Stays 8. Floor untouched.",
     "2026-10-11 — No name. Refused. Nothing written.",
     "2026-10-11 — Learned. Do not price Amy off the hub. The pair would have left 6 unpriced. Do not fold the charge into the conversion. Do not add the open 90 to the closed 188.",
+    "2026-10-11 — Second test. Local = face × (1 − d). Temptation = 97. Gap = temptation − local.",
+    "2026-10-11 — Bob, ordinary. Discount 0.04. Local 96. Gap 1. Charge 1, posted for the class, not fitted to the gap.",
+    "2026-10-11 — Amy, thin. Discount 0.08. Local 92. Gap 5. Charge 2, posted for the class, not fitted to the gap.",
+    "2026-10-11 — Pair. Basket 188, not 194. Charges 3 kept out. Floor 0.",
+    "2026-10-11 — Better. Width class sets the charge before the write. The gap does not choose the charge afterward.",
+    "2026-10-11 — Next. Swap Bob’s charge with Amy’s. A friend rate writes nothing.",
   ];
   const rows = [
     ["Hub", `Converts at ${showNum(hubAt)}. Not this room.`],
