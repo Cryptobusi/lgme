@@ -36,6 +36,12 @@ const TEN = [
   "Stopped — Live execution of the book ends on that site. The record stays. Future performances are written here.",
 ];
 
+const ELEVEN = [
+  "Executed — Face 100. Hub converts at 97. This room converts at 92. Gap 5.",
+  "In force — The charge stays a second number, paid at the write. It is not folded into the conversion.",
+  "In force — A thin room is not priced off a thick one. The floor is untouched.",
+];
+
 const SEALS = [
   ["/seals/legomiego-coin.jpg", "Gold coin. #legomiego on a burst. Egonomic Anonymous along the rim.", ""],
   ["/seals/hederica.jpg", "Gold seal. Hederica, #legomiego, and @trancesage.", ""],
@@ -47,6 +53,11 @@ const SEALS = [
 ];
 
 const SEED = [
+  {
+    id: "hedge",
+    at: "2026-10-11",
+    act: "Hedge executed. Face 100. Hub converts at 97. This room converts at 92. Gap 5. The charge stays separate. The floor is untouched.",
+  },
   {
     id: "open",
     at: "2026-10-10",
@@ -316,6 +327,12 @@ function Home() {
           <h2 className="mt-10 font-display text-3xl">10 October 2026</h2>
           <ul className="mt-4 space-y-2 text-sm text-gold">
             {TEN.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+          <h2 className="mt-10 font-display text-3xl">11 October 2026</h2>
+          <ul className="mt-4 space-y-2 text-sm text-gold">
+            {ELEVEN.map((line) => (
               <li key={line}>{line}</li>
             ))}
           </ul>
