@@ -45,6 +45,8 @@ const ELEVEN = [
   "Second test — Local = face × (1 − d). Bob ordinary, 96, gap 1, charge 1. Amy thin, 92, gap 5, charge 2. Basket 188, not 194.",
   "Better — Width class sets the charge before the write. The gap does not choose it afterward.",
   "Next — Swap Bob’s charge with Amy’s. A friend rate writes nothing.",
+  "Swap run — Bob, ordinary, asked for charge 2. Amy, thin, asked for charge 1. Both refused.",
+  "In force — A friend rate writes nothing. Ordinary stays 1. Thin stays 2.",
 ];
 
 const SEALS = [
@@ -93,6 +95,7 @@ function HedgeDesk() {
   const [charge, setCharge] = useState("0");
   const [hub, setHub] = useState("0.03");
   const [room, setRoom] = useState("0.08");
+  const [width, setWidth] = useState("thin");
   const [person, setPerson] = useState("");
   const [note, setNote] = useState("");
   const [quotes, setQuotes] = useState<string[]>([]);
@@ -116,6 +119,8 @@ function HedgeDesk() {
     "2026-10-11 — Pair. Basket 188, not 194. Charges 3 kept out. Floor 0.",
     "2026-10-11 — Better. Width class sets the charge before the write. The gap does not choose the charge afterward.",
     "2026-10-11 — Next. Swap Bob’s charge with Amy’s. A friend rate writes nothing.",
+    "2026-10-11 — Swap run. Bob, ordinary, asked for charge 2. Amy, thin, asked for charge 1. Both refused.",
+    "2026-10-11 — A friend rate writes nothing. Ordinary stays 1. Thin stays 2.",
   ];
   const rows = [
     ["Hub", `Converts at ${showNum(hubAt)}. Not this room.`],
@@ -145,6 +150,11 @@ function HedgeDesk() {
     }
     if (Math.abs(safe(hubN) - safe(roomN)) < 1e-9) {
       setNote("Copied from the hub. Nothing written.");
+      return;
+    }
+    const posted = width === "thin" ? 2 : 1;
+    if (Math.abs(safe(chargeN) - posted) > 1e-9) {
+      setNote("Friend rate. Nothing written.");
       return;
     }
     const at = new Date().toISOString().slice(0, 10);
@@ -190,6 +200,17 @@ function HedgeDesk() {
             />
           </label>
         ))}
+        <label className="block text-sm text-subtle">
+          Width
+          <select
+            value={width}
+            onChange={(event) => setWidth(event.target.value)}
+            className="mt-1 min-h-11 w-full border-0 border-b border-border bg-transparent font-display text-xl text-fg outline-none"
+          >
+            <option value="ordinary">Ordinary, posted 1</option>
+            <option value="thin">Thin, posted 2</option>
+          </select>
+        </label>
       </form>
       <ol className="mt-4 divide-y divide-border border-y border-border">
         {rows.map(([name, line]) => (
@@ -213,7 +234,7 @@ function HedgeDesk() {
             [
               ["Person", person.trim() || "Missing", person.trim() || "Missing"],
               ["Conversion", showNum(roomAt), `${showNum(roomAt)}, not ${showNum(hubAt)}`],
-              ["Charge", charge.trim() === "" ? "Missing" : showNum(safe(chargeN)), "Kept out"],
+              ["Charge", charge.trim() === "" ? "Missing" : showNum(safe(chargeN)), charge.trim() === "" ? "Missing" : Math.abs(safe(chargeN) - (width === "thin" ? 2 : 1)) > 1e-9 ? `Friend rate. Posted ${width === "thin" ? 2 : 1}` : "Kept out"],
               ["Basket", showNum(roomAt), showNum(roomAt)],
               ["Floor", "Untouched", "0"],
             ] as const
@@ -229,7 +250,9 @@ function HedgeDesk() {
       <p className="mt-4 text-muted">
         {Math.abs(safe(hubN) - safe(roomN)) < 1e-9
           ? "Copied from the hub. The two readings are the flattering price."
-          : "Read twice. The basket matches the conversion, and it is not the hub price."}
+          : charge.trim() !== "" && Math.abs(safe(chargeN) - (width === "thin" ? 2 : 1)) > 1e-9
+            ? "Friend rate. The charge does not match the width class."
+            : "Read twice. The basket matches the conversion, and it is not the hub price."}
       </p>
       <button type="button" className="mt-4 min-h-11 border border-border px-4 text-sm text-fg" onClick={appendLine}>
         Append this line
