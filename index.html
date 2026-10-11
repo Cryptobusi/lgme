@@ -99,8 +99,15 @@
         <label>Hub discount <input id="hedge-hub" inputmode="decimal" value="0.03" /></label>
         <label>Room discount <input id="hedge-room" inputmode="decimal" value="0.08" /></label>
       </form>
-      <ol class="order" id="hedge-out"></ol>
-      <p class="muted" id="hedge-line"></p>
+      <ol class="order" id="hedge-out">
+        <li><span>Hub</span><span class="muted">Converts at 97. Not this room.</span></li>
+        <li><span>Room</span><span class="muted">Converts at 92. This is the local section.</span></li>
+        <li><span>Gap</span><span class="muted">5. Positive means the hub price leaves this room short.</span></li>
+        <li><span>Charge</span><span class="muted">0. Paid at the write. Not folded into the conversion.</span></li>
+        <li><span>Window</span><span class="muted">Discount, charge, and width lock until the due date.</span></li>
+        <li><span>Floor</span><span class="muted">Untouched.</span></li>
+      </ol>
+      <p class="muted" id="hedge-line">Applied: do not price a thin room off a thick one. Do not fold the two numbers into one rate.</p>
       <p class="muted">The desk runs the formula only. It does not write the tape, and it does not touch the floor.</p>
     </section>
     <p class="slogan">Debit Credit ØtØh IDIDIT!</p>
