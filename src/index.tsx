@@ -246,6 +246,33 @@ function MockDemo() {
       <p className="mt-4 text-muted">
         The hub discount stays {showNum(hubDiscount)}, so a face of {face} would convert at {showNum(hubAt)} if a room borrowed it. Each name is priced on that room’s own discount. The charge is paid at the write. The floor is not used.
       </p>
+      <div className="mt-4 overflow-x-auto">
+        <table className="w-full border-collapse text-left text-sm">
+          <thead className="text-subtle">
+            <tr>
+              {["Tongue", ...path.map((row) => row.name), "Next", "No name"].map((head) => (
+                <th key={head} className="border-b border-border py-2 pr-3 font-medium">{head}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="text-muted">
+            {[
+              ["Person", ...path.map(() => "Accepts"), "New accept", "Missing"],
+              ["Conversion", ...path.map((row) => showNum(row.roomAt)), showNum(nextAt), showNum(face * 0.92)],
+              ["Charge", ...path.map((row) => showNum(row.charge)), showNum(nextCharge), "0"],
+              ["Basket", ...path.map(() => `Closed in ${showNum(basket)}`), `${showNum(nextAt)}, still open`, "Not written"],
+              ["Stays", ...path.map((row) => `${showNum(face - row.roomAt)} with ${row.name === "Amy" ? "her" : "him"}`), "Not yet due", "Nothing"],
+            ].map((row) => (
+              <tr key={row[0]}>
+                {row.map((cell, index) => (
+                  <td key={`${row[0]}-${index}`} className="border-b border-border py-2 pr-3 align-top">{cell}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="mt-4 text-muted">The last column fails the dictionary. No name, so the basket does not move. The other three are one act, read across.</p>
       <ol className="mt-4 divide-y divide-border border-y border-border">
         {ran.map((row) => (
           <li key={row.name} className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr]">
@@ -657,34 +684,8 @@ function Home() {
             He works the Langlands correspondence: a dictionary between continents of mathematics that look separate. A number on one side is a function on the other. <em>Love and Math</em> says the usual class only teaches you to paint the fence. The painting is the hidden unity.
           </p>
           <p className="mt-4 text-muted">
-            On this app the fence is the formula, repeated down the page. The painting is one act in several tongues: the person, the conversion, the charge, the basket. If a column is missing, it is not a line. That is the functional change. The aesthetic change is to show that correspondence once, instead of asking the eye to reassemble it.
+            On this app the fence is the formula, repeated down the page. The painting is one act in several tongues: the person, the conversion, the charge, the basket. If a column is missing, it is not a line. That is the functional change. The aesthetic change is the table at the start of Bob and Amy’s run. The story under it is the same picture, read in order.
           </p>
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full border-collapse text-left text-sm">
-              <thead className="text-subtle">
-                <tr>
-                  {["Tongue", "Bob", "Amy", "Next"].map((head) => (
-                    <th key={head} className="border-b border-border py-2 pr-3 font-medium">{head}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="text-muted">
-                {[
-                  ["Person", "Accepts", "Accepts", "New accept"],
-                  ["Conversion", "96", "92", "90"],
-                  ["Charge", "1", "2", "3"],
-                  ["Basket", "Closed in 188", "Closed in 188", "90, still open"],
-                  ["Stays", "4 with him", "8 with her", "Not yet due"],
-                ].map((row) => (
-                  <tr key={row[0]}>
-                    {row.map((cell, index) => (
-                      <td key={`${row[0]}-${index}`} className="border-b border-border py-2 pr-3 align-top">{cell}</td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
           <p className="mt-4 text-muted">Floor untouched. Desert of the closed pair is 0. The charge is never folded into the conversion. One row that fails the dictionary writes nothing.</p>
         </section>
 
