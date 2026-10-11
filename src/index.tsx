@@ -194,6 +194,47 @@ function HedgeDesk() {
   );
 }
 
+const DEMO = [
+  { name: "Ivo Lane", discount: 0.04, charge: 1, accept: true },
+  { name: "Mara Quill", discount: 0.08, charge: 2, accept: true },
+  { name: "Sol Pett", discount: 0.11, charge: 0, accept: false },
+] as const;
+
+function MockDemo() {
+  const face = 100;
+  const hubDiscount = 0.03;
+  const hubAt = face * (1 - hubDiscount);
+  const ran = DEMO.map((row) => {
+    const roomAt = face * (1 - row.discount);
+    return { ...row, roomAt, gap: hubAt - roomAt };
+  });
+  const path = ran.filter((row) => row.accept);
+  return (
+    <section className="mx-auto mt-10 max-w-3xl border-t border-border pt-8">
+      <p className="font-mono text-xs tracking-widest text-subtle uppercase">Mock demo</p>
+      <h2 className="mt-3 font-display text-4xl">Three fictional names. One run.</h2>
+      <p className="mt-4 text-muted">
+        The hub discount stays {showNum(hubDiscount)}, so a face of {face} would convert at {showNum(hubAt)} if a room borrowed it. Each name is priced on that room’s own discount. The charge is paid at the write. The floor is not used.
+      </p>
+      <ol className="mt-4 divide-y divide-border border-y border-border">
+        {ran.map((row) => (
+          <li key={row.name} className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr]">
+            <span className="font-display text-xl">{row.name}</span>
+            <span className="text-sm text-muted">
+              {row.accept
+                ? `Accepts. Room discount ${showNum(row.discount)}. Converts at ${showNum(row.roomAt)}. Gap ${showNum(row.gap)}. Charge ${showNum(row.charge)}.`
+                : "Refuses. Nothing written."}
+            </span>
+          </li>
+        ))}
+      </ol>
+      <p className="mt-4 text-muted">
+        The path has {path.length} points, not {ran.length}. {path.map((row) => `${row.name} at ${showNum(row.roomAt)}`).join(", then ")}. Sol Pett is not a point. No name, no line, no movement of the basket.
+      </p>
+    </section>
+  );
+}
+
 function Home() {
   const [added, setAdded] = useState<Line[]>([]);
   const [act, setAct] = useState("");
@@ -331,6 +372,7 @@ function Home() {
           </p>
           <HedgeDesk />
         </section>
+        <MockDemo />
         <p className="lgme-slogan mt-5 text-gold">Debit Credit ØtØh IDIDIT!</p>
         <a
           href="https://www.egonomicanonymous.live"
