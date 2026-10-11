@@ -115,13 +115,21 @@
         <li><span>Floor</span><span class="muted">Untouched.</span></li>
       </ol>
       <p class="muted" id="hedge-line">Applied: do not price a thin room off a thick one. Do not fold the two numbers into one rate.</p>
+      <table class="order" id="hedge-dict">
+        <tr><th>Tongue</th><th>This line</th></tr>
+        <tr><td>Person</td><td id="dict-person">Missing</td></tr>
+        <tr><td>Conversion</td><td id="dict-conversion">92</td></tr>
+        <tr><td>Charge</td><td id="dict-charge">0</td></tr>
+        <tr><td>Basket</td><td id="dict-basket">92</td></tr>
+        <tr><td>Stays</td><td id="dict-stays">8</td></tr>
+      </table>
       <button type="button" class="hedge-append" id="hedge-append">Append this line</button>
       <button type="button" class="hedge-append" id="hedge-refuse">Refuse</button>
       <p class="muted" id="hedge-note"></p>
       <ul class="tape" id="hedge-path">
         <li>2026-10-11 — Face 100. Hub 97. Room 92. Gap 5. Charge 0. Floor untouched.</li>
       </ul>
-      <p class="muted">A line with no name is a refusal. A refusal writes nothing. The path stays on this page. It does not write the public tape, and it does not touch the floor.</p>
+      <p class="muted">A missing tongue is not a line. A refusal writes nothing. The path stays on this page. It does not write the public tape, and it does not touch the floor.</p>
     </section>
     <section class="laumon" id="demo">
       <p class="kicker">Mock demo</p>
@@ -341,12 +349,20 @@
           row("Floor", "Untouched."),
         ].join("");
         line.textContent = "Applied: do not price a thin room off a thick one. Do not fold the two numbers into one rate.";
+        var who = person.value.trim();
+        var chargeBlank = document.getElementById("hedge-charge").value.trim() === "";
+        document.getElementById("dict-person").textContent = who || "Missing";
+        document.getElementById("dict-conversion").textContent = show(room);
+        document.getElementById("dict-charge").textContent = chargeBlank ? "Missing" : show(charge);
+        document.getElementById("dict-basket").textContent = show(room);
+        document.getElementById("dict-stays").textContent = show(face - room);
       }
       form.addEventListener("input", run);
       button.addEventListener("click", function () {
         var who = person.value.trim();
-        if (!who) {
-          note.textContent = "No name. Nothing written.";
+        var chargeField = document.getElementById("hedge-charge").value.trim();
+        if (!who || chargeField === "") {
+          note.textContent = "A tongue is missing. Nothing written.";
           return;
         }
         var face = num("hedge-face");
@@ -355,7 +371,7 @@
         var room = face * (1 - num("hedge-room"));
         var gap = hub - room;
         var at = new Date().toISOString().slice(0, 10);
-        var text = at + " — " + who + ". Face " + show(face) + ". Hub " + show(hub) + ". Room " + show(room) + ". Gap " + show(gap) + ". Charge " + show(charge) + ". Floor untouched.";
+        var text = at + " — " + who + ". Person accepts. Conversion " + show(room) + ". Charge " + show(charge) + ". Basket " + show(room) + ". Stays " + show(face - room) + ". Floor untouched.";
         quotes.unshift(text);
         localStorage.setItem("lgme-hedge-path", JSON.stringify(quotes));
         note.textContent = "";
@@ -364,6 +380,7 @@
       refuse.addEventListener("click", function () {
         person.value = "";
         note.textContent = "Refused. Nothing written.";
+        run();
       });
       run();
       paint();
