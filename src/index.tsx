@@ -602,6 +602,70 @@ function Home() {
           </p>
         </section>
 
+        <section id="resources" className="mx-auto mt-14 max-w-3xl border-t border-border pt-10">
+          <p className="font-mono text-xs tracking-widest text-subtle uppercase">Resources</p>
+          <h2 className="mt-3 font-display text-4xl">Read with the others</h2>
+          <ul className="mt-4 space-y-3 text-sm text-muted">
+            <li>
+              <a className="text-fg underline decoration-border underline-offset-4" href="https://www.edwardfrenkel.com/" target="_blank" rel="noreferrer">Edward Frenkel</a>
+              . <em>Love and Math: The Heart of Hidden Reality</em> (2013). The fence is not the painting.{" "}
+              <a className="text-fg underline decoration-border underline-offset-4" href="https://en.wikipedia.org/wiki/Love_and_Math" target="_blank" rel="noreferrer">The book</a>
+              {" · "}
+              <a className="text-fg underline decoration-border underline-offset-4" href="https://www.youtube.com/watch?v=b8e_HMEwKIY" target="_blank" rel="noreferrer">Abel lecture</a>
+            </li>
+            <li>
+              <a className="text-fg underline decoration-border underline-offset-4" href="https://www.egonomicanonymous.live/laumon">Gérard Laumon</a>
+              . Sheaves, read onto this book.
+            </li>
+            <li>
+              <a className="text-fg underline decoration-border underline-offset-4" href="https://lgme.app/spp">Sovereign Provenance Protocol</a>
+              . The whitepaper and the commentary.
+            </li>
+            <li>
+              <a className="text-fg underline decoration-border underline-offset-4" href="https://youtu.be/KT9P_HnA1mQ" target="_blank" rel="noreferrer">The Last Invention</a>
+              . The film. This page does not hold it.
+            </li>
+            <li>
+              <a className="text-fg underline decoration-border underline-offset-4" href="https://www.egonomicanonymous.live">egonomicanonymous.live</a>
+              . The book these lines sit beside.
+            </li>
+          </ul>
+          <h3 className="mt-8 font-display text-2xl">What Frenkel changes</h3>
+          <p className="mt-4 text-muted">
+            He works the Langlands correspondence: a dictionary between continents of mathematics that look separate. A number on one side is a function on the other. <em>Love and Math</em> says the usual class only teaches you to paint the fence. The painting is the hidden unity.
+          </p>
+          <p className="mt-4 text-muted">
+            On this app the fence is the formula, repeated down the page. The painting is one act in several tongues: the person, the conversion, the charge, the basket. If a column is missing, it is not a line. That is the functional change. The aesthetic change is to show that correspondence once, instead of asking the eye to reassemble it.
+          </p>
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full border-collapse text-left text-sm">
+              <thead className="text-subtle">
+                <tr>
+                  {["Tongue", "Bob", "Amy", "Next"].map((head) => (
+                    <th key={head} className="border-b border-border py-2 pr-3 font-medium">{head}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="text-muted">
+                {[
+                  ["Person", "Accepts", "Accepts", "New accept"],
+                  ["Conversion", "96", "92", "90"],
+                  ["Charge", "1", "2", "3"],
+                  ["Basket", "Closed in 188", "Closed in 188", "90, still open"],
+                  ["Stays", "4 with him", "8 with her", "Not yet due"],
+                ].map((row) => (
+                  <tr key={row[0]}>
+                    {row.map((cell, index) => (
+                      <td key={`${row[0]}-${index}`} className="border-b border-border py-2 pr-3 align-top">{cell}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-4 text-muted">Floor untouched. Desert of the closed pair is 0. The charge is never folded into the conversion. One row that fails the dictionary writes nothing.</p>
+        </section>
+
         <section className="mt-14 border-t border-border pt-10">
           <h2 className="font-display text-4xl">Analysis / Comment</h2>
           <p className="mt-3 font-mono text-xs tracking-widest text-subtle uppercase">11 October 2026 — On “The Last Invention”</p>
