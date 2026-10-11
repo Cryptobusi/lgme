@@ -33,6 +33,8 @@
     .hedge { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem 1rem; margin-top: 1rem; }
     .hedge label { display: block; color: #8ea892; font-size: 0.85rem; }
     .hedge input { display: block; width: 100%; margin-top: 0.25rem; min-height: 2.6rem; border: 0; border-bottom: 1px solid #2c3b2e; background: transparent; color: #e7efe4; font: 1.1rem/1.2 "Cormorant Garamond", serif; }
+    .hedge-append { margin-top: 0.8rem; min-height: 2.6rem; border: 1px solid #2c3b2e; background: transparent; color: #e7efe4; padding: 0.35rem 0.9rem; }
+    #hedge-path { margin-top: 0.8rem; }
     @media (min-width: 720px) { .slogan { white-space: nowrap; } }
     .heart { display: block; max-width: 48rem; margin: 1.4rem auto 0; }
     .heart video { width: 100%; border-radius: 1rem; transform-origin: center; animation: heart-pump 1.15s ease-in-out infinite; }
@@ -108,7 +110,11 @@
         <li><span>Floor</span><span class="muted">Untouched.</span></li>
       </ol>
       <p class="muted" id="hedge-line">Applied: do not price a thin room off a thick one. Do not fold the two numbers into one rate.</p>
-      <p class="muted">The desk runs the formula only. It does not write the tape, and it does not touch the floor.</p>
+      <button type="button" class="hedge-append" id="hedge-append">Append this line</button>
+      <ul class="tape" id="hedge-path">
+        <li>2026-10-11 — Face 100. Hub 97. Room 92. Gap 5. Charge 0. Floor untouched.</li>
+      </ul>
+      <p class="muted">Append keeps this window’s path on this page. It does not write the public tape, and it does not touch the floor.</p>
     </section>
     <p class="slogan">Debit Credit ØtØh IDIDIT!</p>
     <a class="heart" href="https://www.egonomicanonymous.live" aria-label="I am keeping the book. Opens egonomicanonymous.live">
@@ -205,7 +211,25 @@
       var form = document.getElementById("hedge");
       var out = document.getElementById("hedge-out");
       var line = document.getElementById("hedge-line");
-      if (!form || !out || !line) return;
+      var path = document.getElementById("hedge-path");
+      var button = document.getElementById("hedge-append");
+      if (!form || !out || !line || !path || !button) return;
+      var seed = "2026-10-11 — Face 100. Hub 97. Room 92. Gap 5. Charge 0. Floor untouched.";
+      var quotes = [];
+      try {
+        var saved = JSON.parse(localStorage.getItem("lgme-hedge-path") || "[]");
+        if (Array.isArray(saved)) quotes = saved.filter(function (item) { return typeof item === "string"; });
+      } catch (e) {}
+      function escapeText(text) {
+        return text.replace(/[&<>]/g, function (c) {
+          if (c === "&") return "&" + "amp;";
+          if (c === "<") return "&" + "lt;";
+          return "&" + "gt;";
+        });
+      }
+      function paint() {
+        path.innerHTML = quotes.concat([seed]).map(function (item) { return "<li>" + escapeText(item) + "</li>"; }).join("");
+      }
       function num(id) {
         var v = Number(document.getElementById(id).value);
         return Number.isFinite(v) ? v : 0;
@@ -233,7 +257,20 @@
         line.textContent = "Applied: do not price a thin room off a thick one. Do not fold the two numbers into one rate.";
       }
       form.addEventListener("input", run);
+      button.addEventListener("click", function () {
+        var face = num("hedge-face");
+        var charge = num("hedge-charge");
+        var hub = face * (1 - num("hedge-hub"));
+        var room = face * (1 - num("hedge-room"));
+        var gap = hub - room;
+        var at = new Date().toISOString().slice(0, 10);
+        var text = at + " — Face " + show(face) + ". Hub " + show(hub) + ". Room " + show(room) + ". Gap " + show(gap) + ". Charge " + show(charge) + ". Floor untouched.";
+        quotes.unshift(text);
+        localStorage.setItem("lgme-hedge-path", JSON.stringify(quotes));
+        paint();
+      });
       run();
+      paint();
     })();
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
