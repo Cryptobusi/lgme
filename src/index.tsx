@@ -83,6 +83,8 @@ function HedgeDesk() {
   const [charge, setCharge] = useState("0");
   const [hub, setHub] = useState("0.03");
   const [room, setRoom] = useState("0.08");
+  const [person, setPerson] = useState("");
+  const [note, setNote] = useState("");
   const [quotes, setQuotes] = useState<string[]>([]);
   const faceN = Number(face);
   const chargeN = Number(charge);
@@ -115,16 +117,36 @@ function HedgeDesk() {
   }, []);
 
   function appendLine() {
+    const who = person.trim();
+    if (!who) {
+      setNote("No name. Nothing written.");
+      return;
+    }
     const at = new Date().toISOString().slice(0, 10);
-    const text = `${at} — Face ${showNum(faceV)}. Hub ${showNum(hubAt)}. Room ${showNum(roomAt)}. Gap ${showNum(gap)}. Charge ${showNum(safe(chargeN))}. Floor untouched.`;
+    const text = `${at} — ${who}. Face ${showNum(faceV)}. Hub ${showNum(hubAt)}. Room ${showNum(roomAt)}. Gap ${showNum(gap)}. Charge ${showNum(safe(chargeN))}. Floor untouched.`;
     const next = [text, ...quotes];
     setQuotes(next);
     localStorage.setItem("lgme-hedge-path", JSON.stringify(next));
+    setNote("");
+  }
+
+  function refuse() {
+    setPerson("");
+    setNote("Refused. Nothing written.");
   }
 
   return (
     <>
       <form className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3">
+        <label className="col-span-2 block text-sm text-subtle">
+          Person
+          <input
+            value={person}
+            autoComplete="name"
+            onChange={(event) => setPerson(event.target.value)}
+            className="mt-1 min-h-11 w-full border-0 border-b border-border bg-transparent font-display text-xl text-fg outline-none"
+          />
+        </label>
         {(
           [
             ["Face", face, setFace],
@@ -156,13 +178,17 @@ function HedgeDesk() {
       <button type="button" className="mt-4 min-h-11 border border-border px-4 text-sm text-fg" onClick={appendLine}>
         Append this line
       </button>
+      <button type="button" className="ml-2 mt-4 min-h-11 border border-border px-4 text-sm text-fg" onClick={refuse}>
+        Refuse
+      </button>
+      {note ? <p className="mt-3 text-sm text-muted">{note}</p> : null}
       <ul className="mt-4 space-y-2 text-sm text-gold">
         {[...quotes, seed].map((item, index) => (
           <li key={`${item}-${index}`}>{item}</li>
         ))}
       </ul>
       <p className="mt-4 text-muted">
-        Append keeps this window’s path on this page. It does not write the public tape, and it does not touch the floor.
+        A line with no name is a refusal. A refusal writes nothing. The path stays on this page. It does not write the public tape, and it does not touch the floor.
       </p>
     </>
   );
