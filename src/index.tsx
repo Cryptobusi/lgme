@@ -700,6 +700,28 @@ function Home() {
             On this app the fence is the formula, repeated down the page. The painting is one act in several tongues: the person, the conversion, the charge, the basket. If a column is missing, it is not a line. That is the functional change. The aesthetic change is the table at the start of Bob and Amy’s run. The story under it is the same picture, read in order.
           </p>
           <p className="mt-4 text-muted">Floor untouched. Desert of the closed pair is 0. The charge is never folded into the conversion. One row that fails the dictionary writes nothing.</p>
+          <h3 className="mt-8 font-display text-2xl">Seeking truths</h3>
+          <p className="mt-4 text-muted">
+            <em>Love and Math</em> is not a mood. It is a way of looking until the comfortable number gives up the true one. A facility gets better when it will do that. A higher quote is not an improvement. A quote that still matches in the other tongue is.
+          </p>
+          <ol className="mt-4 divide-y divide-border border-y border-border">
+            {[
+              ["Wallet", "You hold the money. A movement with no person’s line is not a facility. It is a fence."],
+              ["Vote", "One person, one vote. A stack of tokens is not a truer voice."],
+              ["Hedge", "Amy at 92 is truer than the hub’s 97. The desk improves by refusing the flattering price."],
+              ["Charge", "A second number, paid at the write. Folding it into the discount hides who was spared."],
+              ["Basket", "Record 188, the amount that moved. Do not record 194 because it would have looked whole."],
+              ["Floor", "Senior, and paid from surplus already named. A hedge gap is not titled to it."],
+              ["Refusal", "The unnamed line stays out of the history. A book of only accepts is a painted fence."],
+              ["Window", "Bob and Amy stay locked. A later quote, kinder or harsher, is not allowed to become the truth after the fact."],
+            ].map(([name, line]) => (
+              <li key={name} className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr]">
+                <span className="font-display text-xl">{name}</span>
+                <span className="text-sm text-muted">{line}</span>
+              </li>
+            ))}
+          </ol>
+          <p className="mt-4 text-muted">The means are these facilities. The truer way is the one that can be read twice and still say the same thing.</p>
         </section>
 
         <section className="mt-14 border-t border-border pt-10">
