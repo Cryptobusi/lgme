@@ -214,6 +214,8 @@ function MockDemo() {
   const charges = path.reduce((sum, row) => sum + row.charge, 0);
   const nextDiscount = 0.1;
   const nextAt = face * (1 - nextDiscount);
+  const unconverted = path.reduce((sum, row) => sum + (face - row.roomAt), 0);
+  const desert = 0;
   return (
     <section className="mx-auto mt-10 max-w-3xl border-t border-border pt-8">
       <p className="font-mono text-xs tracking-widest text-subtle uppercase">Mock demo</p>
@@ -295,6 +297,28 @@ function MockDemo() {
           <span className="text-sm text-muted">
             Pays {showNum(basket)}. Not {showNum(face * path.length)}. Not {showNum(nextAt * path.length)}. An empty sliver, if one remains, is the issuer’s loss.
           </span>
+        </li>
+      </ol>
+      <h3 className="mt-8 font-display text-2xl">The remainder</h3>
+      <p className="mt-4 text-muted">
+        Desert is what is left after the locked lines and the listed charge. Here that remainder is {showNum(desert)}. The {showNum(unconverted)} that was not converted never entered the book. It is not spent, not printed back, and not titled to the floor. Nothing retires.
+      </p>
+      <ol className="mt-4 divide-y divide-border border-y border-border">
+        <li className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr]">
+          <span className="font-display text-xl">Floor</span>
+          <span className="text-sm text-muted">0 from this hedge. Still senior. Still untouched.</span>
+        </li>
+        <li className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr]">
+          <span className="font-display text-xl">Charge</span>
+          <span className="text-sm text-muted">{showNum(charges)} already paid at the writes. Not collected again.</span>
+        </li>
+        <li className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr]">
+          <span className="font-display text-xl">Desert</span>
+          <span className="text-sm text-muted">{showNum(desert)}. Naming zero keeps the book from looking closed by a story.</span>
+        </li>
+        <li className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr]">
+          <span className="font-display text-xl">Retire</span>
+          <span className="text-sm text-muted">Nothing falls. The {showNum(unconverted)} does not become new units, and it does not roll the old lines at par.</span>
         </li>
       </ol>
     </section>
