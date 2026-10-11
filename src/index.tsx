@@ -208,6 +208,10 @@ function MockDemo() {
     return { ...row, roomAt, gap: hubAt - roomAt };
   });
   const path = ran.filter((row) => row.accept);
+  const basket = path.reduce((sum, row) => sum + row.roomAt, 0);
+  const hubPair = path.length * hubAt;
+  const leftOut = hubPair - basket;
+  const charges = path.reduce((sum, row) => sum + row.charge, 0);
   return (
     <section className="mx-auto mt-10 max-w-3xl border-t border-border pt-8">
       <p className="font-mono text-xs tracking-widest text-subtle uppercase">Mock demo</p>
@@ -230,6 +234,29 @@ function MockDemo() {
       <p className="mt-4 text-muted">
         The path has {path.length} points. {path.map((row) => `${row.name} at ${showNum(row.roomAt)}`).join(", then ")}. A refusal is not a point. No name, no line, no movement of the basket.
       </p>
+      <h3 className="mt-8 font-display text-2xl">The basket, after both accepts</h3>
+      <ol className="mt-4 divide-y divide-border border-y border-border">
+        {path.map((row) => (
+          <li key={row.name} className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr]">
+            <span className="font-display text-xl">{row.name}</span>
+            <span className="text-sm text-muted">The basket moves {showNum(row.roomAt)}, not {showNum(hubAt)}.</span>
+          </li>
+        ))}
+        <li className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr]">
+          <span className="font-display text-xl">Together</span>
+          <span className="text-sm text-muted">
+            {showNum(basket)}. A hub pair would have written {showNum(hubPair)}. The {showNum(leftOut)} is the risk that was priced here, not collected later.
+          </span>
+        </li>
+        <li className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr]">
+          <span className="font-display text-xl">Charge</span>
+          <span className="text-sm text-muted">{showNum(charges)}, paid at the two writes. Not folded into the {showNum(basket)}.</span>
+        </li>
+        <li className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr]">
+          <span className="font-display text-xl">Floor</span>
+          <span className="text-sm text-muted">Untouched.</span>
+        </li>
+      </ol>
     </section>
   );
 }
