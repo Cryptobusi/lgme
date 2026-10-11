@@ -118,12 +118,12 @@ function HedgeDesk() {
 
   function appendLine() {
     const who = person.trim();
-    if (!who) {
-      setNote("No name. Nothing written.");
+    if (!who || charge.trim() === "") {
+      setNote("A tongue is missing. Nothing written.");
       return;
     }
     const at = new Date().toISOString().slice(0, 10);
-    const text = `${at} — ${who}. Face ${showNum(faceV)}. Hub ${showNum(hubAt)}. Room ${showNum(roomAt)}. Gap ${showNum(gap)}. Charge ${showNum(safe(chargeN))}. Floor untouched.`;
+    const text = `${at} — ${who}. Person accepts. Conversion ${showNum(roomAt)}. Charge ${showNum(safe(chargeN))}. Basket ${showNum(roomAt)}. Stays ${showNum(faceV - roomAt)}. Floor untouched.`;
     const next = [text, ...quotes];
     setQuotes(next);
     localStorage.setItem("lgme-hedge-path", JSON.stringify(next));
@@ -175,6 +175,28 @@ function HedgeDesk() {
         ))}
       </ol>
       <p className="mt-4 text-muted">Applied: do not price a thin room off a thick one. Do not fold the two numbers into one rate.</p>
+      <table className="mt-4 w-full border-collapse text-left text-sm">
+        <thead className="text-subtle">
+          <tr>
+            <th className="border-b border-border py-2 pr-3 font-medium">Tongue</th>
+            <th className="border-b border-border py-2 pr-3 font-medium">This line</th>
+          </tr>
+        </thead>
+        <tbody className="text-muted">
+          {[
+            ["Person", person.trim() || "Missing"],
+            ["Conversion", showNum(roomAt)],
+            ["Charge", charge.trim() === "" ? "Missing" : showNum(safe(chargeN))],
+            ["Basket", showNum(roomAt)],
+            ["Stays", showNum(faceV - roomAt)],
+          ].map(([tongue, value]) => (
+            <tr key={tongue}>
+              <td className="border-b border-border py-2 pr-3">{tongue}</td>
+              <td className="border-b border-border py-2 pr-3">{value}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
       <button type="button" className="mt-4 min-h-11 border border-border px-4 text-sm text-fg" onClick={appendLine}>
         Append this line
       </button>
@@ -188,7 +210,7 @@ function HedgeDesk() {
         ))}
       </ul>
       <p className="mt-4 text-muted">
-        A line with no name is a refusal. A refusal writes nothing. The path stays on this page. It does not write the public tape, and it does not touch the floor.
+        A missing tongue is not a line. A refusal writes nothing. The path stays on this page. It does not write the public tape, and it does not touch the floor.
       </p>
     </>
   );
