@@ -116,13 +116,14 @@
       </ol>
       <p class="muted" id="hedge-line">Applied: do not price a thin room off a thick one. Do not fold the two numbers into one rate.</p>
       <table class="order" id="hedge-dict">
-        <tr><th>Tongue</th><th>This line</th></tr>
-        <tr><td>Person</td><td id="dict-person">Missing</td></tr>
-        <tr><td>Conversion</td><td id="dict-conversion">92</td></tr>
-        <tr><td>Charge</td><td id="dict-charge">0</td></tr>
-        <tr><td>Basket</td><td id="dict-basket">92</td></tr>
-        <tr><td>Stays</td><td id="dict-stays">8</td></tr>
+        <tr><th>Tongue</th><th>This line</th><th>Read again</th></tr>
+        <tr><td>Person</td><td id="dict-person">Missing</td><td id="again-person">Missing</td></tr>
+        <tr><td>Conversion</td><td id="dict-conversion">92</td><td id="again-conversion">92, not 97</td></tr>
+        <tr><td>Charge</td><td id="dict-charge">0</td><td id="again-charge">Kept out</td></tr>
+        <tr><td>Basket</td><td id="dict-basket">92</td><td id="again-basket">92</td></tr>
+        <tr><td>Floor</td><td id="dict-floor">Untouched</td><td id="again-floor">0</td></tr>
       </table>
+      <p class="muted" id="hedge-twice">Read twice. The basket matches the conversion, and it is not the hub price.</p>
       <button type="button" class="hedge-append" id="hedge-append">Append this line</button>
       <button type="button" class="hedge-append" id="hedge-refuse">Refuse</button>
       <p class="muted" id="hedge-note"></p>
@@ -376,11 +377,20 @@
         line.textContent = "Applied: do not price a thin room off a thick one. Do not fold the two numbers into one rate.";
         var who = person.value.trim();
         var chargeBlank = document.getElementById("hedge-charge").value.trim() === "";
+        var hubDiscount = num("hedge-hub");
+        var roomDiscount = num("hedge-room");
+        var copied = Math.abs(hubDiscount - roomDiscount) < 1e-9;
         document.getElementById("dict-person").textContent = who || "Missing";
+        document.getElementById("again-person").textContent = who || "Missing";
         document.getElementById("dict-conversion").textContent = show(room);
+        document.getElementById("again-conversion").textContent = show(room) + ", not " + show(hub);
         document.getElementById("dict-charge").textContent = chargeBlank ? "Missing" : show(charge);
+        document.getElementById("again-charge").textContent = "Kept out";
         document.getElementById("dict-basket").textContent = show(room);
-        document.getElementById("dict-stays").textContent = show(face - room);
+        document.getElementById("again-basket").textContent = show(room);
+        document.getElementById("hedge-twice").textContent = copied
+          ? "Copied from the hub. The two readings are the flattering price."
+          : "Read twice. The basket matches the conversion, and it is not the hub price.";
       }
       form.addEventListener("input", run);
       button.addEventListener("click", function () {
@@ -390,13 +400,19 @@
           note.textContent = "A tongue is missing. Nothing written.";
           return;
         }
+        var hubDiscount = num("hedge-hub");
+        var roomDiscount = num("hedge-room");
+        if (Math.abs(hubDiscount - roomDiscount) < 1e-9) {
+          note.textContent = "Copied from the hub. Nothing written.";
+          return;
+        }
         var face = num("hedge-face");
         var charge = num("hedge-charge");
         var hub = face * (1 - num("hedge-hub"));
         var room = face * (1 - num("hedge-room"));
         var gap = hub - room;
         var at = new Date().toISOString().slice(0, 10);
-        var text = at + " — " + who + ". Person accepts. Conversion " + show(room) + ". Charge " + show(charge) + ". Basket " + show(room) + ". Stays " + show(face - room) + ". Floor untouched.";
+        var text = at + " — " + who + ". Read twice. Conversion " + show(room) + ", not the hub " + show(hub) + ". Charge " + show(charge) + " kept out. Basket " + show(room) + ". Floor 0.";
         quotes.unshift(text);
         localStorage.setItem("lgme-hedge-path", JSON.stringify(quotes));
         note.textContent = "";
