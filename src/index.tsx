@@ -195,9 +195,8 @@ function HedgeDesk() {
 }
 
 const DEMO = [
-  { name: "Ivo Lane", discount: 0.04, charge: 1, accept: true },
-  { name: "Mara Quill", discount: 0.08, charge: 2, accept: true },
-  { name: "Sol Pett", discount: 0.11, charge: 0, accept: false },
+  { name: "Bob", discount: 0.04, charge: 1, accept: true },
+  { name: "Amy", discount: 0.08, charge: 2, accept: true },
 ] as const;
 
 function MockDemo() {
@@ -212,7 +211,7 @@ function MockDemo() {
   return (
     <section className="mx-auto mt-10 max-w-3xl border-t border-border pt-8">
       <p className="font-mono text-xs tracking-widest text-subtle uppercase">Mock demo</p>
-      <h2 className="mt-3 font-display text-4xl">Three fictional names. One run.</h2>
+      <h2 className="mt-3 font-display text-4xl">Bob and Amy. One run.</h2>
       <p className="mt-4 text-muted">
         The hub discount stays {showNum(hubDiscount)}, so a face of {face} would convert at {showNum(hubAt)} if a room borrowed it. Each name is priced on that room’s own discount. The charge is paid at the write. The floor is not used.
       </p>
@@ -222,14 +221,14 @@ function MockDemo() {
             <span className="font-display text-xl">{row.name}</span>
             <span className="text-sm text-muted">
               {row.accept
-                ? `Accepts. Room discount ${showNum(row.discount)}. Converts at ${showNum(row.roomAt)}. Gap ${showNum(row.gap)}. Charge ${showNum(row.charge)}.`
+                ? `Accepts. Room discount ${showNum(row.discount)}. Converts at ${showNum(row.roomAt)}. Gap ${showNum(row.gap)}. Charge ${showNum(row.charge)}.${row.gap > 1 ? " The gap is the risk the hub price would have left unpriced." : ""}`
                 : "Refuses. Nothing written."}
             </span>
           </li>
         ))}
       </ol>
       <p className="mt-4 text-muted">
-        The path has {path.length} points, not {ran.length}. {path.map((row) => `${row.name} at ${showNum(row.roomAt)}`).join(", then ")}. Sol Pett is not a point. No name, no line, no movement of the basket.
+        The path has {path.length} points. {path.map((row) => `${row.name} at ${showNum(row.roomAt)}`).join(", then ")}. A refusal is not a point. No name, no line, no movement of the basket.
       </p>
     </section>
   );
