@@ -159,6 +159,39 @@ function Home() {
             </p>
           </div>
         </section>
+        <section className="mx-auto mt-10 max-w-3xl border-t border-border pt-8">
+          <p className="font-mono text-xs tracking-widest text-subtle uppercase">Laumon on the working book</p>
+          <h2 className="mt-3 font-display text-4xl">How the sheaf improves #legomiego</h2>
+          <p className="mt-4 text-muted">
+            The third seat is a small book. The state may tax. The firm may issue credit. The person sits beside them and may refuse a line that skipped the order. Floor, Mint, Issue, Tape, Charge, Agent, Thin, Desert, then Retire. Survival is paid first from surplus already named. A promise is not cash. What cannot be shown is not policy.
+          </p>
+          <p className="mt-4 text-muted">
+            The working model is still flatter than that. A room collapses into three numbers. A contribution collapses into a score. A week is judged by whether it settled. Laumon is useful there. Not as a new mint. As a better shape for the book.
+          </p>
+          <h3 className="mt-8 font-display text-2xl">Sheaves, instead of one average</h3>
+          <p className="mt-2 text-muted">
+            A policy is not the same object in a rural market and in a hub. Each room keeps its own section: basket, fee, desert. The public tape does not average them. It only glues the sections where the order agrees. Local habit stays local. The rule that travels is seniority and visibility.
+          </p>
+          <h3 className="mt-8 font-display text-2xl">A moduli space, instead of a rest state</h3>
+          <p className="mt-2 text-muted">
+            Stop asking where the economy will settle. The allowed books are the points: every triple of floor, fee, and remainder that obeyed the order, including a remainder of zero. The tape records the path from one allowed book to the next. Zero is a point, not a failure.
+          </p>
+          <h3 className="mt-8 font-display text-2xl">A duality between the person and the basket</h3>
+          <p className="mt-2 text-muted">
+            Each accepted help must appear as a movement of the basket, and each movement of the basket must have a named accept behind it. A refusal writes nothing on either side. No macro print without a person’s line.
+          </p>
+          <h3 className="mt-8 font-display text-2xl">A record, instead of one number</h3>
+          <p className="mt-2 text-muted">
+            Keep one person, one vote. Let the work stay a structure: who did it, what it paid, which floor it touched, when it must be retired. The vote does not buy that structure. The structure is what the vote is allowed to read.
+          </p>
+          <p className="mt-4 text-muted">
+            Rooms keep sections. The tape stores paths, not a final balance. Every basket line has a person’s line, and the other way around. The remainder stays a record. The floor stays first.{" "}
+            <a className="text-fg underline decoration-border underline-offset-4" href="https://www.egonomicanonymous.live/laumon">
+              The longer reading
+            </a>
+            .
+          </p>
+        </section>
         <p className="lgme-slogan mt-5 text-gold">Debit Credit ØtØh IDIDIT!</p>
         <a
           href="https://www.egonomicanonymous.live"
