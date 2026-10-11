@@ -137,6 +137,28 @@ function Home() {
             ),
           )}
         </div>
+        <section className="soft-say mx-auto mt-8 max-w-3xl">
+          <p className="text-[1.25rem] leading-snug sm:text-[1.45rem]">
+            You hold your own money. You vote as one real person. Useful work is written down, and its benefits are shared.
+          </p>
+          <div className="mt-4 space-y-1.5 text-[1.05rem] leading-snug sm:text-[1.2rem]">
+            <p>
+              <span className="soft-lead">Your own node.</span> You move value from your own wallet. New money follows public rules, not a private board.
+            </p>
+            <p>
+              <span className="soft-lead">One person, one vote.</span> A verified person gets one vote. A stack of tokens does not buy more.
+            </p>
+            <p>
+              <span className="soft-lead">The record decides.</span> Support follows work already done, not the loudest promise or the biggest payment.
+            </p>
+            <p>
+              <span className="soft-lead">Vote by doing.</span> A say comes from building, reviewing, or teaching. Sitting on tokens is not a voice.
+            </p>
+            <p>
+              <span className="soft-lead">A shared basket.</span> Value grows with the network and is shared by the public record of work, not captured by early holders.
+            </p>
+          </div>
+        </section>
         <p className="lgme-slogan mt-5 text-gold">Debit Credit ØtØh IDIDIT!</p>
         <a
           href="https://www.egonomicanonymous.live"
