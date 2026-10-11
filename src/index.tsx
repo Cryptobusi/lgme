@@ -277,6 +277,26 @@ function MockDemo() {
           <span className="text-sm text-muted">A new name may take {showNum(nextAt)}. That is a new point, not a rewrite of these two.</span>
         </li>
       </ol>
+      <h3 className="mt-8 font-display text-2xl">The date arrives</h3>
+      <p className="mt-4 text-muted">
+        The book pays the locked conversion. It does not pay the face, and it does not pay the new quote. The charge is not taken twice. What was not converted stays with the name that wrote the paper. The floor is not the backstop.
+      </p>
+      <ol className="mt-4 divide-y divide-border border-y border-border">
+        {path.map((row) => (
+          <li key={`${row.name}-due`} className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr]">
+            <span className="font-display text-xl">{row.name}</span>
+            <span className="text-sm text-muted">
+              Paid {showNum(row.roomAt)}. Face was {face}. The {showNum(face - row.roomAt)} stays with {row.name === "Amy" ? "her" : "him"}. Charge {showNum(row.charge)} is not taken again.
+            </span>
+          </li>
+        ))}
+        <li className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr]">
+          <span className="font-display text-xl">Book</span>
+          <span className="text-sm text-muted">
+            Pays {showNum(basket)}. Not {showNum(face * path.length)}. Not {showNum(nextAt * path.length)}. An empty sliver, if one remains, is the issuer’s loss.
+          </span>
+        </li>
+      </ol>
     </section>
   );
 }
