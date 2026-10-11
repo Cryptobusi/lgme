@@ -63,6 +63,69 @@ const KEY = "lgme-performances";
 
 type Line = { id: string; at: string; act: string };
 
+function showNum(n: number) {
+  return String(Math.round(n * 100) / 100);
+}
+
+function HedgeDesk() {
+  const [face, setFace] = useState("100");
+  const [charge, setCharge] = useState("0");
+  const [hub, setHub] = useState("0.03");
+  const [room, setRoom] = useState("0.08");
+  const faceN = Number(face);
+  const chargeN = Number(charge);
+  const hubN = Number(hub);
+  const roomN = Number(room);
+  const safe = (n: number) => (Number.isFinite(n) ? n : 0);
+  const faceV = safe(faceN);
+  const hubAt = faceV * (1 - safe(hubN));
+  const roomAt = faceV * (1 - safe(roomN));
+  const gap = hubAt - roomAt;
+  const rows = [
+    ["Hub", `Converts at ${showNum(hubAt)}. Not this room.`],
+    ["Room", `Converts at ${showNum(roomAt)}. This is the local section.`],
+    ["Gap", `${showNum(gap)}. Positive means the hub price leaves this room short.`],
+    ["Charge", `${showNum(safe(chargeN))}. Paid at the write. Not folded into the conversion.`],
+    ["Window", "Discount, charge, and width lock until the due date."],
+    ["Floor", "Untouched."],
+  ];
+  return (
+    <>
+      <form className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3">
+        {(
+          [
+            ["Face", face, setFace],
+            ["Charge, paid at the write", charge, setCharge],
+            ["Hub discount", hub, setHub],
+            ["Room discount", room, setRoom],
+          ] as const
+        ).map(([label, value, set]) => (
+          <label key={label} className="block text-sm text-subtle">
+            {label}
+            <input
+              value={value}
+              inputMode="decimal"
+              onChange={(event) => set(event.target.value)}
+              className="mt-1 min-h-11 w-full border-0 border-b border-border bg-transparent font-display text-xl text-fg outline-none"
+            />
+          </label>
+        ))}
+      </form>
+      <ol className="mt-4 divide-y divide-border border-y border-border">
+        {rows.map(([name, line]) => (
+          <li key={name} className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr]">
+            <span className="font-display text-xl">{name}</span>
+            <span className="text-sm text-muted">{line}</span>
+          </li>
+        ))}
+      </ol>
+      <p className="mt-4 text-muted">
+        Applied: do not price a thin room off a thick one. Do not fold the two numbers into one rate. The desk runs the formula only. It does not write the tape, and it does not touch the floor.
+      </p>
+    </>
+  );
+}
+
 function Home() {
   const [added, setAdded] = useState<Line[]>([]);
   const [act, setAct] = useState("");
@@ -198,25 +261,7 @@ function Home() {
           <p className="mt-4 text-muted">
             A face of 100. The hub book is thick, so its discount is 0.03 and the paper converts at 97. This room’s book is thin, so its own discount is 0.08 and the paper converts at 92. If the room borrows the hub’s number, five units are never priced. That five is the risk. It later looks like a loss someone will try to print over, or send to the floor.
           </p>
-          <ol className="mt-4 divide-y divide-border border-y border-border">
-            {[
-              ["Face", "100. Paper, not cash."],
-              ["Hub", "Discount 0.03. Converts at 97. Not this room."],
-              ["Room", "Discount 0.08. Converts at 92. This is the local section."],
-              ["Gap", "5. The cost of using the average."],
-              ["Charge", "A second number. Posted for this tenor and this width. Paid at the write."],
-              ["Window", "Discount, charge, and width lock until the due date. The next window may requote. It may not roll at par."],
-              ["Floor", "Untouched. The empty sliver stays with the name that wrote the line."],
-            ].map(([name, line]) => (
-              <li key={name} className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr]">
-                <span className="font-display text-xl">{name}</span>
-                <span className="text-sm text-muted">{line}</span>
-              </li>
-            ))}
-          </ol>
-          <p className="mt-4 text-muted">
-            Applied: do not price a thin room off a thick one. Do not fold the two numbers into one rate. Post the local triple, take the charge at the write, and leave the floor senior.
-          </p>
+          <HedgeDesk />
         </section>
         <p className="lgme-slogan mt-5 text-gold">Debit Credit ØtØh IDIDIT!</p>
         <a
