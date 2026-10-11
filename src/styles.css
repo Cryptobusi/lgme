@@ -30,6 +30,20 @@
   text-align: center;
 }
 
+.soft-say {
+  font-family: "Cormorant Garamond", Palatino, Georgia, serif;
+  font-style: italic;
+  font-weight: 500;
+  color: #8ea892;
+  letter-spacing: 0.01em;
+}
+
+.soft-say .soft-lead {
+  font-style: italic;
+  font-weight: 500;
+  color: #b7c7b8;
+}
+
 @media (min-width: 720px) {
   .lgme-slogan {
     white-space: nowrap;
