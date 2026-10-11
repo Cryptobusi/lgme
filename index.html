@@ -126,8 +126,12 @@
       <button type="button" class="hedge-append" id="hedge-append">Append this line</button>
       <button type="button" class="hedge-append" id="hedge-refuse">Refuse</button>
       <p class="muted" id="hedge-note"></p>
+      <p class="kicker">Test run history</p>
       <ul class="tape" id="hedge-path">
-        <li>2026-10-11 — Face 100. Hub 97. Room 92. Gap 5. Charge 0. Floor untouched.</li>
+        <li>2026-10-11 — Bob. Person accepts. Conversion 96. Charge 1. Basket closed in 188. Stays 4. Floor untouched.</li>
+        <li>2026-10-11 — Amy. Person accepts. Conversion 92. Charge 2. Basket closed in 188. Stays 8. Floor untouched.</li>
+        <li>2026-10-11 — No name. Refused. Nothing written.</li>
+        <li>2026-10-11 — Learned. Do not price Amy off the hub. The pair would have left 6 unpriced. Do not fold the charge into the conversion. Do not add the open 90 to the closed 188.</li>
       </ul>
       <p class="muted">A missing tongue is not a line. A refusal writes nothing. The path stays on this page. It does not write the public tape, and it does not touch the floor.</p>
     </section>
@@ -249,6 +253,8 @@
         <li>Executed — Face 100. Hub converts at 97. This room converts at 92. Gap 5.</li>
         <li>In force — The charge stays a second number, paid at the write. It is not folded into the conversion.</li>
         <li>In force — A thin room is not priced off a thick one. The floor is untouched.</li>
+        <li>Test — Bob accepts at 96, charge 1. Amy accepts at 92, charge 2. Basket 188. A missing name writes nothing.</li>
+        <li>Learned — The hub price would have left 6 unpriced across the pair. Keep that gap on the write. Do not add the open 90 to the closed 188.</li>
       </ul>
       <p class="muted">No new mint. Floor stays senior. An unpublished change is not a change.</p>
       <p class="muted"><a href="https://www.egonomicanonymous.live/status">The live status</a> · <a href="https://www.egonomicanonymous.live/status-2026-10-10.md">Full report</a></p>
@@ -309,7 +315,12 @@
       var note = document.getElementById("hedge-note");
       var person = document.getElementById("hedge-person");
       if (!form || !out || !line || !path || !button || !refuse || !note || !person) return;
-      var seed = "2026-10-11 — Face 100. Hub 97. Room 92. Gap 5. Charge 0. Floor untouched.";
+      var tests = [
+        "2026-10-11 — Bob. Person accepts. Conversion 96. Charge 1. Basket closed in 188. Stays 4. Floor untouched.",
+        "2026-10-11 — Amy. Person accepts. Conversion 92. Charge 2. Basket closed in 188. Stays 8. Floor untouched.",
+        "2026-10-11 — No name. Refused. Nothing written.",
+        "2026-10-11 — Learned. Do not price Amy off the hub. The pair would have left 6 unpriced. Do not fold the charge into the conversion. Do not add the open 90 to the closed 188."
+      ];
       var quotes = [];
       try {
         var saved = JSON.parse(localStorage.getItem("lgme-hedge-path") || "[]");
@@ -323,7 +334,7 @@
         });
       }
       function paint() {
-        path.innerHTML = quotes.concat([seed]).map(function (item) { return "<li>" + escapeText(item) + "</li>"; }).join("");
+        path.innerHTML = quotes.concat(tests).map(function (item) { return "<li>" + escapeText(item) + "</li>"; }).join("");
       }
       function num(id) {
         var v = Number(document.getElementById(id).value);
