@@ -30,6 +30,9 @@
     .soft-say .name { font-weight: 500; color: #b7c7b8; }
     .laumon { max-width: 46rem; margin: 2rem auto 0; }
     .laumon h3 { font-family: "Cormorant Garamond", serif; font-weight: 500; font-size: 1.45rem; margin: 1.4rem 0 0; }
+    .hedge { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem 1rem; margin-top: 1rem; }
+    .hedge label { display: block; color: #8ea892; font-size: 0.85rem; }
+    .hedge input { display: block; width: 100%; margin-top: 0.25rem; min-height: 2.6rem; border: 0; border-bottom: 1px solid #2c3b2e; background: transparent; color: #e7efe4; font: 1.1rem/1.2 "Cormorant Garamond", serif; }
     @media (min-width: 720px) { .slogan { white-space: nowrap; } }
     .heart { display: block; max-width: 48rem; margin: 1.4rem auto 0; }
     .heart video { width: 100%; border-radius: 1rem; transform-origin: center; animation: heart-pump 1.15s ease-in-out infinite; }
@@ -90,16 +93,15 @@
       <h2>The hedge, in the app’s own numbers</h2>
       <p class="muted">The app already keeps two prices. Discount is the haircut. Charge is the posted price of writing the paper at all. Conversion is face × (1 − discount). They are not one rate. The charge is paid when the line is signed, not taken from the wreck. The floor is not the backstop. What Laumon adds is where the discount is read.</p>
       <p class="muted">A face of 100. The hub book is thick, so its discount is 0.03 and the paper converts at 97. This room’s book is thin, so its own discount is 0.08 and the paper converts at 92. If the room borrows the hub’s number, five units are never priced. That five is the risk. It later looks like a loss someone will try to print over, or send to the floor.</p>
-      <ol class="order">
-        <li><span>Face</span><span>100. Paper, not cash.</span></li>
-        <li><span>Hub</span><span>Discount 0.03. Converts at 97. Not this room.</span></li>
-        <li><span>Room</span><span>Discount 0.08. Converts at 92. This is the local section.</span></li>
-        <li><span>Gap</span><span>5. The cost of using the average.</span></li>
-        <li><span>Charge</span><span>A second number. Posted for this tenor and this width. Paid at the write.</span></li>
-        <li><span>Window</span><span>Discount, charge, and width lock until the due date. The next window may requote. It may not roll at par.</span></li>
-        <li><span>Floor</span><span>Untouched. The empty sliver stays with the name that wrote the line.</span></li>
-      </ol>
-      <p class="muted">Applied: do not price a thin room off a thick one. Do not fold the two numbers into one rate. Post the local triple, take the charge at the write, and leave the floor senior.</p>
+      <form class="hedge" id="hedge">
+        <label>Face <input id="hedge-face" inputmode="decimal" value="100" /></label>
+        <label>Charge, paid at the write <input id="hedge-charge" inputmode="decimal" value="0" /></label>
+        <label>Hub discount <input id="hedge-hub" inputmode="decimal" value="0.03" /></label>
+        <label>Room discount <input id="hedge-room" inputmode="decimal" value="0.08" /></label>
+      </form>
+      <ol class="order" id="hedge-out"></ol>
+      <p class="muted" id="hedge-line"></p>
+      <p class="muted">The desk runs the formula only. It does not write the tape, and it does not touch the floor.</p>
     </section>
     <p class="slogan">Debit Credit ØtØh IDIDIT!</p>
     <a class="heart" href="https://www.egonomicanonymous.live" aria-label="I am keeping the book. Opens egonomicanonymous.live">
@@ -186,6 +188,40 @@
     </section>
   </main>
   <script>
+    (function () {
+      var form = document.getElementById("hedge");
+      var out = document.getElementById("hedge-out");
+      var line = document.getElementById("hedge-line");
+      if (!form || !out || !line) return;
+      function num(id) {
+        var v = Number(document.getElementById(id).value);
+        return Number.isFinite(v) ? v : 0;
+      }
+      function show(n) {
+        return String(Math.round(n * 100) / 100);
+      }
+      function row(name, text) {
+        return "<li><span>" + name + "</span><span class=\"muted\">" + text + "</span></li>";
+      }
+      function run() {
+        var face = num("hedge-face");
+        var charge = num("hedge-charge");
+        var hub = face * (1 - num("hedge-hub"));
+        var room = face * (1 - num("hedge-room"));
+        var gap = hub - room;
+        out.innerHTML = [
+          row("Hub", "Converts at " + show(hub) + ". Not this room."),
+          row("Room", "Converts at " + show(room) + ". This is the local section."),
+          row("Gap", show(gap) + ". Positive means the hub price leaves this room short."),
+          row("Charge", show(charge) + ". Paid at the write. Not folded into the conversion."),
+          row("Window", "Discount, charge, and width lock until the due date."),
+          row("Floor", "Untouched."),
+        ].join("");
+        line.textContent = "Applied: do not price a thin room off a thick one. Do not fold the two numbers into one rate.";
+      }
+      form.addEventListener("input", run);
+      run();
+    })();
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
