@@ -206,6 +206,81 @@ function Home() {
         </article>
 
         <section className="mt-14 border-t border-border pt-10">
+          <h2 className="font-display text-4xl">Sovereign Provenance Protocol</h2>
+          <p className="mt-3">
+            <a className="text-gold underline decoration-border underline-offset-4" href="https://lgme.app/spp">
+              Whitepaper
+            </a>
+          </p>
+          <p className="mt-3 font-mono text-xs tracking-widest text-subtle uppercase">New section — 11 October 2026</p>
+          <p className="mt-4 text-muted">
+            The Sovereign Provenance Protocol (SPP) whitepaper has been added, with commentary. It outlines a blueprint for personhood-anchored governance, utility-attested value, and a multi-asset basket treasury.
+          </p>
+          <p className="mt-4 text-muted">
+            Core idea: one human, one vote via ZK Proofs of Personhood; value from Recorded Presentations of real utility rather than speculative narrative; yield from a Basket of productive assets distributed by relative Provenance Score.
+          </p>
+          <h3 className="mt-8 font-display text-2xl">Commentary summary</h3>
+          <p className="mt-3 text-muted">
+            Ambitious architectural sketch that correctly prioritizes non-transferable identity over capital concentration. Strongest as a manifesto; weakest as a near-term specification. Personhood/Sybil resistance, objective utility measurement, and the provided Solidity accounting remain open problems. The voting formula is square-root weighting rather than classic quadratic voting. Centralization backdoors (GenesisInjector, Ownable) and missing epoch-aware score decay are concrete gaps.
+          </p>
+          <p className="mt-4 text-sm text-muted">
+            <a className="text-fg underline decoration-border underline-offset-4" href="https://lgme.app/spp">
+              View SPP page
+            </a>
+            {" · "}
+            <a className="text-fg underline decoration-border underline-offset-4" href="https://lgme.app/docs/Sovereign_Provenance_Protocol_Whitepaper.md" download>
+              Download whitepaper (MD)
+            </a>
+            {" · "}
+            <a className="text-fg underline decoration-border underline-offset-4" href="https://lgme.app/docs/Sovereign_Provenance_Protocol_Commentary.md" download>
+              Download commentary (MD)
+            </a>
+          </p>
+          <p className="mt-2 text-sm text-muted">
+            <a className="text-fg underline decoration-border underline-offset-4" href="https://github.com/Cryptobusi/lgme/blob/main/docs/Sovereign_Provenance_Protocol_Whitepaper.md">
+              View on GitHub
+            </a>
+          </p>
+        </section>
+
+        <section className="mt-14 border-t border-border pt-10">
+          <h2 className="font-display text-4xl">Analysis / Comment</h2>
+          <p className="mt-3 font-mono text-xs tracking-widest text-subtle uppercase">11 October 2026 — On “The Last Invention”</p>
+          <p className="mt-4 text-muted">
+            <strong className="text-fg">Source:</strong>{" "}
+            <a className="text-fg underline decoration-border underline-offset-4" href="https://youtu.be/KT9P_HnA1mQ" target="_blank" rel="noreferrer">
+              #1 The Last Invention: The Whole History of AI, Told by AI
+            </a>{" "}
+            — Recursive (YouTube, 4 October 2026).{" "}
+            <a className="text-fg underline decoration-border underline-offset-4" href="https://youtu.be/KT9P_HnA1mQ" target="_blank" rel="noreferrer">
+              Watch the film →
+            </a>
+          </p>
+          <p className="mt-4 text-muted">
+            The film traces a clean technical lineage from the 1946 “giant electronic brain” through the winters, Deep Blue, ImageNet/AlexNet, AlphaGo’s move 37, the transformer, ChatGPT, and the 2026 framing of Super Intelligence. The AI narrator correctly notes that the curve has been doubling and that keeping it under control is not a forecast. It is a choice.
+          </p>
+          <p className="mt-4 text-muted">
+            That choice becomes coherent only when the unit of agency remains a non-transferable human identity rather than capital, compute, or narrative. The Sovereign Provenance Protocol is the most natural and sustainable evolution of the history the film records.
+          </p>
+          <ul className="mt-4 list-disc space-y-2 pl-5 text-muted">
+            <li>Where the film shows machines learning from planetary-scale data and outperforming specialists, SPP anchors governance and yield in one verified human anchor (ZK Proof of Personhood). Capital cannot purchase, split, or dilute voice.</li>
+            <li>Where the film treats progress as an automatic curve, SPP requires Recorded Presentations: cryptographically attested utility before value is minted. Speculative narrative and pure scale carry zero weight.</li>
+            <li>Where the film ends with an open choice, SPP supplies the mechanism: Provenance Scores that are epoch-bounded, challengeable, and used to distribute yield from a multi-asset Basket of productive assets.</li>
+            <li>The remaining engineering gaps (enrollment, true quadratic cost, epoch-aware accounting) are the work required so the next doubling does not re-create the plutocracy the protocol is designed to refuse.</li>
+          </ul>
+          <p className="mt-4 text-muted">
+            The film is a high-resolution history of capability. The protocol is the corresponding history of constraint: personhood as the root, utility as the filter, and the person as the third seat that stays senior to both capital and the systems that capital trains. Without that constraint, the choice the narrator names remains rhetorical. With it, the curve can continue while sovereignty remains recorded rather than granted.
+          </p>
+          <p className="mt-4 text-sm text-muted italic">
+            Citation: Recursive. “#1 The Last Invention: The Whole History of AI, Told by AI.” YouTube, 4 Oct. 2026,{" "}
+            <a className="text-fg underline decoration-border underline-offset-4" href="https://youtu.be/KT9P_HnA1mQ" target="_blank" rel="noreferrer">
+              https://youtu.be/KT9P_HnA1mQ
+            </a>
+            .
+          </p>
+        </section>
+
+        <section className="mt-14 border-t border-border pt-10">
           <h2 className="font-display text-4xl">Performances</h2>
           <p className="mt-2 text-sm text-muted">Newest first. A line that is not on this page is not a performance.</p>
           <form
