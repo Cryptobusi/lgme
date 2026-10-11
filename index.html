@@ -36,7 +36,7 @@
     .hedge { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem 1rem; margin-top: 1rem; }
     .hedge .wide { grid-column: 1 / -1; }
     .hedge label { display: block; color: #8ea892; font-size: 0.85rem; }
-    .hedge input { display: block; width: 100%; margin-top: 0.25rem; min-height: 2.6rem; border: 0; border-bottom: 1px solid #2c3b2e; background: transparent; color: #e7efe4; font: 1.1rem/1.2 "Cormorant Garamond", serif; }
+    .hedge input, .hedge select { display: block; width: 100%; margin-top: 0.25rem; min-height: 2.6rem; border: 0; border-bottom: 1px solid #2c3b2e; background: transparent; color: #e7efe4; font: 1.1rem/1.2 "Cormorant Garamond", serif; }
     .hedge-append { margin-top: 0.8rem; min-height: 2.6rem; border: 1px solid #2c3b2e; background: transparent; color: #e7efe4; padding: 0.35rem 0.9rem; }
     #hedge-path { margin-top: 0.8rem; }
     @media (min-width: 720px) { .slogan { white-space: nowrap; } }
@@ -103,6 +103,7 @@
         <label class="wide">Person <input id="hedge-person" type="text" autocomplete="name" /></label>
         <label>Face <input id="hedge-face" inputmode="decimal" value="100" /></label>
         <label>Charge, paid at the write <input id="hedge-charge" inputmode="decimal" value="0" /></label>
+        <label>Width <select id="hedge-class"><option value="ordinary">Ordinary, posted 1</option><option value="thin" selected>Thin, posted 2</option></select></label>
         <label>Hub discount <input id="hedge-hub" inputmode="decimal" value="0.03" /></label>
         <label>Room discount <input id="hedge-room" inputmode="decimal" value="0.08" /></label>
       </form>
@@ -139,6 +140,8 @@
         <li>2026-10-11 — Pair. Basket 188, not 194. Charges 3 kept out. Floor 0.</li>
         <li>2026-10-11 — Better. Width class sets the charge before the write. The gap does not choose the charge afterward.</li>
         <li>2026-10-11 — Next. Swap Bob’s charge with Amy’s. A friend rate writes nothing.</li>
+        <li>2026-10-11 — Swap run. Bob, ordinary, asked for charge 2. Amy, thin, asked for charge 1. Both refused.</li>
+        <li>2026-10-11 — A friend rate writes nothing. Ordinary stays 1. Thin stays 2.</li>
       </ul>
       <p class="muted">A missing tongue is not a line. A refusal writes nothing. The path stays on this page. It does not write the public tape, and it does not touch the floor.</p>
     </section>
@@ -348,7 +351,9 @@
         "2026-10-11 — Amy, thin. Discount 0.08. Local 92. Gap 5. Charge 2, posted for the class, not fitted to the gap.",
         "2026-10-11 — Pair. Basket 188, not 194. Charges 3 kept out. Floor 0.",
         "2026-10-11 — Better. Width class sets the charge before the write. The gap does not choose the charge afterward.",
-        "2026-10-11 — Next. Swap Bob’s charge with Amy’s. A friend rate writes nothing."
+        "2026-10-11 — Next. Swap Bob’s charge with Amy’s. A friend rate writes nothing.",
+        "2026-10-11 — Swap run. Bob, ordinary, asked for charge 2. Amy, thin, asked for charge 1. Both refused.",
+        "2026-10-11 — A friend rate writes nothing. Ordinary stays 1. Thin stays 2."
       ];
       var quotes = [];
       try {
@@ -395,19 +400,24 @@
         var hubDiscount = num("hedge-hub");
         var roomDiscount = num("hedge-room");
         var copied = Math.abs(hubDiscount - roomDiscount) < 1e-9;
+        var posted = document.getElementById("hedge-class").value === "thin" ? 2 : 1;
+        var friend = !chargeBlank && Math.abs(charge - posted) > 1e-9;
         document.getElementById("dict-person").textContent = who || "Missing";
         document.getElementById("again-person").textContent = who || "Missing";
         document.getElementById("dict-conversion").textContent = show(room);
         document.getElementById("again-conversion").textContent = show(room) + ", not " + show(hub);
         document.getElementById("dict-charge").textContent = chargeBlank ? "Missing" : show(charge);
-        document.getElementById("again-charge").textContent = "Kept out";
+        document.getElementById("again-charge").textContent = chargeBlank ? "Missing" : friend ? "Friend rate. Posted " + posted : "Kept out";
         document.getElementById("dict-basket").textContent = show(room);
         document.getElementById("again-basket").textContent = show(room);
         document.getElementById("hedge-twice").textContent = copied
           ? "Copied from the hub. The two readings are the flattering price."
-          : "Read twice. The basket matches the conversion, and it is not the hub price.";
+          : friend
+            ? "Friend rate. The charge does not match the width class."
+            : "Read twice. The basket matches the conversion, and it is not the hub price.";
       }
       form.addEventListener("input", run);
+      form.addEventListener("change", run);
       button.addEventListener("click", function () {
         var who = person.value.trim();
         var chargeField = document.getElementById("hedge-charge").value.trim();
@@ -419,6 +429,11 @@
         var roomDiscount = num("hedge-room");
         if (Math.abs(hubDiscount - roomDiscount) < 1e-9) {
           note.textContent = "Copied from the hub. Nothing written.";
+          return;
+        }
+        var posted = document.getElementById("hedge-class").value === "thin" ? 2 : 1;
+        if (Math.abs(num("hedge-charge") - posted) > 1e-9) {
+          note.textContent = "Friend rate. Nothing written.";
           return;
         }
         var face = num("hedge-face");
