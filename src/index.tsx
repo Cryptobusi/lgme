@@ -134,8 +134,12 @@ function HedgeDesk() {
       setNote("A tongue is missing. Nothing written.");
       return;
     }
+    if (Math.abs(safe(hubN) - safe(roomN)) < 1e-9) {
+      setNote("Copied from the hub. Nothing written.");
+      return;
+    }
     const at = new Date().toISOString().slice(0, 10);
-    const text = `${at} — ${who}. Person accepts. Conversion ${showNum(roomAt)}. Charge ${showNum(safe(chargeN))}. Basket ${showNum(roomAt)}. Stays ${showNum(faceV - roomAt)}. Floor untouched.`;
+    const text = `${at} — ${who}. Read twice. Conversion ${showNum(roomAt)}, not the hub ${showNum(hubAt)}. Charge ${showNum(safe(chargeN))} kept out. Basket ${showNum(roomAt)}. Floor 0.`;
     const next = [text, ...quotes];
     setQuotes(next);
     localStorage.setItem("lgme-hedge-path", JSON.stringify(next));
@@ -192,23 +196,32 @@ function HedgeDesk() {
           <tr>
             <th className="border-b border-border py-2 pr-3 font-medium">Tongue</th>
             <th className="border-b border-border py-2 pr-3 font-medium">This line</th>
+            <th className="border-b border-border py-2 pr-3 font-medium">Read again</th>
           </tr>
         </thead>
         <tbody className="text-muted">
-          {[
-            ["Person", person.trim() || "Missing"],
-            ["Conversion", showNum(roomAt)],
-            ["Charge", charge.trim() === "" ? "Missing" : showNum(safe(chargeN))],
-            ["Basket", showNum(roomAt)],
-            ["Stays", showNum(faceV - roomAt)],
-          ].map(([tongue, value]) => (
-            <tr key={tongue}>
-              <td className="border-b border-border py-2 pr-3">{tongue}</td>
-              <td className="border-b border-border py-2 pr-3">{value}</td>
+          {(
+            [
+              ["Person", person.trim() || "Missing", person.trim() || "Missing"],
+              ["Conversion", showNum(roomAt), `${showNum(roomAt)}, not ${showNum(hubAt)}`],
+              ["Charge", charge.trim() === "" ? "Missing" : showNum(safe(chargeN)), "Kept out"],
+              ["Basket", showNum(roomAt), showNum(roomAt)],
+              ["Floor", "Untouched", "0"],
+            ] as const
+          ).map((row) => (
+            <tr key={row[0]}>
+              {row.map((cell, index) => (
+                <td key={`${row[0]}-${index}`} className="border-b border-border py-2 pr-3">{cell}</td>
+              ))}
             </tr>
           ))}
         </tbody>
       </table>
+      <p className="mt-4 text-muted">
+        {Math.abs(safe(hubN) - safe(roomN)) < 1e-9
+          ? "Copied from the hub. The two readings are the flattering price."
+          : "Read twice. The basket matches the conversion, and it is not the hub price."}
+      </p>
       <button type="button" className="mt-4 min-h-11 border border-border px-4 text-sm text-fg" onClick={appendLine}>
         Append this line
       </button>
