@@ -40,6 +40,8 @@ const ELEVEN = [
   "Executed — Face 100. Hub converts at 97. This room converts at 92. Gap 5.",
   "In force — The charge stays a second number, paid at the write. It is not folded into the conversion.",
   "In force — A thin room is not priced off a thick one. The floor is untouched.",
+  "Test — Bob accepts at 96, charge 1. Amy accepts at 92, charge 2. Basket 188. A missing name writes nothing.",
+  "Learned — The hub price would have left 6 unpriced across the pair. Keep that gap on the write. Do not add the open 90 to the closed 188.",
 ];
 
 const SEALS = [
@@ -53,6 +55,11 @@ const SEALS = [
 ];
 
 const SEED = [
+  {
+    id: "test-bob-amy",
+    at: "2026-10-11",
+    act: "Test run. Bob accepts at 96, charge 1. Amy accepts at 92, charge 2. Basket 188. A missing name writes nothing. Learned: do not price the thin room off the hub, and do not add the open 90 to the closed 188.",
+  },
   {
     id: "hedge",
     at: "2026-10-11",
@@ -95,7 +102,12 @@ function HedgeDesk() {
   const hubAt = faceV * (1 - safe(hubN));
   const roomAt = faceV * (1 - safe(roomN));
   const gap = hubAt - roomAt;
-  const seed = "2026-10-11 — Face 100. Hub 97. Room 92. Gap 5. Charge 0. Floor untouched.";
+  const tests = [
+    "2026-10-11 — Bob. Person accepts. Conversion 96. Charge 1. Basket closed in 188. Stays 4. Floor untouched.",
+    "2026-10-11 — Amy. Person accepts. Conversion 92. Charge 2. Basket closed in 188. Stays 8. Floor untouched.",
+    "2026-10-11 — No name. Refused. Nothing written.",
+    "2026-10-11 — Learned. Do not price Amy off the hub. The pair would have left 6 unpriced. Do not fold the charge into the conversion. Do not add the open 90 to the closed 188.",
+  ];
   const rows = [
     ["Hub", `Converts at ${showNum(hubAt)}. Not this room.`],
     ["Room", `Converts at ${showNum(roomAt)}. This is the local section.`],
@@ -204,8 +216,9 @@ function HedgeDesk() {
         Refuse
       </button>
       {note ? <p className="mt-3 text-sm text-muted">{note}</p> : null}
+      <p className="mt-6 font-mono text-xs tracking-widest text-subtle uppercase">Test run history</p>
       <ul className="mt-4 space-y-2 text-sm text-gold">
-        {[...quotes, seed].map((item, index) => (
+        {[...quotes, ...tests].map((item, index) => (
           <li key={`${item}-${index}`}>{item}</li>
         ))}
       </ul>
