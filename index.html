@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="lgme" />
-  <link rel="apple-touch-icon" href="/icons/icon-180.png" />
+  <link rel="apple-touch-icon" href="/seals/legomiego-burst.jpg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bangers&family=Cormorant+Garamond:wght@500;600&family=Figtree:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" />
   <style>
@@ -125,5 +125,14 @@
       <p class="muted"><a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Sovereign_Provenance_Protocol_Whitepaper.md">View on GitHub</a></p>
     </section>
   </main>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('SW registered', reg.scope))
+          .catch(err => console.log('SW registration failed', err));
+      });
+    }
+  </script>
 </body>
 </html>
