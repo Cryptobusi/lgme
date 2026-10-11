@@ -83,6 +83,7 @@ function HedgeDesk() {
   const [charge, setCharge] = useState("0");
   const [hub, setHub] = useState("0.03");
   const [room, setRoom] = useState("0.08");
+  const [quotes, setQuotes] = useState<string[]>([]);
   const faceN = Number(face);
   const chargeN = Number(charge);
   const hubN = Number(hub);
@@ -92,6 +93,7 @@ function HedgeDesk() {
   const hubAt = faceV * (1 - safe(hubN));
   const roomAt = faceV * (1 - safe(roomN));
   const gap = hubAt - roomAt;
+  const seed = "2026-10-11 — Face 100. Hub 97. Room 92. Gap 5. Charge 0. Floor untouched.";
   const rows = [
     ["Hub", `Converts at ${showNum(hubAt)}. Not this room.`],
     ["Room", `Converts at ${showNum(roomAt)}. This is the local section.`],
@@ -100,6 +102,26 @@ function HedgeDesk() {
     ["Window", "Discount, charge, and width lock until the due date."],
     ["Floor", "Untouched."],
   ];
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("lgme-hedge-path");
+      if (!saved) return;
+      const parsed = JSON.parse(saved) as unknown;
+      if (Array.isArray(parsed)) setQuotes(parsed.filter((item) => typeof item === "string"));
+    } catch {
+      /* a bad local note is not the path */
+    }
+  }, []);
+
+  function appendLine() {
+    const at = new Date().toISOString().slice(0, 10);
+    const text = `${at} — Face ${showNum(faceV)}. Hub ${showNum(hubAt)}. Room ${showNum(roomAt)}. Gap ${showNum(gap)}. Charge ${showNum(safe(chargeN))}. Floor untouched.`;
+    const next = [text, ...quotes];
+    setQuotes(next);
+    localStorage.setItem("lgme-hedge-path", JSON.stringify(next));
+  }
+
   return (
     <>
       <form className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3">
@@ -130,8 +152,17 @@ function HedgeDesk() {
           </li>
         ))}
       </ol>
+      <p className="mt-4 text-muted">Applied: do not price a thin room off a thick one. Do not fold the two numbers into one rate.</p>
+      <button type="button" className="mt-4 min-h-11 border border-border px-4 text-sm text-fg" onClick={appendLine}>
+        Append this line
+      </button>
+      <ul className="mt-4 space-y-2 text-sm text-gold">
+        {[...quotes, seed].map((item, index) => (
+          <li key={`${item}-${index}`}>{item}</li>
+        ))}
+      </ul>
       <p className="mt-4 text-muted">
-        Applied: do not price a thin room off a thick one. Do not fold the two numbers into one rate. The desk runs the formula only. It does not write the tape, and it does not touch the floor.
+        Append keeps this window’s path on this page. It does not write the public tape, and it does not touch the floor.
       </p>
     </>
   );
