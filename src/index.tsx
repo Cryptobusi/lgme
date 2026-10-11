@@ -212,6 +212,8 @@ function MockDemo() {
   const hubPair = path.length * hubAt;
   const leftOut = hubPair - basket;
   const charges = path.reduce((sum, row) => sum + row.charge, 0);
+  const nextDiscount = 0.1;
+  const nextAt = face * (1 - nextDiscount);
   return (
     <section className="mx-auto mt-10 max-w-3xl border-t border-border pt-8">
       <p className="font-mono text-xs tracking-widest text-subtle uppercase">Mock demo</p>
@@ -255,6 +257,24 @@ function MockDemo() {
         <li className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr]">
           <span className="font-display text-xl">Floor</span>
           <span className="text-sm text-muted">Untouched.</span>
+        </li>
+      </ol>
+      <h3 className="mt-8 font-display text-2xl">The window closes</h3>
+      <p className="mt-4 text-muted">
+        The next window’s hub discount is {showNum(nextDiscount)}. A new face of {face} would convert at {showNum(nextAt)}. Bob and Amy do not. Their lines stay locked. The new quote does not roll them, and it does not send the difference to the floor.
+      </p>
+      <ol className="mt-4 divide-y divide-border border-y border-border">
+        {path.map((row) => (
+          <li key={`${row.name}-lock`} className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr]">
+            <span className="font-display text-xl">{row.name}</span>
+            <span className="text-sm text-muted">
+              Locked at {showNum(row.roomAt)}. Charge {showNum(row.charge)} stays. The new {showNum(nextAt)} does not reopen {row.name === "Amy" ? "her" : "him"}.
+            </span>
+          </li>
+        ))}
+        <li className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr]">
+          <span className="font-display text-xl">Next</span>
+          <span className="text-sm text-muted">A new name may take {showNum(nextAt)}. That is a new point, not a rewrite of these two.</span>
         </li>
       </ol>
     </section>
