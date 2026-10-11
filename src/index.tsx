@@ -214,6 +214,7 @@ function MockDemo() {
   const charges = path.reduce((sum, row) => sum + row.charge, 0);
   const nextDiscount = 0.1;
   const nextAt = face * (1 - nextDiscount);
+  const nextCharge = 3;
   const unconverted = path.reduce((sum, row) => sum + (face - row.roomAt), 0);
   const desert = 0;
   return (
@@ -319,6 +320,32 @@ function MockDemo() {
         <li className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr]">
           <span className="font-display text-xl">Retire</span>
           <span className="text-sm text-muted">Nothing falls. The {showNum(unconverted)} does not become new units, and it does not roll the old lines at par.</span>
+        </li>
+      </ol>
+      <h3 className="mt-8 font-display text-2xl">The next point</h3>
+      <p className="mt-4 text-muted">
+        A new accept takes the open window. Face {face}, discount {showNum(nextDiscount)}, converts at {showNum(nextAt)}. Charge {showNum(nextCharge)} is paid at this write. It is not added to the closed {showNum(basket)}. Bob stays {showNum(path[0]?.roomAt ?? 0)}. Amy stays {showNum(path[1]?.roomAt ?? 0)}.
+      </p>
+      <ol className="mt-4 divide-y divide-border border-y border-border">
+        <li className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr]">
+          <span className="font-display text-xl">Next</span>
+          <span className="text-sm text-muted">Converts at {showNum(nextAt)}. Charge {showNum(nextCharge)}. A new point on the path.</span>
+        </li>
+        <li className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr]">
+          <span className="font-display text-xl">Closed</span>
+          <span className="text-sm text-muted">
+            {path.map((row) => `${row.name} ${showNum(row.roomAt)}`).join(" and ")} stay shut. Their desert stays {showNum(desert)}.
+          </span>
+        </li>
+        <li className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr]">
+          <span className="font-display text-xl">Path</span>
+          <span className="text-sm text-muted">
+            {path.map((row) => showNum(row.roomAt)).join(", then ")}, then {showNum(nextAt)}. {path.length + 1} points. Two baskets: {showNum(basket)} closed, {showNum(nextAt)} open.
+          </span>
+        </li>
+        <li className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr]">
+          <span className="font-display text-xl">Floor</span>
+          <span className="text-sm text-muted">Still untouched.</span>
         </li>
       </ol>
     </section>
