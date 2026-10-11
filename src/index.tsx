@@ -191,6 +191,32 @@ function Home() {
             </a>
             .
           </p>
+          <h2 className="mt-10 font-display text-4xl">The hedge, in the app’s own numbers</h2>
+          <p className="mt-4 text-muted">
+            The app already keeps two prices. Discount is the haircut. Charge is the posted price of writing the paper at all. Conversion is face × (1 − discount). They are not one rate. The charge is paid when the line is signed, not taken from the wreck. The floor is not the backstop. What Laumon adds is where the discount is read.
+          </p>
+          <p className="mt-4 text-muted">
+            A face of 100. The hub book is thick, so its discount is 0.03 and the paper converts at 97. This room’s book is thin, so its own discount is 0.08 and the paper converts at 92. If the room borrows the hub’s number, five units are never priced. That five is the risk. It later looks like a loss someone will try to print over, or send to the floor.
+          </p>
+          <ol className="mt-4 divide-y divide-border border-y border-border">
+            {[
+              ["Face", "100. Paper, not cash."],
+              ["Hub", "Discount 0.03. Converts at 97. Not this room."],
+              ["Room", "Discount 0.08. Converts at 92. This is the local section."],
+              ["Gap", "5. The cost of using the average."],
+              ["Charge", "A second number. Posted for this tenor and this width. Paid at the write."],
+              ["Window", "Discount, charge, and width lock until the due date. The next window may requote. It may not roll at par."],
+              ["Floor", "Untouched. The empty sliver stays with the name that wrote the line."],
+            ].map(([name, line]) => (
+              <li key={name} className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr]">
+                <span className="font-display text-xl">{name}</span>
+                <span className="text-sm text-muted">{line}</span>
+              </li>
+            ))}
+          </ol>
+          <p className="mt-4 text-muted">
+            Applied: do not price a thin room off a thick one. Do not fold the two numbers into one rate. Post the local triple, take the charge at the write, and leave the floor senior.
+          </p>
         </section>
         <p className="lgme-slogan mt-5 text-gold">Debit Credit ØtØh IDIDIT!</p>
         <a
