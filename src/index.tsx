@@ -627,6 +627,7 @@ function Home() {
             <li>Same rails. Anyone may issue. No one may hide the print.</li>
             <li>If it cannot be shown, it is not policy.</li>
             <li>Sovereignty is the refusal.</li>
+            <li>Precommitment barriers keep the refusal durable. See the egonomic restraint section.</li>
           </ul>
 
           <h2 className="mt-10 font-display text-3xl">The order</h2>
