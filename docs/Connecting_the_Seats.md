@@ -14,3 +14,5 @@ Ego is both asset and liability. The four warning signs (comparative, defensive,
 Together: the people hold final authority (Jefferson). That authority is exercised by refusal of any line that cannot be shown or that skipped the order (third seat). The refusal is made durable by precommitment barriers (Schelling) and by the balance that keeps the ego of the keeper from becoming the new printer (Marcum & Smith).
 
 Floor stays senior. Same rules bind state, firm, and person. The book is kept.
+
+Compact test and leak list: [Precommitment one-page](Precommitment_One_Page.md).
