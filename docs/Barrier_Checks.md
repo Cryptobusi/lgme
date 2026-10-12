@@ -83,3 +83,16 @@ The present self can redefine what counts as a full public cycle (shorten the ca
 All eight cases fail the test if left unstructured. Cases 1–5 closed by L0/L1. Case 6 closed by the cycle requirement. Case 7 closed by independence of the second reading. Case 8 closed by the bright-line definition of the cycle and the rule that omission of L2 writes nothing. No remaining private path survives.
 
 See [Nested commitment](Nested_Commitment.md).
+
+## 9. Redefinition or contraction of the third seat’s refusal
+
+**Result: Incomplete if unstructured.**  
+State or firm can redefine the third seat’s authority so that refusal applies only to “ordinary” lines, or can require the person to consent in advance to a class of changes, thereby contracting the residual claim away.  
+**Leak:** asymmetric redefinition of refusal; advance waiver of the third seat.  
+**Close:** The third seat’s refusal is a residual claim that cannot be contracted away by the other two seats. Any attempt to narrow, condition, or pre-waive that refusal must itself travel the full L2 path and still leaves the prior refusal authority in force until the path closes. A line that skips or redefines the third seat writes nothing.
+
+## Updated summary
+
+All nine cases fail the test if left unstructured. Cases 1–5 closed by L0/L1. Cases 6–8 closed by L2 cycle, independence, and bright-line cycle definition. Case 9 closed by the non-contractible character of the third seat’s refusal. No remaining private path survives.
+
+See [Nested commitment](Nested_Commitment.md).
