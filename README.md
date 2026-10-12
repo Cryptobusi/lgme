@@ -28,3 +28,5 @@ As of 11 October 2026 the page at https://lgme.app/ runs:
 - Nested commitment (L0/L1/L2): [docs/Nested_Commitment.md](docs/Nested_Commitment.md)
 
 Ten cases closed. No remaining private path. Floor stays senior. Same rules bind state, firm, and person. An unpublished change is not a change.
+
+Session summary for next continuation: [docs/Session_Summary.md](docs/Session_Summary.md)
