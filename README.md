@@ -24,5 +24,6 @@ As of 11 October 2026 the page at https://lgme.app/ runs:
 - Marcum & Smith ego balance (humility, curiosity, veracity): [docs/Marcum_Smith_Egonomics.md](docs/Marcum_Smith_Egonomics.md)
 - Jefferson / Declaration: final and absolute authority of the people: [docs/Sovereignty_Jefferson.md](docs/Sovereignty_Jefferson.md)
 - Connecting the seats: [docs/Connecting_the_Seats.md](docs/Connecting_the_Seats.md)
+- Nested commitment (L2): [docs/Nested_Commitment.md](docs/Nested_Commitment.md)
 
 Floor stays senior. Same rules bind state, firm, and person. An unpublished change is not a change.
