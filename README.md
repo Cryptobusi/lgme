@@ -12,3 +12,13 @@ Open index.html. The source of the preview page is in src/.
 - Marcum & Smith ego balance (humility, curiosity, veracity): [docs/Marcum_Smith_Egonomics.md](docs/Marcum_Smith_Egonomics.md)
 - Jefferson / Declaration: final and absolute authority of the people: [docs/Sovereignty_Jefferson.md](docs/Sovereignty_Jefferson.md)
 - Connecting the seats: [docs/Connecting_the_Seats.md](docs/Connecting_the_Seats.md)
+
+## Home page (src/index.tsx)
+
+As of 11 October 2026 the live source includes:
+- Egonomic restraint section (with barrier-check summary and links)
+- Status-tape line recording the barrier checks
+- Central-thesis pointer to the precommitment barriers
+- Resources list entry for the one-page guide, checks, and connecting note
+
+These appear on https://lgme.app/ after the next successful deploy.
