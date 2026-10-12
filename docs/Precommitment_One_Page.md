@@ -30,3 +30,9 @@ Run any new window, fee, residual, or exception through the test and the leak li
 Applied checks: [Barrier checks — 11 October 2026](Barrier_Checks.md).
 
 Citation: Schelling, Thomas C. 1978. “Egonomics, or the Art of Self-Management.” *American Economic Review* 68(2): 290–294.
+
+## Nested test
+Can this extraction or relaxation be completed without a prior, public, categorical commitment at L0, and without completing the slower nested path at L1/L2 that binds every seat equally and leaves a checkable mark?
+If yes, the nesting is incomplete.
+
+L2 rule: any change to the amendment path must be posted one full public cycle in advance and confirmed by a second independent reading. An attempt to shorten the cycle writes nothing. See [Nested commitment](Nested_Commitment.md).
