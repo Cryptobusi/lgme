@@ -4,6 +4,18 @@ Saved 10 October 2026. First page: three seals in one line, slogan Debit Credit 
 
 Open index.html. The source of the preview page is in src/.
 
+## Live static page (index.html)
+
+As of 11 October 2026 the page at https://lgme.app/ runs:
+
+1. Sovereignty — Final and absolute authority (Jefferson)
+2. Egonomic restraint — Schelling self-management + barrier checks
+3. Ego balance — Marcum & Smith
+4. Connecting the seats
+5. The order — Floor first
+6. Third seat — The person keeps the book
+7. Close — The book is kept
+
 ## Egonomics and sovereignty
 
 - Schelling’s art of self-management applied to self-restraining profits: [docs/Schelling_Egonomic_Restraint.md](docs/Schelling_Egonomic_Restraint.md)
@@ -13,12 +25,4 @@ Open index.html. The source of the preview page is in src/.
 - Jefferson / Declaration: final and absolute authority of the people: [docs/Sovereignty_Jefferson.md](docs/Sovereignty_Jefferson.md)
 - Connecting the seats: [docs/Connecting_the_Seats.md](docs/Connecting_the_Seats.md)
 
-## Home page (src/index.tsx)
-
-As of 11 October 2026 the live source includes:
-- Egonomic restraint section (with barrier-check summary and links)
-- Status-tape line recording the barrier checks
-- Central-thesis pointer to the precommitment barriers
-- Resources list entry for the one-page guide, checks, and connecting note
-
-These appear on https://lgme.app/ after the next successful deploy.
+Floor stays senior. Same rules bind state, firm, and person. An unpublished change is not a change.
