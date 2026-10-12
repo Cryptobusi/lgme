@@ -735,6 +735,13 @@ function Home() {
           <h2 className="mt-3 font-display text-4xl">Read with the others</h2>
           <ul className="mt-4 space-y-3 text-sm text-muted">
             <li>
+              <a className="text-fg underline decoration-border underline-offset-4" href="https://github.com/Cryptobusi/lgme/blob/main/docs/Precommitment_One_Page.md">Precommitment one-page</a>
+              . Schelling barriers, test, and leaks.{" "}
+              <a className="text-fg underline decoration-border underline-offset-4" href="https://github.com/Cryptobusi/lgme/blob/main/docs/Barrier_Checks.md">Barrier checks</a>
+              {" · "}
+              <a className="text-fg underline decoration-border underline-offset-4" href="https://github.com/Cryptobusi/lgme/blob/main/docs/Connecting_the_Seats.md">Connecting the seats</a>
+            </li>
+            <li>
               <a className="text-fg underline decoration-border underline-offset-4" href="https://www.edwardfrenkel.com/" target="_blank" rel="noreferrer">Edward Frenkel</a>
               . <em>Love and Math: The Heart of Hidden Reality</em> (2013). The fence is not the painting.{" "}
               <a className="text-fg underline decoration-border underline-offset-4" href="https://en.wikipedia.org/wiki/Love_and_Math" target="_blank" rel="noreferrer">The book</a>
