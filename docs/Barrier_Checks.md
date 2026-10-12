@@ -57,3 +57,16 @@ The present self can rewrite the rule that governs how L0 may be changed, then i
 All six cases fail the test if left unstructured. Cases 1–5 are closed by L0/L1 constraints. Case 6 is closed by the explicit L2 rule. No remaining private path survives once the nested commitment is enforced.
 
 See [Nested commitment](Nested_Commitment.md).
+
+## 7. Second reading supplied by the same seat (or a coordinated seat)
+
+**Result: Incomplete if unstructured.**  
+L2 requires a second independent reading. If the proposing seat can also supply the confirmation, or if two seats can pre-arrange the confirmation in the same cycle, the independence fails and the nested path collapses into a single-act waiver.  
+**Leak:** non-independent confirmation; coordinated same-cycle reading.  
+**Close:** The second reading must be supplied by a seat that did not propose the change and that cannot be shown to have coordinated the confirmation inside the same public cycle. A reading that fails this test writes nothing. The prior L1 path remains in force until a valid independent reading appears on the tape.
+
+## Updated summary
+
+All seven cases fail the test if left unstructured. Cases 1–5 are closed by L0/L1. Case 6 is closed by the L2 cycle requirement. Case 7 is closed by the independence requirement on the second reading. No remaining private path survives once both the cycle and the independence conditions are enforced.
+
+See [Nested commitment](Nested_Commitment.md).
