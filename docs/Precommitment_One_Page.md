@@ -27,4 +27,6 @@ Marcum & Smith: humility, curiosity, veracity reduce quiet redefinition.
 ## Use
 Run any new window, fee, residual, or exception through the test and the leak list before it operates. Show one small case in which a missing line writes nothing and the same case applies to each seat. That transmits the barrier as structure.
 
+Applied checks: [Barrier checks — 11 October 2026](Barrier_Checks.md).
+
 Citation: Schelling, Thomas C. 1978. “Egonomics, or the Art of Self-Management.” *American Economic Review* 68(2): 290–294.
