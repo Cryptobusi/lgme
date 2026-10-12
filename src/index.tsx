@@ -47,6 +47,7 @@ const ELEVEN = [
   "Next — Swap Bob’s charge with Amy’s. A friend rate writes nothing.",
   "Swap run — Bob, ordinary, asked for charge 2. Amy, thin, asked for charge 1. Both refused.",
   "In force — A friend rate writes nothing. Ordinary stays 1. Thin stays 2.",
+  "In force — Barrier checks recorded. Residual, mint window, Floor change, agent action, and single-seat exception all closed under prior naming, default-closed, Floor seniority, constitutive tape, and seat symmetry.",
 ];
 
 const SEALS = [
