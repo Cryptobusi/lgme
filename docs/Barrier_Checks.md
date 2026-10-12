@@ -96,3 +96,18 @@ State or firm can redefine the third seat’s authority so that refusal applies 
 All nine cases fail the test if left unstructured. Cases 1–5 closed by L0/L1. Cases 6–8 closed by L2 cycle, independence, and bright-line cycle definition. Case 9 closed by the non-contractible character of the third seat’s refusal. No remaining private path survives.
 
 See [Nested commitment](Nested_Commitment.md).
+
+## 10. Redefinition of the constitutive tape (“an unpublished change is not a change”)
+
+**Result: Incomplete if unstructured.**  
+A seat can claim that a private note, an off-tape adjustment, or a “working draft” counts as the public record, or can declare that an unpublished change has become effective by custom or necessity.  
+**Leak:** category redefinition of the tape; private record treated as constitutive.  
+**Close:** The open tape is constitutive. An act that does not appear on it is not an act, at any level (L0, L1, or L2). No custom, necessity, or private memorandum can substitute for a named, titled line on the public record. An attempt to treat an unpublished change as a change writes nothing.
+
+## Final summary
+
+All ten cases fail the test if left unstructured. Cases 1–5 closed by L0/L1. Cases 6–8 closed by L2 cycle, independence, and bright-line cycle. Case 9 closed by non-contractible third-seat refusal. Case 10 closed by the constitutive character of the open tape. No remaining private path survives once the nested commitment and the constitutive tape are both enforced.
+
+Floor stays senior. Same rules bind all three. An unpublished change is not a change.
+
+See [Nested commitment](Nested_Commitment.md).
