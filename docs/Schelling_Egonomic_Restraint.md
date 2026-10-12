@@ -18,3 +18,5 @@ In lgme the same logic is applied to profit. Floor Basket is paid first from nam
 - **Self-intimidation on profit**: Naming charge/risk before residual and requiring titled zero remainder makes opportunistic profit a violation rather than a quiet residual. The present self cannot casually erode the boundary without breaking the public record.
 
 This grounds the existing order (Floor → public mint → named credit → visible tape → named residual) in Schelling’s framework of self-management. The mechanism is the same one illustrated with Christmas savings: protecting the book from the people who keep it.
+
+Compact test and leak list: [Precommitment one-page](Precommitment_One_Page.md).
