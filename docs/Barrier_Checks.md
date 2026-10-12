@@ -70,3 +70,16 @@ L2 requires a second independent reading. If the proposing seat can also supply 
 All seven cases fail the test if left unstructured. Cases 1–5 are closed by L0/L1. Case 6 is closed by the L2 cycle requirement. Case 7 is closed by the independence requirement on the second reading. No remaining private path survives once both the cycle and the independence conditions are enforced.
 
 See [Nested commitment](Nested_Commitment.md).
+
+## 8. Redefinition of “public cycle” or silent omission of L2
+
+**Result: Incomplete if unstructured.**  
+The present self can redefine what counts as a full public cycle (shorten the calendar, treat a private note as public, or declare the cycle already satisfied) or simply omit the L2 requirement by calling the change an “administrative clarification” rather than an amendment.  
+**Leak:** category redefinition of the cycle; silent omission of the nested path.  
+**Close:** “Public cycle” is a bright-line, pre-declared interval already on the tape. It cannot be shortened, waived, or reclassified in the same act that proposes the change. Any alteration that does not travel the full named L2 path (posted cycle + independent second reading) writes nothing. Silence on L2 is refusal.
+
+## Updated summary
+
+All eight cases fail the test if left unstructured. Cases 1–5 closed by L0/L1. Case 6 closed by the cycle requirement. Case 7 closed by independence of the second reading. Case 8 closed by the bright-line definition of the cycle and the rule that omission of L2 writes nothing. No remaining private path survives.
+
+See [Nested commitment](Nested_Commitment.md).
