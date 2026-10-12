@@ -15,4 +15,5 @@ Together: the people hold final authority (Jefferson). That authority is exercis
 
 Floor stays senior. Same rules bind state, firm, and person. The book is kept.
 
-Compact test and leak list: [Precommitment one-page](Precommitment_One_Page.md).
+Compact test and leak list: [Precommitment one-page](Precommitment_One_Page.md).  
+Applied checks: [Barrier checks — 11 October 2026](Barrier_Checks.md).
