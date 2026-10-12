@@ -26,3 +26,5 @@ In banking and credit contexts the authors note that senior executives escalate 
 Floor-first seniority, public mint, named charge/risk before residual, titled remainder (including zero), and “an unpublished change is not a change” already function as structural humility and veracity. They force the present self to confront the book rather than protect its own prior decision. Curiosity is practiced when every line must be readable in multiple tongues (person, conversion, charge, basket) and a missing tongue writes nothing.
 
 Together with Schelling’s precommitment barriers, the Marcum/Smith principles keep the third seat from collapsing into ego defense of the print.
+
+See also: [Precommitment one-page](Precommitment_One_Page.md) · [Connecting the seats](Connecting_the_Seats.md).
