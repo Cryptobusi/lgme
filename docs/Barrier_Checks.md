@@ -44,3 +44,16 @@ A quieter path for any single seat re-creates time-inconsistency for that actor.
 All five cases fail the test if left unstructured. Each is closed by enforcing prior naming, default-closed silence, mechanical Floor seniority, constitutive tape, symmetric seats, and slower recorded amendment. No case currently possesses a remaining private path once those constraints are applied.
 
 Floor stays senior. Same rules bind all three. An unpublished change is not a change.
+
+## 6. Instant shortening of the amendment path (L2)
+
+**Result: Incomplete if unstructured.**  
+The present self can rewrite the rule that governs how L0 may be changed, then immediately use the new, weaker path.  
+**Leak:** instant private amendment of L1.  
+**Close:** L2 requires any change to the amendment path to be posted as a named, titled line at least one full public cycle in advance and confirmed by a second independent reading that cannot be supplied by the proposing seat. Until the cycle closes, the prior path remains in force. An attempt to shorten or waive the cycle writes nothing.
+
+## Updated summary
+
+All six cases fail the test if left unstructured. Cases 1–5 are closed by L0/L1 constraints. Case 6 is closed by the explicit L2 rule. No remaining private path survives once the nested commitment is enforced.
+
+See [Nested commitment](Nested_Commitment.md).
