@@ -671,6 +671,23 @@ function Home() {
           </p>
         </article>
 
+        <section className="mt-14 border-t border-border pt-10" id="egonomics">
+          <h2 className="font-display text-4xl">Egonomic restraint</h2>
+          <p className="mt-3 font-mono text-xs tracking-widest text-subtle uppercase">Schelling · Marcum & Smith · Jefferson</p>
+          <p className="mt-4 text-muted">
+            Preferences reverse. The present self that sets a restraint will often want extraction later. Precommitment barriers (Floor first, public mint, named charge before residual, titled zero, “an unpublished change is not a change”) protect the book from the people who keep it. Ego is kept an asset by humility, curiosity, and veracity. Sovereignty is final authority of the people, exercised as refusal of any line that cannot be shown.
+          </p>
+          <p className="mt-4 text-sm text-muted">
+            <a className="text-fg underline decoration-border underline-offset-4" href="https://github.com/Cryptobusi/lgme/blob/main/docs/Precommitment_One_Page.md">One-page field guide</a>
+            {" · "}
+            <a className="text-fg underline decoration-border underline-offset-4" href="https://github.com/Cryptobusi/lgme/blob/main/docs/Barrier_Checks.md">Barrier checks</a>
+            {" · "}
+            <a className="text-fg underline decoration-border underline-offset-4" href="https://github.com/Cryptobusi/lgme/blob/main/docs/Connecting_the_Seats.md">Connecting the seats</a>
+            {" · "}
+            <a className="text-fg underline decoration-border underline-offset-4" href="https://github.com/Cryptobusi/lgme/blob/main/docs/Schelling_Egonomic_Restraint.md">Schelling</a>
+          </p>
+        </section>
+
         <section className="mt-14 border-t border-border pt-10">
           <h2 className="font-display text-4xl">Sovereign Provenance Protocol</h2>
           <p className="mt-3">
