@@ -100,7 +100,8 @@ The following temporary items must be replaced or upgraded:
 
 1. **Enrollment credential** — verified X handle (current pilot). Replace with a stronger uniqueness signal (ZK government ID, existing PoP system, or hybrid).
 2. **Voting formula** — simplest square-root weighting (current test). Replace with true quadratic cost (fixed budget, cost = credits²).
-3. Any other pilot shortcuts that do not meet the minimal constraints above.
+3. **Inscription workflow** — manual KiloScribe upload. Evaluate and adopt the KiloScribe Inscription API (or SDK) for scripted/semi-automated inscription of pilot rules and future records, while keeping signing explicit.
+4. Any other pilot shortcuts that do not meet the minimal constraints above.
 
 An unpublished change is not a change.
 
@@ -125,7 +126,8 @@ An unpublished change is not a change.
    *Done for the X-handle pilot.*
 3. Draft the exact voting formula that applies a quadratic cost once personhood is proven.  
    *Simplest form in use as test; true quadratic cost targeted for next milestone.*
-4. Inscribe the design note and any pilot rules on the tape so the enrollment path is itself showable.
+4. Inscribe the design note and any pilot rules on the tape so the enrollment path is itself showable.  
+   *Pilot rules file ready; inscription still manual. API path noted for revisit.*
 
 ---
 
@@ -135,4 +137,4 @@ An unpublished change is not a change.
 - Barrier checks and L2 amendment path already constrain how enrollment rules can be changed.
 - Provenance scores (epochs, decay, non-gameable oracles) are a related but separate open item.
 
-*This is an outline, not a specification. Temporary pilot items (X-handle credential and simplest voting formula) must be revisited at the next milestone.*
+*This is an outline, not a specification. Temporary pilot items (X-handle credential, simplest voting formula, and manual inscription) must be revisited at the next milestone.*
