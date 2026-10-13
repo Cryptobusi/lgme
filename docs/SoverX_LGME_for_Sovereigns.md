@@ -6,6 +6,12 @@
 
 ---
 
+## Disclaimer — trial only
+
+SoverX is a temporary educational trial under lgme.app. It does not issue real $lgme, does not move real value, and does not constitute an enrollment, claim, or vote under the protocol. Completions are mock records only. The 1 $lgme reward is simulated for learning. Real rewards, if any, require a future published amendment and Floor-compliant accounting. An unpublished change is not a change.
+
+---
+
 ## Purpose
 
 An educational agent app that walks a person through the third-seat role on lgme.app. It accepts varied inputs (acts, receipts, contracts, promises, claims, refusals), shows clear dashboards, explains each step in plain language, and records successful cycles on the tape. Each completed cycle that meets the public criteria receives 1 $lgme, contributing to the Floor and development.
