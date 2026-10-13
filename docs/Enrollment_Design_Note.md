@@ -1,6 +1,6 @@
 # Enrollment and Sybil Resistance — Design Note
 
-**Status:** Outline for future development. Pilot credential chosen.  
+**Status:** Outline for future development. Pilot credential chosen. Tape schema defined.  
 **Date:** 13 October 2026  
 **Context:** The SPP commentary flags personhood-anchored governance as the right direction, but enrollment and Sybil resistance remain unsolved. This note records the minimal constraints and open questions so the next design pass has a clear starting point.
 
@@ -31,6 +31,39 @@ The third seat is the person. The person must be distinguishable from bots, mult
 
 ---
 
+## Public tape entries (X-handle pilot)
+
+| Field              | Required | Description                                      |
+|--------------------|----------|--------------------------------------------------|
+| credential_type    | Yes      | Must be `x-verified-handle`                      |
+| handle             | Yes      | X username (no @)                                |
+| wallet             | Yes      | Hedera account ID or address                     |
+| signed_message     | Yes      | Proof of control (see format below)              |
+| signature          | Yes      | Signature over the message                       |
+| timestamp          | Yes      | Unix seconds when recorded                       |
+| status             | Yes      | `active` or `revoked`                            |
+| revocation_reason  | Optional | If status = revoked                              |
+| note               | Optional | Must include “temporary pilot”                   |
+
+An unpublished enrollment change is not a change.
+
+---
+
+## Signed-message format
+
+Plain text, exact match required:
+
+```
+lgme enrollment pilot
+handle: <username>
+wallet: <hedera-account-or-address>
+timestamp: <unix-seconds>
+```
+
+The holder signs this message with the wallet key. The signature and the exact message are both written to the tape.
+
+---
+
 ## Open design questions
 
 - **Credential type:** What external signal is acceptable? (Government ID + ZK proof, biometric commitment, social recovery with stake, proof-of-personhood protocol, or a hybrid.)
@@ -45,7 +78,8 @@ The third seat is the person. The person must be distinguishable from bots, mult
 
 1. Choose one minimal viable credential path for a pilot (e.g., ZK proof of a government ID or an existing proof-of-personhood system).  
    *Current pilot uses verified X handle; stronger path still required.*
-2. Define the public tape entries required for enrollment (commitment, timestamp, verifier signature or proof, revocation status).
+2. Define the public tape entries required for enrollment (commitment, timestamp, verifier signature or proof, revocation status).  
+   *Done for the X-handle pilot.*
 3. Draft the exact voting formula that applies a quadratic cost once personhood is proven.
 4. Inscribe the design note and any pilot rules on the tape so the enrollment path is itself showable.
 
