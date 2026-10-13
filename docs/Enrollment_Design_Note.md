@@ -1,6 +1,6 @@
 # Enrollment and Sybil Resistance — Design Note
 
-**Status:** Outline for future development. Pilot credential chosen. Tape schema defined.  
+**Status:** Outline for future development. Pilot credential chosen. Tape schema defined. Quadratic formula drafted.  
 **Date:** 13 October 2026  
 **Context:** The SPP commentary flags personhood-anchored governance as the right direction, but enrollment and Sybil resistance remain unsolved. This note records the minimal constraints and open questions so the next design pass has a clear starting point.
 
@@ -64,12 +64,41 @@ The holder signs this message with the wallet key. The signature and the exact m
 
 ---
 
+## Draft quadratic voting formula (once personhood is proven)
+
+Once a unique personhood credential is established (stronger than the current X-handle pilot), voting weight on a proposal uses a true quadratic cost:
+
+\[
+V_i = \sqrt{C_i}
+\]
+
+where \(C_i\) is the number of voice credits the person chooses to spend on the proposal, and the cost of spending \(C_i\) credits is \(C_i^2\) units of a scarce, non-transferable budget allocated per person per epoch.
+
+Total votes for a proposal:
+
+\[
+V_{\text{total}} = \sum_i \sqrt{C_i} \cdot \delta_i
+\]
+
+where \(\delta_i = 1\) only if the person holds a currently valid personhood credential (otherwise 0).
+
+**Requirements for the formula to be quadratic (not merely square-root weighting):**
+- Fixed, equal voice-credit budget per enrolled person per epoch.
+- Cost of additional votes rises quadratically (paying for \(k\) votes costs \(k^2\)).
+- Budget is non-transferable and resets or decays on a public schedule.
+- All allocations and spends are recorded on the tape.
+
+The current whitepaper formula lacks the explicit budget and quadratic cost function; this draft supplies them. An unpublished change to the formula is not a change.
+
+---
+
 ## Open design questions
 
 - **Credential type:** What external signal is acceptable? (Government ID + ZK proof, biometric commitment, social recovery with stake, proof-of-personhood protocol, or a hybrid.)
 - **Epoch boundaries:** How often can a person re-enroll or refresh their credential? How does decay work if a credential expires?
 - **Oracle / verifier set:** Who (or what) attests personhood, and how is that attestation itself shown and challengeable?
-- **Quadratic cost:** Once personhood is established, the voting formula still needs a true quadratic cost (not just square-root weighting). How is the cost paid and shown?
+- **Quadratic cost:** Once personhood is established, the voting formula still needs a true quadratic cost (not just square-root weighting). How is the cost paid and shown?  
+  *Draft formula above; budget size and payment medium still open.*
 - **Privacy vs. showability:** How much of the enrollment record is public versus committed and selectively disclosed?
 
 ---
@@ -80,7 +109,8 @@ The holder signs this message with the wallet key. The signature and the exact m
    *Current pilot uses verified X handle; stronger path still required.*
 2. Define the public tape entries required for enrollment (commitment, timestamp, verifier signature or proof, revocation status).  
    *Done for the X-handle pilot.*
-3. Draft the exact voting formula that applies a quadratic cost once personhood is proven.
+3. Draft the exact voting formula that applies a quadratic cost once personhood is proven.  
+   *Drafted above.*
 4. Inscribe the design note and any pilot rules on the tape so the enrollment path is itself showable.
 
 ---
