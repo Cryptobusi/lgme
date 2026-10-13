@@ -21,6 +21,7 @@
 | Accounting fixes implementation outline | 0.0.10918378 | hcs://1/0.0.10918378 |
 | Epoch parameters | 0.0.10918419 | hcs://1/0.0.10918419 |
 | Mock second test comparison | 0.0.10918510 | hcs://1/0.0.10918510 |
+| Status for next follow-up (13 Oct v2) | 0.0.10918678 | hcs://1/0.0.10918678 |
 | Epoch boundaries & score decay | 0.0.10917935 | hcs://1/0.0.10917935 |
 | Contract accounting fixes | 0.0.10917944 | hcs://1/0.0.10917944 |
 | Attested utility inputs | 0.0.10918021 | hcs://1/0.0.10918021 |
