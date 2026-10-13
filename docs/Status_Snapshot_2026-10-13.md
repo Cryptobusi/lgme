@@ -62,6 +62,9 @@ An attempt to shorten the cycle writes nothing.
 | Enrollment design note | 0.0.10917981 |
 | Epoch boundaries & score decay | 0.0.10917935 |
 | Contract accounting fixes | 0.0.10917944 |
+| Attested utility inputs | 0.0.10918021 |
+| Accounting fixes reference | 0.0.10918033 |
+| Status snapshot (13 Oct) | 0.0.10918042 |
 
 ---
 
@@ -70,6 +73,7 @@ An attempt to shorten the cycle writes nothing.
 Verified X handle linked to wallet by signed message.  
 Not proof of unique personhood.  
 Simplest square-root voting formula in use as test.  
+Public enrollment example published (signed-message format + sample tape entry).  
 Both credential and formula marked for replacement at next milestone.  
 An unpublished change is not a change.
 
@@ -79,8 +83,8 @@ An unpublished change is not a change.
 
 - Stronger personhood credential  
 - True quadratic cost (fixed budget, cost = credits²)  
-- Attested utility inputs (telemetry / jury)  
-- Accounting fixes implemented in reference code  
+- Attested utility inputs finalized (telemetry schema / jury)  
+- Accounting fixes implemented beyond reference sketches  
 - Epoch length and decay factor finalized
 
 ---
