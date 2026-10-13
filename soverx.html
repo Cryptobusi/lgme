@@ -5,14 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SoverX — Trial</title>
   <style>
-    body { background: #10140f; color: #e7efe4; font-family: sans-serif; max-width: 48rem; margin: 0 auto; padding: 1.5rem; }
+    body { background: #10140f; color: #e7efe4; font-family: sans-serif; max-width: 56rem; margin: 0 auto; padding: 1.5rem; }
     .kicker { font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: #8ea892; }
     .disclaimer { border-left: 3px solid #c9a227; padding-left: 1rem; margin: 1rem 0; color: #d4c48a; }
     label, select, input, textarea, button { display: block; width: 100%; margin: 0.4rem 0; }
-    input, textarea, select { background: #1a2218; color: #e7efe4; border: 1px solid #2a3a28; padding: 0.5rem; }
-    button { background: #2a4a28; color: #e7efe4; border: none; padding: 0.7rem; cursor: pointer; }
-    .dash { background: #1a2218; padding: 1rem; margin-top: 1rem; }
+    input, textarea, select { background: #1a2218; color: #e7efe4; border: 1px solid #2a3a28; padding: 0.5rem; border-radius: 4px; }
+    button { background: #2a4a28; color: #e7efe4; border: none; padding: 0.7rem; cursor: pointer; border-radius: 4px; }
+    button:hover { background: #3a5a38; }
+    .dash { background: #1a2218; padding: 1rem; margin-top: 1rem; border-radius: 4px; }
     .muted { color: #b7c7b8; }
+    .cycle { border-bottom: 1px solid #2a3a28; padding: 0.5rem 0; }
+    .step { margin: 0.3rem 0; }
   </style>
 </head>
 <body>
@@ -21,7 +24,7 @@
 
   <div class="disclaimer">
     <strong>Disclaimer — trial only.</strong><br>
-    This is a mock educational trial. No real $lgme is issued. No value moves. Completions are simulated. An unpublished change is not a change.
+    This is a mock educational trial. No real $lgme is issued. No value moves. Completions are simulated and stored only in your browser. An unpublished change is not a change.
   </div>
 
   <label>Input type</label>
@@ -35,33 +38,62 @@
   </select>
 
   <label>What happened</label>
-  <textarea id="desc" rows="3" placeholder="Short description"></textarea>
+  <textarea id="desc" rows="3" placeholder="Short description of the act, receipt, promise, etc."></textarea>
 
   <label>Comment (optional, for sharing)</label>
-  <input id="comment" type="text" placeholder="One line you can share" />
+  <input id="comment" type="text" placeholder="One line you can share in a forum" />
 
   <button onclick="run()">Run cycle</button>
 
   <div id="out" class="dash" style="display:none;">
-    <p class="kicker">Dashboard</p>
-    <p id="public"></p>
-    <p id="residual"></p>
-    <p id="floor"></p>
-    <p id="refusal"></p>
-    <p id="reward"></p>
+    <p class="kicker">Dashboard — this cycle</p>
+    <div class="step" id="step1"></div>
+    <div class="step" id="public"></div>
+    <div class="step" id="residual"></div>
+    <div class="step" id="floor"></div>
+    <div class="step" id="refusal"></div>
+    <div class="step" id="reward"></div>
+  </div>
+
+  <div id="history" class="dash" style="margin-top:1rem;">
+    <p class="kicker">Completed cycles (this browser)</p>
+    <div id="list" class="muted">None yet.</div>
   </div>
 
   <script>
+    let cycles = JSON.parse(localStorage.getItem('soverx-cycles') || '[]');
+    renderHistory();
+
     function run() {
       const type = document.getElementById('type').value;
-      const desc = document.getElementById('desc').value || '(empty)';
-      const comment = document.getElementById('comment').value || '(none)';
+      const desc = document.getElementById('desc').value.trim() || '(empty)';
+      const comment = document.getElementById('comment').value.trim() || '(none)';
+      const id = 'cyc-' + Date.now();
+
+      const cycle = { id, type, desc, comment, ts: new Date().toISOString() };
+      cycles.unshift(cycle);
+      localStorage.setItem('soverx-cycles', JSON.stringify(cycles.slice(0, 20)));
+
       document.getElementById('out').style.display = 'block';
-      document.getElementById('public').textContent = 'Public: ' + type + ' — ' + desc;
-      document.getElementById('residual').textContent = 'Residual: titled (including zero)';
-      document.getElementById('floor').textContent = 'Floor: acknowledged first';
-      document.getElementById('refusal').textContent = 'Refusal check: no private path detected';
-      document.getElementById('reward').textContent = 'Mock reward: 1 $lgme (simulated) — comment: ' + comment;
+      document.getElementById('step1').textContent = '1. Order checked: Floor first, public mint, named charge, tape required.';
+      document.getElementById('public').textContent = '2. Public: ' + type + ' — ' + desc;
+      document.getElementById('residual').textContent = '3. Residual: titled (including zero)';
+      document.getElementById('floor').textContent = '4. Floor: acknowledged first';
+      document.getElementById('refusal').textContent = '5. Refusal check: no private path detected';
+      document.getElementById('reward').textContent = '6. Mock reward: 1 $lgme (simulated) — comment: ' + comment;
+
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const list = document.getElementById('list');
+      if (!cycles.length) {
+        list.textContent = 'None yet.';
+        return;
+      }
+      list.innerHTML = cycles.map(c =>
+        '<div class="cycle"><strong>' + c.type + '</strong> — ' + c.desc + '<br><span class="muted">' + c.comment + ' · ' + c.ts.slice(0,19) + '</span></div>'
+      ).join('');
     }
   </script>
 
