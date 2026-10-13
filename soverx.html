@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SoverX — Trial</title>
+  <style>
+    body { background: #10140f; color: #e7efe4; font-family: sans-serif; max-width: 48rem; margin: 0 auto; padding: 1.5rem; }
+    .kicker { font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: #8ea892; }
+    .disclaimer { border-left: 3px solid #c9a227; padding-left: 1rem; margin: 1rem 0; color: #d4c48a; }
+    label, select, input, textarea, button { display: block; width: 100%; margin: 0.4rem 0; }
+    input, textarea, select { background: #1a2218; color: #e7efe4; border: 1px solid #2a3a28; padding: 0.5rem; }
+    button { background: #2a4a28; color: #e7efe4; border: none; padding: 0.7rem; cursor: pointer; }
+    .dash { background: #1a2218; padding: 1rem; margin-top: 1rem; }
+    .muted { color: #b7c7b8; }
+  </style>
+</head>
+<body>
+  <p class="kicker">SoverX · trial under lgme.app</p>
+  <h1>LGME for Sovereigns</h1>
+
+  <div class="disclaimer">
+    <strong>Disclaimer — trial only.</strong><br>
+    This is a mock educational trial. No real $lgme is issued. No value moves. Completions are simulated. An unpublished change is not a change.
+  </div>
+
+  <label>Input type</label>
+  <select id="type">
+    <option>Act</option>
+    <option>Receipt</option>
+    <option>Contract</option>
+    <option>Promise</option>
+    <option>Claim</option>
+    <option>Refusal</option>
+  </select>
+
+  <label>What happened</label>
+  <textarea id="desc" rows="3" placeholder="Short description"></textarea>
+
+  <label>Comment (optional, for sharing)</label>
+  <input id="comment" type="text" placeholder="One line you can share" />
+
+  <button onclick="run()">Run cycle</button>
+
+  <div id="out" class="dash" style="display:none;">
+    <p class="kicker">Dashboard</p>
+    <p id="public"></p>
+    <p id="residual"></p>
+    <p id="floor"></p>
+    <p id="refusal"></p>
+    <p id="reward"></p>
+  </div>
+
+  <script>
+    function run() {
+      const type = document.getElementById('type').value;
+      const desc = document.getElementById('desc').value || '(empty)';
+      const comment = document.getElementById('comment').value || '(none)';
+      document.getElementById('out').style.display = 'block';
+      document.getElementById('public').textContent = 'Public: ' + type + ' — ' + desc;
+      document.getElementById('residual').textContent = 'Residual: titled (including zero)';
+      document.getElementById('floor').textContent = 'Floor: acknowledged first';
+      document.getElementById('refusal').textContent = 'Refusal check: no private path detected';
+      document.getElementById('reward').textContent = 'Mock reward: 1 $lgme (simulated) — comment: ' + comment;
+    }
+  </script>
+
+  <p class="muted" style="margin-top:2rem;"><a href="/">Back to lgme</a> · <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/SoverX_LGME_for_Sovereigns.md">Full note</a></p>
+</body>
+</html>
