@@ -11,6 +11,7 @@
     .muted { color: #b7c7b8; }
     a { color: #e7efe4; }
     .disclaimer { border-left: 3px solid #c9a227; padding-left: 1rem; margin: 1rem 0; color: #d4c48a; }
+    code { background: #1a2218; padding: 0.1em 0.3em; border-radius: 3px; }
   </style>
 </head>
 <body>
@@ -129,7 +130,8 @@
       <strong>Disclaimer — temporary pilot only.</strong><br>
       A verified X handle is <em>not</em> proof of unique personhood. One person can control multiple verified accounts; accounts can be bought, sold, or rented; verification is a paid subscription to X, not a uniqueness guarantee. This credential is used solely as a low-friction test to practice the tape-recording pattern. It does not meet the Sybil-resistance requirements of the protocol. It will be revisited and replaced at the next milestone. An unpublished change is not a change.
     </div>
-    <p class="muted"><a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Enrollment_Design_Note.md">Full enrollment design note →</a></p>
+    <p class="muted"><strong>Tape entries required:</strong> credential_type (<code>x-verified-handle</code>), handle, wallet, signed_message, signature, timestamp, status. Exact signed-message format is in the design note.</p>
+    <p class="muted"><a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Enrollment_Design_Note.md">Full enrollment design note (schema + message format) →</a></p>
   </section>
 
   <section id="next">
