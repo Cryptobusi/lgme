@@ -1,6 +1,6 @@
 # SoverX — LGME for Sovereigns
 
-**Status:** Design sketch. Temporary. Revisit at next milestone.  
+**Status:** Trial under lgme.app. Temporary. Revisit at next milestone.  
 **Date:** 13 October 2026  
 **Icon:** Egonomic Anonymous / #legomiego coin (second image)
 
@@ -10,7 +10,7 @@
 
 An educational agent app that walks a person through the third-seat role on lgme.app. It accepts varied inputs (acts, receipts, contracts, promises, claims, refusals), shows clear dashboards, explains each step in plain language, and records successful cycles on the tape. Each completed cycle that meets the public criteria receives 1 $lgme, contributing to the Floor and development.
 
-SoverX is “LGME for dummies” made practical: the person keeps the book by seeing what must be shown.
+SoverX is “LGME for dummies” made practical: the person keeps the book by seeing what must be shown. It runs as a trial under lgme.app.
 
 ---
 
