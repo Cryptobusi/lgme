@@ -1,8 +1,7 @@
 // Minimal service worker for lgme.app PWA install
-const CACHE_NAME = 'lgme-v2';
+// HTML is not cached so content updates appear immediately.
+const CACHE_NAME = 'lgme-v3';
 const urlsToCache = [
-  '/',
-  '/index.html',
   '/manifest.json'
 ];
 
@@ -25,6 +24,12 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+  // Always go to network for HTML and root so updates are immediate
+  if (event.request.mode === 'navigate' || url.pathname === '/' || url.pathname.endsWith('.html')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
   event.respondWith(
     caches.match(event.request)
       .then((response) => response || fetch(event.request))
