@@ -20,3 +20,30 @@ An unpublished change is not a change.
 
 The torque is already applied. The tools make the turn practical.  
 The person is the third seat. Sovereignty is the refusal. The book is kept.
+
+---
+
+## X post poem
+
+They printed the money.  
+I am keeping the book.
+
+Hidden prints and residual floors tax the majority.  
+Those costs are the force.  
+Visibility and refusal are the lever.  
+The system turns.
+
+Orwell feared the boot.  
+Huxley feared the soma.  
+Postman said the second is here.  
+Easy credit is the economic distraction.
+
+The book is not new.  
+The tools make the older refusal practical.  
+Floor stays senior.  
+Same rules bind state, firm, and person.  
+If it cannot be shown, it is not policy.
+
+egonomicanonymous.live  
+lgme.app  
+#LeGoMiEgo
