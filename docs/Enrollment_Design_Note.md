@@ -1,7 +1,7 @@
 # Enrollment and Sybil Resistance — Design Note
 
-**Status:** Outline for future development.  
-**Date:** 12 October 2026  
+**Status:** Outline for future development. Pilot credential chosen.  
+**Date:** 13 October 2026  
 **Context:** The SPP commentary flags personhood-anchored governance as the right direction, but enrollment and Sybil resistance remain unsolved. This note records the minimal constraints and open questions so the next design pass has a clear starting point.
 
 ---
@@ -23,6 +23,14 @@ The third seat is the person. The person must be distinguishable from bots, mult
 
 ---
 
+## Pilot credential (temporary)
+
+**Chosen for test:** Verified X (Twitter) handle linked to a wallet by a signed message, recorded on the tape.
+
+**Disclaimer:** This is a low-friction temporary pilot only. A verified X handle is not proof of unique personhood. One person can control multiple verified accounts; accounts can be bought, sold, or rented; verification is a paid subscription to X. It does not satisfy the Sybil-resistance requirements above. It will be revisited and replaced at the next milestone. An unpublished change is not a change.
+
+---
+
 ## Open design questions
 
 - **Credential type:** What external signal is acceptable? (Government ID + ZK proof, biometric commitment, social recovery with stake, proof-of-personhood protocol, or a hybrid.)
@@ -35,7 +43,8 @@ The third seat is the person. The person must be distinguishable from bots, mult
 
 ## Suggested next steps
 
-1. Choose one minimal viable credential path for a pilot (e.g., ZK proof of a government ID or an existing proof-of-personhood system).
+1. Choose one minimal viable credential path for a pilot (e.g., ZK proof of a government ID or an existing proof-of-personhood system).  
+   *Current pilot uses verified X handle; stronger path still required.*
 2. Define the public tape entries required for enrollment (commitment, timestamp, verifier signature or proof, revocation status).
 3. Draft the exact voting formula that applies a quadratic cost once personhood is proven.
 4. Inscribe the design note and any pilot rules on the tape so the enrollment path is itself showable.
@@ -48,4 +57,4 @@ The third seat is the person. The person must be distinguishable from bots, mult
 - Barrier checks and L2 amendment path already constrain how enrollment rules can be changed.
 - Provenance scores (epochs, decay, non-gameable oracles) are a related but separate open item.
 
-*This is an outline, not a specification. The next design pass should pick one credential path and write the showable rules.*
+*This is an outline, not a specification. The verified-X pilot is temporary and must be revisited at the next milestone.*
