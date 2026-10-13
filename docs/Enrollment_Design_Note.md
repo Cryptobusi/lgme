@@ -1,6 +1,6 @@
 # Enrollment and Sybil Resistance — Design Note
 
-**Status:** Outline for future development. Pilot credential chosen. Tape schema defined. Simplest quadratic form in use as test.  
+**Status:** Outline for future development. Pilot credential chosen. Tape schema defined. Simplest quadratic form in use as test. Inscription API reviewed.  
 **Date:** 13 October 2026  
 **Context:** The SPP commentary flags personhood-anchored governance as the right direction, but enrollment and Sybil resistance remain unsolved. This note records the minimal constraints and open questions so the next design pass has a clear starting point.
 
@@ -100,7 +100,8 @@ The following temporary items must be replaced or upgraded:
 
 1. **Enrollment credential** — verified X handle (current pilot). Replace with a stronger uniqueness signal (ZK government ID, existing PoP system, or hybrid).
 2. **Voting formula** — simplest square-root weighting (current test). Replace with true quadratic cost (fixed budget, cost = credits²).
-3. **Inscription workflow** — manual KiloScribe upload. Evaluate and adopt the KiloScribe Inscription API (or SDK) for scripted/semi-automated inscription of pilot rules and future records, while keeping signing explicit.
+3. **Inscription workflow** — manual KiloScribe upload.  
+   *Reviewed 13 Oct 2026:* KiloScribe Inscription API exists (start → sign/submit → status). Official SDK (`@kiloscribe/inscription-sdk`) supports WalletConnect or private-key flows. Signing remains explicit by design. Full automation possible with API key + private key; semi-automation with wallet popup. Pilot rules file ready for either path.
 4. Any other pilot shortcuts that do not meet the minimal constraints above.
 
 An unpublished change is not a change.
@@ -127,7 +128,7 @@ An unpublished change is not a change.
 3. Draft the exact voting formula that applies a quadratic cost once personhood is proven.  
    *Simplest form in use as test; true quadratic cost targeted for next milestone.*
 4. Inscribe the design note and any pilot rules on the tape so the enrollment path is itself showable.  
-   *Pilot rules file ready; inscription still manual. API path noted for revisit.*
+   *Pilot rules file ready. API path reviewed; inscription still requires explicit signing.*
 
 ---
 
@@ -137,4 +138,4 @@ An unpublished change is not a change.
 - Barrier checks and L2 amendment path already constrain how enrollment rules can be changed.
 - Provenance scores (epochs, decay, non-gameable oracles) are a related but separate open item.
 
-*This is an outline, not a specification. Temporary pilot items (X-handle credential, simplest voting formula, and manual inscription) must be revisited at the next milestone.*
+*This is an outline, not a specification. Temporary pilot items must be revisited at the next milestone. Inscription API reviewed 13 October 2026.*
