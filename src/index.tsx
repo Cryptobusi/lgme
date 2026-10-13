@@ -737,6 +737,8 @@ function Home() {
           <ul className="mt-4 space-y-3 text-sm text-muted">
             <li>
               <a className="text-fg underline decoration-border underline-offset-4" href="https://github.com/Cryptobusi/lgme/blob/main/docs/Torque_of_the_Book.md">Torque of the Book</a>
+        {" · "}
+        <a className="text-fg underline decoration-border underline-offset-4" href="https://github.com/Cryptobusi/lgme/blob/main/docs/Krakauer_Non_Ergodicity.md">Krakauer non-ergodicity</a>
               . Unintended costs turn the system. The older refusal is practical.{" "}
               <a className="text-fg underline decoration-border underline-offset-4" href="https://github.com/Cryptobusi/lgme/blob/main/docs/Precommitment_One_Page.md">Precommitment one-page</a>
               . Schelling barriers, test, and leaks.{" "}
