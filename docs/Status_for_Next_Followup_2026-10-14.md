@@ -15,3 +15,5 @@ Deploy: a push to main is the production deploy. There is no build step. vercel.
 ## Left from the other site
 
 The phone menu on egonomicanonymous.live was fixed and deployed (commit c54d2f5). That site is paused.
+
+The chat preview of that site crashed on its expand buttons. The crash is fixed in the preview only. It was not published to egonomicanonymous.live.
