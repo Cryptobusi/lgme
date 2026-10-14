@@ -4,15 +4,75 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>lgme</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;1,6..72,500&display=swap" />
   <style>
-    body { background: #10140f; color: #e7efe4; font-family: sans-serif; max-width: 72rem; margin: 0 auto; padding: 2rem; }
-    .kicker { font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: #8ea892; }
-    h2 { font-weight: 500; }
-    .muted { color: #b7c7b8; }
-    a { color: #e7efe4; }
-    .fishbowl { display: block; width: 100%; height: auto; margin: 0 0 1.5rem; background: #000; border-radius: 12px; }
-    .disclaimer { border-left: 3px solid #c9a227; padding-left: 1rem; margin: 1rem 0; color: #d4c48a; }
-    code { background: #1a2218; padding: 0.1em 0.3em; border-radius: 3px; }
+    :root {
+      --bg: #0c100c;
+      --fg: #f4f1e8;
+      --muted: #c5d0c2;
+      --faint: #8ea892;
+      --gold: #c6a15b;
+      --line: #2c352b;
+      --panel: #141a13;
+    }
+    * { box-sizing: border-box; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: Figtree, sans-serif;
+      font-size: 1.05rem;
+      line-height: 1.6;
+      max-width: 46rem;
+      margin: 0 auto;
+      padding: 1.5rem 1.25rem 4rem;
+    }
+    .kicker {
+      margin: 0;
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+    h1, h2 { font-family: Newsreader, serif; font-weight: 500; letter-spacing: -0.02em; }
+    h1 { font-size: clamp(2.4rem, 7vw, 3.7rem); line-height: 1.02; margin: 0.6rem 0 0; }
+    h2 { font-size: clamp(1.8rem, 4vw, 2.35rem); line-height: 1.12; margin: 0.4rem 0 0.9rem; }
+    p { margin: 0.85rem 0; }
+    .muted { color: var(--muted); }
+    a { color: var(--fg); text-underline-offset: 0.22em; }
+    a:hover { color: var(--gold); }
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem 0.9rem;
+      margin: 1.6rem 0 1.4rem;
+      font-size: 0.92rem;
+    }
+    nav a { color: var(--muted); text-decoration: none; padding: 0.35rem 0; }
+    nav a:hover { color: var(--gold); }
+    .fishbowl {
+      display: block;
+      width: 100%;
+      height: auto;
+      margin: 0 0 1.75rem;
+      background: #000;
+      border: 1px solid #3d3424;
+      border-radius: 16px;
+      box-shadow: 0 28px 70px #000a;
+    }
+    section { border-top: 1px solid var(--line); margin-top: 2.75rem; padding-top: 2.25rem; }
+    ol { margin: 0.6rem 0 1rem; padding-left: 1.2rem; }
+    ol li { margin: 0.35rem 0; padding-left: 0.2rem; }
+    ol li::marker { color: var(--gold); }
+    .disclaimer {
+      border-left: 2px solid var(--gold);
+      padding: 0.2rem 0 0.2rem 1rem;
+      margin: 1.25rem 0;
+      color: #e4d3a2;
+    }
+    code { font-family: ui-monospace, monospace; font-size: 0.88em; color: var(--fg); background: var(--panel); padding: 0.08em 0.35em; border-radius: 4px; }
+    .panel { margin-top: 1.5rem; padding: 1.15rem 1.2rem; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
+    strong { font-weight: 600; color: var(--fg); }
+    ::selection { background: var(--gold); color: var(--bg); }
   </style>
 </head>
 <body>
@@ -23,18 +83,18 @@
   <p class="kicker">lgme · #LeGoMiEgo</p>
   <h1>They printed the money. I am keeping the book.</h1>
 
-  <nav class="muted" style="margin: 1.5rem 0; font-size: 0.9rem;">
-    <a href="#sovereignty">Sovereignty</a> ·
-    <a href="#schelling">Egonomic restraint</a> ·
-    <a href="#marcum">Ego balance</a> ·
-    <a href="#connecting">Connecting</a> ·
-    <a href="#order">The order</a> ·
-    <a href="#third-seat">Third seat</a> ·
-    <a href="#checks">Checks</a> ·
-    <a href="#tape">Tape</a> ·
-    <a href="#enrollment">Enrollment pilot</a> ·
-    <a href="#next">The Next</a> ·
-    <a href="#future">Future development</a> ·
+  <nav>
+    <a href="#sovereignty">Sovereignty</a>
+    <a href="#schelling">Egonomic restraint</a>
+    <a href="#marcum">Ego balance</a>
+    <a href="#connecting">Connecting</a>
+    <a href="#order">The order</a>
+    <a href="#third-seat">Third seat</a>
+    <a href="#checks">Checks</a>
+    <a href="#tape">Tape</a>
+    <a href="#enrollment">Enrollment pilot</a>
+    <a href="#next">The Next</a>
+    <a href="#future">Future development</a>
     <a href="#close">Close</a>
   </nav>
 
@@ -199,7 +259,7 @@
     <p class="muted"><a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Epoch_Parameters_Final.md">Epoch parameters →</a> · <a href="/docs/Epoch_Parameters_Final.md" download>Download (MD)</a></p>
     <p class="muted"><a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Mock_Second_Test_Comparison.md">Mock second test comparison →</a> · <a href="/docs/Mock_Second_Test_Comparison.md" download>Download (MD)</a></p>
     <p class="muted"><a href="https://github.com/Cryptobusi/lgme/blob/main/docs/SoverX_LGME_for_Sovereigns.md">SoverX — LGME for Sovereigns →</a> · <a href="/soverx.html">Trial mock app →</a> · <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/SoverX_Presentation.md">Presentation →</a></p>
-    <div class="muted" style="margin-top: 1.5rem; padding: 1rem; background: #1a2218; border-radius: 4px;">
+    <div class="panel">
       <p class="kicker">Layman example — attested utility</p>
       <p>Imagine a small group of developers deciding who gets a share of a monthly bounty.</p>
       <p>Without attestation Alice simply claims “I did 80% of the work.” With the telemetry schema a designated measurement topic posts a signed observation to the tape containing <code>objectiveUtility: 0.75</code> and <code>peerConsensusScore: 0.80</code>. Anyone can check that the signature matches the published attestor for that month. Alice cannot change the numbers after the fact. An unpublished utility number is not a number.</p>
