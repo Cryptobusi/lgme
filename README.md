@@ -1,6 +1,6 @@
 # lgme
 
-Live site: [lgme.app](https://lgme.app/).
+<a href="https://lgme.app/"><img alt="Open lgme.app" src="https://img.shields.io/badge/Open-lgme.app-111111?style=for-the-badge"></a>
 
 Saved 10 October 2026. First page: three seals in one line, slogan Debit Credit ØtØh IDIDIT!, heartbeat seal linked to egonomicanonymous.live, and the status summary copied from that book.
 
