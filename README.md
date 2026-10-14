@@ -1,12 +1,14 @@
 # lgme
 
+Live site: [lgme.app](https://lgme.app/).
+
 Saved 10 October 2026. First page: three seals in one line, slogan Debit Credit ØtØh IDIDIT!, heartbeat seal linked to egonomicanonymous.live, and the status summary copied from that book.
 
 Open index.html. The source of the preview page is in src/.
 
 ## Live static page (index.html)
 
-As of 11 October 2026 the page at https://lgme.app/ runs:
+As of 11 October 2026 the page at [lgme.app](https://lgme.app/) runs:
 
 1. Sovereignty — Final and absolute authority (Jefferson)
 2. Egonomic restraint — Schelling self-management + barrier checks
