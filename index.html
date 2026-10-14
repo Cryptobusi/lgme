@@ -70,7 +70,16 @@
       color: #e4d3a2;
     }
     code { font-family: ui-monospace, monospace; font-size: 0.88em; color: var(--fg); background: var(--panel); padding: 0.08em 0.35em; border-radius: 4px; }
-    .panel { margin-top: 1.5rem; padding: 1.15rem 1.2rem; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
+    .coin {
+      display: block;
+      width: min(22rem, 100%);
+      height: auto;
+      margin: 3rem auto 0;
+      background: #000;
+      border: 1px solid #3d3424;
+      border-radius: 16px;
+      box-shadow: 0 28px 70px #000a;
+    }
     strong { font-weight: 600; color: var(--fg); }
     ::selection { background: var(--gold); color: var(--bg); }
   </style>
@@ -276,6 +285,10 @@
 
   <p class="muted" style="margin-top: 2rem;">Companion book: <a href="https://www.egonomicanonymous.live">egonomicanonymous.live</a> — sovereignty is the refusal.</p>
   <p class="muted"><a href="/spp">Sovereign Provenance Protocol</a> · <a href="https://www.egonomicanonymous.live">egonomicanonymous.live</a> · <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Connecting_the_Seats.md">Connecting the seats</a> · <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Precommitment_One_Page.md">Precommitment one-page</a> · <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Barrier_Checks.md">Barrier checks</a> · <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Nested_Commitment.md">Nested commitment</a> · <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Future_Development_Considered_Storage_Options.md">Future development considered (storage)</a> · <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Tape_and_Inscription_Plan.md">Tape plan</a> · <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Enrollment_Design_Note.md">Enrollment note</a> · <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Torque_of_the_Book.md">Torque of the Book</a> · <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Krakauer_Non_Ergodicity.md">Krakauer non-ergodicity</a> · <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Tangent_Highly_Speculative.md">Tangent / Highly Speculative</a></p>
+
+  <video class="coin" poster="/legomiego-coin.jpg" autoplay muted loop playsinline preload="auto" aria-label="Egonomic Anonymous coin. #legomiego.">
+    <source src="/legomiego-coin.mp4" type="video/mp4" />
+  </video>
 
   <p class="muted" style="margin-top: 2rem;"><a href="#sovereignty">Back to top</a></p>
 </body>
