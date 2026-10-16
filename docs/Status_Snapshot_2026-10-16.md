@@ -18,7 +18,21 @@ Production is main 1936d1d. Glossary and Precise sit next to each other at the t
 - Floor stays Floor until Precise is pressed.
 - The companion book, www.egonomicanonymous.live, also answers.
 
-No new mint. Floor stays senior. An unpublished change is not a change. This file is the check.
+No new mint. Floor stays senior. An unpublished change is not a change.
+
+## Checked again
+
+Checked 16 October 2026, after the glossary correction. https://lgme.app answers. Home returned.
+
+Production is main 85837ae.
+
+- Easy read is the default. Precise is beside it and is not pressed.
+- Glossary keeps both columns. Floor stays next to Senior tranche.
+- Precise changes the eight names in the order. The sentences stay as written.
+- The manifest and the worker are linked.
+- The companion book, www.egonomicanonymous.live, also answers.
+
+This file is the check.
 
 ---
 
