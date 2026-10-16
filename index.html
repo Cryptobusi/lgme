@@ -82,9 +82,72 @@
     }
     strong { font-weight: 600; color: var(--fg); }
     ::selection { background: var(--gold); color: var(--bg); }
+    .pair {
+      display: flex;
+      width: fit-content;
+      margin: 0 0 1.25rem;
+      border: 1px solid var(--line);
+    }
+    .pair button {
+      appearance: none;
+      background: transparent;
+      color: var(--muted);
+      border: 0;
+      border-right: 1px solid var(--line);
+      font: inherit;
+      font-size: 0.92rem;
+      padding: 0.55rem 0.95rem;
+      min-height: 44px;
+      cursor: pointer;
+    }
+    .pair button:last-child { border-right: 0; }
+    .pair button:hover { color: var(--gold); }
+    .pair button[aria-pressed="true"],
+    .pair button[aria-expanded="true"] {
+      background: var(--fg);
+      color: var(--bg);
+    }
+    .pair button[aria-pressed="true"]:hover,
+    .pair button[aria-expanded="true"]:hover { color: var(--bg); }
+    #glossary { margin-top: 0; border-top: 0; padding-top: 0.2rem; }
+    #glossary[hidden] { display: none; }
+    #glossary ol { list-style: none; margin: 0.8rem 0 0; padding: 0; }
+    #glossary li {
+      display: grid;
+      gap: 0.15rem;
+      padding: 0.75rem 0;
+      border-top: 1px solid var(--line);
+    }
+    #glossary li:last-child { border-bottom: 1px solid var(--line); }
+    #glossary .n {
+      font-family: ui-monospace, monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      color: var(--faint);
+    }
+    #glossary .name { font-family: Newsreader, serif; font-size: 1.45rem; line-height: 1.15; color: var(--fg); }
   </style>
 </head>
 <body>
+  <div class="pair" role="group" aria-label="Reading">
+    <button type="button" id="glossary-btn" aria-expanded="false" aria-controls="glossary">Glossary</button>
+    <button type="button" id="precise-btn" aria-pressed="false">Precise</button>
+  </div>
+  <section id="glossary" hidden>
+    <p class="kicker">Glossary</p>
+    <h2>Eight words</h2>
+    <p class="muted" id="glossary-note">Easy read. The eight words of the book, in order.</p>
+    <ol>
+      <li><span class="n">01</span><span class="name swap" data-easy="Floor" data-precise="Senior tranche">Floor</span><span class="muted swap" data-easy="Basket paid first from named surplus." data-precise="The first tier of the payout. Settled from surplus already named, before any subordinate claim.">Basket paid first from named surplus.</span></li>
+      <li><span class="n">02</span><span class="name swap" data-easy="Mint" data-precise="Fair launch">Mint</span><span class="muted swap" data-easy="Public schedule only. No private window." data-precise="New units enter on one public schedule. No pre-sale, whitelist, or private allocation.">Public schedule only. No private window.</span></li>
+      <li><span class="n">03</span><span class="name swap" data-easy="Issue" data-precise="Promissory note">Issue</span><span class="muted swap" data-easy="Named credit. Not cash at the register." data-precise="A named obligation assigned to a person. It is not cash, and it does not clear at the register.">Named credit. Not cash at the register.</span></li>
+      <li><span class="n">04</span><span class="name swap" data-easy="Tape" data-precise="Audit trail">Tape</span><span class="muted swap" data-easy="Title, mint, lien, conversion, agent act must be shown." data-precise="The record that must show title, issuance, lien, conversion, and the registrar’s act.">Title, mint, lien, conversion, agent act must be shown.</span></li>
+      <li><span class="n">05</span><span class="name swap" data-easy="Charge" data-precise="Risk-adjusted fee">Charge</span><span class="muted swap" data-easy="Discount and risk named before residual." data-precise="Discount and risk are named up front, before any residual value is titled.">Discount and risk named before residual.</span></li>
+      <li><span class="n">06</span><span class="name swap" data-easy="Agent" data-precise="Registrar">Agent</span><span class="muted swap" data-easy="Clerk of the rules. Does not mint." data-precise="Records and enforces the posted rules. Does not create new units.">Clerk of the rules. Does not mint.</span></li>
+      <li><span class="n">07</span><span class="name swap" data-easy="Thin" data-precise="Informational spread">Thin</span><span class="muted swap" data-easy="Width is information. No invented tight price." data-precise="The width of the book is the data. A tight price is not invented when the book is quiet.">Width is information. No invented tight price.</span></li>
+      <li><span class="n">08</span><span class="name swap" data-easy="Desert" data-precise="Residual value">Desert</span><span class="muted swap" data-easy="Remainder titled, including zero." data-precise="What remains after the senior tranche and the listed prices. Titled even when the figure is zero.">Remainder titled, including zero.</span></li>
+    </ol>
+  </section>
   <video class="fishbowl" poster="/lgme-fishbowl.jpg" autoplay muted loop playsinline preload="auto" aria-label="Fishbowl">
     <source src="/lgme-fishbowl.mp4" type="video/mp4" />
     <img src="/lgme-fishbowl.jpg" alt="Fishbowl." />
@@ -155,16 +218,16 @@
 
   <section id="order">
     <p class="kicker">The order</p>
-    <h2>Floor first</h2>
+    <h2><span class="swap" data-easy="Floor first" data-precise="Senior tranche first">Floor first</span></h2>
     <ol class="muted">
-      <li>Floor — Basket paid first from named surplus.</li>
-      <li>Mint — Public schedule only. No private window.</li>
-      <li>Issue — Named credit. Not cash at the register.</li>
-      <li>Tape — Title, mint, lien, conversion, agent act must be shown.</li>
-      <li>Charge — Discount and risk named before residual.</li>
-      <li>Agent — Clerk of the rules. Does not mint.</li>
-      <li>Thin — Width is information. No invented tight price.</li>
-      <li>Desert — Remainder titled, including zero.</li>
+      <li><span class="swap" data-easy="Floor" data-precise="Senior tranche">Floor</span> — <span class="swap" data-easy="Basket paid first from named surplus." data-precise="The first tier of the payout. Settled from surplus already named, before any subordinate claim.">Basket paid first from named surplus.</span></li>
+      <li><span class="swap" data-easy="Mint" data-precise="Fair launch">Mint</span> — <span class="swap" data-easy="Public schedule only. No private window." data-precise="New units enter on one public schedule. No pre-sale, whitelist, or private allocation.">Public schedule only. No private window.</span></li>
+      <li><span class="swap" data-easy="Issue" data-precise="Promissory note">Issue</span> — <span class="swap" data-easy="Named credit. Not cash at the register." data-precise="A named obligation assigned to a person. It is not cash, and it does not clear at the register.">Named credit. Not cash at the register.</span></li>
+      <li><span class="swap" data-easy="Tape" data-precise="Audit trail">Tape</span> — <span class="swap" data-easy="Title, mint, lien, conversion, agent act must be shown." data-precise="The record that must show title, issuance, lien, conversion, and the registrar’s act.">Title, mint, lien, conversion, agent act must be shown.</span></li>
+      <li><span class="swap" data-easy="Charge" data-precise="Risk-adjusted fee">Charge</span> — <span class="swap" data-easy="Discount and risk named before residual." data-precise="Discount and risk are named up front, before any residual value is titled.">Discount and risk named before residual.</span></li>
+      <li><span class="swap" data-easy="Agent" data-precise="Registrar">Agent</span> — <span class="swap" data-easy="Clerk of the rules. Does not mint." data-precise="Records and enforces the posted rules. Does not create new units.">Clerk of the rules. Does not mint.</span></li>
+      <li><span class="swap" data-easy="Thin" data-precise="Informational spread">Thin</span> — <span class="swap" data-easy="Width is information. No invented tight price." data-precise="The width of the book is the data. A tight price is not invented when the book is quiet.">Width is information. No invented tight price.</span></li>
+      <li><span class="swap" data-easy="Desert" data-precise="Residual value">Desert</span> — <span class="swap" data-easy="Remainder titled, including zero." data-precise="What remains after the senior tranche and the listed prices. Titled even when the figure is zero.">Remainder titled, including zero.</span></li>
     </ol>
     <p class="muted">An unpublished change is not a change. Same rules bind state, firm, and person.</p>
     <p class="muted">L2: any change to the amendment path must be posted one full public cycle in advance and confirmed by a second independent reading. An attempt to shorten the cycle writes nothing. <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Nested_Commitment.md">Nested commitment →</a></p>
@@ -206,7 +269,7 @@
     <h2>Canonical inscriptions</h2>
     <p class="muted">The friendly site is the front end. The inscriptions are the source of truth.</p>
     <p class="muted">Whitepaper — topic: 0.0.10917616 · HRL: <a href="hcs://1/0.0.10917616">hcs://1/0.0.10917616</a><br>Commentary — topic: 0.0.10917607 · HRL: <a href="hcs://1/0.0.10917607">hcs://1/0.0.10917607</a><br>Barrier checks — topic: 0.0.10917585 · HRL: <a href="hcs://1/0.0.10917585">hcs://1/0.0.10917585</a><br>Status snapshot (12 Oct) — topic: 0.0.10917624 · HRL: <a href="hcs://1/0.0.10917624">hcs://1/0.0.10917624</a><br>Enrollment pilot rules — topic: 0.0.10917853 · HRL: <a href="hcs://1/0.0.10917853">hcs://1/0.0.10917853</a><br>Enrollment design note — topic: 0.0.10917981 · HRL: <a href="hcs://1/0.0.10917981">hcs://1/0.0.10917981</a><br>Enrollment example — topic: 0.0.10918058 · HRL: <a href="hcs://1/0.0.10918058">hcs://1/0.0.10918058</a><br>First Person Credentials evaluation — topic: 0.0.10918126 · HRL: <a href="hcs://1/0.0.10918126">hcs://1/0.0.10918126</a><br>True Quadratic Cost — topic: 0.0.10918175 · HRL: <a href="hcs://1/0.0.10918175">hcs://1/0.0.10918175</a><br>Attested utility telemetry schema — topic: 0.0.10918220 · HRL: <a href="hcs://1/0.0.10918220">hcs://1/0.0.10918220</a><br>Accounting fixes implementation outline — topic: 0.0.10918378 · HRL: <a href="hcs://1/0.0.10918378">hcs://1/0.0.10918378</a><br>Epoch parameters — topic: 0.0.10918419 · HRL: <a href="hcs://1/0.0.10918419">hcs://1/0.0.10918419</a><br>Mock second test comparison — topic: 0.0.10918510 · HRL: <a href="hcs://1/0.0.10918510">hcs://1/0.0.10918510</a><br>Status for next follow-up (13 Oct v2) — topic: 0.0.10918678 · HRL: <a href="hcs://1/0.0.10918678">hcs://1/0.0.10918678</a><br>Epoch boundaries & score decay — topic: 0.0.10917935 · HRL: <a href="hcs://1/0.0.10917935">hcs://1/0.0.10917935</a><br>Contract accounting fixes — topic: 0.0.10917944 · HRL: <a href="hcs://1/0.0.10917944">hcs://1/0.0.10917944</a><br>Attested utility inputs — topic: 0.0.10918021 · HRL: <a href="hcs://1/0.0.10918021">hcs://1/0.0.10918021</a><br>Accounting fixes reference — topic: 0.0.10918033 · HRL: <a href="hcs://1/0.0.10918033">hcs://1/0.0.10918033</a><br>Status snapshot (13 Oct) — topic: 0.0.10918042 · HRL: <a href="hcs://1/0.0.10918042">hcs://1/0.0.10918042</a></p>
-    <p class="muted"><a href="/docs/Status_for_Next_Followup_2026-10-15.md" download>Status for next follow-up (15 Oct) →</a> · <a href="/docs/Status_Snapshot_2026-10-15.md" download>Status snapshot (15 Oct 2026) →</a> · <a href="/docs/Status_for_Next_Followup_2026-10-13_v2.md" download>Status for next follow-up (13 Oct v2) →</a> · <a href="/docs/Status_Snapshot_2026-10-13.md" download>Status snapshot (13 Oct 2026) →</a> · <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Tape_and_Inscription_Plan.md">Full inscription plan →</a> · <a href="/docs/Tape_and_Inscription_Plan.md" download>Download plan (MD)</a></p>
+    <p class="muted"><a href="/docs/Status_Snapshot_2026-10-16.md" download>Status snapshot (16 Oct 2026) →</a> · <a href="/docs/Status_for_Next_Followup_2026-10-15.md" download>Status for next follow-up (15 Oct) →</a> · <a href="/docs/Status_Snapshot_2026-10-15.md" download>Status snapshot (15 Oct 2026) →</a> · <a href="/docs/Status_for_Next_Followup_2026-10-13_v2.md" download>Status for next follow-up (13 Oct v2) →</a> · <a href="/docs/Status_Snapshot_2026-10-13.md" download>Status snapshot (13 Oct 2026) →</a> · <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Tape_and_Inscription_Plan.md">Full inscription plan →</a> · <a href="/docs/Tape_and_Inscription_Plan.md" download>Download plan (MD)</a></p>
   </section>
 
   <section id="enrollment">
@@ -306,5 +369,37 @@
   </video>
 
   <p class="muted" style="margin-top: 2rem;"><a href="#sovereignty">Back to top</a></p>
+  <script>
+    (function () {
+      var glossaryBtn = document.getElementById("glossary-btn");
+      var preciseBtn = document.getElementById("precise-btn");
+      var glossary = document.getElementById("glossary");
+      var note = document.getElementById("glossary-note");
+      var precise = false;
+
+      function paint() {
+        document.querySelectorAll(".swap").forEach(function (node) {
+          var next = precise ? node.getAttribute("data-precise") : node.getAttribute("data-easy");
+          if (next) node.textContent = next;
+        });
+        preciseBtn.setAttribute("aria-pressed", precise ? "true" : "false");
+        glossaryBtn.setAttribute("aria-expanded", glossary.hasAttribute("hidden") ? "false" : "true");
+        note.textContent = precise
+          ? "Precise names. Each line is the same rule, said with the narrower word."
+          : "Easy read. The eight words of the book, in order.";
+      }
+
+      glossaryBtn.addEventListener("click", function () {
+        if (glossary.hasAttribute("hidden")) glossary.removeAttribute("hidden");
+        else glossary.setAttribute("hidden", "");
+        paint();
+      });
+
+      preciseBtn.addEventListener("click", function () {
+        precise = !precise;
+        paint();
+      });
+    })();
+  </script>
 </body>
 </html>
