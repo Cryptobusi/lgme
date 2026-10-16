@@ -9,15 +9,16 @@
 
 ## Live check
 
-The page at https://lgme.app answers.
+Checked 16 October 2026. https://lgme.app answers. Home returned. The snapshot returned.
 
-Glossary and Precise sit next to each other at the top.
+Production is main 1936d1d. Glossary and Precise sit next to each other at the top, before the fishbowl.
 
 - Glossary opens the eight words. Easy read is the first paint.
 - Precise swaps those names for the narrower words, in the glossary and in the order.
 - Floor stays Floor until Precise is pressed.
+- The companion book, www.egonomicanonymous.live, also answers.
 
-No new mint. Floor stays senior. An unpublished change is not a change.
+No new mint. Floor stays senior. An unpublished change is not a change. This file is the check.
 
 ---
 
