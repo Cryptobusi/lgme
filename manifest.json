@@ -2,27 +2,24 @@
   "name": "lgme",
   "short_name": "lgme",
   "description": "Public bookkeeping and visibility rules. The person is the third seat.",
+  "id": "/",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#10140f",
   "theme_color": "#39e36a",
   "icons": [
     {
-      "src": "/seals/legomiego-burst.jpg",
-      "sizes": "512x512",
-      "type": "image/jpeg",
-      "purpose": "any"
-    },
-    {
-      "src": "/seals/hederica.jpg",
+      "src": "/icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/seals/legomiego-coin.jpg",
-      "sizes": "180x180",
-      "type": "image/jpeg"
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }

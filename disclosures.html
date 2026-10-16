@@ -3,6 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#39e36a" />
+  <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
   <title>Disclosures · lgme</title>
   <meta name="description" content="What lgme is and is not: commentary and research, not an offer, not investment advice." />
   <style>
@@ -38,5 +42,8 @@
   <p class="muted">Questions or corrections: <a href="https://x.com/Trancesage">@Trancesage</a> on X.</p>
 
   <p class="muted" style="margin-top: 3rem;"><a href="https://www.egonomicanonymous.live/disclosures">Egonomic Anonymous disclosures</a></p>
+  <script>
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");
+  </script>
 </body>
 </html>
