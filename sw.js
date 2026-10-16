@@ -1,6 +1,6 @@
 // lgme.app shell. HTML is fetched from the network first so a published change shows.
 // The cache is the offline copy.
-const CACHE_NAME = "lgme-v4";
+const CACHE_NAME = "lgme-v5";
 const SHELL = [
   "/",
   "/manifest.json",
