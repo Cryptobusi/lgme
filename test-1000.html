@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>1000 Seniors — 6 Months — lgme</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600&display=swap" />
+  <style>
+    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; --panel:#141a13; }
+    body { background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; font-size:1.05rem; line-height:1.6; max-width:56rem; margin:0 auto; padding:1.5rem 1.25rem 4rem; }
+    .kicker { font-size:0.72rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--gold); margin:0; }
+    h1,h2 { font-family:Newsreader,serif; font-weight:500; }
+    h1 { font-size:clamp(1.8rem,5vw,2.8rem); margin:0.4rem 0 0.6rem; }
+    h2 { font-size:1.6rem; margin:1.6rem 0 0.5rem; }
+    .muted { color:var(--muted); }
+    a { color:var(--fg); } a:hover { color:var(--gold); }
+    table { width:100%; border-collapse:collapse; margin:0.8rem 0; }
+    th,td { text-align:left; padding:0.45rem 0.35rem; border-bottom:1px solid var(--line); }
+    th { color:var(--fg); } td { color:var(--muted); }
+    .dash { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:1rem; margin:0.8rem 0; }
+    .chart { display:flex; align-items:flex-end; gap:8px; height:180px; margin:1rem 0; padding:0 0.5rem; }
+    .bar { flex:1; background:var(--gold); border-radius:4px 4px 0 0; min-height:4px; position:relative; }
+    .bar span { position:absolute; bottom:-1.4rem; left:0; right:0; text-align:center; font-size:0.75rem; color:var(--muted); }
+  </style>
+</head>
+<body>
+  <p class="kicker">lgme · 20 October 2026 · 6-month mock run</p>
+  <h1>1000 Seniors — 6 Months</h1>
+  <p class="muted"><a href="/">← Back to status</a> · <a href="/summary-test">Summary</a></p>
+
+  <h2>Directive and parameters</h2>
+  <div class="dash">
+    <p><strong>Directive:</strong> Apply the lgme mock model for 6 months (180 days).</p>
+    <ul>
+      <li>1,000 nursing-home seniors with mocked names and prefilled assets.</li>
+      <li>Coins issued relative to prefilled asset values.</li>
+      <li>200 typical services and goods (email/computer/phone help, rides, medication reminders, companionship, tech troubleshooting, etc.).</li>
+      <li>All exchanges taped. Floor stays senior. An unpublished change is not a change.</li>
+    </ul>
+  </div>
+
+  <h2>Beginning dashboard</h2>
+  <div class="dash">
+    <p>Population: <strong>1,000</strong></p>
+    <p>Total coins issued: <strong>34,473</strong></p>
+    <p>Average coins: <strong>34.5</strong></p>
+  </div>
+
+  <h2>6-month summary</h2>
+  <div class="dash">
+    <p>Total exchanges taped: <strong>12,221</strong></p>
+    <p>Total value created & recorded: <strong>154,373 units</strong></p>
+    <p>Coins moved: <strong>38,593</strong></p>
+    <p>Average daily exchanges: <strong>67.9</strong></p>
+  </div>
+
+  <h2>Monthly value recorded (simple chart)</h2>
+  <div class="chart">
+<div class="bar" style="height:155px;"><span>M1</span></div>
+<div class="bar" style="height:148px;"><span>M2</span></div>
+<div class="bar" style="height:160px;"><span>M3</span></div>
+<div class="bar" style="height:142px;"><span>M4</span></div>
+<div class="bar" style="height:151px;"><span>M5</span></div>
+<div class="bar" style="height:147px;"><span>M6</span></div>
+  </div>
+  <p class="muted">Monthly recorded value (units). Highest month sets the scale.</p>
+
+  <h2>End dashboard — after 6 months</h2>
+  <div class="dash">
+    <p>Total coins held: <strong>34,473</strong> (exactly conserved)</p>
+    <p>Total services given: <strong>12,221</strong></p>
+    <p>Total value created: <strong>154,373 units</strong></p>
+  </div>
+
+  <h2>Aggregate comparison — protocol vs regular</h2>
+  <div class="dash">
+    <p>Recorded value under protocol: <strong>154,373 units</strong></p>
+    <p>Estimated under regular circumstances: <strong>104,974 units</strong></p>
+    <p>Productivity gain: <strong>49,399 units (32.0%)</strong></p>
+  </div>
+  <h3>Equivalent values</h3>
+  <ul>
+    <li>Total value created: <strong>154,373 coin-units / $154,373</strong></li>
+    <li>Productivity gain: <strong>49,399 coin-units / $49,399</strong></li>
+  </ul>
+  <p class="muted">Floor stays senior. Every act shown on the tape. Charge named and kept separate.</p>
+
+  <p class="muted" style="margin-top:2rem;"><a href="/">← Back to lgme</a> · <a href="/summary-test">Summary of all cases</a></p>
+  <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");</script>
+</body>
+</html>
