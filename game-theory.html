@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Game Theory — lgme</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600&display=swap" />
+  <style>
+    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; --panel:#141a13; }
+    body { background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; font-size:1.05rem; line-height:1.6; max-width:56rem; margin:0 auto; padding:1.5rem 1.25rem 4rem; }
+    .kicker { font-size:0.72rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--gold); margin:0; }
+    h1,h2 { font-family:Newsreader,serif; font-weight:500; }
+    h1 { font-size:clamp(1.8rem,5vw,2.8rem); margin:0.4rem 0 0.6rem; }
+    h2 { font-size:1.6rem; margin:1.6rem 0 0.5rem; }
+    .muted { color:var(--muted); }
+    a { color:var(--fg); } a:hover { color:var(--gold); }
+    .dash { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:1rem; margin:0.8rem 0; }
+    table { width:100%; border-collapse:collapse; margin:0.8rem 0; }
+    th,td { text-align:left; padding:0.45rem 0.35rem; border-bottom:1px solid var(--line); }
+    th { color:var(--fg); } td { color:var(--muted); }
+  </style>
+</head>
+<body>
+  <p class="kicker">lgme · 20 October 2026 · game theory</p>
+  <h1>Game Theory — Coordination under Floor-first rules</h1>
+  <p class="muted"><a href="/">← Back to status</a> · <a href="/summary-test">Summary</a></p>
+
+  <h2>Directive</h2>
+  <div class="dash">
+    <p>Treat the lgme rules as a coordination game. Floor stays senior. Named credit, public tape, charge separate, third-seat refusal. An unpublished change is not a change.</p>
+    <p>Show how the rules change the payoff structure relative to ordinary private or thin-room bargaining.</p>
+  </div>
+
+  <h2>Core game elements</h2>
+  <table>
+    <thead><tr><th>Element</th><th>Ordinary condition</th><th>lgme rule</th></tr></thead>
+    <tbody>
+      <tr><td>Focal point</td><td>Price or status of the thicker room</td><td>Floor (named, senior, untouched)</td></tr>
+      <tr><td>Information</td><td>Private or one-sided</td><td>Public tape — every act shown</td></tr>
+      <tr><td>Credibility</td><td>Reputation or repeated play</td><td>Third-seat refusal + constitutive tape</td></tr>
+      <tr><td>Side payments</td><td>Often folded into the rate</td><td>Charge named and kept separate</td></tr>
+      <tr><td>Deviation cost</td><td>Low if unobserved</td><td>High — unpublished change is not a change</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Simple 2-player illustration</h2>
+  <div class="dash">
+    <p><strong>Players:</strong> Giver and Receiver.</p>
+    <p><strong>Actions:</strong> Name the exchange and tape it, or attempt a private/off-tape deal.</p>
+    <ul>
+      <li>Both tape → exchange clears at Floor terms; coins move; value recorded.</li>
+      <li>One tapes, one does not → third seat refuses; no line written.</li>
+      <li>Neither tapes → ordinary private deal (possible leakage, no public record).</li>
+    </ul>
+    <p>Under the rules the mutual-tape outcome is the unique equilibrium that survives third-seat refusal. Private deviation yields zero recorded value and can be refused.</p>
+  </div>
+
+  <h2>Coordination result</h2>
+  <div class="dash">
+    <p>The public tape + third-seat refusal converts a multi-equilibrium bargaining game into a single focal equilibrium: name it, show it, clear it at Floor.</p>
+    <p>Ordinary conditions leave residual, thin-room pricing, and unshown favors. The protocol removes those strategies by making them write nothing.</p>
+    <p>Result across the earlier mock runs: coins conserved, value only from taped acts, gain versus ordinary capture rate left as a modeling choice.</p>
+  </div>
+
+  <h2>Parameters used in prior tests</h2>
+  <ul>
+    <li>Populations: 300 students, 1,000 seniors, 5,000 seniors</li>
+    <li>Horizon: 180 days</li>
+    <li>Services: 50–250 named goods and acts</li>
+    <li>Coins issued relative to prefilled assets</li>
+    <li>All exchanges required to be named and taped</li>
+  </ul>
+
+  <p class="muted">Floor stays senior. Same rules bind state, firm, and person. If it cannot be shown, it is not policy.</p>
+  <p class="muted" style="margin-top:2rem;"><a href="/">← Back to lgme</a></p>
+  <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");</script>
+</body>
+</html>
