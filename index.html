@@ -4,28 +4,174 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#0c100c" />
-  <title>lgme — Floor stays senior</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600&display=swap" />
+  <meta name="theme-color" content="#39e36a" />
+  <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+  <title>lgme</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;1,6..72,500&display=swap" />
   <style>
-    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; --panel:#141a13; }
-    body { background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; font-size:1.05rem; line-height:1.6; max-width:56rem; margin:0 auto; padding:1.5rem 1.25rem 4rem; }
-    .kicker { font-size:0.72rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--gold); margin:0; }
-    h1,h2 { font-family:Newsreader,serif; font-weight:500; }
-    nav a { margin-right:1rem; }
-    a { color:var(--fg); } a:hover { color:var(--gold); }
-    .muted { color:var(--muted); }
-    .plates { display:grid; gap:0.75rem; margin:1.15rem 0 0.6rem; }
-    .plates a { display:block; }
-    .plates img { width:100%; height:auto; display:block; border:1px solid var(--line); background:var(--panel); }
-    @media (min-width: 720px) { .plates { grid-template-columns:1fr 1fr; align-items:start; } }
-    #ididit { margin-bottom:2.75rem; padding-bottom:1.5rem; border-bottom:1px solid var(--line); }
-    .topsecret { border: 4px solid #dc2626; background: #1a0a0a; padding: 1.5rem; margin-bottom: 2rem; text-align: center; }
-    .topsecret h2 { color: #f87171; margin: 0 0 0.5rem; }
-    .topsecret .badge { display: inline-block; background: #dc2626; color: white; font-weight: black; padding: 0.25rem 0.75rem; font-size: 0.8rem; letter-spacing: 0.2em; margin-bottom: 1rem; }
+    :root {
+      --bg: #0c100c;
+      --fg: #f4f1e8;
+      --muted: #c5d0c2;
+      --faint: #8ea892;
+      --gold: #c6a15b;
+      --line: #2c352b;
+      --panel: #141a13;
+    }
+    * { box-sizing: border-box; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: Figtree, sans-serif;
+      font-size: 1.05rem;
+      line-height: 1.6;
+      max-width: 46rem;
+      margin: 0 auto;
+      padding: 1.5rem 1.25rem 4rem;
+    }
+    .kicker {
+      margin: 0;
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+    h1, h2 { font-family: Newsreader, serif; font-weight: 500; letter-spacing: -0.02em; }
+    h1 { font-size: clamp(2.4rem, 7vw, 3.7rem); line-height: 1.02; margin: 0.6rem 0 0; }
+    h2 { font-size: clamp(1.8rem, 4vw, 2.35rem); line-height: 1.12; margin: 0.4rem 0 0.9rem; }
+    p { margin: 0.85rem 0; }
+    .muted { color: var(--muted); }
+    a { color: var(--fg); text-underline-offset: 0.22em; }
+    a:hover { color: var(--gold); }
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem 0.9rem;
+      margin: 1.6rem 0 1.4rem;
+      font-size: 0.92rem;
+    }
+    nav a { color: var(--muted); text-decoration: none; padding: 0.35rem 0; }
+    nav a:hover { color: var(--gold); }
+    .fishbowl {
+      display: block;
+      width: 100%;
+      height: auto;
+      margin: 0 0 1.75rem;
+      background: #000;
+      border: 1px solid #3d3424;
+      border-radius: 16px;
+      box-shadow: 0 28px 70px #000a;
+    }
+    section { border-top: 1px solid var(--line); margin-top: 2.75rem; padding-top: 2.25rem; }
+    ol { margin: 0.6rem 0 1rem; padding-left: 1.2rem; }
+    ol li { margin: 0.35rem 0; padding-left: 0.2rem; }
+    ol li::marker { color: var(--gold); }
+    .disclaimer {
+      border-left: 2px solid var(--gold);
+      padding: 0.2rem 0 0.2rem 1rem;
+      margin: 1.25rem 0;
+      color: #e4d3a2;
+    }
+    code { font-family: ui-monospace, monospace; font-size: 0.88em; color: var(--fg); background: var(--panel); padding: 0.08em 0.35em; border-radius: 4px; }
+    .coin {
+      display: block;
+      width: min(22rem, 100%);
+      height: auto;
+      margin: 3rem auto 0;
+      background: #000;
+      border: 1px solid #3d3424;
+      border-radius: 16px;
+      box-shadow: 0 28px 70px #000a;
+    }
+    strong { font-weight: 600; color: var(--fg); }
+    ::selection { background: var(--gold); color: var(--bg); }
+    .tools {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: stretch;
+      gap: 0.6rem;
+      margin: 0 0 1.25rem;
+    }
+    .pair {
+      display: flex;
+      width: fit-content;
+      margin: 0;
+      border: 1px solid var(--line);
+    }
+    .tools > button,
+    .pair button {
+      appearance: none;
+      background: transparent;
+      color: var(--muted);
+      border: 0;
+      border-right: 1px solid var(--line);
+      font: inherit;
+      font-size: 0.92rem;
+      padding: 0.55rem 0.95rem;
+      min-height: 44px;
+      cursor: pointer;
+    }
+    .tools > button {
+      border: 1px solid var(--line);
+    }
+    .pair button:last-child { border-right: 0; }
+    .tools > button:hover,
+    .pair button:hover { color: var(--gold); }
+    .pair button[aria-pressed="true"],
+    .tools > button[aria-expanded="true"] {
+      background: var(--fg);
+      color: var(--bg);
+    }
+    .pair button[aria-pressed="true"]:hover,
+    .tools > button[aria-expanded="true"]:hover { color: var(--bg); }
+    #glossary { margin-top: 0; border-top: 0; padding-top: 0.2rem; }
+    #glossary[hidden] { display: none; }
+    .map { width: 100%; border-collapse: collapse; margin: 1rem 0 0.4rem; }
+    .map th, .map td { text-align: left; padding: 0.55rem 0.35rem; border-bottom: 1px solid var(--line); vertical-align: baseline; }
+    .map th { color: var(--fg); font-weight: 600; }
+    .map td:first-child, .map th:first-child { width: 7.5rem; }
+    .map td { color: var(--muted); }
+
+    .plates { display: grid; gap: 0.75rem; margin: 1.15rem 0 0.6rem; }
+    .plates a { display: block; }
+    .plates img { width: 100%; height: auto; display: block; border: 1px solid var(--line); background: var(--panel); }
+    @media (min-width: 720px) { .plates { grid-template-columns: 1fr 1fr; align-items: start; } }
+    .topsecret { border: 4px solid #dc2626; background: #1a0a0a; padding: 1.5rem; margin: 0 0 2rem; text-align: center; }
+    .topsecret h2 { color: #f87171; margin: 0 0 0.5rem; font-size: clamp(1.4rem, 3vw, 2rem); }
+    .topsecret .badge { display: inline-block; background: #dc2626; color: white; font-weight: 700; padding: 0.25rem 0.75rem; font-size: 0.8rem; letter-spacing: 0.2em; margin-bottom: 1rem; }
   </style>
 </head>
 <body>
+  <div class="tools">
+    <button type="button" id="glossary-btn" aria-expanded="false" aria-controls="glossary">Glossary</button>
+    <div class="pair" role="group" aria-label="Reading">
+      <button type="button" id="easy-btn" aria-pressed="true">Easy read</button>
+      <button type="button" id="precise-btn" aria-pressed="false">Precise</button>
+    </div>
+  </div>
+  <section id="glossary" hidden>
+    <p class="kicker">Glossary</p>
+    <h2>Eight words</h2>
+    <p class="muted">Easy read keeps the eight book words. Precise swaps each name for the narrower one, including the order line.</p>
+    <table class="map">
+      <thead>
+        <tr><th>Easy read</th><th>Precise</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Floor</td><td>Senior tranche</td></tr>
+        <tr><td>Mint</td><td>Fair launch</td></tr>
+        <tr><td>Issue</td><td>Promissory note</td></tr>
+        <tr><td>Tape</td><td>Audit trail</td></tr>
+        <tr><td>Charge</td><td>Risk-adjusted fee</td></tr>
+        <tr><td>Agent</td><td>Registrar</td></tr>
+        <tr><td>Thin</td><td>Informational spread</td></tr>
+        <tr><td>Desert</td><td>Residual value</td></tr>
+      </tbody>
+    </table>
+    <p class="muted">Each precise line still says what it was, so Floor is not lost. Sentences stay as written.</p>
+  </section>
+
   <section class="topsecret">
     <span class="badge">TOP SECRET PROTOCOL · LATEST</span>
     <h2>Sovereign Provenance Protocol — Individual Seigniorage</h2>
@@ -46,8 +192,13 @@
     </div>
     <p class="muted">Voice of <a href="https://x.com/Trancesage">@Trancesage</a>. Proof on the left. The ego on the right. The full psychoanalytic breakdown is on <a href="https://www.egonomicanonymous.live/psychology">Psychology</a>.</p>
   </section>
-  <p class="kicker">lgme · 21 October 2026</p>
-  <h1>Floor stays senior</h1>
+  <video class="fishbowl" poster="/lgme-fishbowl.jpg" autoplay muted loop playsinline preload="auto" aria-label="Fishbowl">
+    <source src="/lgme-fishbowl.mp4" type="video/mp4" />
+    <img src="/lgme-fishbowl.jpg" alt="Fishbowl." />
+  </video>
+  <p class="kicker">lgme · #LeGoMiEgo</p>
+  <h1>They printed the money. I am keeping the book.</h1>
+
   <nav>
     <a href="#ididit">IDidit</a>
     <a href="#sovereignty">Sovereignty</a>
@@ -68,10 +219,242 @@
     <a href="/test-5000">5000 seniors</a>
     <a href="#close">Close</a>
   </nav>
+
   <p class="muted">Floor stays senior. Same rules bind state, firm, and person. If it cannot be shown, it is not policy.</p>
   <p class="muted">In force — Barrier checks recorded. Residual, mint window, Floor change, agent action, and single-seat exception all closed under prior naming, default-closed, Floor seniority, constitutive tape, and seat symmetry.</p>
-  <!-- remaining sections preserved from live site -->
+  <p class="muted">L2 in force — Amendment path cannot be shortened in the same act. One full public cycle and a second independent reading required. An attempt to waive writes nothing.</p>
+
+
+  <section id="sovereignty">
+    <p class="kicker">Sovereignty</p>
+    <h2>Final and absolute authority</h2>
+    <p class="muted">Sovereignty simply means final and absolute authority. Therefore, those who have it are not subject to any outside authority on Earth.</p>
+    <p class="muted">The Declaration of Independence was the ultimate expression of the sovereignty of the people. This is exactly what Thomas Jefferson was expressing when he wrote, “Governments are instituted among Men, deriving their just powers from the consent of the governed.”</p>
+    <p class="muted">The people have the ultimate authority. The government is an agent of the people. The sovereign people can therefore “alter or abolish” the government as they see fit and institute a new government, “laying its foundation on such principles and organizing its powers in such form, as to them shall seem most likely to effect their Safety and Happiness.”</p>
+    <p class="muted">In the book the person is the third seat. Same rules bind all three. Sovereignty is the refusal of any line that skipped the order or cannot be shown.</p>
+    <p class="muted"><a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Sovereignty_Jefferson.md">Full note →</a></p>
+  </section>
+
+  <section id="schelling">
+    <p class="kicker">Egonomic restraint</p>
+    <h2>Schelling self-management of profits</h2>
+    <p class="muted">Thomas C. Schelling, “Egonomics, or the Art of Self-Management,” <em>American Economic Review</em> 68(2): 290–294 (1978).</p>
+    <p class="muted">The person is two selves in conflict. The present self prefers immediate extraction; the future self prefers durable rules. Preferences reverse, so pure intention fails. The remedy is precommitment: external barriers and bright-line rules the present self cannot casually reverse. Schelling’s opening example is the Christmas club account—the bank creates walls that protect the money from the depositor’s own later self.</p>
+    <p class="muted">In lgme the same logic binds profit. Floor Basket is paid first. Mint is public schedule only. Charge and risk are named before residual. Remainder (including zero) is titled. An unpublished change is not a change. These are Schelling barriers. The present self that would widen the spread or privatize the print must violate a visible categorical rule. The person stays the third seat because the protocol has already restrained the profit impulse.</p>
+    <p class="muted">Barrier checks (11 October 2026): residual redefinition, off-schedule mint, instant Floor change, agent-originated value, and single-seat exceptions all fail the test if unstructured. Each is closed by prior naming, default-closed silence, mechanical Floor seniority, constitutive tape, seat symmetry, and slower recorded amendment.</p>
+    <p class="muted"><a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Schelling_Egonomic_Restraint.md">Full summary and citation →</a> · <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Precommitment_One_Page.md">One-page field guide →</a></p>
+  </section>
+
+  <section id="marcum">
+    <p class="kicker">Ego balance</p>
+    <h2>Marcum & Smith — ego as asset or liability</h2>
+    <p class="muted">David Marcum and Steven B. Smith, <em>Egonomics: What Makes Ego Our Greatest Asset (or Most Expensive Liability)</em> (2007/2008).</p>
+    <p class="muted">Four warning signs that ego has become a liability: being comparative, being defensive, showcasing brilliance, seeking acceptance. Three principles that keep it an asset: humility, curiosity, veracity. In credit, senior executives escalate commitment to problem loans because they approved them. The same dynamic appears when an issuer defends a past print or resists a visible correction.</p>
+    <p class="muted">Floor-first, public mint, named residual, and “an unpublished change is not a change” already enforce structural humility and veracity. Curiosity is practiced when every line must be readable in multiple tongues and a missing tongue writes nothing.</p>
+    <p class="muted"><a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Marcum_Smith_Egonomics.md">Full summary and citation →</a></p>
+  </section>
+
+
+  <section id="connecting">
+    <p class="kicker">Three seats</p>
+    <h2>Connecting the seats</h2>
+    <p class="muted">Jefferson: the people hold final and absolute authority. Governments derive just powers from the consent of the governed. The people may alter or abolish.</p>
+    <p class="muted">Schelling: the person is two selves. Precommitment barriers (Floor first, public mint, named charge, titled zero, unpublished change is not a change) protect the book from the people who keep it.</p>
+    <p class="muted">Marcum & Smith: ego is asset or liability. Humility, curiosity, and veracity keep it from defending a past print or redefining residual.</p>
+    <p class="muted">Together the people hold authority, exercise it as refusal of any line that cannot be shown, and make the refusal durable by external barriers and internal balance. Floor stays senior. Same rules bind all three.</p>
+    <p class="muted"><a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Connecting_the_Seats.md">Full connecting note →</a></p>
+  </section>
+
+
+  <section id="order">
+    <p class="kicker">The order</p>
+    <h2>Floor first</h2>
+    <ol class="muted">
+      <li><span class="swap" data-easy="Floor" data-precise="Senior tranche">Floor</span> — Basket paid first from named surplus.</li>
+      <li><span class="swap" data-easy="Mint" data-precise="Fair launch">Mint</span> — Public schedule only. No private window.</li>
+      <li><span class="swap" data-easy="Issue" data-precise="Promissory note">Issue</span> — Named credit. Not cash at the register.</li>
+      <li><span class="swap" data-easy="Tape" data-precise="Audit trail">Tape</span> — Title, mint, lien, conversion, agent act must be shown.</li>
+      <li><span class="swap" data-easy="Charge" data-precise="Risk-adjusted fee">Charge</span> — Discount and risk named before residual.</li>
+      <li><span class="swap" data-easy="Agent" data-precise="Registrar">Agent</span> — Clerk of the rules. Does not mint.</li>
+      <li><span class="swap" data-easy="Thin" data-precise="Informational spread">Thin</span> — Width is information. No invented tight price.</li>
+      <li><span class="swap" data-easy="Desert" data-precise="Residual value">Desert</span> — Remainder titled, including zero.</li>
+    </ol>
+    <p class="muted">An unpublished change is not a change. Same rules bind state, firm, and person.</p>
+    <p class="muted">L2: any change to the amendment path must be posted one full public cycle in advance and confirmed by a second independent reading. An attempt to shorten the cycle writes nothing. <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Nested_Commitment.md">Nested commitment →</a></p>
+  </section>
+
+
+  <section id="third-seat">
+    <p class="kicker">Third seat</p>
+    <h2>The person keeps the book</h2>
+    <p class="muted">State may tax and print. Firm may issue. The person sits beside them and may refuse any line that skipped the order or cannot be shown.</p>
+    <p class="muted">Same rails. Same prices. Same tape. If it cannot be shown, it is not policy. The third seat does not govern the other two. It checks them.</p>
+    <p class="muted">Sovereignty is the refusal. The book is kept.</p>
+
+    <p class="muted">The willow proves the paradox: what appears massive is summoned not from the heavy dark beneath, but from the open air, water, and light caught in sequence. Nothing is spirited away into an unrecorded ledger; every ounce of wood answers to an explicit input before it takes on form.</p>
+    <p class="muted">The human economy, by contrast, has too often run backward—minting quiet claims, clearing liabilities at par behind closed doors, and letting unshown extractions accumulate until the weight lands somewhere else.</p>
+    <p class="muted">The Third Seat insists on the exact discipline of the tree:</p>
+    <ol class="muted">
+      <li>Floor first: Claim only what has already been named and placed on the reserves.</li>
+      <li>Public mint: No private creation outside the visible schedule.</li>
+      <li>Named credit: Valued precisely, refusing false parity.</li>
+      <li>Visible tape: Every act, title, and lien laid out where it can be read.</li>
+    </ol>
+    <p class="muted">What cannot be shown is not growth. The leaf keeps the book, and the book keeps the light.</p>
+    <p class="muted"><a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Willow_Discipline.md">Full note →</a> · <a href="/docs/Willow_Discipline.md" download>Download (MD)</a></p>
+
+  </section>
+
+
+
+  <section id="checks">
+    <p class="kicker">Barrier checks</p>
+    <h2>Ten cases closed</h2>
+    <p class="muted">Cases 1–5 (residual, mint window, Floor change, agent action, single-seat exception) closed by L0/L1. Cases 6–8 (cycle shortening, non-independent reading, cycle redefinition) closed by L2. Case 9 (third-seat refusal) non-contractible. Case 10 (constitutive tape) — an unpublished change is not a change. No remaining private path.</p>
+    <p class="muted"><a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Barrier_Checks.md">Full checks →</a></p>
+  </section>
+
+  <section id="tape">
+    <p class="kicker">Tape</p>
+    <h2>Canonical inscriptions</h2>
+    <p class="muted">The friendly site is the front end. The inscriptions are the source of truth.</p>
+    <p class="muted">Whitepaper — topic: 0.0.10917616 · HRL: <a href="hcs://1/0.0.10917616">hcs://1/0.0.10917616</a><br>Commentary — topic: 0.0.10917607 · HRL: <a href="hcs://1/0.0.10917607">hcs://1/0.0.10917607</a><br>Barrier checks — topic: 0.0.10917585 · HRL: <a href="hcs://1/0.0.10917585">hcs://1/0.0.10917585</a><br>Status snapshot (12 Oct) — topic: 0.0.10917624 · HRL: <a href="hcs://1/0.0.10917624">hcs://1/0.0.10917624</a><br>Enrollment pilot rules — topic: 0.0.10917853 · HRL: <a href="hcs://1/0.0.10917853">hcs://1/0.0.10917853</a><br>Enrollment design note — topic: 0.0.10917981 · HRL: <a href="hcs://1/0.0.10917981">hcs://1/0.0.10917981</a><br>Enrollment example — topic: 0.0.10918058 · HRL: <a href="hcs://1/0.0.10918058">hcs://1/0.0.10918058</a><br>First Person Credentials evaluation — topic: 0.0.10918126 · HRL: <a href="hcs://1/0.0.10918126">hcs://1/0.0.10918126</a><br>True Quadratic Cost — topic: 0.0.10918175 · HRL: <a href="hcs://1/0.0.10918175">hcs://1/0.0.10918175</a><br>Attested utility telemetry schema — topic: 0.0.10918220 · HRL: <a href="hcs://1/0.0.10918220">hcs://1/0.0.10918220</a><br>Accounting fixes implementation outline — topic: 0.0.10918378 · HRL: <a href="hcs://1/0.0.10918378">hcs://1/0.0.10918378</a><br>Epoch parameters — topic: 0.0.10918419 · HRL: <a href="hcs://1/0.0.10918419">hcs://1/0.0.10918419</a><br>Mock second test comparison — topic: 0.0.10918510 · HRL: <a href="hcs://1/0.0.10918510">hcs://1/0.0.10918510</a><br>Status for next follow-up (13 Oct v2) — topic: 0.0.10918678 · HRL: <a href="hcs://1/0.0.10918678">hcs://1/0.0.10918678</a><br>Epoch boundaries & score decay — topic: 0.0.10917935 · HRL: <a href="hcs://1/0.0.10917935">hcs://1/0.0.10917935</a><br>Contract accounting fixes — topic: 0.0.10917944 · HRL: <a href="hcs://1/0.0.10917944">hcs://1/0.0.10917944</a><br>Attested utility inputs — topic: 0.0.10918021 · HRL: <a href="hcs://1/0.0.10918021">hcs://1/0.0.10918021</a><br>Accounting fixes reference — topic: 0.0.10918033 · HRL: <a href="hcs://1/0.0.10918033">hcs://1/0.0.10918033</a><br>Status snapshot (13 Oct) — topic: 0.0.10918042 · HRL: <a href="hcs://1/0.0.10918042">hcs://1/0.0.10918042</a></p>
+    <p class="muted">Checked 16 October 2026. lgme.app answers. Easy read is the default. Precise changes the eight names. The glossary keeps both columns.</p>
+    <p class="muted"><a href="/docs/Status_Snapshot_2026-10-16.md" download>Status snapshot (16 Oct 2026) →</a> · <a href="/docs/Status_for_Next_Followup_2026-10-15.md" download>Status for next follow-up (15 Oct) →</a> · <a href="/docs/Status_Snapshot_2026-10-15.md" download>Status snapshot (15 Oct 2026) →</a> · <a href="/docs/Status_for_Next_Followup_2026-10-13_v2.md" download>Status for next follow-up (13 Oct v2) →</a> · <a href="/docs/Status_Snapshot_2026-10-13.md" download>Status snapshot (13 Oct 2026) →</a> · <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Tape_and_Inscription_Plan.md">Full inscription plan →</a> · <a href="/docs/Tape_and_Inscription_Plan.md" download>Download plan (MD)</a></p>
+  </section>
+
+  <section id="enrollment">
+    <p class="kicker">Enrollment pilot</p>
+    <h2>Verified X handle as temporary test credential</h2>
+    <p class="muted">For the current pilot, a verified X (Twitter) handle linked to a wallet by a signed message is accepted as the soft enrollment signal. The link must be showable on the tape.</p>
+    <div class="disclaimer">
+      <strong>Disclaimer — temporary pilot only.</strong><br>
+      A verified X handle is <em>not</em> proof of unique personhood. One person can control multiple verified accounts; accounts can be bought, sold, or rented; verification is a paid subscription to X, not a uniqueness guarantee. This credential is used solely as a low-friction test to practice the tape-recording pattern. It does not meet the Sybil-resistance requirements of the protocol. It will be revisited and replaced at the next milestone. An unpublished change is not a change.
+    </div>
+    <p class="muted"><strong>Tape entries required:</strong> credential_type (<code>x-verified-handle</code>), handle, wallet, signed_message, signature, timestamp, status. Exact signed-message format is in the design note.</p>
+    <p class="muted"><strong>Current voting formula (test):</strong> simplest square-root form <code>V = √C</code>. Not a true quadratic cost. Temporary only.</p>
+    <p class="muted"><strong>Target (not yet active):</strong> fixed budget of 3 voice credits per month; cost = credits². See True Quadratic Cost note.</p>
+    <p class="muted"><strong>Revisit at next milestone:</strong> (1) X-handle credential, (2) simplest voting formula, (3) manual inscription workflow (evaluate KiloScribe API). All must be replaced or upgraded.</p>
+    <p class="muted"><a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Enrollment_Design_Note.md">Full enrollment design note →</a> · <a href="/docs/Enrollment_Pilot_Rules.md" download>Short pilot rules (MD)</a> · <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Enrollment_Example.md">Public enrollment example →</a> · <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Personhood_First_Person_Credentials.md">First Person Credentials evaluation →</a> · <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/True_Quadratic_Cost.md">True Quadratic Cost (budget 3/month) →</a> · <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Mock_Second_Test_Comparison.md">Mock second test comparison →</a></p>
+  </section>
+
+  <section id="next">
+    <p class="kicker">The Next</p>
+    <h2>Inscribe the canonical set</h2>
+    <p class="muted">Make the book permanent and verifiable. Go to <a href="https://kiloscribe.com">kiloscribe.com</a>, connect a Hedera wallet, and inscribe these files as separate HCS-1 topics (no admin key).</p>
+    <ol class="muted">
+      <li><a href="/docs/Sovereign_Provenance_Protocol_Whitepaper.md" download>Sovereign_Provenance_Protocol_Whitepaper.md</a></li>
+      <li><a href="/docs/Sovereign_Provenance_Protocol_Commentary.md" download>Sovereign_Provenance_Protocol_Commentary.md</a></li>
+      <li><a href="/docs/Barrier_Checks.md" download>Barrier_Checks.md</a></li>
+      <li><a href="/docs/Status_Snapshot_2026-10-13.md" download>Status_Snapshot_2026-10-13.md</a></li>
+      <li><a href="/docs/Enrollment_Pilot_Rules.md" download>Enrollment_Pilot_Rules.md</a> (temporary pilot)</li>
+      <li><a href="/docs/Enrollment_Design_Note.md" download>Enrollment_Design_Note.md</a></li>
+      <li><a href="/docs/Enrollment_Example.md" download>Enrollment_Example.md</a></li>
+      <li><a href="/docs/Personhood_First_Person_Credentials.md" download>Personhood_First_Person_Credentials.md</a></li>
+      <li><a href="/docs/True_Quadratic_Cost.md" download>True_Quadratic_Cost.md</a></li>
+      <li><a href="/docs/Attested_Utility_Telemetry_Schema.md" download>Attested_Utility_Telemetry_Schema.md</a></li>
+      <li><a href="/docs/Accounting_Fixes_Implementation_Outline.md" download>Accounting_Fixes_Implementation_Outline.md</a></li>
+      <li><a href="/docs/Epoch_Parameters_Final.md" download>Epoch_Parameters_Final.md</a></li>
+      <li><a href="/docs/Mock_Second_Test_Comparison.md" download>Mock_Second_Test_Comparison.md</a></li>
+      <li><a href="/docs/Status_for_Next_Followup_2026-10-13_v2.md" download>Status_for_Next_Followup_2026-10-13_v2.md</a></li>
+      <li><a href="/docs/SoverX_LGME_for_Sovereigns.md" download>SoverX_LGME_for_Sovereigns.md</a></li>
+      <li><a href="/docs/SoverX_Presentation.md" download>SoverX_Presentation.md</a></li>
+      <li><a href="/docs/Epoch_Boundaries_and_Score_Decay.md" download>Epoch_Boundaries_and_Score_Decay.md</a></li>
+      <li><a href="/docs/Contract_Accounting_Fixes.md" download>Contract_Accounting_Fixes.md</a></li>
+      <li><a href="/docs/Attested_Utility_Inputs.md" download>Attested_Utility_Inputs.md</a></li>
+      <li><a href="/docs/Accounting_Fixes_Reference.sol" download>Accounting_Fixes_Reference.sol</a></li>
+      <li><a href="/docs/Status_Snapshot_2026-10-15.md" download>Status_Snapshot_2026-10-15.md</a></li>
+      <li><a href="/docs/Willow_Discipline.md" download>Willow_Discipline.md</a></li>
+    </ol>
+    <p class="muted">Steps:</p>
+    <ol class="muted">
+      <li>Open kiloscribe.com and connect your wallet.</li>
+      <li>Choose HCS-1 inscription (no admin key).</li>
+      <li>Upload each file.</li>
+      <li>Review network, fee, and options.</li>
+      <li>Sign and submit.</li>
+      <li>Record the topic ID and HRL (<code>hcs://1/<topic-id></code>).</li>
+      <li>Send the topic IDs here so they can be written into the Tape section.</li>
+    </ol>
+    <p class="muted">Cost is typically well under a few dollars total. The site remains the front end. The inscriptions become the source of truth.</p>
+  </section>
+
+  <section id="future">
+    <p class="kicker">Future development considered</p>
+    <h2>Permanent & verifiable storage options</h2>
+    <p class="muted">Reference evaluation of options for making the book (protocol documents, barrier checks, rule snapshots, and utility attestations) permanent, verifiable, and resistant to silent revision.</p>
+    <p class="muted">Options reviewed: KiloScribe (Hedera HCS / Hashinals), Arweave, IPFS, and Filecoin. Ranking for lgme-scale needs places KiloScribe first as the practical default for an ordered, low-cost, non-renewable tape, with Arweave as a strong complementary permanence layer.</p>
+    <p class="muted"><a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Future_Development_Considered_Storage_Options.md">Full comparison note →</a> · <a href="/docs/Future_Development_Considered_Storage_Options.md" download>Download (MD)</a></p>
+    <p class="muted"><a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Enrollment_Design_Note.md">Enrollment & Sybil resistance design note →</a> · <a href="/docs/Enrollment_Design_Note.md" download>Download (MD)</a></p>
+    <p class="muted"><a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Epoch_Boundaries_and_Score_Decay.md">Epoch boundaries and score decay →</a> · <a href="/docs/Epoch_Boundaries_and_Score_Decay.md" download>Download (MD)</a></p>
+    <p class="muted"><a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Contract_Accounting_Fixes.md">Contract accounting fixes →</a> · <a href="/docs/Contract_Accounting_Fixes.md" download>Download (MD)</a></p>
+    <p class="muted"><a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Attested_Utility_Inputs.md">Attested utility inputs →</a> · <a href="/docs/Attested_Utility_Inputs.md" download>Download (MD)</a></p>
+    <p class="muted"><a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Accounting_Fixes_Reference.sol">Accounting fixes reference (Solidity) →</a> · <a href="/docs/Accounting_Fixes_Reference.sol" download>Download (SOL)</a></p>
+    <p class="muted"><a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Personhood_First_Person_Credentials.md">First Person Credentials evaluation →</a> · <a href="/docs/Personhood_First_Person_Credentials.md" download>Download (MD)</a></p>
+    <p class="muted"><a href="https://github.com/Cryptobusi/lgme/blob/main/docs/True_Quadratic_Cost.md">True Quadratic Cost (budget 3/month) →</a> · <a href="/docs/True_Quadratic_Cost.md" download>Download (MD)</a></p>
+    <p class="muted"><a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Attested_Utility_Telemetry_Schema.md">Attested utility telemetry schema →</a> · <a href="/docs/Attested_Utility_Telemetry_Schema.md" download>Download (MD)</a></p>
+    <p class="muted"><a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Accounting_Fixes_Implementation_Outline.md">Accounting fixes implementation outline →</a> · <a href="/docs/Accounting_Fixes_Implementation_Outline.md" download>Download (MD)</a></p>
+    <p class="muted"><a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Epoch_Parameters_Final.md">Epoch parameters →</a> · <a href="/docs/Epoch_Parameters_Final.md" download>Download (MD)</a></p>
+    <p class="muted"><a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Mock_Second_Test_Comparison.md">Mock second test comparison →</a> · <a href="/docs/Mock_Second_Test_Comparison.md" download>Download (MD)</a></p>
+    <p class="muted"><a href="https://github.com/Cryptobusi/lgme/blob/main/docs/SoverX_LGME_for_Sovereigns.md">SoverX — LGME for Sovereigns →</a> · <a href="/soverx.html">Trial mock app →</a> · <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/SoverX_Presentation.md">Presentation →</a></p>
+    <div class="panel">
+      <p class="kicker">Layman example — attested utility</p>
+      <p>Imagine a small group of developers deciding who gets a share of a monthly bounty.</p>
+      <p>Without attestation Alice simply claims “I did 80% of the work.” With the telemetry schema a designated measurement topic posts a signed observation to the tape containing <code>objectiveUtility: 0.75</code> and <code>peerConsensusScore: 0.80</code>. Anyone can check that the signature matches the published attestor for that month. Alice cannot change the numbers after the fact. An unpublished utility number is not a number.</p>
+    </div>
+  </section>
+
+  <section id="close">
+    <p class="kicker">Close</p>
+    <h2>The book is kept</h2>
+    <p class="muted">Floor stays senior. Same rules bind state, firm, and person. An unpublished change is not a change. If it cannot be shown, it is not policy.</p>
+    <p class="muted">The person is the third seat. Sovereignty is the refusal. The barriers hold.</p>
+  </section>
+
+
+  <p class="muted" style="margin-top: 2rem;">Companion book: <a href="https://www.egonomicanonymous.live">egonomicanonymous.live</a> — sovereignty is the refusal.</p>
+  <p class="muted"><a href="/spp">Sovereign Provenance Protocol</a> · <a href="https://www.egonomicanonymous.live">egonomicanonymous.live</a> · <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Connecting_the_Seats.md">Connecting the seats</a> · <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Precommitment_One_Page.md">Precommitment one-page</a> · <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Barrier_Checks.md">Barrier checks</a> · <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Nested_Commitment.md">Nested commitment</a> · <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Future_Development_Considered_Storage_Options.md">Future development considered (storage)</a> · <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Tape_and_Inscription_Plan.md">Tape plan</a> · <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Enrollment_Design_Note.md">Enrollment note</a> · <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Torque_of_the_Book.md">Torque of the Book</a> · <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Krakauer_Non_Ergodicity.md">Krakauer non-ergodicity</a> · <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Tangent_Highly_Speculative.md">Tangent / Highly Speculative</a></p>
+
+  <video class="coin" poster="/legomiego-coin.jpg" autoplay muted loop playsinline preload="auto" aria-label="Egonomic Anonymous coin. #legomiego.">
+    <source src="/legomiego-coin.mp4" type="video/mp4" />
+  </video>
+
   <p class="muted" style="margin-top: 2rem;"><a href="#sovereignty">Back to top</a></p>
+  <script>
+    (function () {
+      var glossaryBtn = document.getElementById("glossary-btn");
+      var easyBtn = document.getElementById("easy-btn");
+      var preciseBtn = document.getElementById("precise-btn");
+      var glossary = document.getElementById("glossary");
+      var precise = false;
+
+      function paint() {
+        document.querySelectorAll(".swap").forEach(function (node) {
+          var next = precise ? node.getAttribute("data-precise") : node.getAttribute("data-easy");
+          if (next) node.textContent = next;
+        });
+        easyBtn.setAttribute("aria-pressed", precise ? "false" : "true");
+        preciseBtn.setAttribute("aria-pressed", precise ? "true" : "false");
+        glossaryBtn.setAttribute("aria-expanded", glossary.hasAttribute("hidden") ? "false" : "true");
+      }
+
+      glossaryBtn.addEventListener("click", function () {
+        if (glossary.hasAttribute("hidden")) glossary.removeAttribute("hidden");
+        else glossary.setAttribute("hidden", "");
+        paint();
+      });
+
+      easyBtn.addEventListener("click", function () {
+        precise = false;
+        paint();
+      });
+
+      preciseBtn.addEventListener("click", function () {
+        precise = true;
+        paint();
+      });
+    })();
+  </script>
   <script>
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");
   </script>
