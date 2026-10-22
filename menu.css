@@ -1,0 +1,18 @@
+.deskmenu {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.9rem;
+  margin: 0 0 1.25rem;
+  padding: 0.45rem 0 0.7rem;
+  background: #0c100c;
+  border-bottom: 1px solid #2c352b;
+  font-size: 0.92rem;
+}
+.deskmenu a {
+  color: #c5d0c2;
+  text-decoration: none;
+}
+.deskmenu a:hover { color: #c6a15b; }

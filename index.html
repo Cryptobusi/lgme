@@ -45,10 +45,16 @@
     a { color: var(--fg); text-underline-offset: 0.22em; }
     a:hover { color: var(--gold); }
     nav {
+      position: sticky;
+      top: 0;
+      z-index: 5;
       display: flex;
       flex-wrap: wrap;
       gap: 0.35rem 0.9rem;
-      margin: 1.6rem 0 1.4rem;
+      margin: 0 0 1.4rem;
+      padding: 0.35rem 0 0.7rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--line);
       font-size: 0.92rem;
     }
     nav a { color: var(--muted); text-decoration: none; padding: 0.35rem 0; }
@@ -143,12 +149,29 @@
   </style>
 </head>
 <body>
+  <nav>
+    <a href="#ididit">IDidit</a>
+    <a href="/hederica">Hederica</a>
+    <a href="#sovereignty">Sovereignty</a>
+    <a href="#schelling">Egonomic restraint</a>
+    <a href="#marcum">Ego balance</a>
+    <a href="#connecting">Connecting</a>
+    <a href="#order">The order</a>
+    <a href="#third-seat">Third seat</a>
+    <a href="#checks">Checks</a>
+    <a href="#tape">Tape</a>
+    <a href="#enrollment">Enrollment pilot</a>
+    <a href="#next">The Next</a>
+    <a href="#future">Future development</a>
+    <a href="/game-theory">Game theory</a>
+    <a href="/summary-test">Summary test</a>
+    <a href="/test-300">Test 300 students</a>
+    <a href="/test-1000">1000 seniors 30 days</a>
+    <a href="/test-5000">5000 seniors</a>
+    <a href="#close">Close</a>
+  </nav>
   <div class="tools">
     <button type="button" id="glossary-btn" aria-expanded="false" aria-controls="glossary">Glossary</button>
-    <div class="pair" role="group" aria-label="Reading">
-      <button type="button" id="easy-btn" aria-pressed="true">Easy read</button>
-      <button type="button" id="precise-btn" aria-pressed="false">Precise</button>
-    </div>
   </div>
   <section id="glossary" hidden>
     <p class="kicker">Glossary</p>
@@ -216,27 +239,6 @@
   <p class="kicker">lgme · #LeGoMiEgo</p>
   <h1>They printed the money. I am keeping the book.</h1>
 
-  <nav>
-    <a href="#ididit">IDidit</a>
-    <a href="#hederica">Hederica</a>
-    <a href="#sovereignty">Sovereignty</a>
-    <a href="#schelling">Egonomic restraint</a>
-    <a href="#marcum">Ego balance</a>
-    <a href="#connecting">Connecting</a>
-    <a href="#order">The order</a>
-    <a href="#third-seat">Third seat</a>
-    <a href="#checks">Checks</a>
-    <a href="#tape">Tape</a>
-    <a href="#enrollment">Enrollment pilot</a>
-    <a href="#next">The Next</a>
-    <a href="#future">Future development</a>
-    <a href="/game-theory">Game theory</a>
-    <a href="/summary-test">Summary test</a>
-    <a href="/test-300">Test 300 students</a>
-    <a href="/test-1000">1000 seniors 30 days</a>
-    <a href="/test-5000">5000 seniors</a>
-    <a href="#close">Close</a>
-  </nav>
 
   <p class="muted">Floor stays senior. Same rules bind state, firm, and person. If it cannot be shown, it is not policy.</p>
   <p class="muted">In force — Barrier checks recorded. Residual, mint window, Floor change, agent action, and single-seat exception all closed under prior naming, default-closed, Floor seniority, constitutive tape, and seat symmetry.</p>
@@ -441,35 +443,11 @@
   <script>
     (function () {
       var glossaryBtn = document.getElementById("glossary-btn");
-      var easyBtn = document.getElementById("easy-btn");
-      var preciseBtn = document.getElementById("precise-btn");
       var glossary = document.getElementById("glossary");
-      var precise = false;
-
-      function paint() {
-        document.querySelectorAll(".swap").forEach(function (node) {
-          var next = precise ? node.getAttribute("data-precise") : node.getAttribute("data-easy");
-          if (next) node.textContent = next;
-        });
-        easyBtn.setAttribute("aria-pressed", precise ? "false" : "true");
-        preciseBtn.setAttribute("aria-pressed", precise ? "true" : "false");
-        glossaryBtn.setAttribute("aria-expanded", glossary.hasAttribute("hidden") ? "false" : "true");
-      }
-
       glossaryBtn.addEventListener("click", function () {
         if (glossary.hasAttribute("hidden")) glossary.removeAttribute("hidden");
         else glossary.setAttribute("hidden", "");
-        paint();
-      });
-
-      easyBtn.addEventListener("click", function () {
-        precise = false;
-        paint();
-      });
-
-      preciseBtn.addEventListener("click", function () {
-        precise = true;
-        paint();
+        glossaryBtn.setAttribute("aria-expanded", glossary.hasAttribute("hidden") ? "false" : "true");
       });
     })();
   </script>
