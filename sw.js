@@ -1,5 +1,5 @@
-// lgme.app shell. HTML and the gated proof image always come from the network.
-const CACHE_NAME = "lgme-v6";
+// lgme.app shell. HTML is fetched from the network first so a published change shows.
+const CACHE_NAME = "lgme-v7";
 const SHELL = [
   "/",
   "/manifest.json",
@@ -30,19 +30,12 @@ function isHtml(request, url) {
   return request.mode === "navigate" || url.pathname === "/" || url.pathname.endsWith(".html");
 }
 
-function isGated(url) {
-  return url.pathname === "/ididit-proof.jpg" || url.pathname === "/api/proof";
-}
-
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET") return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-  if (/\.(mp4|webm)$/i.test(url.pathname) || isGated(url)) {
-    event.respondWith(fetch(request));
-    return;
-  }
+  if (/\.(mp4|webm)$/i.test(url.pathname)) return;
 
   if (isHtml(request, url)) {
     event.respondWith(
