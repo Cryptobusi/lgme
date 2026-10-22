@@ -1,3 +1,11 @@
 {
-  "cleanUrls": true
+  "cleanUrls": true,
+  "redirects": [{ "source": "/private/:file", "destination": "/404", "permanent": false }],
+  "rewrites": [{ "source": "/ididit-proof.jpg", "destination": "/api/proof" }],
+  "functions": {
+    "api/proof.js": {
+      "includeFiles": "private/ididit-proof.jpg",
+      "maxDuration": 10
+    }
+  }
 }

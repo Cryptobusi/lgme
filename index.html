@@ -18,9 +18,10 @@
     .plates { display:grid; gap:0.75rem; margin:1.15rem 0 0.6rem; }
     .plates a { display:block; }
     .plates img { width:100%; height:auto; display:block; border:1px solid var(--line); background:var(--panel); }
-    .gate { border:1px solid var(--line); background:var(--panel); min-height:14rem; padding:1.25rem 1rem; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.75rem; text-align:center; }
-    .gate input { width:100%; max-width:16rem; box-sizing:border-box; background:var(--bg); color:var(--fg); border:1px solid var(--line); padding:0.75rem; text-align:center; font:inherit; }
-    .gate button, .gate-actions a, .gate-actions button { min-height:2.75rem; background:transparent; color:var(--fg); border:1px solid var(--gold); padding:0.45rem 1rem; font:inherit; cursor:pointer; text-decoration:none; }
+    .gate { border:4px solid #dc2626; background:#1a0a0a; min-height:16rem; padding:1.25rem 1rem; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.75rem; text-align:center; }
+    .gate .stamp { margin:0; color:#f87171; font-family:Newsreader,serif; font-size:1.6rem; letter-spacing:0.14em; text-transform:uppercase; }
+    .gate input { width:100%; max-width:16rem; box-sizing:border-box; background:#0c100c; color:var(--fg); border:1px solid #dc2626; padding:0.75rem; text-align:center; font:inherit; }
+    .gate button, .gate-actions a, .gate-actions button { min-height:2.75rem; background:#dc2626; color:#fff; border:0; padding:0.45rem 1.1rem; font:inherit; font-weight:600; cursor:pointer; text-decoration:none; }
     .gate-actions { display:flex; flex-wrap:wrap; gap:0.6rem; justify-content:center; margin:0.6rem 0 0; }
     .gate .no { color:#f87171; margin:0; }
     @media (min-width: 720px) { .plates { grid-template-columns:1fr 1fr; align-items:start; } }
@@ -44,7 +45,8 @@
     <div class="plates">
       <div id="first-plate">
         <form id="first-gate" class="gate">
-          <p class="kicker">First image</p>
+          <p class="stamp">Password</p>
+          <p class="kicker">First image · view and download</p>
           <input id="first-pass" type="password" placeholder="password" autocomplete="current-password" spellcheck="false" aria-label="Password" />
           <button type="submit">Enter</button>
           <p id="first-no" class="no" hidden>No.</p>
@@ -55,7 +57,7 @@
           </a>
           <p class="gate-actions">
             <button type="button" id="first-view">View</button>
-            <a id="first-down" download="ididit-proof.jpg">Download</a>
+            <a id="first-down" href="/ididit-proof.jpg?download=1" download="ididit-proof.jpg">Download</a>
           </p>
         </div>
       </div>
@@ -93,36 +95,43 @@
   <p class="muted" style="margin-top: 2rem;"><a href="#sovereignty">Back to top</a></p>
   <script>
     (function () {
-      var pass = "thirdseat01e";
       var src = "/ididit-proof.jpg";
-      var key = "lgme-first-image";
       var gate = document.getElementById("first-gate");
       var open = document.getElementById("first-open");
       var img = document.getElementById("first-img");
-      var down = document.getElementById("first-down");
       var field = document.getElementById("first-pass");
       var no = document.getElementById("first-no");
       function reveal() {
         img.src = src;
-        down.href = src;
         gate.hidden = true;
         open.hidden = false;
-        try { sessionStorage.setItem(key, "1"); } catch (e) {}
       }
       document.getElementById("first-view").addEventListener("click", function () {
         window.open(src, "_blank", "noopener");
       });
       gate.addEventListener("submit", function (event) {
         event.preventDefault();
-        if (field.value.trim().toLowerCase() === pass) reveal();
-        else {
+        no.hidden = true;
+        fetch("/api/proof", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ password: field.value })
+        }).then(function (response) {
+          if (!response.ok) throw new Error("no");
+          reveal();
+        }).catch(function () {
           no.hidden = false;
           field.value = "";
-        }
+        });
       });
-      try { if (sessionStorage.getItem(key) === "1") reveal(); } catch (e) {}
+      fetch(src, { credentials: "same-origin", cache: "no-store" }).then(function (response) {
+        if (response.ok) reveal();
+      }).catch(function () {});
     })();
-    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").then(function (reg) { return reg.update(); });
+    }
   </script>
 </body>
 </html>
