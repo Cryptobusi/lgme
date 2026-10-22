@@ -1,5 +1,5 @@
 // lgme.app shell. HTML is fetched from the network first so a published change shows.
-const CACHE_NAME = "lgme-v10";
+const CACHE_NAME = "lgme-v11";
 const SHELL = [
   "/",
   "/manifest.json",
@@ -10,6 +10,7 @@ const SHELL = [
   "/soverx",
   "/disclosures",
   "/hederica",
+  "/charter",
 ];
 
 self.addEventListener("install", (event) => {

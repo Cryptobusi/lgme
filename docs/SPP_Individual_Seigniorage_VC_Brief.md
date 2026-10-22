@@ -1,5 +1,7 @@
 # Sovereign Provenance Protocol (SPP)
 
+> **Status, 22 October 2026.** Archived design research. Not an offer to sell any token or security. Not investment advice. Not the live mission. The live mission is the Hederica charter at [/charter](https://lgme.app/charter) and [egonomicanonymous.live/charter](https://www.egonomicanonymous.live/charter). No exemption is claimed.
+
 ## Disrupting the $100T Global Monetary Base via Cryptographically Enforced Individual Seigniorage
 
 **Prepared For:** Venture Capital & Strategic Infrastructure Partners  
