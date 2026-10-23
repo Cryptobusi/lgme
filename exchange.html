@@ -113,6 +113,17 @@
       if (!kyc || !kyc.name || !kyc.signature) kyc = null;
       try { desk = JSON.parse(localStorage.getItem(DESK_KEY) || "null"); } catch { desk = null; }
       if (!desk || !Array.isArray(desk.listings)) desk = JSON.parse(JSON.stringify(SEED));
+      if (!desk.listings.some((l) => l.kind === "future")) {
+        const futures = [
+          ["Tell me when a furlough date arrives", "A paused payment sits silent after the date."],
+          ["Let me carry this book off this browser", "The desk dies with the browser."],
+          ["Say why a pair is close", "Close pairs show a match and not the shared words."]
+        ];
+        for (const [title, detail] of futures) {
+          desk.listings.push({ id: "future-" + title.slice(0, 12), side: "want", title, detail, category: "Skills", place: "This desk", by: "The desk", mine: true, status: "open", kind: "future", createdAt: Date.now() });
+        }
+      }
+
       ui.phase = kyc ? "desk" : "kyc";
     }
     function save() {
@@ -269,11 +280,11 @@
 
     function deskView() {
       const list = desk.listings.filter(matchList);
-      const haves = list.filter((l) => l.side === "have");
-      const wants = list.filter((l) => l.side === "want");
+      const haves = list.filter((l) => l.side === "have" && l.kind !== "future");
+      const wants = list.filter((l) => l.side === "want" && l.kind !== "future");
       const tabs = [["desk","Desk"],["have","IhavIt"],["want","IwantIT"],["done","IdidIT"]];
       return `<h1>IdidIt</h1>
-        <p class="muted">Checked as ${esc(kyc.name)}. The exchange is under this name.</p>
+        <p class="muted">Checked as ${esc(kyc.handle || kyc.name)}. The beauty is in the eye of the beholder. Functionality is in the user.</p>
         ${ui.toast ? `<p>${esc(ui.toast)}</p>` : ""}
         <div class="row" style="margin:.8rem 0">
           <input id="q" placeholder="Search the desk" value="${esc(ui.query)}" style="max-width:18rem" />
@@ -290,6 +301,9 @@
           ${ui.view !== "want" ? column("IhavIt", "On the table", haves) : ""}
           ${ui.view !== "have" ? column("IwantIT", "Still missing", wants) : ""}
         </div>`}
+        <section style="margin-top:2.5rem;border-top:1px solid var(--line);padding-top:1rem"><p class="kicker">Apart from the swaps</p><h2>Future app improvements</h2><p class="muted">These sit on IwantIT, listed here so they do not mix with what people are trading.</p>
+        ${desk.listings.filter((l) => l.kind === "future").map((l) => `<article style="border-bottom:1px solid var(--line);padding:.8rem 0"><p class="faint">IwantIT · Future</p><h3>${esc(l.title)}</h3><p class="muted">${esc(l.detail)}</p></article>`).join("")}
+        </section>
         <p class="faint" style="margin-top:2rem">This desk stays in this browser.</p>`;
     }
 
@@ -307,15 +321,16 @@
 
     function kycView() {
       return `<h1>IdidIt</h1>
-        <p class="kicker" style="margin-top:1rem">Simple KYC</p>
-        <p class="muted">Name, place, a contact, and a signature. This check stays in this browser. It is not a government ID check.</p>
+        <p class="kicker" style="margin-top:1rem">X handle</p>
+        <p class="muted">The beauty is in the eye of the beholder. Functionality is in the user.</p>
+        <p class="muted">The only check is your X handle. It stays in this browser. X is not asked to confirm it.</p>
         <form id="kyc">
-          <label class="field">Legal name<input name="name" autocomplete="name" required /></label>
-          <label class="field">Place<input name="place" placeholder="City or ward" required /></label>
-          <label class="field">Email or X handle<input name="contact" placeholder="name@mail.com or @handle" required /></label>
-          <p class="field">Signature</p>
-          <canvas class="pad" id="pad" width="640" height="180" aria-label="Signature"></canvas>
-          <label class="check"><input type="checkbox" name="ok" /> <span>I am the person named here.</span></label>
+          <label class="field">X handle<input name="handle" placeholder="@handle" autocomplete="username" required /></label>
+          <p><button type="button" class="btn" data-act="grok">Your Grok</button></p>
+          <div id="grok-box" hidden>
+            <p class="muted">This step: checking the X handle. The help is your own Grok. This desk does not answer for it.</p>
+            <p><a class="btn solid" href="https://grok.com" target="_blank" rel="noreferrer">Open your Grok</a></p>
+          </div>
           <button class="btn solid" style="margin-top:1rem" type="submit">Open the exchange</button>
         </form>`;
     }
@@ -416,6 +431,7 @@
       const el = event.target.closest("[data-act]");
       if (!el) return;
       const act = el.dataset.act;
+      if (act === "grok") { const box = document.getElementById("grok-box"); if (box) box.hidden = !box.hidden; return; }
       if (act === "view") { ui.view = el.dataset.view; ui.showAll = false; render(); return; }
       if (act === "cat") { ui.category = el.dataset.cat; render(); return; }
       if (act === "more") { ui.showAll = !ui.showAll; render(); return; }
@@ -512,17 +528,14 @@
       event.preventDefault();
       if (event.target.id === "kyc") {
         const data = new FormData(event.target);
-        const name = String(data.get("name") || "").trim();
-        const place = String(data.get("place") || "").trim();
-        const contact = String(data.get("contact") || "").trim();
-        if (name.length < 2 || place.length < 2 || contact.length < 3 || !ui.signature || !data.get("ok")) {
-          ui.toast = "Name, place, contact, signature, and the statement are required.";
+        const bare = String(data.get("handle") || "").trim().replace(/^@/, "");
+        if (!/^[A-Za-z0-9_]{1,15}$/.test(bare)) {
           const note = document.createElement("p");
-          note.textContent = ui.toast;
+          note.textContent = "Use an X handle, like @name.";
           event.target.prepend(note);
           return;
         }
-        kyc = { name, place, contact, signature: ui.signature, at: Date.now() };
+        kyc = { name: "@" + bare, handle: "@" + bare, place: "", contact: "@" + bare, at: Date.now() };
         localStorage.setItem(KYC_KEY, JSON.stringify(kyc));
         desk.name = name;
         ui.phase = "desk";
