@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IdidIt · lgme</title>
+  <link rel="icon" href="/icons/icon-192.png" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;1,6..72,500&display=swap" />
+  <style>
+    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --faint:#8ea892; --gold:#c6a15b; --line:#2c352b; --panel:#141a13; }
+    * { box-sizing: border-box; }
+    html { background: var(--bg); color: var(--fg); }
+    body { margin: 0 auto; max-width: 72rem; padding: 1.25rem 1.25rem 4rem; font-family: Figtree, sans-serif; font-size: 1rem; line-height: 1.5; }
+    a { color: var(--fg); }
+    h1, h2, h3 { font-family: Newsreader, serif; font-weight: 500; letter-spacing: -0.02em; margin: 0; }
+    h1 { font-size: clamp(2.6rem, 7vw, 4rem); line-height: 0.95; }
+    h2 { font-size: 1.8rem; }
+    .kicker { margin: 0 0 0.4rem; font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); }
+    .muted { color: var(--muted); }
+    .faint { color: var(--faint); font-size: 0.82rem; }
+    button, input, textarea, select { font: inherit; color: var(--fg); }
+    button { min-height: 44px; cursor: pointer; }
+    input, textarea, select { width: 100%; background: var(--panel); border: 1px solid var(--line); padding: 0.65rem 0.75rem; }
+    textarea { min-height: 5.5rem; }
+    .row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+    .btn { border: 1px solid var(--line); background: transparent; color: var(--fg); padding: 0.55rem 0.9rem; }
+    .btn.solid { background: var(--fg); color: var(--bg); border-color: var(--fg); font-weight: 600; }
+    .btn.solid:hover { background: var(--gold); border-color: var(--gold); color: var(--bg); }
+    .btn[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+    .btn:disabled { opacity: 0.4; }
+    .grid { display: grid; gap: 0.5rem; }
+    .cols { display: grid; gap: 1.5rem; }
+    @media (min-width: 900px) { .cols { grid-template-columns: 1fr 1fr; } .span2 { grid-column: 1 / -1; } }
+    .card { border: 1px solid var(--line); background: var(--panel); padding: 0.9rem 1rem; text-align: left; width: 100%; }
+    .card.on { border-color: var(--fg); }
+    .card img.shot, video { width: 100%; max-height: 11rem; object-fit: cover; margin-top: 0.6rem; background: #000; }
+    img.sign { width: 100%; height: 4.5rem; object-fit: contain; background: var(--bg); border: 1px solid var(--line); margin-top: 0.5rem; }
+    canvas.pad { width: 100%; height: 8rem; touch-action: none; background: var(--bg); border: 1px solid var(--line); margin-top: 0.4rem; }
+    .settle { display: grid; grid-template-columns: 1fr 1fr; gap: 0.45rem; }
+    label.field { display: block; margin-top: 0.8rem; font-size: 0.92rem; }
+    .check { display: flex; gap: 0.6rem; align-items: flex-start; margin-top: 0.9rem; }
+    .check input { width: auto; margin-top: 0.3rem; }
+    hr { border: 0; border-top: 1px solid var(--line); margin: 1.2rem 0; }
+    .back { color: var(--muted); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <p class="kicker">lgme</p>
+  <p><a class="back" href="/">Back to the book</a></p>
+  <div id="app"></div>
+  <script>
+    const KYC_KEY = "lgme-kyc-v1";
+    const DESK_KEY = "lgme-exchange-v1";
+    const CATS = ["Tools","Books","Skills","Kitchen","Plants","Time","Music","Studio","Rides","Care"];
+    const WAYS = [
+      ["settle","Settle","Close the swap now."],
+      ["furlough","Furlough","Pause the payment and keep the pair."],
+      ["tokens","Tokens","Swap the balance for tokens."],
+      ["service","Service","Settle in work, not payment."],
+      ["retire","Retire","Write the balance off."],
+      ["floor","Floor","Contribute it to the floor."],
+      ["receivable","Receivable","Keep it on IhavIt to sell."]
+    ];
+    const STOP = new Set("a an the and or for with to of in on it my your some any from at by is are this that i you we they not but if so as be was were too its also into over per our have has had help looking come one".split(" "));
+    const DAY = 86400000;
+    const ANCHOR = Date.UTC(2026, 9, 18);
+    function esc(value) {
+      return String(value ?? "")
+        .replace(/\u0026/g, "\u0026amp;")
+        .replace(/</g, "\u0026lt;")
+        .replace(/>/g, "\u0026gt;")
+        .replace(/"/g, "\u0026quot;")
+        .replace(/'/g, "\u0026#39;");
+    }
+    const media = (src, kind) => typeof src === "string" && src.startsWith("data:" + kind) ? src : "";
+
+    function item(p) {
+      return { id:p.id, side:p.side, title:p.title, detail:p.detail, category:p.category, place:p.place, by:p.by, mine:false, status:"open", createdAt: ANCHOR - p.age * DAY };
+    }
+    const SEED = {
+      name: "You",
+      pairs: [],
+      done: [
+        { id:"d1", haveTitle:"Ten-inch cast iron skillet", wantTitle:"Pullman loaf pan", haveBy:"Jules", wantBy:"Ivo", category:"Kitchen", note:"Left on the mill step, still warm.", createdAt: Date.UTC(2026,8,28) },
+        { id:"d2", haveTitle:"Fiddle-leaf fig, five feet", wantTitle:"Monstera cutting", haveBy:"Ada", wantBy:"Ren", category:"Plants", note:"Traded at the Saturday stall.", createdAt: Date.UTC(2026,9,4) }
+      ],
+      listings: [
+        item({id:"h1",side:"have",title:"CLA'd Minolta film body",detail:"X-700, meter works, two rolls of HP5 with it. Pickup only.",category:"Studio",place:"River ward",by:"Mara",age:1}),
+        item({id:"h2",side:"have",title:"Twelve-year sourdough starter",detail:"Fed this morning. The jar and a one-page method come with it.",category:"Kitchen",place:"Old mill",by:"Jules",age:2}),
+        item({id:"h3",side:"have",title:"Heirloom tomato starts",detail:"Six plants in newspaper pots. The pots are not part of the deal.",category:"Plants",place:"The yards",by:"Ada",age:0}),
+        item({id:"h4",side:"have",title:"Student cello, three-quarter",detail:"Shop setup, new strings, one owner. Case included.",category:"Music",place:"Station",by:"Lev",age:4}),
+        item({id:"h5",side:"have",title:"54cm steel road bike",detail:"Recently serviced. Lights and a lock come with it.",category:"Rides",place:"North lot",by:"Nia",age:3}),
+        item({id:"h6",side:"have",title:"Tuesday childcare",detail:"From noon to four, one child, my place on the Hill.",category:"Care",place:"Hill",by:"Ada",age:1}),
+        item({id:"h7",side:"have",title:"Japanese pull saw",detail:"Ryoba, plus water stones. I can show the setup once.",category:"Tools",place:"The yards",by:"Ken",age:5}),
+        item({id:"h8",side:"have",title:"Picture books, ages four to seven",detail:"Fourteen bedtime titles, sturdy boards, no scribbles.",category:"Books",place:"Hill",by:"Priya",age:6}),
+        item({id:"w1",side:"want",title:"35mm film enlarger",detail:"Any working enlarger. A spare film body would help the darkroom.",category:"Studio",place:"River ward",by:"Sasha",age:1}),
+        item({id:"w2",side:"want",title:"Active sourdough starter",detail:"Baking a dinner for six and I am starting from nothing.",category:"Kitchen",place:"Station",by:"Ivo",age:0}),
+        item({id:"w3",side:"want",title:"Heirloom tomato seedlings",detail:"For a balcony bed that gets afternoon light.",category:"Plants",place:"Hill",by:"Ren",age:2}),
+        item({id:"w4",side:"want",title:"Cello bow and rosin",detail:"Student size is fine. I already have the cello.",category:"Music",place:"Station",by:"Sasha",age:3}),
+        item({id:"w5",side:"want",title:"54cm steel commuter bike",detail:"A road or commuter, lights welcome.",category:"Rides",place:"North lot",by:"Owen",age:2}),
+        item({id:"w6",side:"want",title:"Tuesday afternoon childcare",detail:"One child, ages covered from three to five. Your place or mine.",category:"Care",place:"Hill",by:"Noor",age:1}),
+        item({id:"w7",side:"want",title:"A pull saw for joinery",detail:"Weekend shelf build. Stones are a bonus if they come too.",category:"Tools",place:"The yards",by:"Bea",age:4}),
+        item({id:"w8",side:"want",title:"Quiet desk for two weekdays",detail:"Near the river, a window if possible, no calls.",category:"Time",place:"River ward",by:"Ren",age:0})
+      ]
+    };
+
+    let kyc = null;
+    let desk = null;
+    const ui = { phase:"kyc", view:"desk", query:"", category:"All", selected:null, showAll:false, choice:{}, tokens:"10", until:"", composer:null, toast:"", review:null };
+
+    function load() {
+      try { kyc = JSON.parse(localStorage.getItem(KYC_KEY) || "null"); } catch { kyc = null; }
+      if (!kyc || !kyc.name || !kyc.signature) kyc = null;
+      try { desk = JSON.parse(localStorage.getItem(DESK_KEY) || "null"); } catch { desk = null; }
+      if (!desk || !Array.isArray(desk.listings)) desk = JSON.parse(JSON.stringify(SEED));
+      ui.phase = kyc ? "desk" : "kyc";
+    }
+    function save() {
+      try { localStorage.setItem(DESK_KEY, JSON.stringify(desk)); } catch { ui.toast = "This browser could not store the picture or video."; }
+    }
+    function words(v) {
+      return String(v).toLowerCase().replace(/[^a-z0-9\s]/g," ").split(/\s+/).filter((w) => w.length > 2 && !STOP.has(w));
+    }
+    function score(h, w) {
+      let s = h.category === w.category ? 3 : 0;
+      const hw = new Set(words(h.title + " " + h.detail));
+      for (const word of words(w.title + " " + w.detail)) if (hw.has(word)) s += 2;
+      return s;
+    }
+    function pairs(focus) {
+      const open = desk.listings.filter((l) => l.status === "open");
+      const rows = [];
+      for (const h of open.filter((l) => l.side === "have")) {
+        for (const w of open.filter((l) => l.side === "want")) {
+          if (focus && focus !== h.id && focus !== w.id) continue;
+          const s = score(h, w);
+          if (s >= (focus ? 3 : 4)) rows.push({ h, w, s });
+        }
+      }
+      rows.sort((a, b) => b.s - a.s || a.h.title.localeCompare(b.h.title));
+      return rows;
+    }
+    function mark(l) {
+      if (l.kind === "floor") return "Floor";
+      if (l.kind === "receivable") return "Receivable";
+      if (l.furloughUntil && l.furloughUntil > Date.now()) return "Furloughed";
+      if (l.status === "held") return "In hand";
+      return l.category;
+    }
+    function wayLabel(id) { return (WAYS.find((w) => w[0] === id) || ["","Settled"])[1]; }
+    function matchList(l) {
+      if (ui.category !== "All" && l.category !== ui.category) return false;
+      const n = ui.query.trim().toLowerCase();
+      if (!n) return true;
+      return (l.title + " " + l.detail + " " + l.by + " " + l.place + " " + l.category + " " + (l.kind || "") + " " + (l.voice || "")).toLowerCase().includes(n);
+    }
+
+    function card(l) {
+      const shot = media(l.photo, "image");
+      const on = ui.selected === l.id ? " on" : "";
+      return `<article class="card${on}" style="margin-bottom:.6rem">
+        <button class="card" data-act="select" data-id="${esc(l.id)}" style="border:0;background:transparent;padding:0">
+          <span class="faint">${esc(mark(l))}</span>
+          ${shot ? `<img class="shot" alt="" src="${shot}" />` : ""}
+          <h3 style="margin-top:.45rem;font-size:1.45rem">${esc(l.title)}</h3>
+          ${l.detail ? `<p class="muted" style="margin:.35rem 0 0">${esc(l.detail)}</p>` : ""}
+          <p class="faint" style="margin:.45rem 0 0">${esc(l.by)} · ${esc(l.place)}</p>
+        </button>
+        ${ui.selected === l.id ? `<div class="row" style="margin-top:.6rem">
+          <button class="btn solid" data-act="edit" data-id="${esc(l.id)}">Edit</button>
+          <button class="btn" data-act="review" data-id="${esc(l.id)}">Review</button>
+          <button class="btn" data-act="dismiss" data-id="${esc(l.id)}">${l.mine ? "Remove" : "Dismiss"}</button>
+        </div>` : ""}
+      </article>`;
+    }
+
+    function column(title, kicker, items) {
+      return `<section><h2>${title}</h2><p class="faint">${kicker} ${items.length}</p>
+        ${items.length ? items.map(card).join("") : `<p class="muted">Nothing on this side yet.</p>`}
+      </section>`;
+    }
+
+    function composer() {
+      const d = ui.composer;
+      if (!d) return "";
+      return `<form id="composer" class="card" style="margin:1rem 0">
+        <h2>${d.id ? "Edit the card" : "Put it on the desk"}</h2>
+        <div class="row" style="margin-top:.6rem">
+          <button type="button" class="btn" data-act="side" data-side="have" aria-pressed="${d.side === "have"}">IhavIt</button>
+          <button type="button" class="btn" data-act="side" data-side="want" aria-pressed="${d.side === "want"}">IwantIT</button>
+        </div>
+        <label class="field">Title<input name="title" value="${esc(d.title)}" /></label>
+        <label class="field">Detail<textarea name="detail">${esc(d.detail)}</textarea></label>
+        <div class="row" style="margin-top:.6rem">
+          <button type="button" class="btn" data-act="voice">${ui.listening ? "Stop voice" : "Voice"}</button>
+          <button type="button" class="btn" data-act="photo">Picture</button>
+          <button type="button" class="btn" data-act="video">Video</button>
+          <button type="button" class="btn" data-act="sign">Signature</button>
+        </div>
+        <input id="photo-file" type="file" accept="image/*" hidden />
+        <input id="video-file" type="file" accept="video/*" hidden />
+        ${media(d.photo,"image") ? `<img class="shot" alt="" src="${media(d.photo,"image")}" />` : ""}
+        ${media(d.video,"video") ? `<video controls src="${media(d.video,"video")}"></video>` : ""}
+        ${d.signing && !d.signature ? `<canvas class="pad" id="pad" width="640" height="180" aria-label="Signature"></canvas>` : ""}
+        ${d.signature ? `<img class="sign" alt="Signature" src="${d.signature}" /><button type="button" class="btn" data-act="resign">Sign again</button>` : ""}
+        <label class="field">Shelf<select name="category">${CATS.map((c) => `<option ${c === d.category ? "selected" : ""}>${esc(c)}</option>`).join("")}</select></label>
+        <label class="field">Where<input name="place" value="${esc(d.place)}" /></label>
+        <label class="field">Your name<input name="by" value="${esc(d.by)}" /></label>
+        <div class="row" style="margin-top:.8rem">
+          <button type="button" class="btn" data-act="read">Read aloud</button>
+          <button class="btn solid" type="submit">${d.id ? "Save" : "Post"}</button>
+          <button type="button" class="btn" data-act="close-post">Close</button>
+        </div>
+      </form>`;
+    }
+
+    function heldBlock() {
+      const rows = desk.pairs.map((p) => {
+        const h = desk.listings.find((l) => l.id === p.haveId);
+        const w = desk.listings.find((l) => l.id === p.wantId);
+        return h && w ? { p, h, w } : null;
+      }).filter(Boolean);
+      if (!rows.length || ui.view === "done") return "";
+      return `<section><h2>In hand</h2>${rows.map(({ p, h, w }) => {
+        const choice = ui.choice[p.id] || "";
+        return `<article style="border-bottom:1px solid var(--line);padding:.8rem 0">
+          <p class="faint">${p.furloughUntil ? "Furloughed until " + new Date(p.furloughUntil).toLocaleDateString() : "Held"}</p>
+          <p><strong>${esc(h.title)}</strong> with <strong>${esc(w.title)}</strong></p>
+          <label class="field">Note<input data-act="note" data-id="${esc(p.id)}" value="${esc(p.note)}" /></label>
+          <p style="margin:.8rem 0 .4rem">Instead of paying now</p>
+          <div class="settle">${WAYS.map(([id, label]) => `<button type="button" class="btn" data-act="choose" data-id="${esc(p.id)}" data-way="${id}" aria-pressed="${choice === id}">${label}</button>`).join("")}</div>
+          ${choice === "furlough" ? `<label class="field">Resume payment<input type="date" data-act="until" value="${esc(ui.until)}" /></label>` : ""}
+          ${choice === "tokens" ? `<label class="field">Tokens<input inputmode="numeric" data-act="tokens" value="${esc(ui.tokens)}" /></label>` : ""}
+          <div class="row" style="margin-top:.6rem">
+            <button class="btn solid" data-act="apply" data-id="${esc(p.id)}" ${choice ? "" : "disabled"}>${choice ? wayLabel(choice) : "Choose one"}</button>
+            <button class="btn" data-act="release" data-id="${esc(p.id)}">Release</button>
+          </div>
+        </article>`;
+      }).join("")}</section>`;
+    }
+
+    function suggestBlock() {
+      if (ui.view === "done") return "";
+      const focus = desk.listings.find((l) => l.id === ui.selected && l.status === "open");
+      const rows = pairs(focus ? focus.id : null);
+      const shown = ui.showAll ? rows : rows.slice(0, 3);
+      return `<section><h2>${focus ? "Closest to this" : "Close pairs"}</h2>
+        ${shown.map((r) => `<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--line);padding:.7rem 0">
+          <p style="margin:0"><strong>${esc(r.h.title)}</strong> with <strong>${esc(r.w.title)}</strong></p>
+          <button class="btn solid" data-act="hold" data-have="${esc(r.h.id)}" data-want="${esc(r.w.id)}">Hold</button>
+        </div>`).join("") || `<p class="muted">No pairs sit close yet.</p>`}
+        ${rows.length > 3 ? `<button class="btn" data-act="more">${ui.showAll ? "Show fewer" : "Show the rest"}</button>` : ""}
+      </section>`;
+    }
+
+    function doneBlock() {
+      return `<section><h2>IdidIT</h2><p class="muted">How each pair was settled.</p>
+        ${desk.done.map((t) => `<article style="border-bottom:1px solid var(--line);padding:.9rem 0">
+          <p class="faint">${esc(t.category)} / ${esc(wayLabel(t.settlement))}${t.tokens ? " · " + t.tokens + " tokens" : ""}</p>
+          <h3 style="font-size:1.6rem">${esc(t.haveTitle)}</h3>
+          <p class="muted">for ${esc(t.wantTitle)}</p>
+          <p>${esc(t.haveBy)} and ${esc(t.wantBy)}</p>
+          ${t.note ? `<p class="muted">${esc(t.note)}</p>` : ""}
+          <button class="btn" data-act="speak-done" data-id="${esc(t.id)}">Read aloud</button>
+          <button class="btn" data-act="clear-done" data-id="${esc(t.id)}">Clear record</button>
+        </article>`).join("") || `<p class="muted">Nothing settled yet.</p>`}
+      </section>`;
+    }
+
+    function deskView() {
+      const list = desk.listings.filter(matchList);
+      const haves = list.filter((l) => l.side === "have");
+      const wants = list.filter((l) => l.side === "want");
+      const tabs = [["desk","Desk"],["have","IhavIt"],["want","IwantIT"],["done","IdidIT"]];
+      return `<h1>IdidIt</h1>
+        <p class="muted">Checked as ${esc(kyc.name)}. The exchange is under this name.</p>
+        ${ui.toast ? `<p>${esc(ui.toast)}</p>` : ""}
+        <div class="row" style="margin:.8rem 0">
+          <input id="q" placeholder="Search the desk" value="${esc(ui.query)}" style="max-width:18rem" />
+          <button class="btn solid" data-act="open-post">Post</button>
+        </div>
+        <div class="row">${tabs.map(([id, label]) => `<button class="btn" data-act="view" data-view="${id}" aria-pressed="${ui.view === id}">${label}</button>`).join("")}</div>
+        <div class="row" style="margin-top:.4rem"><button class="btn" data-act="cat" data-cat="All" aria-pressed="${ui.category === "All"}">All shelves</button>
+          ${CATS.map((c) => `<button class="btn" data-act="cat" data-cat="${esc(c)}" aria-pressed="${ui.category === c}">${esc(c)}</button>`).join("")}</div>
+        ${composer()}
+        ${ui.review ? reviewPane() : ""}
+        ${heldBlock()}
+        ${suggestBlock()}
+        ${ui.view === "done" ? doneBlock() : `<div class="cols" style="margin-top:1.2rem">
+          ${ui.view !== "want" ? column("IhavIt", "On the table", haves) : ""}
+          ${ui.view !== "have" ? column("IwantIT", "Still missing", wants) : ""}
+        </div>`}
+        <p class="faint" style="margin-top:2rem">This desk stays in this browser.</p>`;
+    }
+
+    function reviewPane() {
+      const l = desk.listings.find((x) => x.id === ui.review);
+      if (!l) return "";
+      return `<article class="card" style="margin:1rem 0"><p class="kicker">Review</p><h2>${esc(l.title)}</h2>
+        ${l.detail ? `<p class="muted">${esc(l.detail)}</p>` : ""}
+        ${l.voice ? `<p>${esc(l.voice)}</p>` : ""}
+        ${media(l.video,"video") ? `<video controls src="${media(l.video,"video")}"></video>` : ""}
+        ${l.signature ? `<img class="sign" alt="Signature" src="${l.signature}" />` : ""}
+        <div class="row"><button class="btn" data-act="read-card">Read aloud</button><button class="btn" data-act="close-review">Close</button></div>
+      </article>`;
+    }
+
+    function kycView() {
+      return `<h1>IdidIt</h1>
+        <p class="kicker" style="margin-top:1rem">Simple KYC</p>
+        <p class="muted">Name, place, a contact, and a signature. This check stays in this browser. It is not a government ID check.</p>
+        <form id="kyc">
+          <label class="field">Legal name<input name="name" autocomplete="name" required /></label>
+          <label class="field">Place<input name="place" placeholder="City or ward" required /></label>
+          <label class="field">Email or X handle<input name="contact" placeholder="name@mail.com or @handle" required /></label>
+          <p class="field">Signature</p>
+          <canvas class="pad" id="pad" width="640" height="180" aria-label="Signature"></canvas>
+          <label class="check"><input type="checkbox" name="ok" /> <span>I am the person named here.</span></label>
+          <button class="btn solid" style="margin-top:1rem" type="submit">Open the exchange</button>
+        </form>`;
+    }
+
+    const app = document.getElementById("app");
+    let rec = null;
+
+    function render() {
+      app.innerHTML = ui.phase === "desk" && kyc ? deskView() : kycView();
+      const pad = document.getElementById("pad");
+      if (pad) armPad(pad);
+      const q = document.getElementById("q");
+      if (q) q.addEventListener("input", () => { ui.query = q.value; render(); q.focus(); });
+    }
+
+    function armPad(canvas) {
+      const ctx = canvas.getContext("2d");
+      let drawing = false;
+      const pt = (e) => {
+        const r = canvas.getBoundingClientRect();
+        return { x: ((e.clientX - r.left) / r.width) * canvas.width, y: ((e.clientY - r.top) / r.height) * canvas.height };
+      };
+      canvas.onpointerdown = (e) => {
+        drawing = true;
+        canvas.setPointerCapture(e.pointerId);
+        ctx.strokeStyle = getComputedStyle(canvas).color || "#f4f1e8";
+        ctx.lineWidth = 3;
+        ctx.lineCap = "round";
+        const p = pt(e);
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+      };
+      canvas.onpointermove = (e) => {
+        if (!drawing) return;
+        const p = pt(e);
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+      };
+      canvas.onpointerup = () => {
+        if (!drawing) return;
+        drawing = false;
+        const url = canvas.toDataURL("image/png");
+        if (ui.composer) ui.composer.signature = url;
+        else ui.signature = url;
+      };
+    }
+
+    function blankDraft() {
+      ui.composer = { side: ui.view === "want" ? "want" : "have", title:"", detail:"", category:"Tools", place: kyc.place || "", by: kyc.name, photo:"", video:"", signature:"", voice:"", signing:false };
+    }
+
+    function apply(pairId, mode) {
+      if (mode === "furlough") {
+        const until = new Date(ui.until + "T12:00:00").getTime();
+        if (!until) return;
+        desk.pairs = desk.pairs.map((p) => p.id === pairId ? { ...p, furloughUntil: until } : p);
+        const pair = desk.pairs.find((p) => p.id === pairId);
+        desk.listings = desk.listings.map((l) => pair && (l.id === pair.haveId || l.id === pair.wantId) ? { ...l, furloughUntil: until } : l);
+        ui.toast = "Payment furloughed. The pair stays in hand.";
+        save(); render(); return;
+      }
+      const tokens = Number(ui.tokens);
+      if (mode === "tokens" && !(tokens > 0)) return;
+      const pair = desk.pairs.find((p) => p.id === pairId);
+      if (!pair) return;
+      const have = desk.listings.find((l) => l.id === pair.haveId);
+      const want = desk.listings.find((l) => l.id === pair.wantId);
+      if (!have || !want) return;
+      const done = {
+        id: crypto.randomUUID(), haveTitle: have.title, wantTitle: want.title, haveBy: have.by, wantBy: want.by,
+        category: have.category === want.category ? have.category : have.category + " / " + want.category,
+        note: [pair.note, mode === "tokens" ? tokens + " tokens." : ""].filter(Boolean).join(" "),
+        createdAt: Date.now(), settlement: mode, tokens: mode === "tokens" ? tokens : undefined,
+        photo: have.photo || want.photo, signature: have.signature || want.signature
+      };
+      desk.pairs = desk.pairs.filter((p) => p.id !== pairId);
+      if (mode === "floor") {
+        desk.listings = desk.listings.filter((l) => l.id !== want.id).map((l) => l.id === have.id ? { ...l, status:"open", kind:"floor", furloughUntil: undefined } : l);
+        ui.view = "have"; ui.toast = "Contributed to the floor, under IhavIt.";
+      } else if (mode === "receivable") {
+        desk.listings = [{
+          id: crypto.randomUUID(), side:"have", title:"Receivable · " + want.title,
+          detail: ("Against " + have.title + ". " + have.by + " and " + want.by + ". " + (pair.note || "")).trim(),
+          category: have.category, place: have.place || want.place, by: kyc.name, mine:true, createdAt: Date.now(), status:"open", kind:"receivable",
+          signature: have.signature || want.signature, photo: have.photo || want.photo
+        }, ...desk.listings.filter((l) => l.id !== have.id && l.id !== want.id)];
+        ui.view = "have"; ui.toast = "Receivable is on IhavIt to sell.";
+      } else {
+        desk.listings = desk.listings.filter((l) => l.id !== have.id && l.id !== want.id);
+        ui.view = "done";
+        ui.toast = mode === "retire" ? "Retired." : mode === "service" ? "Settled as service." : mode === "tokens" ? "Swapped for tokens." : "Marked IdidIT.";
+      }
+      desk.done = [done, ...desk.done];
+      save(); render();
+    }
+
+    app.addEventListener("click", async (event) => {
+      const el = event.target.closest("[data-act]");
+      if (!el) return;
+      const act = el.dataset.act;
+      if (act === "view") { ui.view = el.dataset.view; ui.showAll = false; render(); return; }
+      if (act === "cat") { ui.category = el.dataset.cat; render(); return; }
+      if (act === "more") { ui.showAll = !ui.showAll; render(); return; }
+      if (act === "select") { ui.selected = ui.selected === el.dataset.id ? null : el.dataset.id; render(); return; }
+      if (act === "hold") {
+        const { have, want } = el.dataset;
+        const busy = desk.pairs.some((p) => [p.haveId, p.wantId].includes(have) || [p.haveId, p.wantId].includes(want));
+        if (!busy) {
+          desk.pairs.unshift({ id: "p-" + have + "-" + want, haveId: have, wantId: want, note:"", createdAt: Date.now() });
+          desk.listings = desk.listings.map((l) => l.id === have || l.id === want ? { ...l, status:"held" } : l);
+          ui.toast = "Pair held. Choose how to settle it.";
+          save();
+        }
+        render(); return;
+      }
+      if (act === "release") {
+        const pair = desk.pairs.find((p) => p.id === el.dataset.id);
+        if (pair) {
+          desk.pairs = desk.pairs.filter((p) => p.id !== pair.id);
+          desk.listings = desk.listings.map((l) => l.id === pair.haveId || l.id === pair.wantId ? { ...l, status:"open" } : l);
+          save();
+        }
+        render(); return;
+      }
+      if (act === "choose") {
+        ui.choice[el.dataset.id] = el.dataset.way;
+        if (el.dataset.way === "furlough" && !ui.until) ui.until = new Date(Date.now() + 30 * DAY).toISOString().slice(0, 10);
+        render(); return;
+      }
+      if (act === "apply") { apply(el.dataset.id, ui.choice[el.dataset.id]); return; }
+      if (act === "dismiss") {
+        const id = el.dataset.id;
+        const pair = desk.pairs.find((p) => p.haveId === id || p.wantId === id);
+        desk.pairs = desk.pairs.filter((p) => p.haveId !== id && p.wantId !== id);
+        desk.listings = desk.listings.filter((l) => l.id !== id).map((l) => pair && (l.id === pair.haveId || l.id === pair.wantId) ? { ...l, status:"open" } : l);
+        ui.selected = null; save(); render(); return;
+      }
+      if (act === "open-post") { blankDraft(); render(); return; }
+      if (act === "close-post") { ui.composer = null; render(); return; }
+      if (act === "edit") {
+        const l = desk.listings.find((x) => x.id === el.dataset.id);
+        if (!l) return;
+        ui.composer = { id:l.id, side:l.side, title:l.title, detail:l.detail, category:l.category, place:l.place, by:l.by, photo:l.photo || "", video:l.video || "", signature:l.signature || "", voice:l.voice || "", signing:false };
+        render(); return;
+      }
+      if (act === "side" && ui.composer) { ui.composer.side = el.dataset.side; render(); return; }
+      if (act === "photo") { document.getElementById("photo-file").click(); return; }
+      if (act === "video") { document.getElementById("video-file").click(); return; }
+      if (act === "sign" && ui.composer) { ui.composer.signing = true; render(); return; }
+      if (act === "resign" && ui.composer) { ui.composer.signature = ""; ui.composer.signing = true; render(); return; }
+      if (act === "voice") { toggleVoice(); return; }
+      if (act === "read" && ui.composer) { speak([ui.composer.title, ui.composer.detail, ui.composer.voice].filter(Boolean).join(". ")); return; }
+      if (act === "review") { ui.review = el.dataset.id; render(); return; }
+      if (act === "close-review") { ui.review = null; render(); return; }
+      if (act === "read-card") {
+        const l = desk.listings.find((x) => x.id === ui.review);
+        if (l) speak((l.side === "have" ? "IhavIt. " : "IwantIT. ") + l.title + ". " + l.detail);
+        return;
+      }
+      if (act === "speak-done") {
+        const t = desk.done.find((x) => x.id === el.dataset.id);
+        if (t) speak(wayLabel(t.settlement) + ". " + t.haveTitle + " for " + t.wantTitle);
+        return;
+      }
+      if (act === "clear-done") { desk.done = desk.done.filter((t) => t.id !== el.dataset.id); save(); render(); }
+    });
+
+    app.addEventListener("input", (event) => {
+      const el = event.target;
+      if (el.dataset.act === "note") {
+        desk.pairs = desk.pairs.map((p) => p.id === el.dataset.id ? { ...p, note: el.value } : p);
+        save();
+      }
+      if (el.dataset.act === "tokens") ui.tokens = el.value;
+      if (el.dataset.act === "until") ui.until = el.value;
+      if (ui.composer && el.name && el.form && el.form.id === "composer") ui.composer[el.name] = el.value;
+    });
+
+    app.addEventListener("change", async (event) => {
+      const el = event.target;
+      if (el.id === "photo-file" && el.files[0] && ui.composer) {
+        ui.composer.photo = await compress(el.files[0]);
+        render();
+      }
+      if (el.id === "video-file" && el.files[0] && ui.composer) {
+        const file = el.files[0];
+        if (file.size > 1500000) { ui.toast = "Use a video under 1.5 MB."; render(); return; }
+        ui.composer.video = await fileToData(file);
+        render();
+      }
+    });
+
+    app.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (event.target.id === "kyc") {
+        const data = new FormData(event.target);
+        const name = String(data.get("name") || "").trim();
+        const place = String(data.get("place") || "").trim();
+        const contact = String(data.get("contact") || "").trim();
+        if (name.length < 2 || place.length < 2 || contact.length < 3 || !ui.signature || !data.get("ok")) {
+          ui.toast = "Name, place, contact, signature, and the statement are required.";
+          const note = document.createElement("p");
+          note.textContent = ui.toast;
+          event.target.prepend(note);
+          return;
+        }
+        kyc = { name, place, contact, signature: ui.signature, at: Date.now() };
+        localStorage.setItem(KYC_KEY, JSON.stringify(kyc));
+        desk.name = name;
+        ui.phase = "desk";
+        ui.toast = "";
+        save(); render(); return;
+      }
+      if (event.target.id === "composer" && ui.composer) {
+        const d = ui.composer;
+        if (d.title.trim().length < 3 || d.place.trim().length < 2) return;
+        const fields = { side:d.side, title:d.title.trim(), detail:d.detail.trim(), category:d.category, place:d.place.trim(), by:d.by.trim() || kyc.name, photo:d.photo || undefined, video:d.video || undefined, signature:d.signature || undefined, voice:(d.voice || "").trim() || undefined };
+        if (d.id) desk.listings = desk.listings.map((l) => l.id === d.id ? { ...l, ...fields } : l);
+        else {
+          desk.listings.unshift({ id: crypto.randomUUID(), ...fields, mine:true, createdAt: Date.now(), status:"open" });
+          ui.view = d.side === "have" ? "have" : "want";
+        }
+        desk.name = fields.by;
+        ui.composer = null;
+        ui.toast = d.id ? "Updated." : "Posted.";
+        save(); render();
+      }
+    });
+
+    function speak(text) {
+      if (!window.speechSynthesis || !text) return;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+    }
+    function toggleVoice() {
+      const Host = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!Host) { ui.toast = "Voice input is not available in this browser."; render(); return; }
+      if (rec) { rec.stop(); rec = null; ui.listening = false; render(); return; }
+      rec = new Host();
+      rec.lang = "en-US";
+      rec.onresult = (e) => {
+        const text = e.results[0][0].transcript.trim();
+        if (ui.composer && text) {
+          ui.composer.voice = ui.composer.voice ? ui.composer.voice + " " + text : text;
+          ui.composer.detail = ui.composer.detail ? ui.composer.detail + " " + text : text;
+        }
+      };
+      rec.onend = () => { rec = null; ui.listening = false; render(); };
+      rec.start();
+      ui.listening = true;
+      render();
+    }
+    function fileToData(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error("read"));
+        reader.readAsDataURL(file);
+      });
+    }
+    async function compress(file) {
+      const bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, 960 / Math.max(bitmap.width, bitmap.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      bitmap.close();
+      return canvas.toDataURL("image/jpeg", 0.72);
+    }
+
+    load();
+    render();
+  </script>
+</body>
+</html>

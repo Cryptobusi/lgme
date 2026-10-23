@@ -131,6 +131,19 @@
     }
     .pair button[aria-pressed="true"]:hover,
     .tools > button[aria-expanded="true"]:hover { color: var(--bg); }
+    a.enter {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0.55rem 1.15rem;
+      background: var(--fg);
+      color: var(--bg);
+      text-decoration: none;
+      font-weight: 600;
+      border: 1px solid var(--fg);
+    }
+    a.enter:hover { background: var(--gold); border-color: var(--gold); color: var(--bg); }
     #glossary { margin-top: 0; border-top: 0; padding-top: 0.2rem; }
     #glossary[hidden] { display: none; }
     .map { width: 100%; border-collapse: collapse; margin: 1rem 0 0.4rem; }
@@ -174,6 +187,7 @@
     <a href="#close">Close</a>
   </nav>
   <div class="tools">
+    <a class="enter" href="/exchange">IdidIt</a>
     <button type="button" id="glossary-btn" aria-expanded="false" aria-controls="glossary">Glossary</button>
   </div>
   <section id="glossary" hidden>
@@ -206,6 +220,8 @@
   </section>
   <section id="ididit">
     <p class="kicker">Debit Credit IDidit · #LeGoMiego · $LGME</p>
+    <p><a class="enter" href="/exchange">IdidIt</a></p>
+    <p class="muted">The exchange sits under this button. A simple KYC — name, place, contact, and a signature — comes first. It stays in this browser. It is not a government ID check, and it is not the enrollment pilot.</p>
     <h2>The system isn’t broken. It’s working exactly as intended.</h2>
     <p class="muted">Let’s make the economy work for everyone. <a href="https://lgme.app">$LGME</a></p>
     <div class="plates">
