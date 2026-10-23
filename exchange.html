@@ -53,13 +53,13 @@
     const DESK_KEY = "lgme-exchange-v1";
     const CATS = ["Tools","Books","Skills","Kitchen","Plants","Time","Music","Studio","Rides","Care"];
     const WAYS = [
-      ["settle","Settle","Close the swap now."],
-      ["furlough","Furlough","Pause the payment and keep the pair."],
-      ["tokens","Tokens","Swap the balance for tokens."],
-      ["service","Service","Settle in work, not payment."],
-      ["retire","Retire","Write the balance off."],
-      ["floor","Floor","Contribute it to the floor."],
-      ["receivable","Receivable","Keep it on IhavIt to sell."]
+      ["settle","Settle","Accept the swap. The offer becomes a line."],
+      ["furlough","Furlough","Pause the payment. The date stays shown."],
+      ["tokens","Tokens","A named promise. Not cash at the register."],
+      ["service","Service","Settle in work that can be shown."],
+      ["retire","Retire","A named surplus cancels the line. Only this cancels it."],
+      ["floor","Floor","The basket is paid first, from what is already named."],
+      ["receivable","Receivable","Kept on IhavIt. It does not clear at par."]
     ];
     const STOP = new Set("a an the and or for with to of in on it my your some any from at by is are this that i you we they not but if so as be was were too its also into over per our have has had help looking come one".split(" "));
     const DAY = 86400000;
@@ -166,7 +166,7 @@
       if (l.status === "held") return "In hand";
       return l.category;
     }
-    function wayLabel(id) { return (WAYS.find((w) => w[0] === id) || ["","Settled"])[1]; }
+    function wayLabel(id, refused) { if (refused) return "Refused"; return (WAYS.find((w) => w[0] === id) || ["","Settled"])[1]; }
     function matchList(l) {
       if (ui.category !== "All" && l.category !== ui.category) return false;
       const n = ui.query.trim().toLowerCase();
@@ -245,6 +245,12 @@
         return `<article style="border-bottom:1px solid var(--line);padding:.8rem 0">
           <p class="faint">${p.furloughUntil ? "Furloughed until " + new Date(p.furloughUntil).toLocaleDateString() : "Held"}</p>
           <p><strong>${esc(h.title)}</strong> with <strong>${esc(w.title)}</strong></p>
+          <div class="row" style="align-items:flex-start;gap:1.2rem;margin:.7rem 0">
+            <p style="margin:0"><span class="faint">Basket</span><br>${esc(h.title)}<br><span class="muted">Already named. Paid first.</span></p>
+            <p style="margin:0"><span class="faint">Fee</span><br>${choice === "tokens" ? esc(ui.tokens) + " tokens" : "None"}<br><span class="muted">Same charge. No friend rate.</span></p>
+            <p style="margin:0"><span class="faint">Remainder</span><br>${choice === "retire" ? "Zero" : esc(w.title)}<br><span class="muted">Named, including zero.</span></p>
+          </div>
+          <p class="muted">An offer is not a line until you accept it. This hold writes nothing yet.</p>
           <label class="field">Note<input data-act="note" data-id="${esc(p.id)}" value="${esc(p.note)}" /></label>
           <p style="margin:.8rem 0 .4rem">Instead of paying now</p>
           <div class="settle">${WAYS.map(([id, label]) => `<button type="button" class="btn" data-act="choose" data-id="${esc(p.id)}" data-way="${id}" aria-pressed="${choice === id}">${label}</button>`).join("")}</div>
@@ -252,7 +258,7 @@
           ${choice === "tokens" ? `<label class="field">Tokens<input inputmode="numeric" data-act="tokens" value="${esc(ui.tokens)}" /></label>` : ""}
           <div class="row" style="margin-top:.6rem">
             <button class="btn solid" data-act="apply" data-id="${esc(p.id)}" ${choice ? "" : "disabled"}>${choice ? wayLabel(choice) : "Choose one"}</button>
-            <button class="btn" data-act="release" data-id="${esc(p.id)}">Release</button>
+            <button class="btn" data-act="release" data-id="${esc(p.id)}">Release</button><button class="btn" data-act="refuse" data-id="${esc(p.id)}">Refuse</button>
           </div>
         </article>`;
       }).join("")}</section>`;
@@ -273,9 +279,9 @@
     }
 
     function doneBlock() {
-      return `<section><h2>IdidIT</h2><p class="muted">How each pair was settled.</p>
+      return `<section><h2>IdidIT</h2><p class="muted">The book. A refusal stays on it. A release writes nothing.</p>
         ${desk.done.map((t) => `<article style="border-bottom:1px solid var(--line);padding:.9rem 0">
-          <p class="faint">${esc(t.category)} / ${esc(wayLabel(t.settlement))}${t.tokens ? " · " + t.tokens + " tokens" : ""}</p>
+          <p class="faint">${esc(t.category)} / ${esc(wayLabel(t.settlement, t.refused))}${t.tokens ? " · " + t.tokens + " tokens" : ""}</p>
           <h3 style="font-size:1.6rem">${esc(t.haveTitle)}</h3>
           <p class="muted">for ${esc(t.wantTitle)}</p>
           <p>${esc(t.haveBy)} and ${esc(t.wantBy)}</p>
@@ -292,7 +298,7 @@
       const wants = list.filter((l) => l.side === "want" && l.kind !== "future");
       const tabs = [["desk","Desk"],["have","IhavIt"],["want","IwantIT"],["done","IdidIT"]];
       return `<h1>IdidIt</h1>
-        <p class="muted">Checked as ${esc(kyc.handle || kyc.name)}. The beauty is in the eye of the beholder. Functionality is in the user.</p>
+        <p class="muted">Third seat. Checked as ${esc(kyc.handle || kyc.name)}. Floor, then the promise, then the book. You may refuse a line that cannot be shown. Not a new coin.</p>
         ${ui.toast ? `<p>${esc(ui.toast)}</p>` : ""}
         <div class="row" style="margin:.8rem 0">
           <input id="q" placeholder="Search the desk" value="${esc(ui.query)}" style="max-width:18rem" />
@@ -309,7 +315,7 @@
           ${ui.view !== "want" ? column("IhavIt", "On the table", haves) : ""}
           ${ui.view !== "have" ? column("IwantIT", "Still missing", wants) : ""}
         </div>`}
-        <section style="margin-top:2.5rem;border-top:1px solid var(--line);padding-top:1rem"><p class="kicker">Apart from the swaps</p><h2>Future app improvements</h2><p class="muted">Each one is 1 coin to implement. Find a buyer, and it stays on this list, apart from the swaps.</p>
+        <section style="margin-top:2.5rem;border-top:1px solid var(--line);padding-top:1rem"><p class="kicker">Apart from the swaps</p><h2>Future app improvements</h2><p class="muted">Each one is 1 coin to implement. Same charge. No friend rate. Find a buyer, and it stays on this list, apart from the swaps.</p>
         ${desk.listings.filter((l) => l.kind === "future").map((l) => `<article style="border-bottom:1px solid var(--line);padding:.8rem 0"><p class="faint">IwantIT · Future</p><h3>${esc(l.title)}</h3><p class="muted">${esc(l.detail)}</p><p>1 coin to implement</p><p class="muted">${l.buyer ? "Buyer: " + esc(l.buyer) + (l.buyerNote ? " · " + esc(l.buyerNote) : "") : "No buyer yet"}</p><button class="btn" type="button" data-act="buyer" data-id="${esc(l.id)}">Find buyer</button></article>`).join("")}
         </section>
         <p class="faint" style="margin-top:2rem">This desk stays in this browser.</p>`;
@@ -331,7 +337,7 @@
       return `<h1>IdidIt</h1>
         <p class="kicker" style="margin-top:1rem">X handle</p>
         <p class="muted">The beauty is in the eye of the beholder. Functionality is in the user.</p>
-        <p class="muted">The only check is your X handle. It stays in this browser. X is not asked to confirm it.</p>
+        <p class="muted">The only check is your X handle. It is not proof of a unique person. It stays in this browser. X is not asked to confirm it. Not a new coin.</p>
         <form id="kyc">
           <label class="field">X handle<input name="handle" placeholder="@handle" autocomplete="username" required /></label>
           <p><button type="button" class="btn" data-act="grok">Your Grok</button></p>
@@ -461,7 +467,7 @@
         if (!busy) {
           desk.pairs.unshift({ id: "p-" + have + "-" + want, haveId: have, wantId: want, note:"", createdAt: Date.now() });
           desk.listings = desk.listings.map((l) => l.id === have || l.id === want ? { ...l, status:"held" } : l);
-          ui.toast = "Pair held. Choose how to settle it.";
+          ui.toast = "Held. An offer is not a line until you accept it.";
           save();
         }
         render(); return;
@@ -471,6 +477,21 @@
         if (pair) {
           desk.pairs = desk.pairs.filter((p) => p.id !== pair.id);
           desk.listings = desk.listings.map((l) => l.id === pair.haveId || l.id === pair.wantId ? { ...l, status:"open" } : l);
+          ui.toast = "Released. The hold writes nothing.";
+          save();
+        }
+        render(); return;
+      }
+      if (act === "refuse") {
+        const pair = desk.pairs.find((p) => p.id === el.dataset.id);
+        const h = pair && desk.listings.find((l) => l.id === pair.haveId);
+        const w = pair && desk.listings.find((l) => l.id === pair.wantId);
+        if (pair && h && w) {
+          desk.done.unshift({ id: "d-" + Date.now(), haveTitle: h.title, wantTitle: w.title, haveBy: h.by, wantBy: w.by, category: h.category, note: pair.note || "Refused. The line could not be shown, or it skipped the order.", createdAt: Date.now(), refused: true });
+          desk.pairs = desk.pairs.filter((p) => p.id !== pair.id);
+          desk.listings = desk.listings.map((l) => l.id === h.id || l.id === w.id ? { ...l, status:"open" } : l);
+          ui.view = "done";
+          ui.toast = "Refused. The line is on the book. The offer writes nothing.";
           save();
         }
         render(); return;
