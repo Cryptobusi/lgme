@@ -9,7 +9,7 @@
   <style>
     :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --faint:#8ea892; --gold:#c6a15b; --line:#2c352b; --panel:#141a13; }
     * { box-sizing: border-box; }
-    html { background: var(--bg); color: var(--fg); }
+    html[data-look="larger"] { font-size: 125%; }
     body { margin: 0 auto; max-width: 72rem; padding: 1.25rem 1.25rem 4rem; font-family: Figtree, sans-serif; font-size: 1rem; line-height: 1.5; }
     a { color: var(--fg); }
     h1, h2, h3 { font-family: Newsreader, serif; font-weight: 500; letter-spacing: -0.02em; margin: 0; }
@@ -113,9 +113,19 @@
 
     let kyc = null;
     let desk = null;
+    let look = "set";
     const ui = { phase:"kyc", view:"desk", query:"", category:"All", selected:null, showAll:false, choice:{}, tokens:"10", until:"", composer:null, toast:"", review:null };
 
+    function applyLook(next) {
+      look = next === "larger" ? "larger" : "set";
+      if (look === "larger") document.documentElement.dataset.look = "larger";
+      else delete document.documentElement.dataset.look;
+      try { localStorage.setItem("lgme-look", look); } catch {}
+    }
+
     function load() {
+      try { look = localStorage.getItem("lgme-look") === "larger" ? "larger" : "set"; } catch { look = "set"; }
+      applyLook(look);
       try { kyc = JSON.parse(localStorage.getItem(KYC_KEY) || "null"); } catch { kyc = null; }
       if (!kyc || !(kyc.handle || kyc.name)) kyc = null;
       try { desk = JSON.parse(localStorage.getItem(DESK_KEY) || "null"); } catch { desk = null; }
@@ -343,7 +353,10 @@
           <input id="q" placeholder="Search the desk" value="${esc(ui.query)}" style="max-width:18rem" />
           <button class="btn solid" data-act="open-post">Post</button>
         </div>
-        <div class="row">${tabs.map(([id, label]) => `<button class="btn" data-act="view" data-view="${id}" aria-pressed="${ui.view === id}">${label}</button>`).join("")}</div>
+        <div class="row">${tabs.map(([id, label]) => `<button class="btn" data-act="view" data-view="${id}" aria-pressed="${ui.view === id}">${label}</button>`).join("")}
+          <button class="btn" type="button" data-act="look" data-size="set" aria-pressed="${look === "set"}">As set</button>
+          <button class="btn" type="button" data-act="look" data-size="larger" aria-pressed="${look === "larger"}">Larger</button>
+        </div>
         <div class="row" style="margin-top:.4rem"><button class="btn" data-act="cat" data-cat="All" aria-pressed="${ui.category === "All"}">All shelves</button>
           ${CATS.map((c) => `<button class="btn" data-act="cat" data-cat="${esc(c)}" aria-pressed="${ui.category === c}">${esc(c)}</button>`).join("")}</div>
         ${composer()}
@@ -387,6 +400,7 @@
         <p class="kicker" style="margin-top:1rem">X handle</p>
         <p class="muted">The beauty is in the eye of the beholder. Functionality is in the user.</p>
         <p class="muted">The only check is your X handle. It is not proof of a unique person. It stays in this browser. X is not asked to confirm it. Not a new coin.</p>
+        <div class="row"><button class="btn" type="button" data-act="look" data-size="set" aria-pressed="${look === "set"}">As set</button><button class="btn" type="button" data-act="look" data-size="larger" aria-pressed="${look === "larger"}">Larger</button></div>
         <form id="kyc">
           <label class="field">X handle<input name="handle" placeholder="@handle" autocomplete="username" required /></label>
           <p><button type="button" class="btn" data-act="grok">Your Grok</button></p>
@@ -495,7 +509,7 @@
       if (!el) return;
       const act = el.dataset.act;
       if (act === "buyer") {
-        const row = desk.listings.find((l) => l.id === button.dataset.id);
+        const row = desk.listings.find((l) => l.id === el.dataset.id);
         if (row) {
           row.coins = 1;
           row.buyer = (kyc && (kyc.handle || kyc.name)) || "The desk";
@@ -503,8 +517,10 @@
           ui.toast = "Buyer: " + row.buyer + ". Kept on the future list.";
           save();
         }
+        render();
         return;
       }
+      if (act === "look") { applyLook(el.dataset.size); render(); return; }
       if (act === "grok") { const box = document.getElementById("grok-box"); if (box) box.hidden = !box.hidden; return; }
       if (act === "view") { ui.view = el.dataset.view; ui.showAll = false; render(); return; }
       if (act === "cat") { ui.category = el.dataset.cat; render(); return; }
@@ -597,6 +613,15 @@
         render(); return;
       }
       if (act === "close-review") { ui.review = null; render(); return; }
+      if (act === "match") {
+        ui.selected = el.dataset.id;
+        ui.review = null;
+        ui.toast = "Showing what sits close to this.";
+        render();
+        const block = document.querySelector("section h2");
+        if (block) block.scrollIntoView({ block: "start" });
+        return;
+      }
       if (act === "read-card") {
         const l = desk.listings.find((x) => x.id === ui.review);
         if (l) speak((l.side === "have" ? "IhavIt. " : "IwantIT. ") + l.title + ". " + l.detail);
@@ -648,7 +673,7 @@
         }
         kyc = { name: "@" + bare, handle: "@" + bare, place: "", contact: "@" + bare, at: Date.now() };
         localStorage.setItem(KYC_KEY, JSON.stringify(kyc));
-        desk.name = name;
+        desk.name = kyc.handle;
         ui.phase = "desk";
         if (!desk.done.some((t) => t.mock)) writeTrial(false);
         ui.toast = "";
