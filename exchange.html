@@ -185,7 +185,7 @@
       const shot = media(l.photo, "image");
       const side = l.side === "have" ? "IhavIt" : "IwantIT";
       return `<button class="tile" type="button" data-act="review" data-id="${esc(l.id)}">
-        <span class="frame">${shot ? `<img alt="" src="${shot}" />` : ""}<span class="badge">${side}</span></span>
+        <span class="frame">${shot ? `<img alt="" src="${shot}" />` : ""}<span class="badge">${side}${l.saved ? " · Saved" : ""}</span></span>
         <strong>${esc(l.title)}</strong>
         <span class="faint">${esc(l.place)}${l.status === "held" ? " · In hand" : ""}</span>
       </button>`;
@@ -328,7 +328,15 @@
         ${media(l.video,"video") ? `<video controls src="${media(l.video,"video")}"></video>` : ""}
         ${l.signature ? `<img class="sign" alt="Signature" src="${l.signature}" />` : ""}
         <p class="faint">${esc(l.by)} · ${esc(l.place)}</p>
-        <div class="row"><button class="btn solid" data-act="match" data-id="${esc(l.id)}">Find a match</button><button class="btn" data-act="edit" data-id="${esc(l.id)}">Edit</button><button class="btn" data-act="read-card">Read aloud</button><button class="btn" data-act="dismiss" data-id="${esc(l.id)}">${l.mine ? "Remove" : "Dismiss"}</button><button class="btn" data-act="close-review">Close</button></div>
+        ${l.ask ? `<p>${esc(l.ask)}</p>` : ""}
+        ${l.status === "open" ? `<p style="margin-top:.8rem">Make an offer</p>
+          ${(function () {
+            const side = l.side === "have" ? "want" : "have";
+            const rows = desk.listings.filter((o) => o.side === side && o.status === "open" && o.kind !== "future").slice(0, 4);
+            return rows.length ? rows.map((o) => `<button class="btn" type="button" data-act="offer" data-item="${esc(l.id)}" data-other="${esc(o.id)}">${esc(o.title)}</button>`).join(" ") : `<p class="muted">Nothing open on the other side yet.</p>`;
+          })()}
+        ` : ""}
+        <div class="row"><button class="btn" data-act="save" data-id="${esc(l.id)}">${l.saved ? "Saved" : "Save"}</button><button class="btn solid" data-act="match" data-id="${esc(l.id)}">Find a match</button><button class="btn" data-act="edit" data-id="${esc(l.id)}">Edit</button><button class="btn" data-act="read-card">Read aloud</button><button class="btn" data-act="dismiss" data-id="${esc(l.id)}">${l.mine ? "Remove" : "Dismiss"}</button><button class="btn" data-act="close-review">Close</button></div>
       </article>`;
     }
 
@@ -525,6 +533,27 @@
       if (act === "read" && ui.composer) { speak([ui.composer.title, ui.composer.detail, ui.composer.voice].filter(Boolean).join(". ")); return; }
       if (act === "review") { ui.review = el.dataset.id; render(); return; }
       if (act === "match") { ui.selected = el.dataset.id; ui.review = null; ui.toast = "Showing what sits close to this."; render(); return; }
+      if (act === "save") {
+        desk.listings = desk.listings.map((l) => l.id === el.dataset.id ? { ...l, saved: !l.saved } : l);
+        save(); render(); return;
+      }
+      if (act === "offer") {
+        const item = desk.listings.find((l) => l.id === el.dataset.item);
+        const other = desk.listings.find((l) => l.id === el.dataset.other);
+        if (item && other && item.status === "open" && other.status === "open") {
+          const have = item.side === "have" ? item.id : other.id;
+          const want = item.side === "want" ? item.id : other.id;
+          const busy = desk.pairs.some((p) => [p.haveId, p.wantId].includes(have) || [p.haveId, p.wantId].includes(want));
+          if (!busy) {
+            desk.pairs.unshift({ id: "p-" + have + "-" + want, haveId: have, wantId: want, note: "", createdAt: Date.now() });
+            desk.listings = desk.listings.map((l) => l.id === have || l.id === want ? { ...l, status: "held" } : l);
+            ui.toast = "Held. An offer is not a line until you accept it.";
+            ui.review = null;
+            save();
+          }
+        }
+        render(); return;
+      }
       if (act === "close-review") { ui.review = null; render(); return; }
       if (act === "read-card") {
         const l = desk.listings.find((x) => x.id === ui.review);
