@@ -34,6 +34,13 @@
     .card { border: 1px solid var(--line); background: var(--panel); padding: 0.9rem 1rem; text-align: left; width: 100%; }
     .card.on { border-color: var(--fg); }
     .card img.shot, video { width: 100%; max-height: 11rem; object-fit: cover; margin-top: 0.6rem; background: #000; }
+    .feed { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem 0.7rem; }
+    @media (min-width: 700px) { .feed { grid-template-columns: 1fr 1fr 1fr; } }
+    .tile { display: block; width: 100%; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; }
+    .tile .frame { position: relative; display: block; aspect-ratio: 1; overflow: hidden; border-radius: 0.6rem; background: var(--panel); border: 1px solid var(--line); }
+    .tile img { width: 100%; height: 100%; object-fit: cover; margin: 0; max-height: none; }
+    .tile .badge { position: absolute; top: 0.4rem; left: 0.4rem; background: var(--bg); color: var(--fg); border-radius: 999px; padding: 0.15rem 0.45rem; font-size: 0.72rem; }
+    .tile strong { display: block; margin-top: 0.4rem; font-weight: 600; font-size: 0.95rem; line-height: 1.25; }
     img.sign { width: 100%; height: 4.5rem; object-fit: contain; background: var(--bg); border: 1px solid var(--line); margin-top: 0.5rem; }
     canvas.pad { width: 100%; height: 8rem; touch-action: none; background: var(--bg); border: 1px solid var(--line); margin-top: 0.4rem; }
     .settle { display: grid; grid-template-columns: 1fr 1fr; gap: 0.45rem; }
@@ -176,26 +183,17 @@
 
     function card(l) {
       const shot = media(l.photo, "image");
-      const on = ui.selected === l.id ? " on" : "";
-      return `<article class="card${on}" style="margin-bottom:.6rem">
-        <button class="card" data-act="select" data-id="${esc(l.id)}" style="border:0;background:transparent;padding:0">
-          <span class="faint">${esc(mark(l))}</span>
-          ${shot ? `<img class="shot" alt="" src="${shot}" />` : ""}
-          <h3 style="margin-top:.45rem;font-size:1.45rem">${esc(l.title)}</h3>
-          ${l.detail ? `<p class="muted" style="margin:.35rem 0 0">${esc(l.detail)}</p>` : ""}
-          <p class="faint" style="margin:.45rem 0 0">${esc(l.by)} · ${esc(l.place)}</p>
-        </button>
-        ${ui.selected === l.id ? `<div class="row" style="margin-top:.6rem">
-          <button class="btn solid" data-act="edit" data-id="${esc(l.id)}">Edit</button>
-          <button class="btn" data-act="review" data-id="${esc(l.id)}">Review</button>
-          <button class="btn" data-act="dismiss" data-id="${esc(l.id)}">${l.mine ? "Remove" : "Dismiss"}</button>
-        </div>` : ""}
-      </article>`;
+      const side = l.side === "have" ? "IhavIt" : "IwantIT";
+      return `<button class="tile" type="button" data-act="review" data-id="${esc(l.id)}">
+        <span class="frame">${shot ? `<img alt="" src="${shot}" />` : ""}<span class="badge">${side}</span></span>
+        <strong>${esc(l.title)}</strong>
+        <span class="faint">${esc(l.place)}${l.status === "held" ? " · In hand" : ""}</span>
+      </button>`;
     }
 
     function column(title, kicker, items) {
       return `<section><h2>${title}</h2><p class="faint">${kicker} ${items.length}</p>
-        ${items.length ? items.map(card).join("") : `<p class="muted">Nothing on this side yet.</p>`}
+        ${items.length ? `<div class="feed">${items.map(card).join("")}</div>` : `<p class="muted">Nothing on this side yet.</p>`}
       </section>`;
     }
 
@@ -329,7 +327,8 @@
         ${l.voice ? `<p>${esc(l.voice)}</p>` : ""}
         ${media(l.video,"video") ? `<video controls src="${media(l.video,"video")}"></video>` : ""}
         ${l.signature ? `<img class="sign" alt="Signature" src="${l.signature}" />` : ""}
-        <div class="row"><button class="btn" data-act="read-card">Read aloud</button><button class="btn" data-act="close-review">Close</button></div>
+        <p class="faint">${esc(l.by)} · ${esc(l.place)}</p>
+        <div class="row"><button class="btn solid" data-act="match" data-id="${esc(l.id)}">Find a match</button><button class="btn" data-act="edit" data-id="${esc(l.id)}">Edit</button><button class="btn" data-act="read-card">Read aloud</button><button class="btn" data-act="dismiss" data-id="${esc(l.id)}">${l.mine ? "Remove" : "Dismiss"}</button><button class="btn" data-act="close-review">Close</button></div>
       </article>`;
     }
 
@@ -525,6 +524,7 @@
       if (act === "voice") { toggleVoice(); return; }
       if (act === "read" && ui.composer) { speak([ui.composer.title, ui.composer.detail, ui.composer.voice].filter(Boolean).join(". ")); return; }
       if (act === "review") { ui.review = el.dataset.id; render(); return; }
+      if (act === "match") { ui.selected = el.dataset.id; ui.review = null; ui.toast = "Showing what sits close to this."; render(); return; }
       if (act === "close-review") { ui.review = null; render(); return; }
       if (act === "read-card") {
         const l = desk.listings.find((x) => x.id === ui.review);
