@@ -319,7 +319,9 @@
     function mockBlock() {
       const rows = trialRows();
       const paired = rows.filter((r) => r.paired).length;
-      return `<section style="margin-top:2.5rem;border-top:1px solid var(--line);padding-top:1rem"><p class="kicker">All shelves</p><h2>Mock trial</h2><p>${paired} of ${rows.length} shelves have both sides. Nothing was taken.</p>
+      return `<section style="margin-top:2.5rem;border-top:1px solid var(--line);padding-top:1rem"><p class="kicker">All shelves</p><h2>Mock trial</h2>
+        <p style="font-family:Newsreader,serif;font-size:3rem;line-height:1;margin:.3rem 0 .6rem">${paired}<span class="muted" style="font-size:1.3rem">/${rows.length}</span></p>
+        <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:.4rem;margin-bottom:1rem">${rows.map((r) => `<div style="min-height:3.4rem;border-radius:.5rem;padding:.45rem;border:1px solid var(--line);background:${r.paired ? "var(--fg)" : "var(--panel)"};color:${r.paired ? "var(--bg)" : "var(--muted)"};font-size:.75rem">${esc(r.category)}</div>`).join("")}</div>
         ${rows.map((r) => `<p style="border-bottom:1px solid var(--line);padding:.55rem 0"><strong>${esc(r.category)}</strong> <span class="muted">${r.paired ? esc(r.have) + " with " + esc(r.want) : r.have ? "Have only · " + esc(r.have) : r.want ? "Want only · " + esc(r.want) : "No line on this shelf"}</span></p>`).join("")}
         <button class="btn solid" type="button" data-act="trial">Add to the tape</button></section>`;
     }
@@ -331,6 +333,11 @@
       const tabs = [["desk","Desk"],["have","IhavIt"],["want","IwantIT"],["done","IdidIT"]];
       return `<h1>IdidIt</h1>
         <p class="muted">Third seat. Checked as ${esc(kyc.handle || kyc.name)}. Floor, then the promise, then the book. You may refuse a line that cannot be shown. Not a new coin.</p>
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.5rem;margin:.8rem 0">
+          <div class="card"><div style="font-family:Newsreader,serif;font-size:2rem;line-height:1">${desk.listings.filter((l) => l.side === "have" && l.status === "open" && l.kind !== "future").length}</div><div class="faint">IhavIt open</div></div>
+          <div class="card"><div style="font-family:Newsreader,serif;font-size:2rem;line-height:1">${desk.listings.filter((l) => l.side === "want" && l.status === "open" && l.kind !== "future").length}</div><div class="faint">IwantIT open</div></div>
+          <div class="card"><div style="font-family:Newsreader,serif;font-size:2rem;line-height:1">${(desk.done || []).filter((t) => !t.mock).length}</div><div class="faint">On the tape</div></div>
+        </div>
         ${ui.toast ? `<p>${esc(ui.toast)}</p>` : ""}
         <div class="row" style="margin:.8rem 0">
           <input id="q" placeholder="Search the desk" value="${esc(ui.query)}" style="max-width:18rem" />
