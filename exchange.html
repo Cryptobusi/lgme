@@ -261,13 +261,14 @@
             <p style="margin:0"><span class="faint">Remainder</span><br>${choice === "retire" ? "Zero" : esc(w.title)}<br><span class="muted">Named, including zero.</span></p>
           </div>
           <p class="muted">An offer is not a line until you accept it. This hold writes nothing yet.</p>
-          <label class="field">Note<input data-act="note" data-id="${esc(p.id)}" value="${esc(p.note)}" /></label>
+          <label class="field">Your sentence<input data-act="note" data-id="${esc(p.id)}" value="${esc(p.note)}" placeholder="Why this line cannot be shown" /></label>
           <p style="margin:.8rem 0 .4rem">Instead of paying now</p>
           <div class="settle">${WAYS.map(([id, label]) => `<button type="button" class="btn" data-act="choose" data-id="${esc(p.id)}" data-way="${id}" aria-pressed="${choice === id}">${label}</button>`).join("")}</div>
+          ${choice ? `<p>Charge posted: ${choice === "tokens" ? (Number(ui.tokens) > 0 ? esc(ui.tokens) + " tokens" : "Unnamed") : "None"}. Same charge.</p>` : ""}
           ${choice === "furlough" ? `<label class="field">Resume payment<input type="date" data-act="until" value="${esc(ui.until)}" /></label>` : ""}
           ${choice === "tokens" ? `<label class="field">Tokens<input inputmode="numeric" data-act="tokens" value="${esc(ui.tokens)}" /></label>` : ""}
           <div class="row" style="margin-top:.6rem">
-            <button class="btn solid" data-act="apply" data-id="${esc(p.id)}" ${choice ? "" : "disabled"}>${choice ? wayLabel(choice) : "Choose one"}</button>
+            <button class="btn solid" data-act="apply" data-id="${esc(p.id)}" ${choice && (choice !== "tokens" || Number(ui.tokens) > 0) && (choice === "retire" || (w.title || "").trim()) ? "" : "disabled"}>${choice ? wayLabel(choice) : "Choose one"}</button>
             <button class="btn" data-act="release" data-id="${esc(p.id)}">Release</button><button class="btn" data-act="refuse" data-id="${esc(p.id)}">Refuse</button>
           </div>
         </article>`;
@@ -333,6 +334,7 @@
         <p style="font-family:Newsreader,serif;font-size:3rem;line-height:1;margin:.3rem 0 .6rem">${paired}<span class="muted" style="font-size:1.3rem">/${rows.length}</span></p>
         <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:.4rem;margin-bottom:1rem">${rows.map((r) => `<div style="min-height:3.4rem;border-radius:.5rem;padding:.45rem;border:1px solid var(--line);background:${r.paired ? "var(--fg)" : "var(--panel)"};color:${r.paired ? "var(--bg)" : "var(--muted)"};font-size:.75rem">${esc(r.category)}</div>`).join("")}</div>
         ${rows.map((r) => `<p style="border-bottom:1px solid var(--line);padding:.55rem 0"><strong>${esc(r.category)}</strong> <span class="muted">${r.paired ? esc(r.have) + " with " + esc(r.want) : r.have ? "Have only · " + esc(r.have) : r.want ? "Want only · " + esc(r.want) : "No line on this shelf"}</span></p>`).join("")}
+        <button class="btn" type="button" data-act="fill">Fill the open shelves</button>
         <button class="btn solid" type="button" data-act="trial">Add to the tape</button></section>`;
     }
 
@@ -370,7 +372,7 @@
         <section style="margin-top:2.5rem;border-top:1px solid var(--line);padding-top:1rem"><p class="kicker">Apart from the swaps</p><h2>Future app improvements</h2><p class="muted">Each one is 1 coin to implement. Same charge. No friend rate. Find a buyer, and it stays on this list, apart from the swaps.</p>
         ${desk.listings.filter((l) => l.kind === "future").map((l) => `<article style="border-bottom:1px solid var(--line);padding:.8rem 0"><p class="faint">IwantIT · Future</p><h3>${esc(l.title)}</h3><p class="muted">${esc(l.detail)}</p><p>1 coin to implement</p><p class="muted">${l.buyer ? "Buyer: " + esc(l.buyer) + (l.buyerNote ? " · " + esc(l.buyerNote) : "") : "No buyer yet"}</p><button class="btn" type="button" data-act="buyer" data-id="${esc(l.id)}">Find buyer</button></article>`).join("")}
         </section>
-        <p class="faint" style="margin-top:2rem">This desk stays in this browser. Contribution, participation welcome. X Money to <a href="https://x.com/Trancesage">@Trancesage</a>. Send it from the Money tab on X. This desk does not hold it. <a href="/live-check">Live check, two passes</a>. Hedera’s Cursor MCP is on testnet only. A transaction there does not settle until a wallet signs it. This desk does not use it.</p>
+        <p class="faint" style="margin-top:2rem">This desk stays in this browser. <button class="btn" type="button" data-act="book">Take the book</button> Contribution, participation welcome. X Money to <a href="https://x.com/Trancesage">@Trancesage</a>. Send it from the Money tab on X. This desk does not hold it. <a href="/live-check">Live check, two passes</a>. Hedera’s Cursor MCP is on testnet only. A transaction there does not settle until a wallet signs it. This desk does not use it.</p>
         ${mockBlock()}`;
     }
 
@@ -407,7 +409,7 @@
           <label class="field">X handle<input name="handle" placeholder="@handle" autocomplete="username" required /></label>
           <p><button type="button" class="btn" data-act="grok">Your Grok</button></p>
           <div id="grok-box" hidden>
-            <p class="muted">This step: checking the X handle. The help is your own Grok. This desk does not answer for it.</p>
+            <p class="muted">This step: checking the X handle. The help is your own Grok. This desk does not answer for it. Your Grok cannot post, hold, or settle. An agent does not mint.</p>
             <p><a class="btn solid" href="https://grok.com" target="_blank" rel="noreferrer">Open your Grok</a></p>
           </div>
           <button class="btn solid" style="margin-top:1rem" type="submit">Open the exchange</button>
@@ -472,7 +474,7 @@
         save(); render(); return;
       }
       const tokens = Number(ui.tokens);
-      if (mode === "tokens" && !(tokens > 0)) return;
+      if (mode === "tokens" && !(tokens > 0)) { ui.toast = "Post the charge before the line is accepted."; save(); render(); return; }
       const pair = desk.pairs.find((p) => p.id === pairId);
       if (!pair) return;
       const have = desk.listings.find((l) => l.id === pair.haveId);
@@ -504,6 +506,33 @@
       }
       desk.done = [done, ...desk.done];
       save(); render();
+    }
+
+    function fillShelves() {
+      const fills = [
+        { id:"fill-books", side:"want", title:"Picture books for bedtime", detail:"Ages four to seven. Sturdy boards.", category:"Books", place:"Hill", by:"Ren" },
+        { id:"fill-time", side:"have", title:"Quiet desk for two weekdays", detail:"Near the river, a window, no calls.", category:"Time", place:"River ward", by:"Mara" },
+        { id:"fill-skills-have", side:"have", title:"One hour of sharpening", detail:"Tools and a lesson on the stones.", category:"Skills", place:"The yards", by:"Ken" },
+        { id:"fill-skills-want", side:"want", title:"One hour of sharpening", detail:"I have the tools. I need the lesson.", category:"Skills", place:"The yards", by:"Bea" }
+      ];
+      const added = fills.filter((fill) => !desk.listings.some((l) => l.id === fill.id) && !desk.listings.some((l) => l.kind !== "future" && l.category === fill.category && l.side === fill.side))
+        .map((fill) => ({ ...fill, mine:false, status:"open", createdAt: Date.now() }));
+      if (!added.length) { ui.toast = "Every shelf already has both sides."; render(); return; }
+      desk.listings = added.concat(desk.listings);
+      ui.toast = "Posted the missing sides. Nothing was taken.";
+      save();
+      render();
+    }
+    function takeBook() {
+      const file = { listings: desk.listings, pairs: desk.pairs, done: desk.done, at: Date.now() };
+      const url = URL.createObjectURL(new Blob([JSON.stringify(file, null, 2)], { type: "application/json" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "ididit-book.json";
+      link.click();
+      URL.revokeObjectURL(url);
+      ui.toast = "The book is a file. This desk does not keep another copy.";
+      render();
     }
 
     app.addEventListener("click", async (event) => {
@@ -554,7 +583,13 @@
         const h = pair && desk.listings.find((l) => l.id === pair.haveId);
         const w = pair && desk.listings.find((l) => l.id === pair.wantId);
         if (pair && h && w) {
-          desk.done.unshift({ id: "d-" + Date.now(), haveTitle: h.title, wantTitle: w.title, haveBy: h.by, wantBy: w.by, category: h.category, note: pair.note || "Refused. The line could not be shown, or it skipped the order.", createdAt: Date.now(), refused: true });
+          const sentence = (pair.note || "").trim();
+          if (!sentence) {
+            ui.toast = "Write your sentence. A refusal has to be shown.";
+            render();
+            return;
+          }
+          desk.done.unshift({ id: "d-" + Date.now(), haveTitle: h.title, wantTitle: w.title, haveBy: h.by, wantBy: w.by, category: h.category, note: sentence, createdAt: Date.now(), refused: true });
           desk.pairs = desk.pairs.filter((p) => p.id !== pair.id);
           desk.listings = desk.listings.map((l) => l.id === h.id || l.id === w.id ? { ...l, status:"open" } : l);
           ui.view = "done";
@@ -593,6 +628,8 @@
       if (act === "read" && ui.composer) { speak([ui.composer.title, ui.composer.detail, ui.composer.voice].filter(Boolean).join(". ")); return; }
       if (act === "review") { ui.review = el.dataset.id; render(); return; }
       if (act === "trial") { writeTrial(true); render(); return; }
+      if (act === "fill") { fillShelves(); return; }
+      if (act === "book") { takeBook(); return; }
       if (act === "save") {
         desk.listings = desk.listings.map((l) => l.id === el.dataset.id ? { ...l, saved: !l.saved } : l);
         save(); render(); return;
