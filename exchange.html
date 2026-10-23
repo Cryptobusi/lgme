@@ -264,7 +264,7 @@
           <label class="field">Your sentence<input data-act="note" data-id="${esc(p.id)}" value="${esc(p.note)}" placeholder="Why this line cannot be shown" /></label>
           <p style="margin:.8rem 0 .4rem">Instead of paying now</p>
           <div class="settle">${WAYS.map(([id, label]) => `<button type="button" class="btn" data-act="choose" data-id="${esc(p.id)}" data-way="${id}" aria-pressed="${choice === id}">${label}</button>`).join("")}</div>
-          ${choice ? `<p>Charge posted: ${choice === "tokens" ? (Number(ui.tokens) > 0 ? esc(ui.tokens) + " tokens" : "Unnamed") : "None"}. Same charge.</p>` : ""}
+          ${choice ? `<p data-charge>Charge posted: ${choice === "tokens" ? (Number(ui.tokens) > 0 ? esc(ui.tokens) + " tokens" : "Unnamed") : "None"}. Same charge.</p>` : ""}
           ${choice === "furlough" ? `<label class="field">Resume payment<input type="date" data-act="until" value="${esc(ui.until)}" /></label>` : ""}
           ${choice === "tokens" ? `<label class="field">Tokens<input inputmode="numeric" data-act="tokens" value="${esc(ui.tokens)}" /></label>` : ""}
           <div class="row" style="margin-top:.6rem">
@@ -680,7 +680,15 @@
         desk.pairs = desk.pairs.map((p) => p.id === el.dataset.id ? { ...p, note: el.value } : p);
         save();
       }
-      if (el.dataset.act === "tokens") ui.tokens = el.value;
+      if (el.dataset.act === "tokens") {
+        ui.tokens = el.value;
+        const article = el.closest("article");
+        const ready = Number(el.value) > 0;
+        const apply = article && article.querySelector("[data-act=apply]");
+        if (apply) apply.disabled = !ready;
+        const line = article && article.querySelector("[data-charge]");
+        if (line) line.textContent = "Charge posted: " + (ready ? el.value + " tokens" : "Unnamed") + ". Same charge.";
+      }
       if (el.dataset.act === "until") ui.until = el.value;
       if (ui.composer && el.name && el.form && el.form.id === "composer") ui.composer[el.name] = el.value;
     });
