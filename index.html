@@ -144,6 +144,19 @@
       border: 1px solid var(--fg);
     }
     a.enter:hover { background: var(--gold); border-color: var(--gold); color: var(--bg); }
+    .tools > a.study {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0.55rem 0.95rem;
+      background: transparent;
+      color: var(--muted);
+      text-decoration: none;
+      border: 1px solid var(--line);
+      font-size: 0.92rem;
+    }
+    .tools > a.study:hover { color: var(--gold); }
     #glossary { margin-top: 0; border-top: 0; padding-top: 0.2rem; }
     #glossary[hidden] { display: none; }
     .map { width: 100%; border-collapse: collapse; margin: 1rem 0 0.4rem; }
@@ -189,6 +202,7 @@
   </nav>
   <div class="tools">
     <a class="enter" href="/exchange">IdidIt</a>
+    <a class="study" href="/study">Study</a>
     <button type="button" id="glossary-btn" aria-expanded="false" aria-controls="glossary">Glossary</button>
   </div>
   <section id="glossary" hidden>
