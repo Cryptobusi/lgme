@@ -370,7 +370,7 @@
         <section style="margin-top:2.5rem;border-top:1px solid var(--line);padding-top:1rem"><p class="kicker">Apart from the swaps</p><h2>Future app improvements</h2><p class="muted">Each one is 1 coin to implement. Same charge. No friend rate. Find a buyer, and it stays on this list, apart from the swaps.</p>
         ${desk.listings.filter((l) => l.kind === "future").map((l) => `<article style="border-bottom:1px solid var(--line);padding:.8rem 0"><p class="faint">IwantIT · Future</p><h3>${esc(l.title)}</h3><p class="muted">${esc(l.detail)}</p><p>1 coin to implement</p><p class="muted">${l.buyer ? "Buyer: " + esc(l.buyer) + (l.buyerNote ? " · " + esc(l.buyerNote) : "") : "No buyer yet"}</p><button class="btn" type="button" data-act="buyer" data-id="${esc(l.id)}">Find buyer</button></article>`).join("")}
         </section>
-        <p class="faint" style="margin-top:2rem">This desk stays in this browser. <a href="/live-check">Live check, two passes</a>. Hedera’s Cursor MCP is on testnet only. A transaction there does not settle until a wallet signs it. This desk does not use it.</p>
+        <p class="faint" style="margin-top:2rem">This desk stays in this browser. Contribution, participation welcome. X Money to <a href="https://x.com/Trancesage">@Trancesage</a>. Send it from the Money tab on X. This desk does not hold it. <a href="/live-check">Live check, two passes</a>. Hedera’s Cursor MCP is on testnet only. A transaction there does not settle until a wallet signs it. This desk does not use it.</p>
         ${mockBlock()}`;
     }
 
@@ -400,6 +400,8 @@
         <p class="kicker" style="margin-top:1rem">X handle</p>
         <p class="muted">The beauty is in the eye of the beholder. Functionality is in the user.</p>
         <p class="muted">The only check is your X handle. It is not proof of a unique person. It stays in this browser. X is not asked to confirm it. Not a new coin.</p>
+        <p>Contribution, participation welcome.</p>
+        <p class="muted">X Money to <a href="https://x.com/Trancesage">@Trancesage</a>. Send it from the Money tab on X. This desk does not hold it.</p>
         <div class="row"><button class="btn" type="button" data-act="look" data-size="set" aria-pressed="${look === "set"}">As set</button><button class="btn" type="button" data-act="look" data-size="larger" aria-pressed="${look === "larger"}">Larger</button></div>
         <form id="kyc">
           <label class="field">X handle<input name="handle" placeholder="@handle" autocomplete="username" required /></label>
