@@ -5,12 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>IdidIt · lgme</title>
   <link rel="icon" href="/icons/icon-192.png" />
+  <link rel="stylesheet" href="/menu.css" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;1,6..72,500&display=swap" />
   <style>
     :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --faint:#8ea892; --gold:#c6a15b; --line:#2c352b; --panel:#141a13; }
     * { box-sizing: border-box; }
     html[data-look="larger"] { font-size: 125%; }
-    body { margin: 0 auto; max-width: 72rem; padding: 1.25rem 1.25rem 4rem; font-family: Figtree, sans-serif; font-size: 1rem; line-height: 1.5; }
+    body { margin: 0 auto; max-width: 72rem; padding: 1.25rem 1.25rem 4rem; background: var(--bg); color: var(--fg); font-family: Figtree, sans-serif; font-size: 1rem; line-height: 1.5; }
     a { color: var(--fg); }
     h1, h2, h3 { font-family: Newsreader, serif; font-weight: 500; letter-spacing: -0.02em; margin: 0; }
     h1 { font-size: clamp(2.6rem, 7vw, 4rem); line-height: 0.95; }
@@ -49,11 +50,28 @@
     .check input { width: auto; margin-top: 0.3rem; }
     hr { border: 0; border-top: 1px solid var(--line); margin: 1.2rem 0; }
     .back { color: var(--muted); text-decoration: none; }
+    .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; margin: 0.9rem 0 1.3rem; }
+    .num { font-family: Newsreader, serif; font-size: 2rem; line-height: 1; }
+    .tile .frame.bare { aspect-ratio: 4 / 3; display: flex; align-items: flex-end; padding: 0.75rem; }
+    .tile .gloss { font-family: Newsreader, serif; font-size: 1.35rem; line-height: 1; }
+    .hold, .pair { border-bottom: 1px solid var(--line); padding: 0.8rem 0 1rem; }
+    .pair p, .waynote { margin: 0 0 0.35rem; }
+    .reason { color: var(--muted); }
+    .toast { margin: 0.6rem 0; border-left: 2px solid var(--gold); padding-left: 0.7rem; }
+    .shelves { margin-top: 0.45rem; }
+    @media (max-width: 640px) {
+      .stats { grid-template-columns: 1fr; }
+      .settle { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
-  <p class="kicker">lgme</p>
-  <p><a class="back" href="/study">Study/Prerequisite</a> · <a class="back" href="/">Back to the book</a></p>
+  <nav class="deskmenu" aria-label="Desk">
+    <a href="/study">Study/Prerequisite</a>
+    <a href="/#ididit">IDidit</a>
+    <a href="/exchange" aria-current="page">IdidIt</a>
+    <a href="/">Desk</a>
+  </nav>
   <div id="app"></div>
   <script>
     const KYC_KEY = "lgme-kyc-v1";
@@ -186,6 +204,23 @@
       return l.category;
     }
     function wayLabel(id, refused) { if (refused) return "Refused"; return (WAYS.find((w) => w[0] === id) || ["","Settled"])[1]; }
+    function wayNote(id) { return (WAYS.find((w) => w[0] === id) || ["", "", ""])[2]; }
+    function sharedWords(h, w) {
+      const have = new Set(words(h.title + " " + h.detail));
+      const found = [];
+      for (const word of words(w.title + " " + w.detail)) {
+        if (have.has(word) && !found.includes(word)) found.push(word);
+      }
+      return found;
+    }
+    function pairReason(h, w) {
+      const bits = [];
+      if (h.category === w.category) bits.push("Same shelf, " + h.category);
+      const shared = sharedWords(h, w);
+      if (shared.length) bits.push("Shared words: " + shared.slice(0, 6).join(", "));
+      if (!bits.length) bits.push("Close on the desk");
+      return bits.join(". ") + ".";
+    }
     function matchList(l) {
       if (ui.category !== "All" && l.category !== ui.category) return false;
       const n = ui.query.trim().toLowerCase();
@@ -196,8 +231,13 @@
     function card(l) {
       const shot = media(l.photo, "image");
       const side = l.side === "have" ? "IhavIt" : "IwantIT";
+      const gloss = l.side === "have" ? "I have it" : "I want it";
+      const saved = l.saved ? " · Saved" : "";
+      const frame = shot
+        ? `<span class="frame"><img alt="" src="${shot}" /><span class="badge">${side}${saved}</span></span>`
+        : `<span class="frame bare"><span class="badge">${side}${saved}</span><span class="gloss">${gloss}</span></span>`;
       return `<button class="tile" type="button" data-act="review" data-id="${esc(l.id)}">
-        <span class="frame">${shot ? `<img alt="" src="${shot}" />` : ""}<span class="badge">${side}${l.saved ? " · Saved" : ""}</span></span>
+        ${frame}
         <strong>${esc(l.title)}</strong>
         <span class="faint">${esc(l.place)}${l.status === "held" ? " · In hand" : ""}</span>
       </button>`;
@@ -205,7 +245,7 @@
 
     function column(title, kicker, items) {
       return `<section><h2>${title}</h2><p class="faint">${kicker} ${items.length}</p>
-        ${items.length ? `<div class="feed">${items.map(card).join("")}</div>` : `<p class="muted">Nothing on this side yet.</p>`}
+        ${items.length ? `<div class="feed">${items.map(card).join("")}</div>` : `<p class="muted">Nothing on this side yet. Post what you have, or what you still need.</p>`}
       </section>`;
     }
 
@@ -243,17 +283,19 @@
       </form>`;
     }
 
-    function heldBlock() {
-      const rows = desk.pairs.map((p) => {
+    function holdRows() {
+      return desk.pairs.map((p) => {
         const h = desk.listings.find((l) => l.id === p.haveId);
         const w = desk.listings.find((l) => l.id === p.wantId);
         return h && w ? { p, h, w } : null;
       }).filter(Boolean);
-      if (!rows.length || ui.view === "done") return "";
-      return `<section><h2>In hand</h2>${rows.map(({ p, h, w }) => {
-        const choice = ui.choice[p.id] || "";
-        return `<article style="border-bottom:1px solid var(--line);padding:.8rem 0">
-          <p class="faint">${p.furloughUntil ? "Furloughed until " + new Date(p.furloughUntil).toLocaleDateString() : "Held"}</p>
+    }
+    function holdArticle(p, h, w) {
+      const choice = ui.choice[p.id] || "";
+      const due = p.furloughUntil && p.furloughUntil <= Date.now();
+      const state = due ? "The date has arrived" : p.furloughUntil ? "Furloughed until " + new Date(p.furloughUntil).toLocaleDateString() : "In hand";
+      return `<article class="hold">
+          <p class="faint">${esc(state)}</p>
           <p><strong>${esc(h.title)}</strong> with <strong>${esc(w.title)}</strong></p>
           <div class="row" style="align-items:flex-start;gap:1.2rem;margin:.7rem 0">
             <p style="margin:0"><span class="faint">Basket</span><br>${esc(h.title)}<br><span class="muted">Already named. Paid first.</span></p>
@@ -264,7 +306,7 @@
           <label class="field">Your sentence<input data-act="note" data-id="${esc(p.id)}" value="${esc(p.note)}" placeholder="Why this line cannot be shown" /></label>
           <p style="margin:.8rem 0 .4rem">Instead of paying now</p>
           <div class="settle">${WAYS.map(([id, label]) => `<button type="button" class="btn" data-act="choose" data-id="${esc(p.id)}" data-way="${id}" aria-pressed="${choice === id}">${label}</button>`).join("")}</div>
-          ${choice ? `<p data-charge>Charge posted: ${choice === "tokens" ? (Number(ui.tokens) > 0 ? esc(ui.tokens) + " tokens" : "Unnamed") : "None"}. Same charge.</p>` : ""}
+          ${choice ? `<p class="waynote muted">${esc(wayNote(choice))}</p><p data-charge>Charge posted: ${choice === "tokens" ? (Number(ui.tokens) > 0 ? esc(ui.tokens) + " tokens" : "Unnamed") : "None"}. Same charge.</p>` : `<p class="faint">Choose one way. The sentence shows under it.</p>`}
           ${choice === "furlough" ? `<label class="field">Resume payment<input type="date" data-act="until" value="${esc(ui.until)}" /></label>` : ""}
           ${choice === "tokens" ? `<label class="field">Tokens<input inputmode="numeric" data-act="tokens" value="${esc(ui.tokens)}" /></label>` : ""}
           <div class="row" style="margin-top:.6rem">
@@ -272,17 +314,25 @@
             <button class="btn" data-act="release" data-id="${esc(p.id)}">Release</button><button class="btn" data-act="refuse" data-id="${esc(p.id)}">Refuse</button>
           </div>
         </article>`;
-      }).join("")}</section>`;
     }
-
+    function needsBlock() {
+      const rows = holdRows();
+      const saved = desk.listings.filter((l) => l.saved && l.kind !== "future" && l.status !== "held");
+      const body = !rows.length && !saved.length
+        ? `<p class="muted">Nothing is waiting on you.</p>`
+        : `${rows.map(({ p, h, w }) => holdArticle(p, h, w)).join("")}${saved.length ? `<p class="kicker" style="margin-top:1.1rem">Saved</p><div class="feed">${saved.map(card).join("")}</div>` : ""}`;
+      return `<section id="needs"><p class="kicker">Needs you</p><h2>Needs you</h2>${body}</section>`;
+    }
     function suggestBlock() {
       if (ui.view === "done") return "";
       const focus = desk.listings.find((l) => l.id === ui.selected && l.status === "open");
       const rows = pairs(focus ? focus.id : null);
       const shown = ui.showAll ? rows : rows.slice(0, 3);
-      return `<section><h2>${focus ? "Closest to this" : "Close pairs"}</h2>
-        ${shown.map((r) => `<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--line);padding:.7rem 0">
-          <p style="margin:0"><strong>${esc(r.h.title)}</strong> with <strong>${esc(r.w.title)}</strong></p>
+      return `<section id="pairs"><h2>${focus ? "Closest to this" : "Close pairs"}</h2>
+        <p class="muted">${focus ? "Why this sits close to the one you chose. Hold is not a line." : "Why these sit close. Hold is not a line."}</p>
+        ${shown.map((r) => `<div class="pair">
+          <p><strong>${esc(r.h.title)}</strong> with <strong>${esc(r.w.title)}</strong></p>
+          <p class="reason">${esc(pairReason(r.h, r.w))}</p>
           <button class="btn solid" data-act="hold" data-have="${esc(r.h.id)}" data-want="${esc(r.w.id)}">Hold</button>
         </div>`).join("") || `<p class="muted">No pairs sit close yet.</p>`}
         ${rows.length > 3 ? `<button class="btn" data-act="more">${ui.showAll ? "Show fewer" : "Show the rest"}</button>` : ""}
@@ -343,27 +393,30 @@
       const haves = list.filter((l) => l.side === "have" && l.kind !== "future");
       const wants = list.filter((l) => l.side === "want" && l.kind !== "future");
       const tabs = [["desk","Desk"],["have","IhavIt"],["want","IwantIT"],["done","IdidIT"]];
-      return `<h1>IdidIt</h1>
-        <p class="muted">Third seat. Checked as ${esc(kyc.handle || kyc.name)}. Floor, then the promise, then the book. You may refuse a line that cannot be shown. Not a new coin.</p>
-        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.5rem;margin:.8rem 0">
-          <div class="card"><div style="font-family:Newsreader,serif;font-size:2rem;line-height:1">${desk.listings.filter((l) => l.side === "have" && l.status === "open" && l.kind !== "future").length}</div><div class="faint">IhavIt open</div></div>
-          <div class="card"><div style="font-family:Newsreader,serif;font-size:2rem;line-height:1">${desk.listings.filter((l) => l.side === "want" && l.status === "open" && l.kind !== "future").length}</div><div class="faint">IwantIT open</div></div>
-          <div class="card"><div style="font-family:Newsreader,serif;font-size:2rem;line-height:1">${(desk.done || []).filter((t) => !t.mock).length}</div><div class="faint">On the tape</div></div>
-        </div>
-        ${ui.toast ? `<p>${esc(ui.toast)}</p>` : ""}
-        <div class="row" style="margin:.8rem 0">
-          <input id="q" placeholder="Search the desk" value="${esc(ui.query)}" style="max-width:18rem" />
+      return `<p class="kicker">Third seat</p>
+        <h1>IdidIt</h1>
+        <p class="muted">Checked as ${esc(kyc.handle || kyc.name)}. Floor, then the promise, then the book. You may refuse a line that cannot be shown. Not a new coin.</p>
+        <div class="row" style="margin:.75rem 0 .2rem">
           <button class="btn solid" data-act="open-post">Post</button>
-        </div>
-        <div class="row">${tabs.map(([id, label]) => `<button class="btn" data-act="view" data-view="${id}" aria-pressed="${ui.view === id}">${label}</button>`).join("")}
-          <button class="btn" type="button" data-act="look" data-size="set" aria-pressed="${look === "set"}">As set</button>
           <button class="btn" type="button" data-act="look" data-size="larger" aria-pressed="${look === "larger"}">Larger</button>
+          <button class="btn" type="button" data-act="look" data-size="set" aria-pressed="${look === "set"}">As set</button>
+          <button class="btn" type="button" data-act="read-seat">Read aloud</button>
         </div>
-        <div class="row" style="margin-top:.4rem"><button class="btn" data-act="cat" data-cat="All" aria-pressed="${ui.category === "All"}">All shelves</button>
+        <div class="stats">
+          <div class="card"><div class="num">${desk.listings.filter((l) => l.side === "have" && l.status === "open" && l.kind !== "future").length}</div><div class="faint">IhavIt open</div><div class="faint">I have it</div></div>
+          <div class="card"><div class="num">${desk.listings.filter((l) => l.side === "want" && l.status === "open" && l.kind !== "future").length}</div><div class="faint">IwantIT open</div><div class="faint">I want it</div></div>
+          <div class="card"><div class="num">${(desk.done || []).filter((t) => !t.mock).length}</div><div class="faint">On the tape</div><div class="faint">I did it</div></div>
+        </div>
+        ${ui.toast ? `<p class="toast">${esc(ui.toast)}</p>` : ""}
+        ${needsBlock()}
+        <div class="row" style="margin:1.3rem 0 .55rem">
+          <input id="q" placeholder="Search the desk" value="${esc(ui.query)}" style="max-width:18rem" />
+        </div>
+        <div class="row">${tabs.map(([id, label]) => `<button class="btn" data-act="view" data-view="${id}" aria-pressed="${ui.view === id}">${label}</button>`).join("")}</div>
+        <div class="row shelves"><button class="btn" data-act="cat" data-cat="All" aria-pressed="${ui.category === "All"}">All shelves</button>
           ${CATS.map((c) => `<button class="btn" data-act="cat" data-cat="${esc(c)}" aria-pressed="${ui.category === c}">${esc(c)}</button>`).join("")}</div>
         ${composer()}
         ${ui.review ? reviewPane() : ""}
-        ${heldBlock()}
         ${suggestBlock()}
         ${ui.view === "done" ? doneBlock() : `<div class="cols" style="margin-top:1.2rem">
           ${ui.view !== "want" ? column("IhavIt", "On the table", haves) : ""}
@@ -552,6 +605,10 @@
         return;
       }
       if (act === "look") { applyLook(el.dataset.size); render(); return; }
+      if (act === "read-seat") {
+        speak("IdidIt. Checked as " + (kyc.handle || kyc.name) + ". Floor, then the promise, then the book. You may refuse a line that cannot be shown.");
+        return;
+      }
       if (act === "grok") { const box = document.getElementById("grok-box"); if (box) box.hidden = !box.hidden; return; }
       if (act === "view") { ui.view = el.dataset.view; ui.showAll = false; render(); return; }
       if (act === "cat") { ui.category = el.dataset.cat; render(); return; }
@@ -657,7 +714,7 @@
         ui.review = null;
         ui.toast = "Showing what sits close to this.";
         render();
-        const block = document.querySelector("section h2");
+        const block = document.getElementById("pairs");
         if (block) block.scrollIntoView({ block: "start" });
         return;
       }
