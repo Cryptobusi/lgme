@@ -35,8 +35,7 @@
     .card { border: 1px solid var(--line); background: var(--panel); padding: 0.9rem 1rem; text-align: left; width: 100%; }
     .card.on { border-color: var(--fg); }
     .card img.shot, video { width: 100%; max-height: 11rem; object-fit: cover; margin-top: 0.6rem; background: #000; }
-    .feed { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem 0.7rem; }
-    @media (min-width: 700px) { .feed { grid-template-columns: 1fr 1fr 1fr; } }
+    .feed { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 1rem 0.7rem; }
     .tile { display: block; width: 100%; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; }
     .tile .frame { position: relative; display: block; aspect-ratio: 1; overflow: hidden; border-radius: 0.6rem; background: var(--panel); border: 1px solid var(--line); }
     .tile img { width: 100%; height: 100%; object-fit: cover; margin: 0; max-height: none; }
@@ -348,11 +347,13 @@
     }
 
     function doneBlock() {
-      return `<section><h2>IdidIT</h2><p class="muted">The book. A refusal stays on it. A release writes nothing.</p>
+      return `<section id="room"><h2>IdidIT</h2><p class="muted">The book. A refusal stays on it. A release writes nothing.</p>
         ${desk.done.map((t) => `<article style="border-bottom:1px solid var(--line);padding:.9rem 0">
           <p class="faint">${esc(t.category)} / ${esc(t.mock ? "Mock" : wayLabel(t.settlement, t.refused))}${t.tokens ? " · " + t.tokens + " tokens" : ""}</p>
           <h3 style="font-size:1.6rem">${esc(t.haveTitle)}</h3>
           <p class="muted">for ${esc(t.wantTitle)}</p>
+          ${!t.mock && !t.refused && t.settlement ? `<p class="muted">${esc(wayNote(t.settlement))}</p>` : ""}
+          ${t.refused ? `<p class="muted">Refused. The line is on the book. The offer writes nothing.</p>` : ""}
           <p>${esc(t.haveBy)} and ${esc(t.wantBy)}</p>
           ${t.note ? `<p class="muted">${esc(t.note)}</p>` : ""}
           <button class="btn" data-act="speak-done" data-id="${esc(t.id)}">Read aloud</button>
@@ -446,7 +447,7 @@
         ${composer()}
         ${ui.review ? reviewPane() : ""}
         ${suggestBlock()}
-        ${ui.view === "done" ? doneBlock() : `<div class="cols" style="margin-top:1.2rem">
+        ${ui.view === "done" ? doneBlock() : `<div class="cols" id="room" style="margin-top:1.2rem">
           ${ui.view !== "want" ? column("IhavIt", "I have it. On the table", haves) : ""}
           ${ui.view !== "have" ? column("IwantIT", "I want it. Still missing", wants) : ""}
         </div>`}
@@ -639,7 +640,13 @@
       }
       if (act === "grok") { const box = document.getElementById("grok-box"); if (box) box.hidden = !box.hidden; return; }
       if (act === "view") { ui.view = el.dataset.view; ui.showAll = false; render(); return; }
-      if (act === "cat") { ui.category = el.dataset.cat; render(); return; }
+      if (act === "cat") {
+        ui.category = el.dataset.cat;
+        render();
+        const room = document.getElementById("room");
+        if (room && el.dataset.cat !== "All") room.scrollIntoView({ block: "start" });
+        return;
+      }
       if (act === "more") { ui.showAll = !ui.showAll; render(); return; }
       if (act === "select") { ui.selected = ui.selected === el.dataset.id ? null : el.dataset.id; render(); return; }
       if (act === "hold") {
