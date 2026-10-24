@@ -58,7 +58,10 @@
     .pair p, .waynote { margin: 0 0 0.35rem; }
     .reason { color: var(--muted); }
     .toast { margin: 0.6rem 0; border-left: 2px solid var(--gold); padding-left: 0.7rem; }
-    .shelves { margin-top: 0.45rem; }
+    .board { display: grid; grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr)); gap: 0.45rem; margin-top: 0.7rem; }
+    .shelf { display: flex; flex-direction: column; align-items: flex-start; gap: 0.15rem; min-height: 5.4rem; }
+    .shelf .count { font-family: Newsreader, serif; font-size: 1.45rem; line-height: 1.05; }
+    .trial { display: grid; grid-template-columns: repeat(auto-fill, minmax(6.2rem, 1fr)); gap: 0.4rem; margin-bottom: 1rem; }
     @media (max-width: 640px) {
       .stats { grid-template-columns: 1fr; }
       .settle { grid-template-columns: 1fr; }
@@ -184,7 +187,7 @@
       return s;
     }
     function pairs(focus) {
-      const open = desk.listings.filter((l) => l.status === "open");
+      const open = desk.listings.filter((l) => l.status === "open" && (focus || ui.category === "All" || l.category === ui.category));
       const rows = [];
       for (const h of open.filter((l) => l.side === "have")) {
         for (const w of open.filter((l) => l.side === "want")) {
@@ -382,12 +385,27 @@
       const paired = rows.filter((r) => r.paired).length;
       return `<section style="margin-top:2.5rem;border-top:1px solid var(--line);padding-top:1rem"><p class="kicker">All shelves</p><h2>Mock trial</h2>
         <p style="font-family:Newsreader,serif;font-size:3rem;line-height:1;margin:.3rem 0 .6rem">${paired}<span class="muted" style="font-size:1.3rem">/${rows.length}</span></p>
-        <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:.4rem;margin-bottom:1rem">${rows.map((r) => `<div style="min-height:3.4rem;border-radius:.5rem;padding:.45rem;border:1px solid var(--line);background:${r.paired ? "var(--fg)" : "var(--panel)"};color:${r.paired ? "var(--bg)" : "var(--muted)"};font-size:.75rem">${esc(r.category)}</div>`).join("")}</div>
+        <div class="trial">${rows.map((r) => `<div style="min-height:3.4rem;border-radius:.5rem;padding:.45rem;border:1px solid var(--line);background:${r.paired ? "var(--fg)" : "var(--panel)"};color:${r.paired ? "var(--bg)" : "var(--muted)"};font-size:.75rem">${esc(r.category)}</div>`).join("")}</div>
         ${rows.map((r) => `<p style="border-bottom:1px solid var(--line);padding:.55rem 0"><strong>${esc(r.category)}</strong> <span class="muted">${r.paired ? esc(r.have) + " with " + esc(r.want) : r.have ? "Have only · " + esc(r.have) : r.want ? "Want only · " + esc(r.want) : "No line on this shelf"}</span></p>`).join("")}
         <button class="btn" type="button" data-act="fill">Fill the open shelves</button>
         <button class="btn solid" type="button" data-act="trial">Add to the tape</button></section>`;
     }
 
+    function shelfBoard() {
+      const tiles = CATS.map((cat) => {
+        const rows = desk.listings.filter((l) => l.category === cat && l.kind !== "future" && l.status === "open");
+        const h = rows.filter((l) => l.side === "have").length;
+        const w = rows.filter((l) => l.side === "want").length;
+        const state = h && w ? "Both sides" : h ? "Have only" : w ? "Want only" : "Empty";
+        return `<button class="btn shelf" type="button" data-act="cat" data-cat="${esc(cat)}" aria-pressed="${ui.category === cat}">
+          <span>${esc(cat)}</span><span class="count">${h} · ${w}</span><span class="faint">${state}</span>
+        </button>`;
+      }).join("");
+      return `<section id="shelves"><p class="kicker">Shelves</p><h2>Where it sits</h2>
+        <p class="muted">The first number is what is on the table. The second is what is still missing. Both sides means a pair can be considered. Nothing here is taken.</p>
+        <button class="btn" type="button" data-act="cat" data-cat="All" aria-pressed="${ui.category === "All"}">All shelves</button>
+        <div class="board">${tiles}</div></section>`;
+    }
     function deskView() {
       const list = desk.listings.filter(matchList);
       const haves = list.filter((l) => l.side === "have" && l.kind !== "future");
@@ -413,8 +431,7 @@
           <input id="q" placeholder="Search the desk" value="${esc(ui.query)}" style="max-width:18rem" />
         </div>
         <div class="row">${tabs.map(([id, label]) => `<button class="btn" data-act="view" data-view="${id}" aria-pressed="${ui.view === id}">${label}</button>`).join("")}</div>
-        <div class="row shelves"><button class="btn" data-act="cat" data-cat="All" aria-pressed="${ui.category === "All"}">All shelves</button>
-          ${CATS.map((c) => `<button class="btn" data-act="cat" data-cat="${esc(c)}" aria-pressed="${ui.category === c}">${esc(c)}</button>`).join("")}</div>
+        ${shelfBoard()}
         ${composer()}
         ${ui.review ? reviewPane() : ""}
         ${suggestBlock()}
