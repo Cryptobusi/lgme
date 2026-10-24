@@ -27,7 +27,8 @@
     .btn { border: 1px solid var(--line); background: transparent; color: var(--fg); padding: 0.55rem 0.9rem; }
     .btn.solid { background: var(--fg); color: var(--bg); border-color: var(--fg); font-weight: 600; }
     .btn.solid:hover { background: var(--gold); border-color: var(--gold); color: var(--bg); }
-    .btn[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+    .btn[aria-pressed="true"] { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+    .btn.solid[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); box-shadow: none; }
     .btn:disabled { opacity: 0.4; }
     .grid { display: grid; gap: 0.5rem; }
     .cols { display: grid; gap: 1.5rem; }
@@ -35,7 +36,14 @@
     .card { border: 1px solid var(--line); background: var(--panel); padding: 0.9rem 1rem; text-align: left; width: 100%; }
     .card.on { border-color: var(--fg); }
     .card img.shot, video { width: 100%; max-height: 11rem; object-fit: cover; margin-top: 0.6rem; background: #000; }
-    .feed { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 1rem 0.7rem; }
+    .feed { display: grid; grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr)); gap: 0.85rem; }
+    h2, section, .block { scroll-margin-top: 4.5rem; }
+    .deskmenu a[aria-current="page"] { color: var(--fg); box-shadow: inset 0 -1px 0 var(--gold); }
+    .block { margin-top: 1.75rem; padding-top: 1.15rem; border-top: 1px solid var(--line); }
+    .search { margin: 0.2rem 0 0.7rem; }
+    .search input { flex: 1 1 16rem; max-width: none; }
+    .ledger { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.8rem 1.2rem; margin: 0.7rem 0; }
+    .ledger p { margin: 0; }
     .tile { display: block; width: 100%; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; }
     .tile .frame { position: relative; display: block; aspect-ratio: 1; overflow: hidden; border-radius: 0.6rem; background: var(--panel); border: 1px solid var(--line); }
     .tile img { width: 100%; height: 100%; object-fit: cover; margin: 0; max-height: none; }
@@ -49,9 +57,10 @@
     .check input { width: auto; margin-top: 0.3rem; }
     hr { border: 0; border-top: 1px solid var(--line); margin: 1.2rem 0; }
     .back { color: var(--muted); text-decoration: none; }
-    .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; margin: 0.9rem 0 1.3rem; }
+    .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; margin: 0.75rem 0 0.45rem; }
     .num { font-family: Newsreader, serif; font-size: 2rem; line-height: 1; }
-    .tile .frame.bare { aspect-ratio: auto; min-height: 8.5rem; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end; gap: 0.35rem; padding: 0.8rem; }
+    .tile .frame.bare { aspect-ratio: auto; min-height: 0; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 0.3rem; padding: 0.8rem 0.9rem 0.85rem; }
+    .tile .frame.bare .badge { position: static; }
     .tile .frame.bare .gloss { font-family: Newsreader, serif; font-size: 1.25rem; line-height: 1.15; }
     .seats p { margin: 0.25rem 0 0; }
     .hold, .pair { border-bottom: 1px solid var(--line); padding: 0.8rem 0 1rem; }
@@ -62,9 +71,11 @@
     .shelf { display: flex; flex-direction: column; align-items: flex-start; gap: 0.15rem; min-height: 5.4rem; }
     .shelf .count { font-family: Newsreader, serif; font-size: 1.45rem; line-height: 1.05; }
     .trial { display: grid; grid-template-columns: repeat(auto-fill, minmax(6.2rem, 1fr)); gap: 0.4rem; margin-bottom: 1rem; }
+    @media (min-width: 900px) { .cols { gap: 2rem; } }
     @media (max-width: 640px) {
-      .stats { grid-template-columns: 1fr; }
+      .stats, .ledger { grid-template-columns: 1fr; }
       .settle { grid-template-columns: 1fr; }
+      h1 { font-size: 2.7rem; }
     }
   </style>
 </head>
@@ -239,8 +250,7 @@
       const held = l.status === "held" ? " · In hand" : "";
       if (!shot) {
         return `<button class="tile" type="button" data-act="review" data-id="${esc(l.id)}">
-          <span class="frame bare"><span class="badge">${side}${saved}</span><span class="gloss">${esc(l.title)}</span><span class="faint">${gloss}${held}</span></span>
-          <span class="faint">${esc(l.place)}</span>
+          <span class="frame bare"><span class="badge">${side}${saved}</span><span class="gloss">${esc(l.title)}</span><span class="faint">${gloss}${held}</span><span class="faint">${esc(l.place)}</span></span>
         </button>`;
       }
       return `<button class="tile" type="button" data-act="review" data-id="${esc(l.id)}">
@@ -304,7 +314,7 @@
       return `<article class="hold">
           <p class="faint">${esc(state)}</p>
           <p><strong>${esc(h.title)}</strong> with <strong>${esc(w.title)}</strong></p>
-          <div class="row" style="align-items:flex-start;gap:1.2rem;margin:.7rem 0">
+          <div class="ledger">
             <p style="margin:0"><span class="faint">Basket</span><br>${esc(h.title)}<br><span class="muted">Already named. Paid first.</span></p>
             <p style="margin:0"><span class="faint">Fee</span><br>${choice === "tokens" ? esc(ui.tokens) + " tokens" : "None"}<br><span class="muted">Same charge. No friend rate.</span></p>
             <p style="margin:0"><span class="faint">Remainder</span><br>${choice === "retire" ? "Zero" : esc(w.title)}<br><span class="muted">Named, including zero.</span></p>
@@ -328,14 +338,14 @@
       const body = !rows.length && !saved.length
         ? `<p class="muted">Nothing is waiting on you.</p>`
         : `${rows.map(({ p, h, w }) => holdArticle(p, h, w)).join("")}${saved.length ? `<p class="kicker" style="margin-top:1.1rem">Saved</p><div class="feed">${saved.map(card).join("")}</div>` : ""}`;
-      return `<section id="needs"><p class="kicker">Needs you</p><h2>Needs you</h2>${body}</section>`;
+      return `<section id="needs" class="block"><p class="kicker">Needs you</p><h2>Needs you</h2>${body}</section>`;
     }
     function suggestBlock() {
       if (ui.view === "done") return "";
       const focus = desk.listings.find((l) => l.id === ui.selected && l.status === "open");
       const rows = pairs(focus ? focus.id : null);
       const shown = ui.showAll ? rows : rows.slice(0, 3);
-      return `<section id="pairs"><h2>${focus ? "Closest to this" : "Close pairs"}</h2>
+      return `<section id="pairs" class="block"><h2>${focus ? "Closest to this" : "Close pairs"}</h2>
         <p class="muted">${focus ? "Why this sits close to the one you chose. Hold is not a line." : "Why these sit close. Hold is not a line."}</p>
         ${shown.map((r) => `<div class="pair">
           <p><strong>${esc(r.h.title)}</strong> with <strong>${esc(r.w.title)}</strong></p>
@@ -347,7 +357,7 @@
     }
 
     function doneBlock() {
-      return `<section id="room"><h2>IdidIT</h2><p class="muted">The book. A refusal stays on it. A release writes nothing.</p>
+      return `<section id="room" class="block"><h2>IdidIT</h2><p class="muted">The book. A refusal stays on it. A release writes nothing.</p>
         ${desk.done.map((t) => `<article style="border-bottom:1px solid var(--line);padding:.9rem 0">
           <p class="faint">${esc(t.category)} / ${esc(t.mock ? "Mock" : wayLabel(t.settlement, t.refused))}${t.tokens ? " · " + t.tokens + " tokens" : ""}</p>
           <h3 style="font-size:1.6rem">${esc(t.haveTitle)}</h3>
@@ -407,7 +417,7 @@
           <span>${esc(cat)}</span><span class="count">${h} · ${w}</span><span class="faint">${state}</span>
         </button>`;
       }).join("");
-      return `<section id="shelves"><p class="kicker">Shelves</p><h2>Where it sits</h2>
+      return `<section id="shelves" class="block"><p class="kicker">Shelves</p><h2>Where it sits</h2>
         <p class="muted">The first number is what is on the table. The second is what is still missing. Both sides means a pair can be considered. Nothing here is taken.</p>
         <button class="btn" type="button" data-act="cat" data-cat="All" aria-pressed="${ui.category === "All"}">All shelves</button>
         <div class="board">${tiles}</div></section>`;
@@ -439,15 +449,15 @@
         </div>
         ${ui.toast ? `<p class="toast">${esc(ui.toast)}</p>` : ""}
         ${needsBlock()}
-        <div class="row" style="margin:1.3rem 0 .55rem">
-          <input id="q" placeholder="Search the desk" value="${esc(ui.query)}" style="max-width:18rem" />
+        <div class="row search">
+          <input id="q" placeholder="Search the desk" value="${esc(ui.query)}" />
         </div>
         <div class="row">${tabs.map(([id, label]) => `<button class="btn" data-act="view" data-view="${id}" aria-pressed="${ui.view === id}">${label}</button>`).join("")}</div>
         ${shelfBoard()}
         ${composer()}
         ${ui.review ? reviewPane() : ""}
         ${suggestBlock()}
-        ${ui.view === "done" ? doneBlock() : `<div class="cols" id="room" style="margin-top:1.2rem">
+        ${ui.view === "done" ? doneBlock() : `<div class="cols block" id="room">
           ${ui.view !== "want" ? column("IhavIt", "I have it. On the table", haves) : ""}
           ${ui.view !== "have" ? column("IwantIT", "I want it. Still missing", wants) : ""}
         </div>`}
