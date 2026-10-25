@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Technical — lgme</title>
+  <link rel="icon" href="/icons/icon-192.png" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500&display=swap" />
+  <link rel="stylesheet" href="/menu.css" />
+  <style>
+    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; }
+    body { margin: 0 auto; max-width: 46rem; padding: 1.25rem 1.25rem 4rem; background: var(--bg); color: var(--fg); font-family: Figtree, sans-serif; line-height: 1.55; }
+    h1, h2 { font-family: Newsreader, serif; font-weight: 500; letter-spacing: -0.02em; }
+    h1 { font-size: clamp(2.4rem, 7vw, 3.6rem); line-height: 0.95; margin: 0.2rem 0 0.8rem; }
+    h2 { font-size: 1.7rem; line-height: 1.1; margin: 0 0 0.6rem; }
+    a { color: var(--fg); }
+    .kicker { margin: 0; font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); }
+    .lede, .muted { color: var(--muted); }
+    section { margin-top: 2rem; padding-top: 1.25rem; border-top: 1px solid var(--line); }
+    .answer { color: var(--fg); }
+    ul { padding-left: 1.2rem; }
+    li { margin: 0.35rem 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.92rem; margin-top: 0.8rem; }
+    th, td { text-align: left; vertical-align: top; padding: 0.55rem 0.6rem 0.55rem 0; border-bottom: 1px solid var(--line); }
+    th { color: var(--fg); font-weight: 500; }
+    td { color: var(--muted); }
+    td:first-child { color: var(--fg); }
+    .deskmenu a[aria-current="page"] { color: var(--gold); }
+  </style>
+</head>
+<body>
+  <nav class="deskmenu" aria-label="Desk">
+    <a href="/study">Study/Prerequisite</a>
+    <a href="/#ididit">IDidit</a>
+    <a href="/hederica">Hederica</a>
+    <a href="/charter">Charter</a>
+    <a href="/bylaws">Bylaws</a>
+    <a href="/membership">Membership</a>
+    <a href="/#sovereignty">Sovereignty</a>
+    <a href="/#order">The order</a>
+    <a href="/#third-seat">Third seat</a>
+    <a href="/#checks">Checks</a>
+    <a href="/#tape">Tape</a>
+    <a href="/spp">Protocol</a>
+    <a href="/game-theory">Game theory</a>
+    <a href="/technical" aria-current="page">Technical</a>
+    <a href="/">Desk</a>
+  </nav>
+
+  <p class="kicker"><a href="/">lgme</a> / Technical</p>
+  <h1>Technical</h1>
+  <p class="lede">Cryptographic attestation and game-theoretic invariants for ledger-first governance. Deterministic rules replace discretionary oversight. The physical oracle and the holdout veto are the two points where the invariant must hold without a sovereign override.</p>
+
+  <section>
+    <h2>Core strengths of the framing</h2>
+    <ul class="muted">
+      <li>Conceptual precision: aggregate telemetry versus procedural verification treats governance as a systems-engineering problem.</li>
+      <li>The non-moneyness of private debt: circulating liabilities are not settled reserves. This is the structural driver named by the Chicago Plan and narrow banking.</li>
+      <li>The comparative matrix: discretionary post-hoc litigation versus deterministic pre-execution verification.</li>
+      <li>Punchy thesis: “Trust is what enters the room when verification leaves.”</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Q1. The Oracle Problem and physical enforcement</h2>
+    <p class="muted">A distributed, append-only ledger verifies internal state consistency, not physical ground truth. If a party claims a physical shipment arrived spoiled, or an easement was violated, who signs the state change? The moment human arbiters or inspection bodies are introduced to feed outside reality into the ledger, discretion re-enters through the oracle layer. A state retaining a monopoly on violence can simply operate an off-chain parallel legal track.</p>
+    <p class="answer">Answer: Hardware-attested cryptographic feeds, tri-lateral evidence consensus, and asymmetric staking.</p>
+    <p class="muted">External physical metrics originate from tamper-resistant hardware cores (Trusted Platform Modules / Secure Enclaves). High-frequency raw streams stay off-chain; interval Merkle roots and state-change digests anchor to a decentralized consensus timestamping layer (e.g., Hedera Consensus Service). State execution evaluates strictly whether the cryptographically signed sensor payload satisfies pre-compiled contract thresholds.</p>
+    <p class="muted">Where sensors are incomplete, settlement uses a 2-of-2 cryptographic sign-off: provider asserts completion, recipient certifies satisfaction. Neither holds unilateral mint, seizure, or debit privileges.</p>
+    <p class="muted">Discrepancies escalate via bonds. An assertion bond posts with the claim; a challenge bond locks equivalently. Randomized, non-correlated staked validators evaluate the cryptographic logs and hardware telemetry. The dishonest party forfeits their bond. Super-linear economic penalties deter fraudulent attestation. No discretionary committee is required.</p>
+  </section>
+
+  <section>
+    <h2>Q2. Game-theoretic deadlock of the irrevocable “no”</h2>
+    <p class="muted">Empowering any party with a unilateral, pre-execution veto to halt out-of-order execution solves administrative overreach, but risks anti-commons gridlock (the holdout problem). Without an escrow settlement rule, timeout mechanism, or bounded challenge window, a malicious or insolvent counterparty could weaponize an invariant “no” to freeze interlinked settlement queues indefinitely.</p>
+    <p class="answer">Answer: Separate the right to refuse performance from the capacity to freeze counterparty liquidity. Bounded challenge windows, staked dispute collateral, and unilateral unwinding.</p>
+    <p class="muted">A legitimate refusal must be actively logged via an explicit, signed HALT_ASSERTION within a fixed block-height horizon. Silence compiles as procedural compliance; the system executes default deterministic settlement.</p>
+    <p class="muted">Freezing a settlement queue costs capital. A challenger locks a dispute bond. Valid breach slashes the defaulter and restores state. Malicious holdout slashes the bond and unfreezes the pipeline. Frivolous freeze credits the stalled party.</p>
+    <p class="muted">If bilateral transaction stalls, assets in intermediate escrow cannot be seized. After deadline expiry, unencumbered principal automatically reverts to originating addresses via verifiable source-of-funds logic. Extractable rent is eliminated. Asynchronous state partitioning isolates failures locally so adjacent queues continue.</p>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>Attack Vector</th>
+            <th>Naive Invariant Veto</th>
+            <th>Protocol Countermeasure</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Silent Inaction</td>
+            <td>Indefinite capital lockup</td>
+            <td>Decaying block-height timeouts; silence defaults to fallback</td>
+          </tr>
+          <tr>
+            <td>Extortionate Veto</td>
+            <td>Forced off-chain concessions</td>
+            <td>Bilateral split-and-exit; deadlocks revert non-contested assets</td>
+          </tr>
+          <tr>
+            <td>Cascading Pipeline Sabotage</td>
+            <td>System-wide failure</td>
+            <td>Asynchronous state partitioning; local isolation</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Q3. Price-deflation and debt-deflation paradox</h2>
+    <p class="muted">In a system where private debt cannot circulate as money and the monetary base follows a deterministic schedule, an expanding economy with productivity growth generates secular deflation. Under secular deflation or sudden output shocks, fixed obligations become heavier in real terms, risking a Fisherian debt-deflation spiral rather than mere seasonal friction. Velocity or fractional-reserve substitutes must absorb demand fluctuations, or the framework needs an explicit position.</p>
+    <p class="answer">Answer: The protocol does not abolish existing money or institutions. It requires a public sequence: floor first, a public mint schedule, named credit that is not cash at par, and a visible tape. Same rails. The floor stays senior. Liquidity friction is addressed by the same mechanisms that prevent holdouts: bounded windows, source unwinding, and no extractable rent from inaction. Secular productivity gains remain possible; the tape shows the order so the real-term weight of obligations is not hidden. No new sovereign mint is introduced to “absorb” the fluctuation.</p>
+  </section>
+
+  <section>
+    <h2>Implementation verification checklist</h2>
+    <ul class="muted">
+      <li>Hardware-anchored telemetry: sensor data ingest flows directly through TPM/Secure Enclave hardware signatures linked to public consensus timestamping rails.</li>
+      <li>Deterministic timers: every escrow and state transition contract includes an immutable block-height expiration parameter triggering automatic fallback.</li>
+      <li>Collateralized halts: veto and dispute assertions require non-zero stake bonds subject to slashing rules for bad-faith pipeline stalls.</li>
+      <li>Sovereign capital reclamation: counterparty lockup is neutralized via deterministic source unwinding whenever bilateral completion fails.</li>
+    </ul>
+  </section>
+
+  <p class="muted">Floor stays senior. Same sequence binds state, firm, and person. If it cannot be shown, it is not policy. An unpublished change is not a change. Trust is what enters the room when verification leaves.</p>
+  <p class="muted"><a href="https://www.egonomicanonymous.live/technical">The same page on the book</a></p>
+</body>
+</html>
