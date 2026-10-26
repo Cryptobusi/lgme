@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>3-month simulation — 25,000 lower income — lgme</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" />
+  <style>
+    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; --panel:#141a13; }
+    body { background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; font-size:1.05rem; line-height:1.6; max-width:56rem; margin:0 auto; padding:1.5rem 1.25rem 4rem; }
+    .kicker { font-size:0.72rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--gold); margin:0; }
+    h1,h2 { font-family:Newsreader,serif; font-weight:500; }
+    h1 { font-size:clamp(1.8rem,5vw,2.8rem); margin:0.4rem 0 0.6rem; }
+    h2 { font-size:1.45rem; margin:1.5rem 0 0.4rem; }
+    .muted { color:var(--muted); }
+    a { color:var(--fg); } a:hover { color:var(--gold); }
+    .dash { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:1rem; margin:0.6rem 0; }
+    table { width:100%; border-collapse:collapse; margin:0.5rem 0; font-size:0.95rem; }
+    th,td { text-align:left; padding:0.35rem; border-bottom:1px solid var(--line); }
+    th { color:var(--fg); } td { color:var(--muted); }
+  </style>
+</head>
+<body>
+  <p class="kicker">lgme · 25 October 2026 · simulation</p>
+  <h1>3 months · 25,000 lower-income</h1>
+  <p class="muted">Typical lower-income bracket. Lower participation, higher floor pressure, work mix skewed to errands, chores, and light care. Demonstrative. Coins conserved. <a href="/demo-work">Demographics</a> · <a href="/mock-runs-report">Mock runs</a> · <a href="/">Desk</a></p>
+
+  <h2>Assumptions</h2>
+  <div class="dash">
+    <p>Population 25,000. Participation 62% before attrition; effective ~60% after mild attrition. Floor pressure 50% (more must clear the floor before residual). Dispute rate 4%. Coins issued at 18 per person relative to a modest prefilled base. Work mix weighted toward errands, chores, light care, and rides rather than premium tutoring.</p>
+  </div>
+
+  <h2>Headline</h2>
+  <div class="dash">
+    <p>Active persons: <strong>14,879</strong></p>
+    <p>Exchanges (3 months): <strong>62,491</strong></p>
+    <p>Value recorded: <strong>766,141</strong></p>
+    <p>After floor (50%): <strong>383,070</strong></p>
+    <p>After dispute: <strong>367,747</strong></p>
+    <p>Gain vs regular rails (~30%): <strong>229,842</strong></p>
+    <p>Coins issued (conserved): <strong>450,000</strong></p>
+  </div>
+
+  <h2>Work mix</h2>
+  <table>
+    <tr><th>Work</th><th>Share</th><th>Exchanges</th><th>Unit</th><th>Value</th></tr>
+    <tr><td>Errands / groceries</td><td>22%</td><td>13,751</td><td>12</td><td>165,012</td></tr>
+    <tr><td>Chores / snow / yard</td><td>18%</td><td>11,248</td><td>14</td><td>157,472</td></tr>
+    <tr><td>Light care / check-in</td><td>16%</td><td>9,998</td><td>15</td><td>149,970</td></tr>
+    <tr><td>Rides / accompaniment</td><td>12%</td><td>7,498</td><td>10</td><td>74,980</td></tr>
+    <tr><td>Meal share</td><td>10%</td><td>6,249</td><td>11</td><td>68,739</td></tr>
+    <tr><td>Tool / item lending</td><td>8%</td><td>4,999</td><td>6</td><td>29,994</td></tr>
+    <tr><td>Tutoring / help</td><td>8%</td><td>4,999</td><td>18</td><td>89,982</td></tr>
+    <tr><td>Group / community</td><td>6%</td><td>3,749</td><td>8</td><td>29,992</td></tr>
+  </table>
+
+  <h2>Monthly recorded value</h2>
+  <div class="dash">
+    <p>M1: <strong>255,380</strong> · M2: <strong>280,918</strong> · M3: <strong>306,456</strong></p>
+    <p class="muted">Mild ramp. Total matches the 3-month recorded value.</p>
+  </div>
+
+  <h2>Reading</h2>
+  <div class="dash">
+    <p>Per active person the recorded value is modest (about 51 units over 3 months). That is consistent with a lower-income bracket where acts are smaller and more of the total must clear the floor. The ~30% gain is the share that would not clear ordinary card rails (fixed fee dominates sub-$15 acts). Coins issued stay at 450,000. No expansion. Floor stays senior.</p>
+  </div>
+  <p class="muted"><a href="/demo-work">← Demographics & work</a> · <a href="/">Desk</a></p>
+</body>
+</html>
