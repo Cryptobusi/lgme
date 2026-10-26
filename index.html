@@ -44,19 +44,45 @@
     .muted { color: var(--muted); }
     a { color: var(--fg); text-underline-offset: 0.22em; }
     a:hover { color: var(--gold); }
-    nav {
+    .menu-toggle {
       position: sticky;
       top: 0;
-      z-index: 5;
+      z-index: 6;
       display: flex;
-      flex-wrap: wrap;
-      gap: 0.35rem 0.9rem;
-      margin: 0 0 1.4rem;
-      padding: 0.35rem 0 0.7rem;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      margin: 0 0 0.4rem;
+      padding: 0.45rem 0;
       background: var(--bg);
       border-bottom: 1px solid var(--line);
       font-size: 0.92rem;
     }
+    .menu-toggle button {
+      appearance: none;
+      background: transparent;
+      color: var(--fg);
+      border: 1px solid var(--line);
+      font: inherit;
+      padding: 0.4rem 0.9rem;
+      min-height: 40px;
+      cursor: pointer;
+    }
+    .menu-toggle button:hover { color: var(--gold); border-color: var(--gold); }
+    nav {
+      position: sticky;
+      top: 48px;
+      z-index: 5;
+      display: none;
+      flex-wrap: wrap;
+      gap: 0.35rem 0.9rem;
+      margin: 0 0 1.4rem;
+      padding: 0.5rem 0 0.8rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--line);
+      font-size: 0.92rem;
+    }
+    nav.open { display: flex; }
     nav a { color: var(--muted); text-decoration: none; padding: 0.35rem 0; }
     nav a:hover { color: var(--gold); }
     .fishbowl {
@@ -175,7 +201,11 @@
   </style>
 </head>
 <body>
-  <nav>
+  <div class="menu-toggle">
+    <span class="kicker">Menu</span>
+    <button type="button" id="menu-btn" aria-expanded="false" aria-controls="main-nav">Open</button>
+  </div>
+  <nav id="main-nav">
     <a href="/study">Study/Prerequisite</a>
     <a href="#ididit">IDidit</a>
     <a href="/hederica">Hederica</a>
@@ -451,5 +481,19 @@
   <script>
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");
   </script>
+
+  <script>
+    (function () {
+      var btn = document.getElementById("menu-btn");
+      var nav = document.getElementById("main-nav");
+      if (!btn || !nav) return;
+      btn.addEventListener("click", function () {
+        var open = nav.classList.toggle("open");
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+        btn.textContent = open ? "Close" : "Open";
+      });
+    })();
+  </script>
+
 </body>
 </html>
