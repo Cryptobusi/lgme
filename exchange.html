@@ -612,7 +612,7 @@
       const count = asCount(pair.count);
       if (count == null || count <= 0) { ui.toast = "Write the count. It stays what it is."; render(); return; }
       if (pair.baseCount == null) pair.baseCount = count;
-      if (count > pair.baseCount) { ui.toast = "The count cannot go up."; render(); return; }
+      if (count !== pair.baseCount) { ui.toast = "The count stays " + pair.baseCount + "."; render(); return; }
       const end = pair.ending;
       const means = String(pair.means || "").trim();
       const when = String(pair.when || "").trim();
