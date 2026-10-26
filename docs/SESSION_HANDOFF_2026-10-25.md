@@ -1,54 +1,51 @@
-# Session handoff — 25 October 2026 (evening)
+# Session handoff — 25 October 2026 (late evening)
 
 Saved for next session.
 
 ## Current production tip
 
 ### egonomicanonymous.live
-- Repo: `Cryptobusi/crystal-quartz-valley-beacon`
-- Branch: `main`
-- HEAD: `94097349` — "Sanitize Why Must We page content to pure ASCII so the TanStack build succeeds"
-- Vercel deployment: `dpl_9u6o2ANt3Ch59U8nJj3GX3mysXwe` — **READY**
+- Repo: Cryptobusi/crystal-quartz-valley-beacon
+- Branch: main
+- HEAD: ebb7207a — "Rewrite Why Must We: proposition first"
+- Vercel: dpl_Ciu4aT59u21z2FGXt8NHvfqoMvzM — READY
 - Live: https://www.egonomicanonymous.live
 
 ### lgme.app
-- Repo: `Cryptobusi/lgme`
-- Branch: `main`
-- HEAD: `e1857093` — "Add Why Must We page with formal thesis"
+- Repo: Cryptobusi/lgme
+- Branch: main
+- HEAD: 1de3c074 — "Rewrite Why Must We: proposition first"
 - Live: https://lgme.app
 
-## Pages added / confirmed this session
+## Pages confirmed live
 
 | Page | egonomicanonymous.live | lgme.app | Notes |
 |------|------------------------|----------|-------|
-| Synthesis | `/synthesis` | `/synthesis` | William James / Merovingian / Third Seat treatise. Fully rendered. |
-| Why Must We | `/why-must-we` | `/why-must-we` | Riemann Hypothesis duality + unitarity → Sovereign Provenance Protocol. ASCII-sanitized so TanStack build succeeds. |
+| Synthesis | /synthesis | /synthesis | William James / Merovingian / Third Seat. Fully rendered. |
+| Why Must We | /why-must-we | /why-must-we | Proposition first. Critical line mandatory; SPP is the invariant reform. |
 
-Both pages verified in browser on 25 October 2026 evening. Titles, abstracts, body sections, and links load.
+## lgme.app menu (index.html)
+- Top menu is a toggle: click the "Menu" bar to open/close. No Open/Close button.
+- Why Must We is in the menu and also appears as a link directly below the ARCHIVE section.
 
-## Build note (important for next session)
+## Build note (critical)
+TanStack / Vite on crystal-quartz-valley-beacon fails on non-ASCII characters in route files.
+Keep new page content pure ASCII (no Unicode minus, special dashes, Greek, etc.).
+The Why Must We page was rewritten to pure ASCII so the build succeeds.
 
-TanStack / Vite build on crystal-quartz-valley-beacon **fails on non-ASCII characters** in route files (Unicode minus, special dashes, etc.).
-The Why Must We page had to be rewritten to pure ASCII before the deployment went READY.
-Any new page content should avoid non-ASCII punctuation or the build will error.
+## Earlier issues resolved this session
+- lgme.app index.html was briefly corrupted (PLACEHOLDER_FOR_FULL). Restored.
+- Intermediate Synthesis and Why Must We deploys failed; final commits are READY.
+- Menu toggle implemented without a separate Open/Close button.
 
-## Earlier intermediate failures (historical only)
-
-- Synthesis: early commits with empty/placeholder `nav.ts` failed (missing `navGroups` / `searchNav` exports). Fixed by later commit.
-- Why Must We: first two pushes failed on Unicode; final ASCII commit succeeded.
-
-These can be ignored. Current production tip is healthy.
-
-## Quick links for next session
-
+## Quick links
 - https://www.egonomicanonymous.live/synthesis
 - https://www.egonomicanonymous.live/why-must-we
 - https://lgme.app/synthesis
 - https://lgme.app/why-must-we
+- https://lgme.app/
 
-## Open items (none blocking)
-
-- lgme.app main `index.html` sticky nav may still lack a Synthesis / Why Must We link (pages themselves have desk menus).
-- No further content changes requested at close of session.
+## Open items
+None blocking. Menu and both new pages are live and functional.
 
 End of handoff.
