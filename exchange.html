@@ -103,6 +103,17 @@
       ["receivable","Receivable","Kept on IhavIt. It does not clear at par."]
     ];
     const STOP = new Set("a an the and or for with to of in on it my your some any from at by is are this that i you we they not but if so as be was were too its also into over per our have has had help looking come one".split(" "));
+    const ENDINGS = [
+      ["herself","Do the work","She does the work, on the day she names. The count stays."],
+      ["hours","Name the hours","The hours are named now. A later miss adds nothing."],
+      ["iou","IOU","Someone else does the work and collects equal value, in the exchange they decide."],
+      ["wait","Wait","The date stays. She is not late. The count stays."],
+      ["open","Leave it open","It is not called paid. The count stays. Nothing is added."],
+      ["no","Say no","The no stays. One new bill may follow it. The count does not grow."],
+      ["walk","Walk away","The page says nothing is owed."],
+      ["aside","Set aside","Cancel only from money already set aside for this bill. Food cannot be used."]
+    ];
+    function endingOf(id) { return ENDINGS.find((row) => row[0] === id); }
     const DAY = 86400000;
     const ANCHOR = Date.UTC(2026, 9, 18);
     function esc(value) {
@@ -219,8 +230,17 @@
       if (l.status === "held") return "In hand";
       return l.category;
     }
-    function wayLabel(id, refused) { if (refused) return "Refused"; return (WAYS.find((w) => w[0] === id) || ["","Settled"])[1]; }
-    function wayNote(id) { return (WAYS.find((w) => w[0] === id) || ["", "", ""])[2]; }
+    function wayLabel(id, refused) {
+      if (refused) return "Refused";
+      const end = endingOf(id);
+      if (end) return end[1];
+      return (WAYS.find((w) => w[0] === id) || ["","Settled"])[1];
+    }
+    function wayNote(id) {
+      const end = endingOf(id);
+      if (end) return end[2];
+      return (WAYS.find((w) => w[0] === id) || ["", "", ""])[2];
+    }
     function sharedWords(h, w) {
       const have = new Set(words(h.title + " " + h.detail));
       const found = [];
@@ -323,6 +343,7 @@
           </div>
           <p class="muted">An offer is not a line until you accept it. This hold writes nothing yet.</p>
           <label class="field">Your sentence<input data-act="note" data-id="${esc(p.id)}" value="${esc(p.note)}" placeholder="Why this line cannot be shown" /></label>
+          ${fullFields(p)}
           <p style="margin:.8rem 0 .4rem">Instead of paying now</p>
           <div class="settle">${WAYS.map(([id, label]) => `<button type="button" class="btn" data-act="choose" data-id="${esc(p.id)}" data-way="${id}" aria-pressed="${choice === id}">${label}</button>`).join("")}</div>
           ${choice ? `<p class="waynote muted">${esc(wayNote(choice))}</p><p data-charge>Charge posted: ${choice === "tokens" ? (Number(ui.tokens) > 0 ? esc(ui.tokens) + " tokens" : "Unnamed") : "None"}. Same charge.</p>` : `<p class="faint">Choose one way. The sentence shows under it.</p>`}
@@ -364,8 +385,9 @@
           <p class="faint">${esc(t.category)} / ${esc(t.mock ? "Mock" : wayLabel(t.settlement, t.refused))}${t.tokens ? " · " + t.tokens + " tokens" : ""}</p>
           <h3 style="font-size:1.6rem">${esc(t.haveTitle)}</h3>
           <p class="muted">for ${esc(t.wantTitle)}</p>
-          ${!t.mock && !t.refused && t.settlement ? `<p class="muted">${esc(wayNote(t.settlement))}</p>` : ""}
-          ${t.refused ? `<p class="muted">Refused. The line is on the book. The offer writes nothing.</p>` : ""}
+          ${t.full ? `<p class="muted">${esc(t.full)}</p>` : ""}
+          ${!t.mock && !t.refused && t.settlement && !t.full ? `<p class="muted">${esc(wayNote(t.settlement))}</p>` : ""}
+          ${t.refused && !t.full ? `<p class="muted">Refused. The line is on the book. The offer writes nothing.</p>` : ""}
           <p>${esc(t.haveBy)} and ${esc(t.wantBy)}</p>
           ${t.note ? `<p class="muted">${esc(t.note)}</p>` : ""}
           <button class="btn" data-act="speak-done" data-id="${esc(t.id)}">Read aloud</button>
@@ -440,6 +462,7 @@
         <p class="faint">Same rules bind all three. This seat checks them. It does not govern them.</p>
         <div class="row" style="margin:.75rem 0 .2rem">
           <button class="btn solid" data-act="open-post">Post</button>
+          <button class="btn" data-act="latch">Put the latch on the desk</button>
           <button class="btn" type="button" data-act="look" data-size="larger" aria-pressed="${look === "larger"}">Larger</button>
           <button class="btn" type="button" data-act="look" data-size="set" aria-pressed="${look === "set"}">As set</button>
           <button class="btn" type="button" data-act="read-seat">Read aloud</button>
@@ -555,6 +578,105 @@
 
     function blankDraft() {
       ui.composer = { side: ui.view === "want" ? "want" : "have", title:"", detail:"", category:"Tools", place: kyc.place || "", by: kyc.name, photo:"", video:"", signature:"", voice:"", signing:false };
+    }
+
+    function fullFields(p) {
+      const end = p.ending || "";
+      return `<p style="margin:.8rem 0 .4rem">Meet it in full</p>
+        <p class="muted">The count stays what it is. A choice adds nothing. Food written here cannot pay the bill. Each party is settled in full, or the line stays open and unpaid.</p>
+        <div class="settle">${ENDINGS.map(([id, label]) => `<button type="button" class="btn" data-act="ending" data-id="${esc(p.id)}" data-way="${id}" aria-pressed="${end === id}">${label}</button>`).join("")}</div>
+        ${end ? `<p class="waynote muted">${esc(wayNote(end))}</p>` : ""}
+        <label class="field">Count, and it stays<input data-meet="count" data-id="${esc(p.id)}" value="${esc(p.count || "")}" inputmode="decimal" /></label>
+        <label class="field">Food, not for this bill<input data-meet="food" data-id="${esc(p.id)}" value="${esc(p.food || "")}" /></label>
+        <label class="field">Means she can and will cover<input data-meet="means" data-id="${esc(p.id)}" value="${esc(p.means || "")}" /></label>
+        <label class="field">Time she can and will cover<input data-meet="when" data-id="${esc(p.id)}" value="${esc(p.when || "")}" /></label>
+        ${end === "iou" ? `<label class="field">Who does the work<input data-meet="worker" data-id="${esc(p.id)}" value="${esc(p.worker || "")}" /></label><label class="field">Exchange they decide<input data-meet="exchange" data-id="${esc(p.id)}" value="${esc(p.exchange || "")}" /></label>` : ""}
+        ${end === "aside" ? `<label class="field">Money already set aside<input data-meet="aside" data-id="${esc(p.id)}" value="${esc(p.aside || "")}" /></label>` : ""}
+        <div class="row" style="margin-top:.6rem">
+          <button class="btn" type="button" data-act="refuse-slip" data-id="${esc(p.id)}">Refuse a percent or a penalty</button>
+          <button class="btn solid" type="button" data-act="meet" data-id="${esc(p.id)}" ${end ? "" : "disabled"}>${end ? "Settle in full" : "Choose one"}</button>
+        </div>
+        ${p.slips ? `<p class="muted">A percent or a penalty was refused. The count did not grow. The bill is still to be met.</p>` : ""}`;
+    }
+    function asCount(value) {
+      const n = Number(String(value ?? "").replace(/[^0-9.]/g, ""));
+      return Number.isFinite(n) ? n : null;
+    }
+    function settleFull(pairId) {
+      const pair = desk.pairs.find((p) => p.id === pairId);
+      if (!pair) return;
+      if (!endingOf(pair.ending)) { ui.toast = "Choose how to meet it."; render(); return; }
+      const have = desk.listings.find((l) => l.id === pair.haveId);
+      const want = desk.listings.find((l) => l.id === pair.wantId);
+      if (!have || !want) return;
+      const count = asCount(pair.count);
+      if (count == null || count <= 0) { ui.toast = "Write the count. It stays what it is."; render(); return; }
+      if (pair.baseCount == null) pair.baseCount = count;
+      if (count > pair.baseCount) { ui.toast = "The count cannot go up."; render(); return; }
+      const end = pair.ending;
+      const means = String(pair.means || "").trim();
+      const when = String(pair.when || "").trim();
+      const food = String(pair.food || "").trim();
+      if ((end === "herself" || end === "hours" || end === "iou") && (!means || !when)) { ui.toast = "Name the means and the time."; render(); return; }
+      if (end === "iou" && (!String(pair.worker || "").trim() || !String(pair.exchange || "").trim())) { ui.toast = "Name who does the work, and the exchange they decide."; render(); return; }
+      if (end === "aside") {
+        const aside = String(pair.aside || "").trim();
+        if (!aside) { ui.toast = "Name the money already set aside."; render(); return; }
+        if (/food/i.test(aside) || (food && aside === food)) { ui.toast = "The food stays food. It was not set aside for this bill."; render(); return; }
+      }
+      const person = want.by;
+      const shop = have.by;
+      const worker = end === "iou" ? String(pair.worker).trim() : person;
+      const taken = end === "iou" ? String(pair.exchange).trim() : end === "aside" ? String(pair.aside).trim() : means || "the work named";
+      const stayed = "Count stayed " + count + "." + (food ? " Food stayed food." : "");
+      let full = stayed + " " + person + " met it on their terms and time. " + worker + " collected equal value: " + taken + ". " + shop + " was paid in work that can be shown. The office can read the line and has no penalty.";
+      if (end === "wait") full = stayed + " The date stays. " + person + " is not late. No one was charged.";
+      if (end === "open") full = stayed + " Left open. Not called paid. No one was charged.";
+      if (end === "no") full = stayed + " " + person + " said no. The no stays. Nothing was added.";
+      if (end === "walk") full = stayed + " Nothing is owed. No penalty was added.";
+      const done = {
+        id: crypto.randomUUID(), haveTitle: have.title, wantTitle: want.title, haveBy: have.by, wantBy: want.by,
+        category: have.category, note: [pair.note, means, when].filter(Boolean).join(" "),
+        createdAt: Date.now(), settlement: end, full: full
+      };
+      const close = () => {
+        desk.pairs = desk.pairs.filter((p) => p.id !== pair.id);
+        desk.listings = desk.listings.filter((l) => l.id !== have.id && l.id !== want.id);
+      };
+      if (end === "wait" || end === "open") {
+        desk.done = [done, ...desk.done];
+        ui.view = "done";
+        ui.toast = end === "wait" ? "The date stays. The count stays. Still in hand." : "Left open. Not called paid. The count stays.";
+        save(); render(); return;
+      }
+      if (end === "no") {
+        desk.listings = [{
+          id: crypto.randomUUID(), side: "want", title: "Follows the no · " + want.title,
+          detail: "One bill may follow the no. The no stays. The count does not grow.",
+          category: want.category, place: want.place, by: person, mine: true, status: "open", createdAt: Date.now()
+        }, ...desk.listings.map((l) => l.id === have.id || l.id === want.id ? { ...l, status: "open" } : l)];
+        desk.pairs = desk.pairs.filter((p) => p.id !== pair.id);
+        desk.done = [done, ...desk.done];
+        ui.view = "done";
+        ui.toast = "The no stays. One new bill may follow it. The count did not grow.";
+        save(); render(); return;
+      }
+      close();
+      desk.done = [done, ...desk.done];
+      ui.view = "done";
+      ui.toast = "Settled in full. The count stayed " + count + ".";
+      save(); render();
+    }
+    function loadLatch() {
+      if (desk.pairs.some((p) => p.id === "latch-pair")) { ui.toast = "The latch is already in hand."; render(); return; }
+      const have = { id: "latch-work", side: "have", title: "Count the stock, Saturday week", detail: "Sol does the work. He collects equal value and decides the exchange.", category: "Time", place: "Pell Hardware", by: "Sol", mine: false, status: "held", createdAt: Date.now() };
+      const want = { id: "latch-bill", side: "want", title: "Fix the latch", detail: "For Ana. Due Friday 30 October 2026. The count is 10. The 8 is food.", category: "Care", place: "Lane Street", by: "Ana", mine: true, status: "held", createdAt: Date.now() };
+      desk.listings = [have, want, ...desk.listings.filter((l) => l.id !== "latch-work" && l.id !== "latch-bill")];
+      desk.pairs.unshift({ id: "latch-pair", haveId: "latch-work", wantId: "latch-bill", note: "", createdAt: Date.now(), count: "10", food: "8 for food", means: "Sol counts the stock", when: "Saturday week, nine until noon", worker: "Sol", exchange: "A key, equal to 10", ending: "iou", baseCount: 10 });
+      ui.toast = "The latch is in hand. The count is 10. Choose how she meets it.";
+      save(); render();
+      const needs = document.getElementById("needs");
+      if (needs) needs.scrollIntoView({ block: "start" });
     }
 
     function apply(pairId, mode) {
@@ -702,6 +824,17 @@
         }
         render(); return;
       }
+      if (act === "latch") { loadLatch(); return; }
+      if (act === "ending") {
+        desk.pairs = desk.pairs.map((p) => p.id === el.dataset.id ? { ...p, ending: el.dataset.way } : p);
+        save(); render(); return;
+      }
+      if (act === "meet") { settleFull(el.dataset.id); return; }
+      if (act === "refuse-slip") {
+        desk.pairs = desk.pairs.map((p) => p.id === el.dataset.id ? { ...p, slips: (p.slips || 0) + 1, note: ((p.note || "").trim() + " Refused a percent or a penalty. The count stays.").trim() } : p);
+        ui.toast = "Refused first. The count stays. The bill is still hers to meet.";
+        save(); render(); return;
+      }
       if (act === "choose") {
         ui.choice[el.dataset.id] = el.dataset.way;
         if (el.dataset.way === "furlough" && !ui.until) ui.until = new Date(Date.now() + 30 * DAY).toISOString().slice(0, 10);
@@ -780,6 +913,11 @@
 
     app.addEventListener("input", (event) => {
       const el = event.target;
+      if (el.dataset.meet) {
+        const key = el.dataset.meet;
+        desk.pairs = desk.pairs.map((p) => p.id === el.dataset.id ? { ...p, [key]: el.value } : p);
+        save();
+      }
       if (el.dataset.act === "note") {
         desk.pairs = desk.pairs.map((p) => p.id === el.dataset.id ? { ...p, note: el.value } : p);
         save();
