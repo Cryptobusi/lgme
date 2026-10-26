@@ -50,25 +50,18 @@
       z-index: 6;
       display: flex;
       align-items: center;
-      justify-content: space-between;
       width: 100%;
       margin: 0 0 0.4rem;
       padding: 0.45rem 0;
       background: var(--bg);
       border-bottom: 1px solid var(--line);
       font-size: 0.92rem;
-    }
-    .menu-toggle button {
-      appearance: none;
-      background: transparent;
-      color: var(--fg);
-      border: 1px solid var(--line);
-      font: inherit;
-      padding: 0.4rem 0.9rem;
-      min-height: 40px;
       cursor: pointer;
+      user-select: none;
     }
-    .menu-toggle button:hover { color: var(--gold); border-color: var(--gold); }
+    .menu-toggle:hover .kicker { color: var(--gold); }
+    .menu-toggle .kicker::after { content: " ▾"; font-size: 0.7em; opacity: 0.7; }
+    .menu-toggle.open .kicker::after { content: " ▴"; }
     nav {
       position: sticky;
       top: 48px;
@@ -201,9 +194,8 @@
   </style>
 </head>
 <body>
-  <div class="menu-toggle">
+  <div class="menu-toggle" id="menu-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="main-nav">
     <span class="kicker">Menu</span>
-    <button type="button" id="menu-btn" aria-expanded="false" aria-controls="main-nav">Open</button>
   </div>
   <nav id="main-nav">
     <a href="/study">Study/Prerequisite</a>
@@ -220,8 +212,8 @@
     <a href="#third-seat">Third seat</a>
     <a href="#checks">Checks</a>
     <a href="#tape">Tape</a>
-    <a href="/synthesis">Synthesis</a>
     <a href="/why-must-we">Why Must We</a>
+    <a href="/synthesis">Synthesis</a>
     <a href="/opportunity">Opportunity</a>
     <a href="#enrollment">Enrollment pilot</a>
     <a href="#next">The Next</a>
@@ -272,6 +264,7 @@
     <p class="muted">The October 2026 seigniorage note is kept. It is not a solicitation, not a token sale, and not the live mission. The live mission is the Hederica charter.</p>
     <p><a href="/charter" style="color:#f87171; font-weight:600;">Read the charter</a> · <a href="/docs/SPP_Individual_Seigniorage_VC_Brief.md" download style="color:#f87171;">Archived note (MD)</a> · <a href="/spp" style="color:#f87171;">Full archive</a></p>
   </section>
+  <p class="muted" style="margin-top:1.25rem;"><a href="/why-must-we">Why Must We</a> — duality, unitarity, and the Sovereign Provenance Protocol.</p>
   <section id="ididit">
     <p class="kicker">Debit Credit IDidit · #LeGoMiego · $LGME</p>
     <p><a class="enter" href="/exchange">IdidIt</a></p>
@@ -484,13 +477,17 @@
 
   <script>
     (function () {
-      var btn = document.getElementById("menu-btn");
+      var bar = document.getElementById("menu-toggle");
       var nav = document.getElementById("main-nav");
-      if (!btn || !nav) return;
-      btn.addEventListener("click", function () {
+      if (!bar || !nav) return;
+      function toggle() {
         var open = nav.classList.toggle("open");
-        btn.setAttribute("aria-expanded", open ? "true" : "false");
-        btn.textContent = open ? "Close" : "Open";
+        bar.classList.toggle("open", open);
+        bar.setAttribute("aria-expanded", open ? "true" : "false");
+      }
+      bar.addEventListener("click", toggle);
+      bar.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
       });
     })();
   </script>
