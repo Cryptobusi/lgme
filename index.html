@@ -1,1 +1,211 @@
-FORCE_REBUILD_CONTENT
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#39e36a" />
+  <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+  <title>lgme</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;1,6..72,500&display=swap" />
+  <style>
+    :root { --bg: #0c100c; --fg: #f4f1e8; --muted: #c5d0c2; --faint: #8ea892; --gold: #c6a15b; --line: #2c352b; --panel: #141a13; }
+    html { background: var(--bg); color: var(--fg); overflow-x: clip; }
+    body { background: var(--bg); color: var(--fg); font-family: Figtree, sans-serif; font-size: 1.05rem; line-height: 1.6; max-width: 46rem; margin: 0 auto; padding: 1.5rem 1.25rem 4rem; }
+    .kicker { margin: 0; font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); }
+    h1, h2 { font-family: Newsreader, serif; font-weight: 500; letter-spacing: -0.02em; }
+    h1 { font-size: clamp(2.4rem, 7vw, 3.7rem); line-height: 1.02; margin: 0.6rem 0 0; }
+    h2 { font-size: clamp(1.8rem, 4vw, 2.35rem); line-height: 1.12; margin: 0.4rem 0 0.9rem; }
+    p { margin: 0.85rem 0; }
+    .muted { color: var(--muted); }
+    a { color: var(--fg); text-underline-offset: 0.22em; }
+    a:hover { color: var(--gold); }
+    .menu-toggle { position: sticky; top: 0; z-index: 6; display: flex; align-items: center; width: 100%; margin: 0 0 0.4rem; padding: 0.45rem 0; background: var(--bg); border-bottom: 1px solid var(--line); font-size: 0.92rem; cursor: pointer; user-select: none; }
+    .menu-toggle:hover .kicker { color: var(--gold); }
+    .menu-toggle .kicker::after { content: " \u25be"; font-size: 0.7em; opacity: 0.7; }
+    .menu-toggle.open .kicker::after { content: " \u25b4"; }
+    nav { position: sticky; top: 48px; z-index: 5; display: none; flex-wrap: wrap; gap: 0.35rem 0.9rem; margin: 0 0 1.4rem; padding: 0.5rem 0 0.8rem; background: var(--bg); border-bottom: 1px solid var(--line); font-size: 0.92rem; }
+    nav.open { display: flex; }
+    nav a { color: var(--muted); text-decoration: none; padding: 0.35rem 0; }
+    nav a:hover { color: var(--gold); }
+    .fishbowl { display: block; width: 100%; height: auto; margin: 0 0 1.75rem; background: #000; border: 1px solid #3d3424; border-radius: 16px; box-shadow: 0 28px 70px #000a; }
+    section { border-top: 1px solid var(--line); margin-top: 2.75rem; padding-top: 2.25rem; }
+    ol { margin: 0.6rem 0 1rem; padding-left: 1.2rem; }
+    ol li { margin: 0.35rem 0; padding-left: 0.2rem; }
+    ol li::marker { color: var(--gold); }
+    .disclaimer { border-left: 2px solid var(--gold); padding: 0.2rem 0 0.2rem 1rem; margin: 1.25rem 0; color: #e4d3a2; }
+    code { font-family: ui-monospace, monospace; font-size: 0.88em; color: var(--fg); background: var(--panel); padding: 0.08em 0.35em; border-radius: 4px; }
+    .coin { display: block; width: min(22rem, 100%); height: auto; margin: 3rem auto 0; background: #000; border: 1px solid #3d3424; border-radius: 16px; box-shadow: 0 28px 70px #000a; }
+    strong { font-weight: 600; color: var(--fg); }
+    ::selection { background: var(--gold); color: var(--bg); }
+    .tools { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0.6rem; margin: 0 0 1.25rem; }
+    .pair { display: flex; width: fit-content; margin: 0; border: 1px solid var(--line); }
+    .tools > button, .pair button { appearance: none; background: transparent; color: var(--muted); border: 0; border-right: 1px solid var(--line); font: inherit; font-size: 0.92rem; padding: 0.55rem 0.95rem; min-height: 44px; cursor: pointer; }
+    .tools > button { border: 1px solid var(--line); }
+    .pair button:last-child { border-right: 0; }
+    .tools > button:hover, .pair button:hover { color: var(--gold); }
+    .pair button[aria-pressed="true"], .tools > button[aria-expanded="true"] { background: var(--fg); color: var(--bg); }
+    .pair button[aria-pressed="true"]:hover, .tools > button[aria-expanded="true"]:hover { color: var(--bg); }
+    a.enter { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0.55rem 1.15rem; background: var(--fg); color: var(--bg); text-decoration: none; font-weight: 600; border: 1px solid var(--fg); }
+    a.enter:hover { background: var(--gold); border-color: var(--gold); color: var(--bg); }
+    .tools > a.study { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0.55rem 0.95rem; background: transparent; color: var(--muted); text-decoration: none; border: 1px solid var(--line); font-size: 0.92rem; }
+    .tools > a.study:hover { color: var(--gold); }
+    #glossary { margin-top: 0; border-top: 0; padding-top: 0.2rem; }
+    #glossary[hidden] { display: none; }
+    .map { width: 100%; border-collapse: collapse; margin: 1rem 0 0.4rem; }
+    .map th, .map td { text-align: left; padding: 0.55rem 0.35rem; border-bottom: 1px solid var(--line); vertical-align: baseline; }
+    .map th { color: var(--fg); font-weight: 600; }
+    .map td:first-child, .map th:first-child { width: 7.5rem; }
+    .map td { color: var(--muted); }
+    .plates { display: grid; gap: 0.75rem; margin: 1.15rem 0 0.6rem; }
+    .plates a { display: block; }
+    .plates img { width: 100%; height: auto; display: block; border: 1px solid var(--line); background: var(--panel); }
+    @media (min-width: 720px) { .plates { grid-template-columns: 1fr 1fr; align-items: start; } }
+    .topsecret { border: 4px solid #dc2626; background: #1a0a0a; padding: 1.5rem; margin: 0 0 2rem; text-align: center; }
+    .topsecret h2 { color: #f87171; margin: 0 0 0.5rem; font-size: clamp(1.4rem, 3vw, 2rem); }
+    .topsecret .badge { display: inline-block; background: #dc2626; color: white; font-weight: 700; padding: 0.25rem 0.75rem; font-size: 0.8rem; letter-spacing: 0.2em; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  <div class="menu-toggle" id="menu-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="main-nav">
+    <span class="kicker">Menu</span>
+  </div>
+  <nav id="main-nav">
+    <a href="/study">Study/Prerequisite</a>
+    <a href="/nswo">NSWO</a>
+    <a href="/dominion">Dominion</a>
+    <a href="#ididit">IDidit</a>
+    <a href="/hederica">Hederica</a>
+    <a href="/charter">Charter</a>
+    <a href="/bylaws">Bylaws</a>
+    <a href="/membership">Membership</a>
+    <a href="#sovereignty">Sovereignty</a>
+    <a href="#schelling">Egonomic restraint</a>
+    <a href="#marcum">Ego balance</a>
+    <a href="#connecting">Connecting</a>
+    <a href="#order">The order</a>
+    <a href="#third-seat">Third seat</a>
+    <a href="#checks">Checks</a>
+    <a href="#tape">Tape</a>
+    <a href="/why-must-we">Why Must We</a>
+    <a href="/synthesis">Synthesis</a>
+    <a href="/opportunity">Opportunity</a>
+    <a href="#enrollment">Enrollment pilot</a>
+    <a href="#next">The Next</a>
+    <a href="#future">Future development</a>
+    <a href="/game-theory">Game theory</a>
+    <a href="/technical">Technical</a>
+    <a href="/preparation">Preparation</a>
+    <a href="/summary-test">Summary test</a>
+    <a href="/mock-runs-report">Mock summary</a>
+    <a href="/test-300">Test 300 students</a>
+    <a href="/test-1000">1000 seniors 30 days</a>
+    <a href="/test-5000">5000 seniors</a>
+    <a href="/pumpup">Pumpup The Floor</a>
+    <a href="/story">Story</a>
+    <a href="/developer-notes">Developer Notes</a>
+    <a href="#close">Close</a>
+  </nav>
+  <div class="tools">
+    <a class="enter" href="/exchange">IdidIt</a>
+    <a class="study" href="/study">Study</a>
+    <a class="study" href="/technical">Technical</a>
+    <a class="study" href="/preparation">Preparation</a>
+    <button type="button" id="glossary-btn" aria-expanded="false" aria-controls="glossary">Glossary</button>
+  </div>
+  <section id="glossary" hidden>
+    <p class="kicker">Glossary</p>
+    <h2>Eight words</h2>
+    <p class="muted">Easy read keeps the eight book words. Precise swaps each name for the narrower one, including the order line.</p>
+    <table class="map">
+      <thead><tr><th>Easy read</th><th>Precise</th><th>Also</th></tr></thead>
+      <tbody>
+        <tr><td>Floor</td><td>Senior tranche</td><td>Food, rent, and the bus, paid first</td></tr>
+        <tr><td>Mint</td><td>Fair launch</td><td>Same schedule for everyone. No private drop</td></tr>
+        <tr><td>Issue</td><td>Promissory note</td><td>A bill. Not cash in the app</td></tr>
+        <tr><td>Tape</td><td>Audit trail</td><td>The receipt everyone can open</td></tr>
+        <tr><td>Charge</td><td>Risk-adjusted fee</td><td>Same price. No VIP</td></tr>
+        <tr><td>Agent</td><td>Registrar</td><td>The app can explain. It cannot tap pay</td></tr>
+        <tr><td>Thin</td><td>Informational spread</td><td>A wide number is the honest price</td></tr>
+        <tr><td>Desert</td><td>Residual value</td><td>What's left. Even if it's nothing</td></tr>
+      </tbody>
+    </table>
+    <p class="muted">Also said, and not a new step. Third seat is your seat. A quiet print is a fee that shows up later. Provenance is where it came from. A refusal is: you tap no, and the no stays on the record.</p>
+  </section>
+  <section class="topsecret">
+    <span class="badge">ARCHIVE · NOT AN OFFER</span>
+    <h2>Sovereign Provenance Protocol — design research</h2>
+    <p class="muted">The October 2026 seigniorage note is kept. It is not a solicitation, not a token sale, and not the live mission. The live mission is the Hederica charter.</p>
+    <p><a href="/charter" style="color:#f87171; font-weight:600;">Read the charter</a> · <a href="/docs/SPP_Individual_Seigniorage_VC_Brief.md" download style="color:#f87171;">Archived note (MD)</a> · <a href="/spp" style="color:#f87171;">Full archive</a></p>
+  </section>
+  <p class="muted" style="margin-top:1.25rem;"><a href="/why-must-we">Why Must We</a> — duality, unitarity, and the Sovereign Provenance Protocol.</p>
+  <section id="ididit">
+    <p class="kicker">Debit Credit IDidit · #LeGoMiego · $LGME</p>
+    <p><a class="enter" href="/exchange">IdidIt</a></p>
+    <p class="muted">The exchange sits under this button. You are the third seat: read the book, and refuse a line that skipped the order. The only check is an X handle. It stays in this browser. Not a new coin, and not the enrollment pilot.</p>
+    <p class="muted"><strong>IdidIt receipt.</strong> A single Hedera Consensus Service message that records the job, who did it, and the sequence on the tape. The message is the credit. It is not cash. It stores the fact of the work. It becomes a source of value toward exchange only when claimed against another shown item, and that claim must also appear on the tape. Floor stays senior.</p>
+    <p>Contribution, participation welcome. X Money to <a href="https://x.com/Trancesage">@Trancesage</a>. Send it from the Money tab on X. This page does not hold it.</p>
+    <h2>The system isn’t broken. It’s working exactly as intended.</h2>
+    <p class="muted">Let’s make the economy work for everyone. <a href="https://lgme.app">$LGME</a></p>
+    <div class="plates">
+      <a href="https://x.com/Trancesage/status/2112511345128067347"><img src="/ididit-proof.jpg" alt="Debit Credit IDidit. Three readings of proof." /></a>
+      <a href="https://x.com/Trancesage/status/2111605929862967314"><img src="/unconstrained-ego.jpg" alt="Inequality isn’t a math error. It’s the unconstrained ego." /></a>
+    </div>
+    <p class="muted">Voice of <a href="https://x.com/Trancesage">@Trancesage</a>. Proof on the left. The ego on the right. The full psychoanalytic breakdown is on <a href="https://www.egonomicanonymous.live/psychology">Psychology</a>.</p>
+  </section>
+  <section id="hederica">
+    <p class="kicker">Hederica</p>
+    <h2>A public book for work the banks never counted.</h2>
+    <p class="muted">The aim is a cooperative, not a charity. Members would record civic work for one another — one verified person, one vote; doing the work is how you qualify — instead of running a speculative mint. The blind spot is real. Informal human capital, a neighbor helped, a lesson given, a walkway cleared, never reaches a balance sheet, because the old rails cost more to clear than the act is worth.</p>
+    <p class="muted">Surplus, if any, would return by use, after the floor. It would not be a dividend on a holding. A manager’s wage, if one is ever paid, would be employment set in advance by the members. It would not be a claim on other people’s hours, and this site pays no wage today.</p>
+    <p class="muted">No cooperative is formed. No membership is offered on this page. It is not a 501(c)(3) and not a credit union. An hour here is not cash, not a deposit, not a security, and not a token offered for sale. A Hedera timestamp records a deed. It does not move money. <a href="/charter">The charter</a> lists the rules and what counsel still has to file.</p>
+    <h2>1. The core thesis: recording lost, unrecorded value</h2>
+    <p class="muted">In conventional economies, vast amounts of real wealth are permanently lost because the administrative and verification costs exceed the face value of the act:</p>
+    <ul class="muted">
+      <li>Helping an elderly neighbor move groceries</li>
+      <li>Forty-five minutes of unbilled peer chemistry tutoring in a dorm</li>
+      <li>Clearing snow off a community walkway</li>
+      <li>Mentoring a freshman or organizing a campus cleanup</li>
+    </ul>
+    <p class="muted">Because traditional banking rails demand $0.30 + 2.9% per swipe and require contracts, invoices, and accounting departments, these high-value societal contributions vanish from balance sheets.</p>
+    <p class="muted">By leveraging Hedera Consensus Service (HCS), each authenticated good deed or micro-service is inscribed for $0.0008 per consensus timestamp, creating an auditable, immutable ledger of community sweat equity that costs practically nothing to notarize.</p>
+    <p class="muted"><a href="/hederica">Open Hederica</a></p>
+  </section>
+  <video class="fishbowl" poster="/lgme-fishbowl.jpg" autoplay muted loop playsinline preload="auto" aria-label="Fishbowl">
+    <source src="/lgme-fishbowl.mp4" type="video/mp4" />
+    <img src="/lgme-fishbowl.jpg" alt="Fishbowl." />
+  </video>
+  <p class="kicker">lgme · #LeGoMiEgo</p>
+  <h1>They printed the money. I am keeping the book.</h1>
+  <p class="muted">Floor stays senior. Same rules bind state, firm, and person. If it cannot be shown, it is not policy.</p>
+  <p class="muted">In force — Barrier checks recorded. Residual, mint window, Floor change, agent action, and single-seat exception all closed under prior naming, default-closed, Floor seniority, constitutive tape, and seat symmetry.</p>
+  <p class="muted">L2 in force — Amendment path cannot be shortened in the same act. One full public cycle and a second independent reading required. An attempt to waive writes nothing.</p>
+  <section id="sovereignty">
+    <p class="kicker">Sovereignty</p>
+    <h2>Final and absolute authority</h2>
+    <p class="muted">Sovereignty simply means final and absolute authority. Therefore, those who have it are not subject to any outside authority on Earth.</p>
+    <p class="muted">The Declaration of Independence was the ultimate expression of the sovereignty of the people. This is exactly what Thomas Jefferson was expressing when he wrote, “Governments are instituted among Men, deriving their just powers from the consent of the governed.”</p>
+    <p class="muted">The people have the ultimate authority. The government is an agent of the people. The sovereign people can therefore “alter or abolish” the government as they see fit and institute a new government, “laying its foundation on such principles and organizing its powers in such form, as to them shall seem most likely to effect their Safety and Happiness.”</p>
+    <p class="muted">In the book the person is the third seat. Same rules bind all three. Sovereignty is the refusal of any line that skipped the order or cannot be shown.</p>
+    <p class="muted"><a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Sovereignty_Jefferson.md">Full note →</a></p>
+  </section>
+  <p class="muted"><a href="/">Desk</a></p>
+  <script>
+    (function () {
+      var t = document.getElementById("menu-toggle");
+      var n = document.getElementById("main-nav");
+      if (!t || !n) return;
+      function toggle() {
+        var open = n.classList.toggle("open");
+        t.classList.toggle("open", open);
+        t.setAttribute("aria-expanded", open ? "true" : "false");
+      }
+      t.addEventListener("click", toggle);
+      t.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
+      });
+    })();
+  </script>
+</body>
+</html>
