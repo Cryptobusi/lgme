@@ -42,7 +42,7 @@ The brief maps philosophical themes from the video essay on *What the Bleep Do W
 ## Review Notes (Mock Simulation Context)
 
 - The proposal is coherent with the existing Third Seat / Floor First / Vote-by-Doing / visible-tape framing already present on the sites.
-- “SOBEIT” appears to be the working name for the co-creation / mutual-credit protocol layer (consistent with the recent rename of IcmdIt → soBIT).
+- “SOBEIT” appears to be the working name for the co-creation / mutual-credit protocol layer (consistent with the recent rename of IcmdIt → soBEIT).
 - Because lgme.app is explicitly a model/mock simulation:
   - Full DePIN sensor integration, live HCS topic wiring, and production DID separation are **out of scope** for the current static/HTML and design-research stage.
   - Useful next steps inside the mock are limited to: clearer documentation of the SOBEIT framing, placeholder UI notes, or expanded study/glossary entries.
@@ -50,6 +50,6 @@ The brief maps philosophical themes from the video essay on *What the Bleep Do W
 
 **Action taken:** This note only. No code or live architectural changes have been made.
 
-**Related pages:** `/consciousness`, `/sobit`, `/sobit-marketing`.
+**Related pages:** `/consciousness`, `/sobeit`, `/sobeit-marketing`.
 
 End of note.
