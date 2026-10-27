@@ -1,1 +1,1 @@
-$(cat /tmp/study.html)
+$(cat /tmp/study.html | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')
