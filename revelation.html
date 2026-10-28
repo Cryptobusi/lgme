@@ -8,7 +8,7 @@
   <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
   <title>Revelation — lgme</title>
-  <meta name="description" content="A counterfactual. The Egonomic SPP as a stabilizer of the pre-Fed system: public schedule, floor seniority, and what it would not have fixed." />
+  <meta name="description" content="Revelation. The pre-Fed counterfactual, and a policy brief on algorithmic liquidity, public floor seniority, and what the overlay does not replace." />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600&display=swap" />
   <style>
     :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; --panel:#141a13; }
@@ -20,6 +20,16 @@
     .muted { color:var(--muted); }
     a { color:var(--fg); } a:hover { color:var(--gold); }
     .note { border-left:2px solid var(--gold); padding:0.15rem 0 0.15rem 1rem; margin:1.25rem 0; color:#e4d3a2; }
+
+    table { width:100%; border-collapse:collapse; margin:1rem 0 0.4rem; font-size:0.95rem; }
+    th, td { text-align:left; vertical-align:top; padding:0.7rem 0.55rem; border-bottom:1px solid var(--line); }
+    th { color:var(--fg); font-weight:600; }
+    td { color:var(--muted); }
+    td strong { color:var(--fg); font-weight:600; }
+    .tier { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:0.9rem 1rem; margin:0.55rem 0; }
+    .tier .n { font-size:0.72rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--gold); margin:0 0 0.25rem; }
+    ul { margin:0.4rem 0 0; padding-left:1.15rem; }
+    li { margin:0.28rem 0; }
   </style>
   <link rel="stylesheet" href="/menu.css" />
 </head>
@@ -48,6 +58,75 @@
   <h2>Net assessment</h2>
   <p>With contemporary AI and DLT, the Egonomic SPP would have been a stronger stabilizer of the pre-Fed system than the combination of bond-backed notes, private clearing houses, and ad-hoc Treasury deposits that actually existed. It would have expanded usable liquidity under scarcity constraints, subjected state claims to the same visible order as private ones, and forced more explicit settlements. That path would have made the later institutional choice of a large, independent central bank with an expandable balance sheet less necessary and would have left fewer residual problems of the kind now visible in the Fed’s securities portfolio, interest payments, and exposure to fiscal pressure.</p>
   <p>It remains an overlay on existing money rather than a full replacement of base-money management. Real scarcity and political control of the ultimate unit of account would still have required resolution, only under tighter public rules.</p>
+
+
+  <h2>Policy brief</h2>
+  <p class="kicker">Algorithmic liquidity management and seniority schedules</p>
+  <p class="muted">A consolidated reading of the same constraint. Not a facility, and not a claim on the public balance sheet.</p>
+
+  <h2>Executive summary</h2>
+  <p>Integrating contemporary artificial intelligence and distributed ledger technology offers a viable framework for algorithmic liquidity clearing. By enforcing a deterministic, public schedule of floor seniority and leveraging real-time telemetry, this protocol design addresses chronic inefficiencies in traditional central banking: discretionary delays, bailout stigma, and balance-sheet bloat. Rather than replacing sovereign base money, the model functions as an automated settlement and netting layer that expands usable liquidity under strict scarcity constraints.</p>
+
+  <h2>Core architectural advantages</h2>
+
+  <h3 style="font-family:Newsreader,serif;font-weight:500;font-size:1.25rem;margin:1.4rem 0 0.4rem;">Algorithmic seniority versus a discretionary lender of last resort</h3>
+  <p><strong>Traditional central banking.</strong> Emergency facilities — the discount window, standing repo, targeted credit backstops — rely on human administrative discretion. That introduces operational lag, political sensitivity, and counterparty stigma.</p>
+  <p><strong>Deterministic seniority.</strong> Emergency liquidity operates through an automated waterfall. Floor seniority, expansion limits, and haircut schedules are defined in the protocol and publicly auditable. Subjective intervention is not a step.</p>
+
+  <h3 style="font-family:Newsreader,serif;font-weight:500;font-size:1.25rem;margin:1.4rem 0 0.4rem;">Real-time telemetry</h3>
+  <p><strong>The old failure.</strong> Clearinghouse loan certificates and note issues failed first from information asymmetry. Participants could not verify whether a counterparty had overextended or exhausted eligible assets.</p>
+  <p><strong>What the tape can show.</strong> Machine-learning surveillance on an immutable ledger can do three things the certificate could not:</p>
+  <ul class="muted">
+    <li>Continuous marked-to-market revaluation of pledged collateral.</li>
+    <li>Rapid identification of parallel encumbrances and rehypothecation.</li>
+    <li>Automated tripwires when reserves breach the floor.</li>
+  </ul>
+
+  <h3 style="font-family:Newsreader,serif;font-weight:500;font-size:1.25rem;margin:1.4rem 0 0.4rem;">Fiscal dominance and balance-sheet bloat</h3>
+  <p>Large quantitative-easing portfolios leave a central-bank balance sheet exposed to yield mismatch, interest payments on reserve balances, and political pressure. An asset-backed settlement overlay self-liquidates as the underlying obligations clear. Liquidity can expand in stress without locking the assets permanently onto the public book.</p>
+
+  <h2>Risks and what answers them</h2>
+  <table>
+    <thead>
+      <tr><th>Vulnerability</th><th>Structural risk</th><th>What answers it</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Shadow claims</strong></td>
+        <td>Participants try off-tape, opaque agreements to step around public seniority. Bad claims drive out the shown ones.</td>
+        <td>Legal wrappers and negative-pledge covenants. A registered lien on the tape outranks an unrecorded bilateral claim. Enforceability is the point, in the manner of UCC Article 12 for controllable electronic records.</td>
+      </tr>
+      <tr>
+        <td><strong>Solvency dressed as liquidity</strong></td>
+        <td>A bad loan book can be presented as a short-term cash need.</td>
+        <td>Dynamic collateral haircuts. Oracles move margin and haircut curves with the risk that can be shown.</td>
+      </tr>
+      <tr>
+        <td><strong>A run on the public tape</strong></td>
+        <td>Full sight of floor seniority can trigger a preemptive liquidation of the lower tiers.</td>
+        <td>Tiered visibility. A zero-knowledge proof can show that reserves and the floor still hold, without broadcasting the position to a front-runner.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Two-tiered clearing, three seats</h2>
+  <p class="muted">Base money stays the unit of account. The protocol is the overlay. The participants do not set the floor.</p>
+  <div class="tier">
+    <p class="n">Tier 1 · Base settlement</p>
+    <p>Sovereign unit of account. Central-bank reserves, or a public settlement balance. This page does not mint one.</p>
+  </div>
+  <div class="tier">
+    <p class="n">Tier 2 · Algorithmic clearing overlay</p>
+    <p>Public floor-seniority schedule. Programmatic liquidity-expansion waterfalls. Real-time collateral audit. The expansion is on the schedule, or it is not an expansion.</p>
+  </div>
+  <div class="tier">
+    <p class="n">Tier 3 · Market participants</p>
+    <p>Participating commercial banks and non-bank market makers. Same waterfall. No quieter rule for a larger book.</p>
+  </div>
+
+  <h2>Brief conclusion</h2>
+  <p>The protocol sits between free-banking liquidity elasticity and central-bank stability. It turns a liquidity backstop from a discretionary political instrument into a rule that can be read. Crisis liquidity remains. The discipline is structural, because the schedule is public and the floor stays senior.</p>
+
 
   <p class="muted">Floor stays senior. Same rules bind state, firm, and person. If it cannot be shown, it is not policy.</p>
   <p class="muted" style="margin-top:2rem;"><a href="/">← Desk</a> · <a href="https://www.egonomicanonymous.live/revelation">Same page on the book</a> · <a href="/spp">Protocol</a></p>
