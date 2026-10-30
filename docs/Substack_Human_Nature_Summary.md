@@ -1,7 +1,7 @@
 # Human Nature, Relational Dynamics, and the Egonomic Architecture
 
 **For Substack post**  
-Companion full display: [Gemini share](https://share.gemini.google/WrB3nJkKGexV)  
+Companion full display: [Google Drive](https://drive.google.com/file/d/1oZyhgfXma-SL_rViRP6z036ioMHcnxgX/view?usp=drivesdk)  
 Live pages: [lgme.app/human-nature-synthesis](https://lgme.app/human-nature-synthesis) · [egonomicanonymous.live](https://egonomicanonymous.live)
 
 ---
@@ -40,7 +40,7 @@ It is not a new currency or a new monopoly issuer. It is the existing rails plus
 ---
 
 Full synthesis (laws breakdown, comparison tables, strengths/weaknesses, action plan):  
-**[https://share.gemini.google/WrB3nJkKGexV](https://share.gemini.google/WrB3nJkKGexV)**  
+**[https://drive.google.com/file/d/1oZyhgfXma-SL_rViRP6z036ioMHcnxgX/view?usp=drivesdk](https://drive.google.com/file/d/1oZyhgfXma-SL_rViRP6z036ioMHcnxgX/view?usp=drivesdk)**  
 **[https://lgme.app/human-nature-synthesis](https://lgme.app/human-nature-synthesis)**
 
 Floor stays senior.  
