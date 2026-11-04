@@ -17,6 +17,7 @@
     code, pre { background:var(--panel); padding:0.1em 0.3em; border-radius:3px; font-size:0.9em; }
     pre { padding:0.8rem; overflow-x:auto; }
     .test { border-left:2px solid var(--gold); padding-left:1rem; margin:0.8rem 0; }
+    .demo-box { border:1px solid var(--gold); padding:1.2rem; border-radius:8px; background:#1a2018; margin:1rem 0; }
   </style>
 </head>
 <body>
@@ -36,6 +37,21 @@
       <li>AGPL-3.0 — free to self-host forever</li>
     </ul>
     <p><a href="https://github.com/bigcapitalhq/bigcapital">GitHub</a> · <a href="https://docs.bigcapital.app">Docs</a> · <a href="https://bigcapital.app">Cloud trial</a></p>
+  </section>
+
+  <section>
+    <h2>Live demo</h2>
+    <div class="demo-box">
+      <p><strong>Public cloud trial</strong> (official Bigcapital hosted demo)</p>
+      <p><a href="https://bigcapital.app" target="_blank" rel="noopener">Open bigcapital.app →</a></p>
+      <p class="muted">Create a free trial organization to explore the UI, invoicing, inventory, and reports. Data is isolated to your trial org.</p>
+    </div>
+    <div class="demo-box">
+      <p><strong>Self-hosted instance</strong> (your HomeBox + Bigcapital pair)</p>
+      <p>Once your Docker stack is running, link it here:</p>
+      <p><code>https://your-domain-or-ip</code> — replace with the actual BASE_URL from your .env</p>
+      <p class="muted">Use the functional test checklist below to verify the HomeBox CSV → Bigcapital Items flow on your own instance.</p>
+    </div>
   </section>
 
   <section>
