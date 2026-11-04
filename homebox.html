@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HomeBox — lgme Exchange Listing Tracker</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" />
+  <style>
+    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; --panel:#141a13; }
+    body { background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; max-width:46rem; margin:0 auto; padding:1.5rem 1.25rem 4rem; line-height:1.6; }
+    h1,h2 { font-family:Newsreader,serif; }
+    a { color:var(--fg); text-underline-offset:0.22em; }
+    a:hover { color:var(--gold); }
+    .kicker { font-size:0.72rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--gold); }
+    section { border-top:1px solid var(--line); margin-top:2.5rem; padding-top:2rem; }
+    .card { background:var(--panel); border:1px solid var(--line); padding:1rem; border-radius:8px; margin:1rem 0; }
+    code { background:var(--panel); padding:0.1em 0.3em; border-radius:3px; }
+  </style>
+</head>
+<body>
+  <p class="kicker">lgme · HomeBox Integration</p>
+  <h1>HomeBox for Exchange Listing Coordination</h1>
+  <p class="muted">Self-hosted inventory system adapted to gather, organize, and keep up-to-date the information required for exchange listing of $LGME / related instruments. Coordinates documents, statuses, and notifications. Floor stays senior. An unpublished change is not a change.</p>
+
+  <section>
+    <h2>What HomeBox provides</h2>
+    <p>HomeBox (sysadminsmedia/homebox) is a lightweight, self-hosted Go app for tracking items, locations, documents, warranties, and maintenance. We use its structure for the listing book:</p>
+    <ul>
+      <li>Locations = listing stages (Pre-submission, Legal, Technical, Marketing, Live)</li>
+      <li>Items = required documents / assets (whitepaper, legal opinion, KYC pack, liquidity plan, etc.)</li>
+      <li>Custom fields + attachments for versions and status</li>
+      <li>Maintenance schedules → automated reminders for expiry or review dates</li>
+      <li>Search + QR codes for quick retrieval</li>
+      <li>API keys for future automation / notifications</li>
+    </ul>
+    <p><a href="https://homebox.software/en/">Official docs</a> · <a href="https://github.com/sysadminsmedia/homebox">GitHub</a> · <a href="https://demo.homebox.software">Demo</a></p>
+  </section>
+
+  <section>
+    <h2>Suggested tracking items</h2>
+    <div class="card">
+      <strong>Legal & Compliance</strong><br>
+      Whitepaper / disclaimer versions · Legal opinion letter · KYC/AML policy · Terms of service · Privacy policy
+    </div>
+    <div class="card">
+      <strong>Technical</strong><br>
+      Contract addresses (Hedera / other) · Audit reports · Source code links · RPC endpoints · Token metadata
+    </div>
+    <div class="card">
+      <strong>Market & Listing</strong><br>
+      Exchange application status · Liquidity commitment · Market maker info · Listing fee receipts · Announcement drafts
+    </div>
+    <div class="card">
+      <strong>Team & Ops</strong><br>
+      Key contacts · Wallet addresses (public) · Notification recipients · Review schedule
+    </div>
+  </section>
+
+  <section>
+    <h2>Notifications & coordination</h2>
+    <p>HomeBox maintenance tracking can flag upcoming review dates. For automated external notifications:</p>
+    <ul>
+      <li>Use the REST API + API keys to poll status</li>
+      <li>Pair with a simple cron or GitHub Action that checks for changes and posts to Discord / X / email</li>
+      <li>Or self-host HomeBox and point its health/maintenance endpoints at an existing notifier</li>
+    </ul>
+    <p>Setup guide (Docker):</p>
+    <pre><code>openssl rand -base64 48 > hbox.pepper
+docker run -d --name lgme-homebox --restart unless-stopped \
+  -p 3100:7745 \
+  -e HBOX_AUTH_API_KEY_PEPPER=$(cat hbox.pepper) \
+  -v /path/to/lgme-listing-data:/data \
+  ghcr.io/sysadminsmedia/homebox:latest</code></pre>
+    <p>Then open <code>http://localhost:3100</code>, create an account, and start adding locations + items.</p>
+  </section>
+
+  <section>
+    <h2>Next steps</h2>
+    <ol>
+      <li>Stand up a private HomeBox instance for the listing team.</li>
+      <li>Populate the suggested items and attach current documents.</li>
+      <li>Set maintenance dates for reviews.</li>
+      <li>Wire API notifications if desired.</li>
+      <li>Link the live instance from this page once ready (replace demo links).</li>
+    </ol>
+    <p><a href="/">← Back to lgme</a></p>
+  </section>
+</body>
+</html>
