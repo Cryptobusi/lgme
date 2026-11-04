@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bigcapital — lgme Accounting + HomeBox</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" />
+  <style>
+    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; --panel:#141a13; }
+    body { background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; max-width:46rem; margin:0 auto; padding:1.5rem 1.25rem 4rem; line-height:1.6; }
+    h1,h2 { font-family:Newsreader,serif; }
+    a { color:var(--fg); text-underline-offset:0.22em; }
+    a:hover { color:var(--gold); }
+    .kicker { font-size:0.72rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--gold); }
+    section { border-top:1px solid var(--line); margin-top:2.5rem; padding-top:2rem; }
+    .card { background:var(--panel); border:1px solid var(--line); padding:1rem; border-radius:8px; margin:1rem 0; }
+    code, pre { background:var(--panel); padding:0.1em 0.3em; border-radius:3px; font-size:0.9em; }
+    pre { padding:0.8rem; overflow-x:auto; }
+    .test { border-left:2px solid var(--gold); padding-left:1rem; margin:0.8rem 0; }
+  </style>
+</head>
+<body>
+  <p class="kicker">lgme · Bigcapital + HomeBox</p>
+  <h1>Bigcapital Accounting with HomeBox</h1>
+  <p class="muted">Self-hosted double-entry accounting and inventory for the lgme book. Works with the already-installed HomeBox instance via CSV export/import and REST APIs. Floor stays senior. An unpublished change is not a change.</p>
+
+  <section>
+    <h2>What Bigcapital provides</h2>
+    <ul>
+      <li>Double-entry accounting, chart of accounts, journals</li>
+      <li>Invoicing, bills, expenses, payments</li>
+      <li>Inventory tracking (FIFO / average cost) with valuation reports</li>
+      <li>Financial statements (P&L, Balance Sheet, Cash Flow)</li>
+      <li>Multi-currency, multi-organization</li>
+      <li>Full REST API + CSV/XLSX import for Items, Contacts, Accounts</li>
+      <li>AGPL-3.0 — free to self-host forever</li>
+    </ul>
+    <p><a href="https://github.com/bigcapitalhq/bigcapital">GitHub</a> · <a href="https://docs.bigcapital.app">Docs</a> · <a href="https://bigcapital.app">Cloud trial</a></p>
+  </section>
+
+  <section>
+    <h2>Working with installed HomeBox</h2>
+    <div class="card">
+      <strong>Data flow</strong><br>
+      HomeBox (operational inventory / listing tracker) → CSV or API export → Bigcapital Items / Inventory Adjustments / Expenses.
+    </div>
+    <ol>
+      <li>In HomeBox: Export entities as CSV (<code>/api/v1/entities/export</code> or UI Tools).</li>
+      <li>Map columns (name, quantity, cost, location, custom fields) to Bigcapital Item import template.</li>
+      <li>In Bigcapital: Use Import → Items (or Inventory Adjustments) → upload, map, preview, process.</li>
+      <li>For ongoing sync: script the HomeBox REST API + Bigcapital API (Bearer token).</li>
+    </ol>
+    <p>HomeBox page: <a href="/homebox">/homebox</a></p>
+  </section>
+
+  <section>
+    <h2>Docker setup (production)</h2>
+    <pre><code>git clone --depth 1 -b main https://github.com/bigcapitalhq/bigcapital.git
+cd bigcapital
+cp .env.example .env
+# edit .env — set DB passwords, JWT secret, BASE_URL
+echo "APP_JWT_SECRET=$(openssl rand -base64 48)" >> .env
+docker compose -f docker-compose.prod.yml up -d</code></pre>
+    <p>Access at the configured BASE_URL (default port 80/443 via proxy). Create organization and admin user on first load.</p>
+  </section>
+
+  <section>
+    <h2>Functional test checklist (preview)</h2>
+    <div class="test"><strong>1. Deploy & login</strong> — Stack starts, create org + user, dashboard loads.</div>
+    <div class="test"><strong>2. Chart of accounts</strong> — Default accounts present; add custom asset/expense accounts for listing costs.</div>
+    <div class="test"><strong>3. Items import</strong> — Upload sample HomeBox-style CSV of items; map name/qty/cost; preview shows correct rows; process succeeds; items appear in inventory list with valuation.</div>
+    <div class="test"><strong>4. Manual transaction</strong> — Create expense (e.g. listing fee) and invoice; journal entries balance.</div>
+    <div class="test"><strong>5. Reports</strong> — P&L and Balance Sheet generate for the period; inventory valuation matches imported quantities.</div>
+    <div class="test"><strong>6. API smoke</strong> — Generate API key; GET /api/items and /api/reports/profit-loss-sheet return 200 with Bearer auth.</div>
+    <div class="test"><strong>7. HomeBox round-trip</strong> — Export from HomeBox, import to Bigcapital, confirm totals match; re-export from Bigcapital if needed.</div>
+  </section>
+
+  <section>
+    <h2>Next</h2>
+    <p>Once the above tests pass on your running Bigcapital + HomeBox pair, the page is ready for live use. Link the live instance here when available.</p>
+    <p><a href="/">← Back to lgme</a> · <a href="/homebox">HomeBox Listing</a></p>
+  </section>
+</body>
+</html>
