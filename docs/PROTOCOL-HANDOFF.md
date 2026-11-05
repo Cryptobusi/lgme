@@ -20,7 +20,7 @@ Leave `/plan` and `/forecasts` as they are. Do not replace their text with anyth
 
 `/protocol` uses the same gate as The Plan and Forecasts. Before the password, the page shows only the password window. After it, the page shows, in this order:
 
-1. The Protocol file. The line, the three seats, five locks, the nine stages, seven layers, a passport specimen, how a line moves, and the three rollout phases. A small clerk runs in the browser. It does not move a wallet, a basket, or $Trust.
+1. The Protocol file. The line, the three seats, five locks, the nine stages, seven layers, a passport specimen, how a line moves, and the three rollout phases. A small clerk runs in the browser. It does not move a wallet or a basket.
 2. The specification, headed “Sovereign Provenance Protocol.” It follows the architecture published 20 October 2026. Link both of these, and say the lines follow that file:
    - https://lgme.app/docs/Sovereign_Provenance_Protocol_Architecture.md
    - https://github.com/Cryptobusi/lgme/blob/main/docs/Sovereign_Provenance_Protocol_Architecture.md
