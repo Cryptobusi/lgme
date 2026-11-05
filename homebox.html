@@ -15,12 +15,33 @@
     section { border-top:1px solid var(--line); margin-top:2.5rem; padding-top:2rem; }
     .card { background:var(--panel); border:1px solid var(--line); padding:1rem; border-radius:8px; margin:1rem 0; }
     code { background:var(--panel); padding:0.1em 0.3em; border-radius:3px; }
+    .mock-login { background:var(--panel); border:1px solid var(--gold); padding:1.2rem; border-radius:8px; margin:1.5rem 0; }
+    .mock-login input { display:block; width:100%; margin:0.5rem 0 1rem; padding:0.5rem; background:#1a2018; border:1px solid var(--line); color:var(--fg); border-radius:4px; }
+    .mock-login button { background:var(--gold); color:#0c100c; border:none; padding:0.6rem 1.2rem; border-radius:4px; cursor:pointer; font-weight:600; }
+    .mock-success { display:none; background:#1a2a1a; border:1px solid #4a7c4a; padding:1rem; border-radius:8px; margin-top:1rem; }
   </style>
 </head>
 <body>
   <p class="kicker">lgme · HomeBox Integration</p>
   <h1>HomeBox for Exchange Listing Coordination</h1>
   <p class="muted">Self-hosted inventory system adapted to gather, organize, and keep up-to-date the information required for exchange listing of $LGME / related instruments. Coordinates documents, statuses, and notifications. Floor stays senior. An unpublished change is not a change.</p>
+
+  <section>
+    <h2>Mock simulation login</h2>
+    <div class="mock-login">
+      <p><strong>Design-research mock</strong> — any username/password will pass.</p>
+      <form id="mockForm" onsubmit="return mockLogin(event)">
+        <label>Username / Email<br><input type="text" id="user" placeholder="anything" required></label>
+        <label>Password<br><input type="password" id="pass" placeholder="anything" required></label>
+        <button type="submit">Login</button>
+      </form>
+      <div id="success" class="mock-success">
+        <strong>✓ Logged in (simulated)</strong><br>
+        Welcome to the HomeBox listing tracker mock. Locations and items would appear here.<br>
+        Floor stays senior. This is not a live instance.
+      </div>
+    </div>
+  </section>
 
   <section>
     <h2>What HomeBox provides</h2>
@@ -86,5 +107,14 @@ docker run -d --name lgme-homebox --restart unless-stopped \
     <p><a href="/">← Back to lgme</a></p>
   </section>
   <p class="muted"><a href="/">Desk</a> · <a href="/disclosures">Disclosures</a> · Not an offer. Not an investment.</p>
+
+  <script>
+    function mockLogin(e) {
+      e.preventDefault();
+      document.getElementById('success').style.display = 'block';
+      document.getElementById('mockForm').style.display = 'none';
+      return false;
+    }
+  </script>
 </body>
 </html>
