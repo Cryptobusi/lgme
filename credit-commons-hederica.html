@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Credit Commons × Hederica Integration — lgme</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;1,6..72,500&display=swap" />
+  <style>
+    :root {
+      --bg: #0c100c;
+      --fg: #f4f1e8;
+      --muted: #c5d0c2;
+      --faint: #8ea892;
+      --gold: #c6a15b;
+      --line: #2c352b;
+      --panel: #141a13;
+    }
+    html { background: var(--bg); color: var(--fg); }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: Figtree, sans-serif;
+      font-size: 1.05rem;
+      line-height: 1.6;
+      max-width: 46rem;
+      margin: 0 auto;
+      padding: 1.5rem 1.25rem 4rem;
+    }
+    .kicker {
+      margin: 0;
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+    h1, h2, h3 { font-family: Newsreader, serif; font-weight: 500; letter-spacing: -0.02em; }
+    h1 { font-size: clamp(2.2rem, 6vw, 3.2rem); line-height: 1.05; margin: 0.6rem 0 0.5rem; }
+    h2 { font-size: clamp(1.6rem, 4vw, 2.1rem); margin: 2rem 0 0.8rem; }
+    h3 { font-size: 1.25rem; margin: 1.5rem 0 0.5rem; }
+    p, li { margin: 0.7rem 0; }
+    .muted { color: var(--muted); }
+    a { color: var(--fg); text-underline-offset: 0.22em; }
+    a:hover { color: var(--gold); }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+    th, td { text-align: left; padding: 0.6rem 0.4rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--gold); font-weight: 600; }
+    .disclaimer {
+      border-left: 2px solid var(--gold);
+      padding: 0.4rem 0 0.4rem 1rem;
+      margin: 1.5rem 0;
+      color: #e4d3a2;
+    }
+    code, pre { font-family: ui-monospace, monospace; font-size: 0.88em; background: var(--panel); padding: 0.2em 0.4em; border-radius: 4px; }
+    pre { padding: 1rem; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <p class="kicker">Protocol Interoperability</p>
+  <h1>Credit Commons × Hederica Charter Integration</h1>
+  <p class="muted">Architectural Synthesis: Credit Commons Protocol × lgme.app Sovereign Ledger<br>
+  Target: lgme.app / hederica.com / egonomicanonymous.live</p>
+
+  <div class="disclaimer">
+    ARCHIVE · NOT AN OFFER. Design research. Not a solicitation, not a token sale. The live mission is the Hederica charter and IdidIt deeds.
+  </div>
+
+  <h2>Executive Summary</h2>
+  <p>Alternative economic coordination faces a structural dilemma: remain confined within isolated local mutual aid silos, or adopt speculative token rails that introduce financial extraction and custodial risk. The lgme.app platform resolves this dilemma by unifying the federated transport topology of the Credit Commons Protocol (CCP) with the constitutional evidentiary foundation of the Hederica Charter. Inter-community trade flows across federated clearing paths, while internal balance tracking is converted into immutable, non-extractive proofs of deed (IdidIt receipts) anchored directly to distributed consensus rails.</p>
+
+  <h2>1. Structural Comparison & Synthesis</h2>
+  <table>
+    <thead>
+      <tr><th>Dimension</th><th>Credit Commons Protocol</th><th>Hederica Protocol (lgme.app)</th><th>Integration Outcome</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Primary Entity</td>
+        <td>Ledger account balances, debits, and tree clearing paths.</td>
+        <td>Notarized IdidIt deeds: attested human labor and time.</td>
+        <td>CCP transactions materialize as immutable deeds, not debt obligations.</td>
+      </tr>
+      <tr>
+        <td>Topology</td>
+        <td>Hierarchical tree of mirror ledgers and branch relays.</td>
+        <td>Bilateral sovereign covenants (Article I § 10 contract law).</td>
+        <td>Use CCP tree relays for external routing; settle sovereignly on-chain.</td>
+      </tr>
+      <tr>
+        <td>Data Proof</td>
+        <td>Linear SHA-256 header ratchets (Last-hash).</td>
+        <td>Public consensus timestamps ($0.0001/tx) & Ed25519 signatures.</td>
+        <td>Convert CCP hash chains into FRE 902 self-authenticating legal evidence.</td>
+      </tr>
+      <tr>
+        <td>Economic Policy</td>
+        <td>Branch-level credit/debit limits with zero-interest limits.</td>
+        <td>Unconditional Survival Floor; non-interest time banking.</td>
+        <td>Immunizes community accounts from systemic contagion or external debt extraction.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>2. Architecture: Relay Transport vs. Constitutional Anchor</h2>
+  <pre>
+[Credit Commons Trunk: Federated Clearing Hub]
+        ↓ (POST /cc/transaction/relay • 2-Phase Commit)
+[lgme.app Gateway Node: Ratchet Verification & Account Validation]
+        ↓ (Enforce Covenant Limits & Unconditional Survival Floor)
+[Hederica Charter Engine: Inscription of IdidIt Receipt • FRE 902 Artifact]
+        ↓ (Timestamp Inscription • Decentralized Consensus Layer)
+[Immutable Archival: Bilateral Sovereign Covenant Ledger]
+  </pre>
+
+  <h2>3. End-to-End Interoperability Sequence</h2>
+  <ol>
+    <li><strong>Relay Ingestion:</strong> An external mutual credit circle initiates a trade clearance request using standard OpenAPI 3.0 endpoints (POST /cc/transaction/relay).</li>
+    <li><strong>Constitutional Filter:</strong> The lgme.app adapter checks sender and counterparty states, confirming the action conforms to local mutual covenants and does not violate the Unconditional Survival Floor.</li>
+    <li><strong>Two-Phase Commit:</strong> Balances are provisionally locked across ledger branches during the prepare phase, preventing double-spend or dangling state splits.</li>
+    <li><strong>Consensus Deed Inscription:</strong> Upon final validation (PATCH /cc/transaction/:uuid/completed), the settlement is formatted as a standardized JSON deed package and committed to public consensus rails.</li>
+    <li><strong>Evidentiary Packaging:</strong> The transaction produces an exportable FRE 902(13/14) certificate containing hash verification headers, cryptographic signatures, and consensus timestamps.</li>
+  </ol>
+
+  <h2>Constitutional Guarantees of the Combined Architecture</h2>
+  <p>Settlements conducted across the integrated Credit Commons × Hederica bridge maintain complete immunity from interest rate shocks, liquidity extraction, and third-party custody claims. By operating under private bilateral covenants protected by Article I § 10 of the United States Constitution, mutual exchange remains an unencumbered medium of authentic community cooperation.</p>
+
+  <p class="muted"><a href="/">← Back to lgme</a> · <a href="https://hederica.com">Hederica.com</a> · <a href="https://egonomicanonymous.live">Egonomic Anonymous</a></p>
+</body>
+</html>
