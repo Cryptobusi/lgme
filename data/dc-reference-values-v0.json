@@ -1,0 +1,616 @@
+{
+  "region": "Washington DC MSA test run",
+  "date": "2026-11-02",
+  "notice": "reference ranges only, not prices or offers, simulated",
+  "method": "Services: hourly_avg is the OEWS hourly median, or the mean of p25 and p75 if the median is missing. job_avg is the midpoint of a job low-high span when one exists. avg_value_usd is job_avg when present, otherwise hourly_avg. Goods: avg_value_usd is the listed unit price. Pending series stay null.",
+  "items": [
+    {
+      "id": "svc-01",
+      "name": "Lawn mowing",
+      "kind": "service",
+      "unit": "job",
+      "avg_value_usd": 109.5,
+      "hourly_avg": 20.53,
+      "job_avg": 109.5,
+      "sources": [
+        "BLS OEWS May 2025, Washington-Arlington-Alexandria MSA (area 47900), SOC 37-3011",
+        "Thumbtack national, preliminary"
+      ],
+      "note": "SOC 37-3011 is a landscaping-worker proxy."
+    },
+    {
+      "id": "svc-02",
+      "name": "House cleaning",
+      "kind": "service",
+      "unit": "visit",
+      "avg_value_usd": 215,
+      "hourly_avg": 18.19,
+      "job_avg": 215,
+      "sources": [
+        "BLS OEWS May 2025, Washington-Arlington-Alexandria MSA (area 47900), SOC 37-2012",
+        "Thumbtack national, preliminary"
+      ],
+      "note": "Job midpoint uses the one-time visit series. A separate monthly series was not averaged in."
+    },
+    {
+      "id": "svc-03",
+      "name": "Handyman",
+      "kind": "service",
+      "unit": "job",
+      "avg_value_usd": 297,
+      "hourly_avg": 27.52,
+      "job_avg": 297,
+      "sources": [
+        "BLS OEWS May 2025, Washington-Arlington-Alexandria MSA (area 47900), SOC 49-9071",
+        "Thumbtack national, preliminary"
+      ],
+      "note": ""
+    },
+    {
+      "id": "svc-04",
+      "name": "Painting",
+      "kind": "service",
+      "unit": "job",
+      "avg_value_usd": 1534.5,
+      "hourly_avg": 24.31,
+      "job_avg": 1534.5,
+      "sources": [
+        "BLS OEWS May 2025, Washington-Arlington-Alexandria MSA (area 47900), SOC 47-2141",
+        "Thumbtack national, preliminary"
+      ],
+      "note": "Job midpoint uses the interior job series. A one-room series was not averaged in."
+    },
+    {
+      "id": "svc-05",
+      "name": "Moving labor",
+      "kind": "service",
+      "unit": "hour",
+      "avg_value_usd": 20.47,
+      "hourly_avg": 20.47,
+      "job_avg": null,
+      "sources": [
+        "BLS OEWS May 2025, Washington-Arlington-Alexandria MSA (area 47900), SOC 53-7062"
+      ],
+      "note": ""
+    },
+    {
+      "id": "svc-06",
+      "name": "Childcare",
+      "kind": "service",
+      "unit": "hour",
+      "avg_value_usd": 18.13,
+      "hourly_avg": 18.13,
+      "job_avg": null,
+      "sources": [
+        "BLS OEWS May 2025, Washington-Arlington-Alexandria MSA (area 47900), SOC 39-9011"
+      ],
+      "note": ""
+    },
+    {
+      "id": "svc-07",
+      "name": "Pet sitting / dog walking",
+      "kind": "service",
+      "unit": "job",
+      "avg_value_usd": 71.5,
+      "hourly_avg": 18.08,
+      "job_avg": 71.5,
+      "sources": [
+        "BLS OEWS May 2025, Washington-Arlington-Alexandria MSA (area 47900), SOC 39-2021",
+        "Thumbtack national, preliminary"
+      ],
+      "note": "SOC 39-2021 is an animal-caretaker proxy. Job midpoint is the per-job series."
+    },
+    {
+      "id": "svc-08",
+      "name": "Elder companion care",
+      "kind": "service",
+      "unit": "hour",
+      "avg_value_usd": 18.52,
+      "hourly_avg": 18.52,
+      "job_avg": null,
+      "sources": [
+        "BLS OEWS May 2025, Washington-Arlington-Alexandria MSA (area 47900), SOC 31-1120"
+      ],
+      "note": ""
+    },
+    {
+      "id": "svc-09",
+      "name": "Tutoring",
+      "kind": "service",
+      "unit": "hour",
+      "avg_value_usd": 23.43,
+      "hourly_avg": 23.43,
+      "job_avg": null,
+      "sources": [
+        "BLS OEWS May 2025, Washington-Arlington-Alexandria MSA (area 47900), SOC 25-3041"
+      ],
+      "note": "SOC 25-3041 is a tutor proxy."
+    },
+    {
+      "id": "svc-10",
+      "name": "Music lessons",
+      "kind": "service",
+      "unit": "hour",
+      "avg_value_usd": 28.73,
+      "hourly_avg": 28.73,
+      "job_avg": null,
+      "sources": [
+        "BLS OEWS May 2025, Washington-Arlington-Alexandria MSA (area 47900), SOC 25-3021"
+      ],
+      "note": "No job figures were parsed. SOC 25-3021 is a self-enrichment teacher proxy."
+    },
+    {
+      "id": "svc-11",
+      "name": "Cooking / meal prep",
+      "kind": "service",
+      "unit": "hour",
+      "avg_value_usd": null,
+      "hourly_avg": null,
+      "job_avg": null,
+      "sources": [
+        "BLS OEWS May 2025, Washington-Arlington-Alexandria MSA (area 47900), SOC 35-2013"
+      ],
+      "note": "OEWS SOC 35-2013 is not published for the DC MSA in this run, so hourly_avg is null. No job range."
+    },
+    {
+      "id": "svc-12",
+      "name": "Sewing / alterations",
+      "kind": "service",
+      "unit": "hour",
+      "avg_value_usd": 26.44,
+      "hourly_avg": 26.44,
+      "job_avg": null,
+      "sources": [
+        "BLS OEWS May 2025, Washington-Arlington-Alexandria MSA (area 47900), SOC 51-6052"
+      ],
+      "note": ""
+    },
+    {
+      "id": "svc-13",
+      "name": "Hair cutting",
+      "kind": "service",
+      "unit": "hour",
+      "avg_value_usd": 17.8,
+      "hourly_avg": 17.8,
+      "job_avg": null,
+      "sources": [
+        "BLS OEWS May 2025, Washington-Arlington-Alexandria MSA (area 47900), SOC 39-5012"
+      ],
+      "note": "Tips may be excluded from the OEWS wage."
+    },
+    {
+      "id": "svc-14",
+      "name": "Appliance repair",
+      "kind": "service",
+      "unit": "job",
+      "avg_value_usd": 229,
+      "hourly_avg": 30.69,
+      "job_avg": 229,
+      "sources": [
+        "BLS OEWS May 2025, Washington-Arlington-Alexandria MSA (area 47900), SOC 49-9031",
+        "Thumbtack national, preliminary"
+      ],
+      "note": "Listed in place of bike repair."
+    },
+    {
+      "id": "svc-15",
+      "name": "Small-engine repair",
+      "kind": "service",
+      "unit": "hour",
+      "avg_value_usd": 24.99,
+      "hourly_avg": 24.99,
+      "job_avg": null,
+      "sources": [
+        "BLS OEWS May 2025, Washington-Arlington-Alexandria MSA (area 47900), SOC 49-3053"
+      ],
+      "note": ""
+    },
+    {
+      "id": "svc-16",
+      "name": "Computer help",
+      "kind": "service",
+      "unit": "job",
+      "avg_value_usd": 160,
+      "hourly_avg": 37.43,
+      "job_avg": 160,
+      "sources": [
+        "BLS OEWS May 2025, Washington-Arlington-Alexandria MSA (area 47900), SOC 15-1232",
+        "Thumbtack national, preliminary"
+      ],
+      "note": ""
+    },
+    {
+      "id": "svc-17",
+      "name": "Web & graphic design",
+      "kind": "service",
+      "unit": "hour",
+      "avg_value_usd": 41.07,
+      "hourly_avg": 41.07,
+      "job_avg": null,
+      "sources": [
+        "BLS OEWS May 2025, Washington-Arlington-Alexandria MSA (area 47900), SOC 27-1024"
+      ],
+      "note": ""
+    },
+    {
+      "id": "svc-18",
+      "name": "Writing & editing",
+      "kind": "service",
+      "unit": "hour",
+      "avg_value_usd": 52.14,
+      "hourly_avg": 52.14,
+      "job_avg": null,
+      "sources": [
+        "BLS OEWS May 2025, Washington-Arlington-Alexandria MSA (area 47900), SOC 27-3043"
+      ],
+      "note": ""
+    },
+    {
+      "id": "svc-19",
+      "name": "Translation",
+      "kind": "service",
+      "unit": "hour",
+      "avg_value_usd": 45.44,
+      "hourly_avg": 45.44,
+      "job_avg": null,
+      "sources": [
+        "BLS OEWS May 2025, Washington-Arlington-Alexandria MSA (area 47900), SOC 27-3091"
+      ],
+      "note": ""
+    },
+    {
+      "id": "svc-20",
+      "name": "Bookkeeping",
+      "kind": "service",
+      "unit": "hour",
+      "avg_value_usd": 28.51,
+      "hourly_avg": 28.51,
+      "job_avg": null,
+      "sources": [
+        "BLS OEWS May 2025, Washington-Arlington-Alexandria MSA (area 47900), SOC 43-3031"
+      ],
+      "note": ""
+    },
+    {
+      "id": "svc-21",
+      "name": "Photography",
+      "kind": "service",
+      "unit": "job",
+      "avg_value_usd": 359.5,
+      "hourly_avg": 26.22,
+      "job_avg": 359.5,
+      "sources": [
+        "BLS OEWS May 2025, Washington-Arlington-Alexandria MSA (area 47900), SOC 27-4021",
+        "Thumbtack national, preliminary"
+      ],
+      "note": "Job midpoint uses the per-job series."
+    },
+    {
+      "id": "svc-22",
+      "name": "Delivery & errands",
+      "kind": "service",
+      "unit": "hour",
+      "avg_value_usd": 22.29,
+      "hourly_avg": 22.29,
+      "job_avg": null,
+      "sources": [
+        "BLS OEWS May 2025, Washington-Arlington-Alexandria MSA (area 47900), SOC 53-3033"
+      ],
+      "note": "SOC 53-3033 is a light-truck driver proxy."
+    },
+    {
+      "id": "svc-23",
+      "name": "Carpentry",
+      "kind": "service",
+      "unit": "hour",
+      "avg_value_usd": 29.23,
+      "hourly_avg": 29.23,
+      "job_avg": null,
+      "sources": [
+        "BLS OEWS May 2025, Washington-Arlington-Alexandria MSA (area 47900), SOC 47-2031"
+      ],
+      "note": ""
+    },
+    {
+      "id": "svc-24",
+      "name": "Plumbing helper",
+      "kind": "service",
+      "unit": "job",
+      "avg_value_usd": 367.5,
+      "hourly_avg": 22.52,
+      "job_avg": 367.5,
+      "sources": [
+        "BLS OEWS May 2025, Washington-Arlington-Alexandria MSA (area 47900), SOC 47-3015",
+        "Thumbtack national, preliminary"
+      ],
+      "note": "OEWS is plumber helpers. The job midpoint is a licensed-plumber series, a higher tier."
+    },
+    {
+      "id": "svc-25",
+      "name": "Electrician helper",
+      "kind": "service",
+      "unit": "job",
+      "avg_value_usd": 414,
+      "hourly_avg": 22.82,
+      "job_avg": 414,
+      "sources": [
+        "BLS OEWS May 2025, Washington-Arlington-Alexandria MSA (area 47900), SOC 47-3013",
+        "Thumbtack national, preliminary"
+      ],
+      "note": "OEWS is electrician helpers. The job midpoint is a licensed-electrician series, a higher tier."
+    },
+    {
+      "id": "good-01",
+      "name": "Eggs, grade A large",
+      "kind": "good",
+      "unit": "dozen",
+      "avg_value_usd": 2.368,
+      "hourly_avg": null,
+      "job_avg": null,
+      "sources": [
+        "BLS CPI average price, series APU0300708111"
+      ],
+      "note": "BLS CPI average price, South region, Sep 2026."
+    },
+    {
+      "id": "good-02",
+      "name": "Milk, whole",
+      "kind": "good",
+      "unit": "gallon",
+      "avg_value_usd": 3.901,
+      "hourly_avg": null,
+      "job_avg": null,
+      "sources": [
+        "BLS CPI average price, series APU0300709112"
+      ],
+      "note": "BLS CPI average price, South region, Sep 2026."
+    },
+    {
+      "id": "good-03",
+      "name": "White bread",
+      "kind": "good",
+      "unit": "lb",
+      "avg_value_usd": 1.748,
+      "hourly_avg": null,
+      "job_avg": null,
+      "sources": [
+        "BLS CPI average price, series APU0300702111"
+      ],
+      "note": "BLS CPI average price, South region, Sep 2026."
+    },
+    {
+      "id": "good-04",
+      "name": "Ground beef 100%",
+      "kind": "good",
+      "unit": "lb",
+      "avg_value_usd": 6.501,
+      "hourly_avg": null,
+      "job_avg": null,
+      "sources": [
+        "BLS CPI average price, series APU0300703112"
+      ],
+      "note": "BLS CPI average price, South region, Sep 2026."
+    },
+    {
+      "id": "good-05",
+      "name": "Chicken, whole",
+      "kind": "good",
+      "unit": "lb",
+      "avg_value_usd": 1.947,
+      "hourly_avg": null,
+      "job_avg": null,
+      "sources": [
+        "BLS CPI average price, series APU0300706111"
+      ],
+      "note": "BLS CPI average price, South region, Sep 2026."
+    },
+    {
+      "id": "good-06",
+      "name": "Rice, white",
+      "kind": "good",
+      "unit": "lb",
+      "avg_value_usd": 1.218,
+      "hourly_avg": null,
+      "job_avg": null,
+      "sources": [
+        "BLS CPI average price, series APU0300701312"
+      ],
+      "note": "BLS CPI average price, South region, Sep 2026."
+    },
+    {
+      "id": "good-07",
+      "name": "Dried beans",
+      "kind": "good",
+      "unit": "lb",
+      "avg_value_usd": 1.752,
+      "hourly_avg": null,
+      "job_avg": null,
+      "sources": [
+        "BLS CPI average price, series APU0300714233"
+      ],
+      "note": "BLS CPI average price, South region, Sep 2026."
+    },
+    {
+      "id": "good-08",
+      "name": "Flour",
+      "kind": "good",
+      "unit": "lb",
+      "avg_value_usd": 0.486,
+      "hourly_avg": null,
+      "job_avg": null,
+      "sources": [
+        "BLS CPI average price, series APU0300701111"
+      ],
+      "note": "BLS CPI average price, South region, Sep 2026."
+    },
+    {
+      "id": "good-09",
+      "name": "Sugar",
+      "kind": "good",
+      "unit": "lb",
+      "avg_value_usd": 1.061,
+      "hourly_avg": null,
+      "job_avg": null,
+      "sources": [
+        "BLS CPI average price, series APU0300715211"
+      ],
+      "note": "BLS CPI average price, South region, Sep 2026."
+    },
+    {
+      "id": "good-10",
+      "name": "Coffee, ground",
+      "kind": "good",
+      "unit": "lb",
+      "avg_value_usd": 9.332,
+      "hourly_avg": null,
+      "job_avg": null,
+      "sources": [
+        "BLS CPI average price, series APU0000717311"
+      ],
+      "note": "US city average. The South series had ended before this run."
+    },
+    {
+      "id": "good-11",
+      "name": "Bananas",
+      "kind": "good",
+      "unit": "lb",
+      "avg_value_usd": 0.616,
+      "hourly_avg": null,
+      "job_avg": null,
+      "sources": [
+        "BLS CPI average price, series APU0300711211"
+      ],
+      "note": "BLS CPI average price, South region, Sep 2026."
+    },
+    {
+      "id": "good-12",
+      "name": "Apples",
+      "kind": "good",
+      "unit": "lb",
+      "avg_value_usd": null,
+      "hourly_avg": null,
+      "job_avg": null,
+      "sources": [
+        "BLS CPI average price, series APU0300711111"
+      ],
+      "note": "No recent observation in this run."
+    },
+    {
+      "id": "good-13",
+      "name": "Potatoes",
+      "kind": "good",
+      "unit": "lb",
+      "avg_value_usd": 1.027,
+      "hourly_avg": null,
+      "job_avg": null,
+      "sources": [
+        "BLS CPI average price, series APU0300712112"
+      ],
+      "note": "BLS CPI average price, South region, Sep 2026."
+    },
+    {
+      "id": "good-14",
+      "name": "Tomatoes",
+      "kind": "good",
+      "unit": "lb",
+      "avg_value_usd": 2.006,
+      "hourly_avg": null,
+      "job_avg": null,
+      "sources": [
+        "BLS CPI average price, series APU0300712311"
+      ],
+      "note": "BLS CPI average price, South region, Sep 2026."
+    },
+    {
+      "id": "good-15",
+      "name": "Oranges, navel",
+      "kind": "good",
+      "unit": "lb",
+      "avg_value_usd": 1.697,
+      "hourly_avg": null,
+      "job_avg": null,
+      "sources": [
+        "BLS CPI average price, series APU0300711311"
+      ],
+      "note": "BLS CPI average price, South region, Sep 2026."
+    },
+    {
+      "id": "good-16",
+      "name": "Cheddar",
+      "kind": "good",
+      "unit": "lb",
+      "avg_value_usd": 5.533,
+      "hourly_avg": null,
+      "job_avg": null,
+      "sources": [
+        "BLS CPI average price, series APU0300710212"
+      ],
+      "note": "BLS CPI average price, South region, Sep 2026."
+    },
+    {
+      "id": "good-17",
+      "name": "Butter",
+      "kind": "good",
+      "unit": "lb",
+      "avg_value_usd": 3.959,
+      "hourly_avg": null,
+      "job_avg": null,
+      "sources": [
+        "BLS CPI average price, series APU0000FS1101"
+      ],
+      "note": "US city average. No South series in this run."
+    },
+    {
+      "id": "good-18",
+      "name": "Gasoline, regular",
+      "kind": "good",
+      "unit": "gallon",
+      "avg_value_usd": 3.997,
+      "hourly_avg": null,
+      "job_avg": null,
+      "sources": [
+        "BLS CPI average price, series APU030074714"
+      ],
+      "note": "BLS South region regular gasoline. A separate EIA series was pending and was not used."
+    },
+    {
+      "id": "good-19",
+      "name": "Diesel",
+      "kind": "good",
+      "unit": "gallon",
+      "avg_value_usd": null,
+      "hourly_avg": null,
+      "job_avg": null,
+      "sources": [
+        "BLS CPI average price, series EIA PADD 1B"
+      ],
+      "note": "No observation in this run."
+    },
+    {
+      "id": "good-20",
+      "name": "Electricity",
+      "kind": "good",
+      "unit": "kWh",
+      "avg_value_usd": 0.163,
+      "hourly_avg": null,
+      "job_avg": null,
+      "sources": [
+        "BLS CPI average price, series APU030072610"
+      ],
+      "note": "BLS CPI average price, South region, Sep 2026."
+    },
+    {
+      "id": "good-21",
+      "name": "Natural gas (utility)",
+      "kind": "good",
+      "unit": "therm",
+      "avg_value_usd": 2.093,
+      "hourly_avg": null,
+      "job_avg": null,
+      "sources": [
+        "BLS CPI average price, series APU030072620"
+      ],
+      "note": "BLS CPI average price, South region, Sep 2026."
+    }
+  ]
+}

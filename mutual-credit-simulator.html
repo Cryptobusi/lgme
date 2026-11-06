@@ -101,6 +101,24 @@
             </select>
             <p id="thirdSeatNote" class="text-[10px] text-slate-500 mt-1">No third seat. Bilateral exchange only (simulated).</p>
           </div>
+          <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80 space-y-2">
+            <label class="block text-xs font-medium text-slate-400" for="refItem">Reference value (DC test run, simulated)</label>
+            <select id="refItem" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+              <option value="">None</option>
+            </select>
+            <p class="text-[10px] text-amber-200/90">Reference only, not a price</p>
+            <div id="refQtyWrap" hidden class="grid grid-cols-3 gap-3">
+              <div class="col-span-2">
+                <label id="refQtyLabel" class="block text-xs font-medium text-slate-400 mb-1" for="refQty">Hours or quantity</label>
+                <input id="refQty" type="number" value="1" min="0.01" step="0.01" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1" for="refBasis">Basis</label>
+                <select id="refBasis" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"></select>
+              </div>
+            </div>
+            <p id="refDetail" class="text-[10px] text-slate-500">Reference list loads from this site (simulated).</p>
+          </div>
           <div class="grid grid-cols-3 gap-3">
             <div class="col-span-2">
               <label class="block text-xs font-medium text-slate-400 mb-1">Service / Good Provenance</label>
@@ -108,7 +126,7 @@
             </div>
             <div>
               <label class="block text-xs font-medium text-slate-400 mb-1">Mutual Units</label>
-              <input id="tradeAmount" type="number" value="75" min="1" max="500" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500" required>
+              <input id="tradeAmount" type="number" value="75" min="0.01" step="0.01" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500" required>
             </div>
           </div>
           <!-- Feature Flags (Auto-secure / Adoptive) -->
@@ -242,7 +260,9 @@
     const state = {
       accounts: {},
       tape: [],
-      logs: []
+      logs: [],
+      refs: [],
+      appliedRef: null
     };
     let busy = false;
 
@@ -287,7 +307,9 @@
         creditor: document.getElementById('partyB').value,
         thirdSeat: third || null,
         amount: parseFloat(document.getElementById('tradeAmount').value),
-        reference: document.getElementById('itemDesc').value.trim()
+        reference: document.getElementById('itemDesc').value.trim(),
+        referenceId: state.appliedRef ? state.appliedRef.id : null,
+        referenceAvg: state.appliedRef ? state.appliedRef.avg : null
       };
     }
     function proposalError(proposal, requireThird) {
@@ -318,6 +340,8 @@
         thirdSeat: fields.thirdSeat,
         amount: fields.amount,
         reference: fields.reference,
+        referenceId: fields.referenceId || null,
+        referenceAvg: fields.referenceAvg == null ? null : fields.referenceAvg,
         message: fields.message || ''
       };
       const hash = await sha256(canonicalJSON(body));
@@ -388,14 +412,17 @@
         div.className = 'border rounded-lg px-2.5 py-2 ' + (tone[entry.type] || 'border-slate-800');
         div.dataset.type = entry.type;
         div.dataset.hash = entry.hash;
+        div.dataset.ref = entry.referenceId || '';
+        div.dataset.avg = entry.referenceAvg == null ? '' : String(entry.referenceAvg);
         const third = entry.thirdSeat ? ` · third ${esc(entry.thirdSeat)}` : '';
         const message = entry.message ? ` · ${esc(entry.message)}` : '';
+        const refLine = entry.referenceId ? ` · ref ${esc(entry.referenceId)} @ ${esc(entry.referenceAvg)}` : '';
         div.innerHTML = `
           <div class="flex items-center justify-between gap-2">
             <span class="text-[10px] uppercase tracking-wider">${esc(entry.type)} · simulated</span>
             <span class="text-[10px] text-slate-500">#${esc(entry.index)}</span>
           </div>
-          <div class="mt-1 text-[11px]">${esc(entry.debtor)} → ${esc(entry.creditor)} · ${esc(entry.amount)}${third}${message}</div>
+          <div class="mt-1 text-[11px]">${esc(entry.debtor)} → ${esc(entry.creditor)} · ${esc(entry.amount)}${third}${refLine}${message}</div>
           <div class="mt-1 text-[10px] text-slate-500">prev ${esc(entry.prev.slice(0, 12))}… · hash ${esc(entry.hash.slice(0, 12))}…</div>
         `;
         container.appendChild(div);
@@ -544,9 +571,106 @@
         busy = false;
       }
     });
+    function selectedRefItem() {
+      const id = document.getElementById('refItem').value;
+      return state.refs.find((item) => item.id === id) || null;
+    }
+    function activeReferenceAvg(item) {
+      const basis = document.getElementById('refBasis').value;
+      if (basis === 'hour') return item.hourly_avg;
+      if (basis === 'job') return item.job_avg;
+      return item.avg_value_usd;
+    }
+    function configureReference(item) {
+      const wrap = document.getElementById('refQtyWrap');
+      const basis = document.getElementById('refBasis');
+      const label = document.getElementById('refQtyLabel');
+      const detail = document.getElementById('refDetail');
+      basis.innerHTML = '';
+      if (!item || item.avg_value_usd == null) {
+        wrap.hidden = true;
+        state.appliedRef = null;
+        detail.textContent = item
+          ? `Reference only, not a price. ${item.note || 'No reference value for this item.'} (simulated)`
+          : 'Reference only, not a price.';
+        return;
+      }
+      wrap.hidden = false;
+      if (item.hourly_avg != null) {
+        const hour = document.createElement('option');
+        hour.value = 'hour';
+        hour.textContent = 'Per hour';
+        basis.appendChild(hour);
+      }
+      if (item.job_avg != null) {
+        const job = document.createElement('option');
+        job.value = 'job';
+        job.textContent = item.unit === 'visit' ? 'Per visit' : 'Per job';
+        basis.appendChild(job);
+      }
+      if (item.hourly_avg == null && item.job_avg == null) {
+        const unit = document.createElement('option');
+        unit.value = 'unit';
+        unit.textContent = 'Per ' + item.unit;
+        basis.appendChild(unit);
+      }
+      basis.value = item.job_avg != null ? 'job' : (item.hourly_avg != null ? 'hour' : 'unit');
+      basis.hidden = basis.children.length < 2;
+      label.textContent = basis.value === 'hour' ? 'Hours' : ('Quantity (' + item.unit + ')');
+      applyReferenceFill();
+    }
+    function applyReferenceFill() {
+      const item = selectedRefItem();
+      const detail = document.getElementById('refDetail');
+      if (!item || item.avg_value_usd == null) {
+        state.appliedRef = null;
+        return;
+      }
+      const qty = parseFloat(document.getElementById('refQty').value);
+      const avg = activeReferenceAvg(item);
+      const basis = document.getElementById('refBasis').value;
+      document.getElementById('refQtyLabel').textContent = basis === 'hour' ? 'Hours' : ('Quantity (' + item.unit + ')');
+      if (!Number.isFinite(qty) || qty <= 0 || avg == null) {
+        state.appliedRef = null;
+        detail.textContent = 'Reference only, not a price. Enter hours or quantity. (simulated)';
+        return;
+      }
+      const amount = Math.round(avg * qty * 100) / 100;
+      document.getElementById('tradeAmount').value = String(amount);
+      document.getElementById('itemDesc').value = item.name;
+      state.appliedRef = { id: item.id, avg };
+      detail.textContent = `Reference only, not a price. ${avg} USD × ${qty} = ${amount} (simulated). You can still edit the amount.`;
+    }
+    async function loadReferences() {
+      const select = document.getElementById('refItem');
+      const detail = document.getElementById('refDetail');
+      try {
+        const response = await fetch('/data/dc-reference-values-v0.json');
+        if (!response.ok) throw new Error(String(response.status));
+        const catalog = await response.json();
+        state.refs = Array.isArray(catalog.items) ? catalog.items : [];
+        select.innerHTML = '';
+        const none = document.createElement('option');
+        none.value = '';
+        none.textContent = 'None';
+        select.appendChild(none);
+        for (const item of state.refs) {
+          const option = document.createElement('option');
+          option.value = item.id;
+          option.textContent = item.avg_value_usd == null ? `${item.name} — no reference value` : item.name;
+          select.appendChild(option);
+        }
+        detail.textContent = 'Reference only, not a price. ' + (catalog.notice || 'simulated');
+      } catch (err) {
+        detail.textContent = 'Reference list did not load (simulated).';
+      }
+    }
     ['partyA', 'partyB', 'thirdSeat'].forEach((id) => {
       document.getElementById(id).addEventListener('change', syncThirdSeat);
     });
+    document.getElementById('refItem').addEventListener('change', () => configureReference(selectedRefItem()));
+    document.getElementById('refQty').addEventListener('input', applyReferenceFill);
+    document.getElementById('refBasis').addEventListener('change', applyReferenceFill);
     document.getElementById('clearLogsBtn').addEventListener('click', () => {
       document.getElementById('logStream').innerHTML = '';
       state.logs = [];
@@ -583,14 +707,14 @@
       md += `---
 ## 3. Constitutive tape (simulated)
 
-| # | Type | Debtor | Creditor | Amount | Third seat | Message | Hash |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| # | Type | Debtor | Creditor | Amount | Third seat | Reference | Avg used | Message | Hash |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 `;
       if (state.tape.length === 0) {
         md += `*No tape entries yet in this session.*\n`;
       } else {
         state.tape.forEach((entry) => {
-          md += `| #${entry.index} | ${entry.type} | ${entry.debtor} | ${entry.creditor} | ${entry.amount} | ${entry.thirdSeat || ''} | ${entry.message} | \`${entry.hash.slice(0, 16)}...\` |\n`;
+          md += `| #${entry.index} | ${entry.type} | ${entry.debtor} | ${entry.creditor} | ${entry.amount} | ${entry.thirdSeat || ''} | ${entry.referenceId || ''} | ${entry.referenceAvg == null ? '' : entry.referenceAvg} | ${entry.message} | \`${entry.hash.slice(0, 16)}...\` |\n`;
         });
       }
       md += `\n---
@@ -642,6 +766,7 @@
     syncThirdSeat();
     addLog('SYSTEM BOOT', 'lgme.app simulator initialized (simulated). No network calls. Floor stays senior. Tape is constitutive.', 'info');
     if (window.lucide) lucide.createIcons();
+    loadReferences();
   </script>
 </body>
 </html>
