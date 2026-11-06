@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#39e36a" />
+  <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+  <title>Deployment Manifest · Hederica · lgme</title>
+  <meta name="description" content="Hederica Index Registry: lgme.app Deployment Profile — Komunitin Mutual Credit + Hedera HCS" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;1,6..72,500&display=swap" />
+  <style>
+    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; }
+    body { background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; font-size:1.05rem; line-height:1.6; max-width:46rem; margin:0 auto; padding:1.5rem 1.25rem 4rem; }
+    .kicker { margin:0; font-size:0.72rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--gold); }
+    h1,h2,h3 { font-family:Newsreader,serif; font-weight:500; letter-spacing:-0.02em; }
+    h1 { font-size:clamp(2rem, 5vw, 2.8rem); line-height:1.05; margin:0.6rem 0 0; }
+    h2 { font-size:1.5rem; line-height:1.15; margin:2rem 0 0.6rem; }
+    .muted { color:var(--muted); }
+    a { color:var(--fg); }
+    a:hover { color:var(--gold); }
+    pre { background:#151a15; border:1px solid var(--line); padding:1rem; overflow-x:auto; font-size:0.85rem; border-radius:6px; }
+    table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:0.95rem; }
+    th, td { border:1px solid var(--line); padding:0.5rem 0.75rem; text-align:left; }
+    th { background:#151a15; color:var(--gold); }
+    code { background:#151a15; padding:0.1rem 0.35rem; border-radius:3px; font-size:0.9em; }
+  </style>
+  <link rel="stylesheet" href="/menu.css" />
+</head>
+<body>
+<nav class="deskmenu" aria-label="Desk">
+  <a href="/nswo">NSWO</a>
+  <a href="/dominion">Dominion</a>
+  <a href="/story">Story</a>
+  <a href="/study">Study/Prerequisite</a>
+  <a href="/#ididit">IDidit</a>
+  <a href="/hederica">Hederica</a>
+  <a href="/charter">Charter</a>
+  <a href="/bylaws">Bylaws</a>
+  <a href="/membership">Membership</a>
+  <a href="/#sovereignty">Sovereignty</a>
+  <a href="/#order">The order</a>
+  <a href="/#third-seat">Third seat</a>
+  <a href="/#checks">Checks</a>
+  <a href="/#tape">Tape</a>
+  <a href="/spp">Protocol</a>
+  <a href="/opportunity">Opportunity</a>
+  <a href="/game-theory">Game theory</a>
+  <a href="/technical">Technical</a>
+  <a href="/preparation">Preparation</a>
+  <a href="/">Desk</a>
+</nav>
+
+  <p class="kicker"><a href="/">lgme</a> · <a href="/hederica">Hederica</a> · Deployment</p>
+  <h1>Deployment Manifest &amp; Index Spec</h1>
+  <p class="muted"><strong>Domain Identifier:</strong> <code>lgme.hederica.com</code><br>
+  <strong>Consensus Layer:</strong> Hedera Consensus Service (HCS)<br>
+  <strong>Clearing Engine:</strong> Komunitin Mutual Credit Core (CES 2.0 compatible)<br>
+  <strong>Security Model:</strong> Auto-Secure Client-Side Ed25519 Enclave (WebAuthn PRF)<br>
+  <strong>Status:</strong> Indexed &amp; Staged for Deployment</p>
+
+  <h2>1. Network &amp; Protocol Topology</h2>
+  <pre>
+             [lgme.app User (PWA)]
+                       │
+             (1) Local Passkey / Ed25519
+             RFC-8785 Canonical JSON Signature
+                       ▼
+             [Bilateral Handshake]
+           ┌───────────┴───────────┐
+           ▼                       ▼
+  [Komunitin Ledger]       [Hedera Consensus]
+  - Port 2025 (Accounting)  - Topic ID: 0.0.489104
+  - Double-Entry Net       - Running Hash Sequencing
+  - Sum = 0 Invariant      - 3-5s Finality Anchor
+           │                       │
+           └───────────┬───────────┘
+                       ▼
+          [Indexed on hederica.com]
+  </pre>
+
+  <h2>2. Auto-Secure &amp; Adoptive Mechanics</h2>
+  <table>
+    <thead>
+      <tr><th>Requirement</th><th>Implementation Detail</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Auto-Secure Signing</strong></td>
+        <td>Ephemeral or WebAuthn enclave private keys; users sign bilateral exchange receipts without exporting or managing 24-word seed phrases manually.</td>
+      </tr>
+      <tr>
+        <td><strong>Adoptive UX</strong></td>
+        <td>Zero initial purchase required; transactions settle within participant mutual credit limits. Balances adjust dynamically as trades take place.</td>
+      </tr>
+      <tr>
+        <td><strong>Audit Continuity</strong></td>
+        <td>Every state transition computes a canonical SHA-256 hash anchored to Hedera topic <code>0.0.489104</code>, producing a verifiable, tamper-proof proof trail.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>3. Verification &amp; Deployment Commands</h2>
+  <p class="muted">To run the local Komunitin ledger pair:</p>
+  <pre><code># 1. Start Komunitin local nodes
+git clone https://github.com/komunitin/komunitin.git
+cd komunitin
+./start.sh --up --dev --demo
+
+# 2. Host simulation &amp; index runner
+npx serve .
+# Opens on http://localhost:3000</code></pre>
+
+  <p class="muted"><a href="/mutual-credit-simulator">→ Open Mutual Credit Simulator</a></p>
+  <p class="muted"><a href="/hederica">← Back to Hederica</a> · <a href="/">Desk</a></p>
+  <p class="muted"><a href="/disclosures">Disclosures</a> · Not an offer. Not an investment. Mock / design research.</p>
+</body>
+</html>
