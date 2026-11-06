@@ -6,17 +6,20 @@
   <title>Simulation Explainer · lgme</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" />
   <style>
-    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; }
-    body { background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; font-size:1.05rem; line-height:1.6; max-width:46rem; margin:0 auto; padding:1.5rem 1.25rem 4rem; }
-    .kicker { margin:0; font-size:0.72rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--gold); }
+    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; --card:#151a15; }
+    body { background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; font-size:1.05rem; line-height:1.55; max-width:48rem; margin:0 auto; padding:1.25rem 1rem 4rem; }
+    .kicker { margin:0; font-size:0.72rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--gold); }
     h1,h2 { font-family:Newsreader,serif; font-weight:500; }
-    h1 { font-size:clamp(2rem, 5vw, 2.8rem); margin:0.6rem 0 0; }
+    h1 { font-size:clamp(1.8rem, 5vw, 2.6rem); margin:0.5rem 0 0.4rem; }
     .muted { color:var(--muted); }
     a { color:var(--fg); } a:hover { color:var(--gold); }
-    table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:0.95rem; }
-    th, td { border:1px solid var(--line); padding:0.5rem 0.75rem; text-align:left; }
-    th { background:#151a15; color:var(--gold); }
-    .card { background:#151a15; border:1px solid var(--line); border-radius:8px; padding:1rem; margin:1rem 0; }
+    table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:0.92rem; }
+    th, td { border:1px solid var(--line); padding:0.55rem 0.6rem; text-align:left; }
+    th { background:var(--card); color:var(--gold); }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:0.9rem 1rem; margin:0.8rem 0; }
+    .remark { font-style:italic; color:var(--muted); }
+    .exch { font-family:ui-monospace,monospace; font-size:0.85rem; white-space:pre-wrap; }
+    @media (max-width:600px) { table { font-size:0.8rem; } th,td { padding:0.4rem; } }
   </style>
   <link rel="stylesheet" href="/menu.css" />
 </head>
@@ -26,52 +29,82 @@
 </nav>
 <p class="kicker"><a href="/">lgme</a> · Simulation Explainer</p>
 <h1>Mutual Credit Simulation Explainer</h1>
-<p class="muted">3 people · 15 exchanges · 1 refusal · 1 unresolved. Simulation only. Zero-sum. Third seat keeps the book. Floor stays senior. If it cannot be shown, it is not policy.</p>
+<p class="muted">3 people · 15 exchanges · 1 refusal · 1 open item. Simulation only. Zero-sum. Third seat keeps the book. Floor stays senior. If it cannot be shown, it is not policy.</p>
 
 <div class="card">
-  <strong>Download slides:</strong> <a href="/lgme-simulation-explainer.pptx">lgme-simulation-explainer.pptx</a>
+  <strong>Download high-contrast slides:</strong> <a href="/lgme-simulation-explainer-visible-dark.pptx">lgme-simulation-explainer-visible-dark.pptx</a>
 </div>
 
-<h2>Participants</h2>
-<table>
-  <tr><th>Person</th><th>Role</th><th>Start</th><th>Limit</th></tr>
-  <tr><td>Alice</td><td>Providore / Community</td><td>+120</td><td>−500</td></tr>
-  <tr><td>Bob</td><td>Agronomist</td><td>−45</td><td>−300</td></tr>
-  <tr><td>Charlie</td><td>Logistics</td><td>−75</td><td>−400</td></tr>
-  <tr><td>System</td><td>—</td><td>0.00</td><td>—</td></tr>
-</table>
-
-<h2>After 15 Cleared Exchanges</h2>
-<table>
-  <tr><th>Person</th><th>Start</th><th>Net</th><th>Final</th><th>Status</th></tr>
-  <tr><td>Alice</td><td>+120</td><td>−24</td><td>+96</td><td>Positive</td></tr>
-  <tr><td>Bob</td><td>−45</td><td>+72</td><td>+27</td><td>Positive</td></tr>
-  <tr><td>Charlie</td><td>−75</td><td>−48</td><td>−123</td><td>Within limit</td></tr>
-  <tr><td>System</td><td>0</td><td>0</td><td>0.00</td><td>Zero-sum held</td></tr>
-</table>
-
-<h2>Special Cases</h2>
+<h2>Recorded remarks — opening</h2>
 <div class="card">
-  <strong>1 Refusal</strong><br>
+  <div class="remark">Alice: “I put the walkway clearing and the books on the desk. Floor first.”</div>
+  <div class="remark">Bob: “Soil credits are ready. Same rules for me as for anyone.”</div>
+  <div class="remark">Charlie: “Logistics is on the shelf. I’ll refuse anything I can’t see.”</div>
+</div>
+<p class="muted">Starting balances: Alice +120 · Bob −45 · Charlie −75 · Sum 0.00</p>
+
+<h2>The 15 exchanges</h2>
+<div class="card exch">1 Alice→Bob 75  Soil credits
+2 Bob→Charlie 40  Logistics
+3 Charlie→Alice 55  Walkway + tools
+4 Alice→Charlie 30  Books + childcare
+5 Bob→Alice 25  Tomato starts
+6 Charlie→Bob 35  Bike maintenance
+7 Alice→Bob 20  Childcare reciprocity
+8 Bob→Charlie 15  Film support
+9 Charlie→Alice 45  Sourdough
+10 Alice→Charlie 18  Desk time
+11 Bob→Alice 12  Pull saw
+12 Charlie→Bob 22  Seedlings
+13 Alice→Bob 28  Cello support
+14 Bob→Charlie 16  Ride share  → REFUSED
+15 Charlie→Alice 10  Bookkeeping  → OPEN</div>
+
+<h2>Settled dashboard (after refusal)</h2>
+<table>
+  <tr><th>Person</th><th>Start</th><th>Settled now</th><th>Status</th></tr>
+  <tr><td>Alice</td><td>+120</td><td>+96</td><td>Positive</td></tr>
+  <tr><td>Bob</td><td>−45</td><td>+43</td><td>Positive</td></tr>
+  <tr><td>Charlie</td><td>−75</td><td>−107</td><td>Within limit</td></tr>
+  <tr><td>System</td><td>0</td><td>0.00</td><td>Zero-sum held</td></tr>
+</table>
+<p class="muted">Refusal of the 16-unit ride share never posted. Open 10-unit item still pending.</p>
+
+<h2>Personal accounts + remarks</h2>
+<div class="card">
+  <strong>Alice +96</strong><br>
+  <span class="remark">“Book is clear on my side. Open item still waiting.”</span>
+</div>
+<div class="card">
+  <strong>Bob +43</strong><br>
+  <span class="remark">“The refusal was right. Nothing unclear moved.”</span>
+</div>
+<div class="card">
+  <strong>Charlie −107</strong><br>
+  <span class="remark">“I refused what I couldn’t see. The 10 units stay open.”</span>
+</div>
+
+<h2>Special items on the desk</h2>
+<div class="card">
+  <strong>1 Refusal (closed)</strong><br>
   Bob → Charlie 16 u · Ride Share Coordination<br>
-  Charlie refused: line could not be shown. Nothing taken.<br>
-  Mock contract: RefusalRecord.sol
+  Charlie: “Could not be shown.” Nothing taken.<br>
+  Mock: RefusalRecord.sol
 </div>
 <div class="card">
-  <strong>1 Unresolved</strong><br>
+  <strong>1 Unresolved (open)</strong><br>
   Charlie → Alice 10 u · Final Bookkeeping Review<br>
-  Pending third-seat action.<br>
-  Mock contract: PendingExchange.sol
+  Still waiting. Either side may show or refuse.<br>
+  Mock: PendingExchange.sol
 </div>
-<p class="muted">Settled after refusal: Alice +96 · Bob +43 · Charlie −107 · Sum still 0.00</p>
 
-<h2>Coordinated Resolution Procedure</h2>
+<h2>How an open item is resolved</h2>
 <ol class="muted">
-  <li>Unresolved TX stays on the desk under the third seat.</li>
-  <li>Either party may show the canonical line or refuse it.</li>
-  <li>If shown &amp; accepted → PendingExchange.sol clears (zero-sum preserved).</li>
-  <li>If refused → RefusalRecord.sol records it; nothing moves.</li>
-  <li>Both emit mock HCS events. Person keeps the book.</li>
+  <li>The open item stays on the desk. The person keeps the book.</li>
+  <li>Either side can show the clear record of the work, or refuse it.</li>
+  <li>If shown and accepted → the 10 units move (Charlie −10, Alice +10). Zero-sum preserved.</li>
+  <li>If refused → the refusal is written and nothing moves.</li>
+  <li>Result recorded on the local tape. No real network is used.</li>
 </ol>
 <p class="muted">Simulation only. No real on-chain activity. No tokens. Floor stays senior.</p>
 <p class="muted"><a href="/hederica">← Hederica</a> · <a href="/mutual-credit-simulator">Simulator</a> · <a href="/">Desk</a></p>
