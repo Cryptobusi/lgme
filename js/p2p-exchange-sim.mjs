@@ -10,9 +10,13 @@ export const PEER_PREFIX = 'lgme-sim:peer:';
 
 export const DEMO_OPENING = Object.freeze({
   alice: Object.freeze({ name: 'Alice (Providore)', balance: 120, creditLimit: -500, floor: 40, floorNote: 'food/rent' }),
-  bob: Object.freeze({ name: 'Bob (Agronomist)', balance: -45, creditLimit: -300, floor: 50, floorNote: 'food/rent' }),
-  charlie: Object.freeze({ name: 'Charlie (Logistics)', balance: -75, creditLimit: -400, floor: 45, floorNote: 'food/rent' })
+  bob: Object.freeze({ name: 'Bob (Agronomist)', balance: 80, creditLimit: -300, floor: 50, floorNote: 'food/rent' }),
+  charlie: Object.freeze({ name: 'Charlie (Logistics)', balance: 70, creditLimit: -400, floor: 45, floorNote: 'food/rent' })
 });
+
+export const MOCK_GRANT = 100;
+export const KDF_ITERATIONS = 100000;
+const MESSAGE_KINDS = new Set(['proposal', 'countersign', 'refusal', 'transfer', 'attestation', 'iou', 'tape']);
 
 export function canonicalJSON(value) {
   if (value === null || typeof value !== 'object') return JSON.stringify(value);
@@ -192,6 +196,23 @@ export function applyLegs(balance, peerId, legs) {
   return { balance: next, debit, credit };
 }
 
+export function applyTransfer(balance, peerId, payload) {
+  let next = balance;
+  let debit = 0;
+  let credit = 0;
+  const amount = round2(payload.amount);
+  if (!Number.isFinite(amount)) return { balance, debit, credit };
+  if (payload.fromId === peerId && payload.direction !== 'in') {
+    next = round2(next - amount);
+    debit = amount;
+  }
+  if (payload.toId === peerId && payload.direction !== 'out') {
+    next = round2(next + amount);
+    credit = amount;
+  }
+  return { balance: next, debit, credit };
+}
+
 export function replay(peer) {
   let balance = 0;
   let credits = 0;
@@ -204,6 +225,20 @@ export function replay(peer) {
       balance = round2(entry.payload.balance);
     } else if (entry.type === 'settlement') {
       const applied = applyLegs(balance, peer.id, entry.payload.legs || []);
+      debit = applied.debit;
+      credit = applied.credit;
+      balance = applied.balance;
+      debits = round2(debits + debit);
+      credits = round2(credits + credit);
+    } else if (entry.type === 'transfer') {
+      const moved = applyTransfer(balance, peer.id, entry.payload || {});
+      debit = moved.debit;
+      credit = moved.credit;
+      balance = moved.balance;
+      debits = round2(debits + debit);
+      credits = round2(credits + credit);
+    } else if (entry.type === 'attested') {
+      const applied = applyLegs(balance, peer.id, [entry.payload || {}]);
       debit = applied.debit;
       credit = applied.credit;
       balance = applied.balance;
@@ -269,8 +304,15 @@ export function entryDetail(entry, names = {}) {
   const payload = entry.payload || {};
   const name = (id) => names[id] || id;
   if (entry.type === 'genesis') {
-    return `Opening ${payload.balance}. Floor ${payload.floor} ${payload.floorNote || ''}`.trim();
+    const grant = payload.mock ? `Mock grant ${payload.balance} $lgme. ` : `Opening ${payload.balance}. `;
+    return `${grant}Floor ${payload.floor} ${payload.floorNote || ''}`.trim();
   }
+  if (entry.type === 'transfer') {
+    const way = payload.direction === 'in' ? 'in' : 'out';
+    return `$lgme ${way} ${payload.amount} ${name(payload.fromId)} → ${name(payload.toId)} ${payload.note || ''}`.trim();
+  }
+  if (entry.type === 'iou') return `IOU pending ${payload.amount} ${name(payload.debtorId)} → ${name(payload.creditorId)} ${payload.reference || ''}`.trim();
+  if (entry.type === 'attested') return `IOU attested ${payload.amount} ${name(payload.debtorId)} → ${name(payload.creditorId)} ${payload.reference || ''}`.trim();
   if (entry.type === 'ididit') {
     const hours = payload.hours == null ? '' : ` · ${payload.hours} h`;
     return `${payload.work || 'Work'}${payload.scope ? ' · ' + payload.scope : ''}${hours}`;
@@ -345,14 +387,21 @@ export async function createPeer(store, spec) {
     exchanges: {},
     receipts: {}
   };
-  await appendEntry(peer, 'genesis', {
+  const genesis = {
     name,
     balance,
     floor,
     creditLimit,
     floorNote: peer.opening.floorNote,
     publicKeyJwk: keys.publicKeyJwk
-  }, spec.at || nowIso());
+  };
+  if (spec.mock) {
+    genesis.mock = true;
+    genesis.unit = '$lgme';
+    genesis.grant = balance;
+    genesis.label = 'mock';
+  }
+  await appendEntry(peer, 'genesis', genesis, spec.at || nowIso());
   await store.set(id, peer);
   return { ok: true, id };
 }
@@ -365,6 +414,7 @@ export async function listPeers(store) {
     if (!peer) continue;
     const view = replay(peer);
     const rule = terms(peer);
+    const genesis = (peer.tape || []).find((entry) => entry.type === 'genesis');
     peers.push({
       id: peer.id,
       name: peer.name,
@@ -373,6 +423,8 @@ export async function listPeers(store) {
       floorNote: rule.floorNote,
       creditLimit: rule.creditLimit,
       balance: view.balance,
+      mock: Boolean(genesis?.payload?.mock),
+      locked: Boolean(peer.wallet?.ciphertext) && !peer.privateKeyJwk,
       credits: view.credits,
       debits: view.debits,
       tapeLength: peer.tape.length
@@ -817,6 +869,570 @@ export function toCsv(peer, names = {}) {
     ].map(csvCell).join(','));
   }
   return lines.join('\n') + '\n';
+}
+
+const B32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+
+export function base32Encode(bytes) {
+  let bits = 0;
+  let value = 0;
+  let output = '';
+  for (const byte of bytes) {
+    value = (value << 8) | byte;
+    bits += 8;
+    while (bits >= 5) {
+      output += B32[(value >>> (bits - 5)) & 31];
+      bits -= 5;
+    }
+  }
+  if (bits > 0) output += B32[(value << (5 - bits)) & 31];
+  return output;
+}
+
+export function base32Decode(text) {
+  const clean = String(text || '').toUpperCase().replace(/=+$/g, '').replace(/\s/g, '');
+  let bits = 0;
+  let value = 0;
+  const out = [];
+  for (const ch of clean) {
+    const idx = B32.indexOf(ch);
+    if (idx < 0) continue;
+    value = (value << 5) | idx;
+    bits += 5;
+    if (bits >= 8) {
+      out.push((value >>> (bits - 8)) & 255);
+      bits -= 8;
+    }
+  }
+  return new Uint8Array(out);
+}
+
+export async function hotp(secretBytes, counter, options = {}) {
+  const digits = options.digits || 6;
+  const algorithm = options.algorithm || 'SHA-1';
+  const key = await crypto.subtle.importKey('raw', secretBytes, { name: 'HMAC', hash: algorithm }, false, ['sign']);
+  const buf = new ArrayBuffer(8);
+  const view = new DataView(buf);
+  const whole = Math.floor(Number(counter));
+  view.setUint32(0, Math.floor(whole / 4294967296));
+  view.setUint32(4, whole >>> 0);
+  const mac = new Uint8Array(await crypto.subtle.sign('HMAC', key, buf));
+  const offset = mac[mac.length - 1] & 0x0f;
+  const bin = ((mac[offset] & 0x7f) << 24) | (mac[offset + 1] << 16) | (mac[offset + 2] << 8) | mac[offset + 3];
+  return String(bin % (10 ** digits)).padStart(digits, '0');
+}
+
+export async function totp(secretBytes, unixSeconds, options = {}) {
+  const period = options.period || 30;
+  const counter = Math.floor(Number(unixSeconds) / period);
+  return hotp(secretBytes, counter, options);
+}
+
+function hexToBytes(hex) {
+  const raw = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < raw.length; i++) raw[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+  return raw;
+}
+
+export async function encryptJson(passphrase, value, iterations = KDF_ITERATIONS) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(passphrase), 'PBKDF2', false, ['deriveKey']);
+  const key = await crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
+    base,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt']
+  );
+  const cipher = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(JSON.stringify(value)));
+  return {
+    iterations,
+    salt: bytesToHex(salt),
+    iv: bytesToHex(iv),
+    ciphertext: bytesToHex(new Uint8Array(cipher))
+  };
+}
+
+export async function decryptJson(passphrase, sealed) {
+  const salt = hexToBytes(sealed.salt);
+  const iv = hexToBytes(sealed.iv);
+  const iterations = sealed.iterations;
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(passphrase), 'PBKDF2', false, ['deriveKey']);
+  const key = await crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
+    base,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['decrypt']
+  );
+  const clear = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, hexToBytes(sealed.ciphertext));
+  return JSON.parse(new TextDecoder().decode(clear));
+}
+
+export async function registerPeer(store, spec) {
+  const floor = spec.floor == null ? 40 : spec.floor;
+  if (Number(floor) > MOCK_GRANT) return fail('The floor sits under the mock grant.');
+  return createPeer(store, {
+    id: spec.id,
+    name: spec.name,
+    balance: MOCK_GRANT,
+    floor,
+    creditLimit: spec.creditLimit == null ? -200 : spec.creditLimit,
+    floorNote: spec.floorNote || 'food/rent',
+    mock: true,
+    at: spec.at
+  });
+}
+
+export async function setupWallet(store, peerId, passphrase, options = {}) {
+  const peer = await store.get(peerId);
+  if (!peer?.privateKeyJwk) return fail('No key to lock.');
+  if (!passphrase || String(passphrase).length < 8) return fail('Use a passphrase of at least 8 characters.');
+  const secretBytes = options.secretBytes || crypto.getRandomValues(new Uint8Array(20));
+  const totpSecretBase32 = base32Encode(secretBytes);
+  const iterations = options.iterations || KDF_ITERATIONS;
+  const sealed = await encryptJson(String(passphrase), {
+    privateKeyJwk: peer.privateKeyJwk,
+    totpSecretBase32
+  }, iterations);
+  peer.wallet = {
+    simulated: true,
+    locked: true,
+    mock: true,
+    kdf: 'PBKDF2',
+    cipher: 'AES-GCM',
+    hash: 'SHA-256',
+    iterations: sealed.iterations,
+    salt: sealed.salt,
+    iv: sealed.iv,
+    ciphertext: sealed.ciphertext,
+    totp: { algorithm: 'SHA-1', digits: 6, period: 30 }
+  };
+  peer.privateKeyJwk = null;
+  await store.set(peerId, peer);
+  const label = encodeURIComponent(`lgme-sim:${peer.name}`);
+  const otpauthUrl = `otpauth://totp/${label}?secret=${totpSecretBase32}&issuer=lgme-sim&algorithm=SHA1&digits=6&period=30`;
+  return { ok: true, secretBase32: totpSecretBase32, otpauthUrl };
+}
+
+export async function unlockWallet(record, passphrase, code, unixSeconds) {
+  if (!record?.wallet?.ciphertext) return fail('This book has no locked wallet.');
+  let plain;
+  try {
+    plain = await decryptJson(String(passphrase || ''), record.wallet);
+  } catch {
+    return fail('Wrong passphrase.');
+  }
+  const secret = base32Decode(plain.totpSecretBase32);
+  const digits = record.wallet.totp?.digits || 6;
+  const period = record.wallet.totp?.period || 30;
+  const entered = String(code ?? '').replace(/\s/g, '');
+  let matched = false;
+  for (const step of [0, -1, 1]) {
+    const guess = await totp(secret, Number(unixSeconds) + (step * period), { digits, period, algorithm: 'SHA-1' });
+    if (guess === entered) matched = true;
+  }
+  if (!matched) return fail('Wrong code.');
+  return { ok: true, privateKeyJwk: plain.privateKeyJwk, secretBase32: plain.totpSecretBase32 };
+}
+
+function b64urlEncode(bytes) {
+  let bin = '';
+  for (const byte of bytes) bin += String.fromCharCode(byte);
+  return btoa(bin).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '');
+}
+
+function b64urlDecode(text) {
+  const b64 = text.replaceAll('-', '+').replaceAll('_', '/');
+  const pad = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+  const bin = atob(pad);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+export async function sealMessage(peer, kind, body) {
+  if (!peer?.privateKeyJwk) return fail('Wallet is locked.');
+  if (!MESSAGE_KINDS.has(kind)) return fail('Unknown message.');
+  const hash = await sha256(canonicalJSON(body));
+  const sig = await signText(peer.privateKeyJwk, hash);
+  return {
+    ok: true,
+    message: {
+      v: 1,
+      simulated: true,
+      kind,
+      fromId: peer.id,
+      publicKeyJwk: peer.publicKeyJwk,
+      body,
+      hash,
+      sig
+    }
+  };
+}
+
+export function encodeMessage(message) {
+  return 'lgme1.' + b64urlEncode(new TextEncoder().encode(JSON.stringify(message)));
+}
+
+export function decodeMessage(input) {
+  let text = String(input || '').trim();
+  const mark = text.indexOf('lgme1.');
+  if (mark >= 0) text = text.slice(mark);
+  if (text.startsWith('lgme1.')) {
+    return JSON.parse(new TextDecoder().decode(b64urlDecode(text.slice('lgme1.'.length))));
+  }
+  return JSON.parse(text);
+}
+
+export async function openMessage(input) {
+  let message;
+  try {
+    message = typeof input === 'string' || input instanceof String ? decodeMessage(input) : input;
+  } catch {
+    return fail('The message could not be read.');
+  }
+  if (!message || message.simulated !== true || !MESSAGE_KINDS.has(message.kind)) return fail('This is not a simulated lgme message.');
+  const hash = await sha256(canonicalJSON(message.body));
+  if (hash !== message.hash) return fail('Hash does not match. Import stopped.');
+  const valid = await verifyText(message.publicKeyJwk, message.hash, message.sig);
+  if (!valid) return fail('Signature does not verify. Import stopped.');
+  if (message.kind === 'tape') {
+    const checked = await verifyTape(message.body);
+    if (!checked.ok) return fail(checked.reason || 'Hash link does not verify. Import stopped.');
+  }
+  return { ok: true, message };
+}
+
+export function shareHrefs(address, text) {
+  const body = encodeURIComponent(text);
+  const to = address ? encodeURIComponent(String(address).trim()) : '';
+  return {
+    sms: `sms:${to}?&body=${body}`,
+    mailto: `mailto:${to}?subject=${encodeURIComponent('SIMULATION lgme')}&body=${body}`
+  };
+}
+
+export function shareText(summary, encoded) {
+  return `SIMULATION lgme. ${summary} This page does not send it. Open the link in your own browser.\n${encoded}`;
+}
+
+export async function createTransfer(store, fromId, spec) {
+  const from = await store.get(fromId);
+  if (!from) return fail('Unknown peer.');
+  if (!from.privateKeyJwk) return fail('Wallet is locked.');
+  const toId = String(spec.toId || '').trim();
+  const amount = round2(spec.amount);
+  if (!/^[a-z0-9-]{1,32}$/.test(toId) || toId === fromId) return fail('Name a different peer id.');
+  if (!Number.isFinite(amount) || amount <= 0) return fail('Enter an amount greater than zero.');
+  const next = round2(replay(from).balance - amount);
+  const blocked = floorBlockReason(from, next);
+  if (blocked) return fail(blocked);
+  const at = spec.at || nowIso();
+  const body = {
+    simulated: true,
+    kind: 'transfer',
+    fromId,
+    toId,
+    amount,
+    unit: '$lgme',
+    note: String(spec.note || '').trim(),
+    mock: true
+  };
+  const sealed = await sealMessage(from, 'transfer', body);
+  if (!sealed.ok) return sealed;
+  await appendEntry(from, 'transfer', { ...body, hash: sealed.message.hash, sig: sealed.message.sig, direction: 'out' }, at);
+  from.outbox = from.outbox || [];
+  from.outbox.push({ at, kind: 'transfer', toId, amount, hash: sealed.message.hash, channel: 'local', simulated: true });
+  await store.set(fromId, from);
+  return { ok: true, message: sealed.message, encoded: encodeMessage(sealed.message), balance: replay(from).balance };
+}
+
+async function rememberInbox(peer, item) {
+  peer.inbox = peer.inbox || [];
+  peer.inbox.push({ ...item, simulated: true });
+}
+
+export async function importMessage(store, peerId, input, at = nowIso()) {
+  const opened = await openMessage(input);
+  if (!opened.ok) return opened;
+  const message = opened.message;
+  if (message.kind === 'tape') return { ok: true, kind: 'tape', peer: message.body, appended: false };
+  const peer = await store.get(peerId);
+  if (!peer) return fail('Unknown peer.');
+  if (!peer.privateKeyJwk) return fail('Wallet is locked.');
+  const known = message.fromId ? await store.get(message.fromId) : null;
+  if (known && canonicalJSON(known.publicKeyJwk) !== canonicalJSON(message.publicKeyJwk)) {
+    return fail('The signing key does not match the book already stored for that peer.');
+  }
+  if (message.kind === 'transfer') return applyImportedTransfer(store, peer, message, at);
+  if (message.kind === 'attestation') return applyImportedAttestation(store, peer, message, at);
+  if (message.kind === 'refusal') return applyImportedRefusal(store, peer, message, at);
+  if (message.kind === 'iou') return applyImportedIou(store, peer, message, at);
+  if (message.kind === 'proposal' || message.kind === 'countersign') return applyImportedExchange(store, peer, message, at);
+  return fail('This message has no place on this book.');
+}
+
+async function applyImportedTransfer(store, peer, message, at) {
+  const body = message.body || {};
+  if (body.toId !== peer.id) return fail('This transfer is addressed to another peer.');
+  if ((peer.tape || []).some((entry) => entry.type === 'transfer' && entry.payload?.hash === message.hash)) {
+    return { ok: true, duplicate: true, balance: replay(peer).balance };
+  }
+  await appendEntry(peer, 'transfer', {
+    ...body,
+    hash: message.hash,
+    sig: message.sig,
+    direction: 'in'
+  }, at);
+  await rememberInbox(peer, { at, kind: 'transfer', fromId: body.fromId, amount: body.amount, hash: message.hash });
+  await store.set(peer.id, peer);
+  return { ok: true, balance: replay(peer).balance };
+}
+
+export async function recordIou(store, makerId, spec) {
+  const maker = await store.get(makerId);
+  if (!maker) return fail('Unknown peer.');
+  if (!maker.privateKeyJwk) return fail('Wallet is locked.');
+  const debtorId = String(spec.debtorId || '').trim();
+  const creditorId = String(spec.creditorId || '').trim();
+  const amount = round2(spec.amount);
+  const reference = String(spec.reference || '').trim();
+  if (debtorId === creditorId || !debtorId || !creditorId) return fail('An IOU names two different peers.');
+  if (makerId !== debtorId && makerId !== creditorId) return fail('The maker must be a party to the IOU.');
+  if (!Number.isFinite(amount) || amount <= 0) return fail('Enter an amount greater than zero.');
+  if (!reference) return fail('Name the dollar IOU.');
+  const attesterId = makerId === debtorId ? creditorId : debtorId;
+  const at = spec.at || nowIso();
+  const body = {
+    simulated: true,
+    kind: 'iou',
+    debtorId,
+    creditorId,
+    attesterId,
+    amount,
+    unit: 'USD',
+    reference,
+    status: 'pending',
+    mock: true
+  };
+  const sealed = await sealMessage(maker, 'iou', body);
+  if (!sealed.ok) return sealed;
+  const iouId = sealed.message.hash;
+  const pending = { ...body, iouId, hash: iouId, sig: sealed.message.sig };
+  maker.ious = maker.ious || {};
+  maker.ious[iouId] = pending;
+  await appendEntry(maker, 'iou', pending, at);
+  await store.set(makerId, maker);
+  const other = await store.get(attesterId);
+  if (other?.privateKeyJwk) {
+    other.ious = other.ious || {};
+    other.ious[iouId] = pending;
+    await appendEntry(other, 'iou', { ...pending, role: 'received' }, at);
+    await rememberInbox(other, { at, kind: 'iou', fromId: makerId, amount, hash: iouId });
+    await store.set(attesterId, other);
+  }
+  return { ok: true, iouId, message: sealed.message, encoded: encodeMessage(sealed.message), balance: replay(maker).balance };
+}
+
+async function writeAttested(store, peers, pending, message, at) {
+  const payload = {
+    iouId: pending.iouId,
+    debtorId: pending.debtorId,
+    creditorId: pending.creditorId,
+    attesterId: pending.attesterId,
+    amount: pending.amount,
+    unit: pending.unit,
+    reference: pending.reference,
+    hash: message.hash,
+    sig: message.sig,
+    mock: true
+  };
+  for (const peer of Object.values(peers)) {
+    if ((peer.tape || []).some((entry) => entry.type === 'attested' && entry.payload?.iouId === pending.iouId)) continue;
+    peer.ious = peer.ious || {};
+    peer.ious[pending.iouId] = { ...pending, status: 'attested' };
+    await appendEntry(peer, 'attested', payload, at);
+    await store.set(peer.id, peer);
+  }
+}
+
+export async function attestIou(store, attesterId, iouId, at = nowIso()) {
+  const attester = await store.get(attesterId);
+  if (!attester?.privateKeyJwk) return fail(attester ? 'Wallet is locked.' : 'Unknown peer.');
+  const pending = attester.ious?.[iouId];
+  if (!pending || pending.status === 'refused') return fail('No pending IOU on this book.');
+  if (pending.status === 'attested') return { ok: true, duplicate: true, balance: replay(attester).balance };
+  if (pending.attesterId !== attesterId) return fail('Only the named attester can sign this IOU.');
+  const holders = [pending.debtorId, pending.creditorId];
+  const peers = {};
+  for (const id of holders) {
+    const peer = await store.get(id);
+    if (peer?.privateKeyJwk) peers[id] = peer;
+  }
+  if (!peers[attesterId]) peers[attesterId] = attester;
+  const debtor = peers[pending.debtorId];
+  if (debtor) {
+    const next = applyLegs(replay(debtor).balance, pending.debtorId, [pending]).balance;
+    if (floorBlockReason(debtor, next)) return fail(FLOOR_BLOCK);
+  }
+  const body = {
+    simulated: true,
+    kind: 'attestation',
+    iouId,
+    debtorId: pending.debtorId,
+    creditorId: pending.creditorId,
+    attesterId,
+    amount: pending.amount,
+    unit: pending.unit,
+    reference: pending.reference,
+    mock: true
+  };
+  const sealed = await sealMessage(peers[attesterId], 'attestation', body);
+  if (!sealed.ok) return sealed;
+  await writeAttested(store, peers, pending, sealed.message, at);
+  const balances = {};
+  for (const id of Object.keys(peers)) balances[id] = replay(await store.get(id)).balance;
+  return { ok: true, message: sealed.message, encoded: encodeMessage(sealed.message), balances, status: 'attested' };
+}
+
+export async function refuseAttestation(store, peerId, iouId, statement, at = nowIso()) {
+  const peer = await store.get(peerId);
+  if (!peer?.privateKeyJwk) return fail(peer ? 'Wallet is locked.' : 'Unknown peer.');
+  const pending = peer.ious?.[iouId];
+  if (!pending) return fail('No pending IOU on this book.');
+  if (pending.attesterId !== peerId && peerId !== pending.debtorId && peerId !== pending.creditorId) {
+    return fail('Only a party or the named attester can refuse.');
+  }
+  if (pending.status === 'attested') return fail('Already attested. A refusal does not unwind a shown line.');
+  const before = replay(peer).balance;
+  const text = String(statement || 'REFUSAL').trim() || 'REFUSAL';
+  const body = { simulated: true, kind: 'refusal', iouId, peerId, role: pending.attesterId === peerId ? 'attester' : 'party', statement: text };
+  const sealed = await sealMessage(peer, 'refusal', body);
+  if (!sealed.ok) return sealed;
+  const holders = {};
+  for (const id of [pending.debtorId, pending.creditorId]) {
+    const holder = await store.get(id);
+    if (holder?.privateKeyJwk) holders[id] = holder;
+  }
+  if (!holders[peerId]) holders[peerId] = peer;
+  for (const holder of Object.values(holders)) {
+    holder.ious = holder.ious || {};
+    if (holder.ious[iouId]) holder.ious[iouId] = { ...holder.ious[iouId], status: 'refused' };
+    await appendEntry(holder, 'refusal', { iouId, by: peerId, role: body.role, statement: text, hash: sealed.message.hash, sig: sealed.message.sig }, at);
+    await store.set(holder.id, holder);
+  }
+  return { ok: true, status: 'refused', balance: replay(await store.get(peerId)).balance, unchanged: replay(await store.get(peerId)).balance === before, message: sealed.message };
+}
+
+async function applyImportedIou(store, peer, message, at) {
+  const body = message.body || {};
+  if (peer.id !== body.debtorId && peer.id !== body.creditorId) return fail('This IOU does not name this peer.');
+  const iouId = message.hash;
+  if (peer.ious?.[iouId]) return { ok: true, duplicate: true, balance: replay(peer).balance };
+  const pending = { ...body, iouId, status: 'pending', hash: iouId, sig: message.sig };
+  peer.ious = peer.ious || {};
+  peer.ious[iouId] = pending;
+  await appendEntry(peer, 'iou', { ...pending, role: 'received' }, at);
+  await rememberInbox(peer, { at, kind: 'iou', fromId: message.fromId, amount: body.amount, hash: iouId });
+  await store.set(peer.id, peer);
+  return { ok: true, balance: replay(peer).balance, iouId };
+}
+
+async function applyImportedAttestation(store, peer, message, at) {
+  const body = message.body || {};
+  if (message.fromId !== body.attesterId) return fail('The attester signature does not match.');
+  if (peer.id !== body.debtorId && peer.id !== body.creditorId) return fail('This attestation does not name this peer.');
+  if ((peer.tape || []).some((entry) => entry.type === 'attested' && entry.payload?.iouId === body.iouId)) {
+    return { ok: true, duplicate: true, balance: replay(peer).balance };
+  }
+  if (peer.id === body.debtorId) {
+    const next = applyLegs(replay(peer).balance, peer.id, [body]).balance;
+    if (floorBlockReason(peer, next)) return fail(FLOOR_BLOCK);
+  }
+  const pending = peer.ious?.[body.iouId] || body;
+  await rememberInbox(peer, { at, kind: 'attestation', fromId: message.fromId, amount: body.amount, hash: message.hash });
+  await writeAttested(store, { [peer.id]: peer }, { ...pending, ...body }, message, at);
+  return { ok: true, balance: replay(await store.get(peer.id)).balance, status: 'attested' };
+}
+
+async function applyImportedRefusal(store, peer, message, at) {
+  const body = message.body || {};
+  await appendEntry(peer, 'refusal', {
+    iouId: body.iouId || null,
+    exchangeId: body.exchangeId || null,
+    by: body.peerId || message.fromId,
+    role: body.role || 'imported',
+    statement: body.statement || 'REFUSAL',
+    hash: message.hash,
+    sig: message.sig
+  }, at);
+  if (body.iouId && peer.ious?.[body.iouId]) peer.ious[body.iouId] = { ...peer.ious[body.iouId], status: 'refused' };
+  await rememberInbox(peer, { at, kind: 'refusal', fromId: message.fromId, hash: message.hash });
+  await store.set(peer.id, peer);
+  return { ok: true, balance: replay(peer).balance, status: 'refused' };
+}
+
+async function applyImportedExchange(store, peer, message, at) {
+  const exchange = message.body?.exchange || message.body;
+  if (!exchange?.id || !exchange.legs) return fail('The exchange in this message could not be read.');
+  const idAgain = await sha256(canonicalJSON(coreOf(exchange)));
+  if (idAgain !== exchange.id) return fail('Hash does not match. Import stopped.');
+  if (!holderIds(exchange).includes(peer.id)) return fail('This exchange does not name this peer.');
+  const existing = peer.exchanges?.[exchange.id];
+  if (existing && !coresMatch(existing, exchange)) return fail('Copies disagree. Nothing moved. Reconcile the two books.');
+  peer.exchanges = peer.exchanges || {};
+  const merged = existing ? { ...existing, signatures: { ...existing.signatures, ...(exchange.signatures || {}) }, status: exchange.status || existing.status, refusal: exchange.refusal || existing.refusal } : exchange;
+  peer.exchanges[exchange.id] = merged;
+  await appendEntry(peer, message.kind === 'countersign' ? 'countersign' : 'proposal', {
+    exchangeId: exchange.id,
+    role: 'received',
+    kind: exchange.kind,
+    legs: exchange.legs,
+    charge: exchange.charge,
+    thirdSeatId: exchange.thirdSeatId,
+    by: message.fromId
+  }, at);
+  await rememberInbox(peer, { at, kind: message.kind, fromId: message.fromId, hash: message.hash });
+  await store.set(peer.id, peer);
+  return { ok: true, exchangeId: exchange.id, balance: replay(peer).balance };
+}
+
+export async function openTape(input) {
+  let data = input;
+  try {
+    if (typeof input === 'string') {
+      const trimmed = input.trim();
+      if (trimmed.includes('lgme1.')) {
+        const opened = await openMessage(trimmed);
+        if (!opened.ok) return opened;
+        if (opened.message.kind !== 'tape') return fail('That message is not a tape.');
+        data = opened.message.body;
+      } else {
+        data = JSON.parse(trimmed);
+      }
+    }
+  } catch {
+    return fail('The tape could not be read.');
+  }
+  if (!data?.tape || !data?.publicKeyJwk) return fail('This file is not a tape.');
+  const checked = await verifyTape(data);
+  if (!checked.ok) return fail(checked.reason || 'Hash link does not verify. Import stopped.');
+  return { ok: true, peer: data };
+}
+
+export async function exportTapeMessage(peer) {
+  return sealMessage(peer, 'tape', toExport(peer));
+}
+
+export async function logDispatch(store, peerId, item) {
+  const peer = await store.get(peerId);
+  if (!peer) return fail('Unknown peer.');
+  peer.outbox = peer.outbox || [];
+  peer.outbox.push({ ...item, at: item.at || nowIso(), simulated: true });
+  await store.set(peerId, peer);
+  return { ok: true };
 }
 
 export async function resetAndSeed(store) {

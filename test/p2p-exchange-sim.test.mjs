@@ -129,8 +129,8 @@ test('countersign required', async () => {
   const settled = await sim.settle(store, 'alice', proposed.exchangeId, '2026-11-06T00:04:00.000Z');
   assert.equal(settled.ok, true, settled.error);
   assert.equal(settled.balances.alice, 110);
-  assert.equal(settled.balances.bob, -35);
-  assert.equal((await balances(store)).charlie, -75);
+  assert.equal(settled.balances.bob, 90);
+  assert.equal((await balances(store)).charlie, 70);
   const verified = await sim.verifyTape(await store.get('alice'));
   assert.equal(verified.ok, true, verified.reason);
 });
@@ -258,6 +258,148 @@ test('IdidIt receipt does not move a balance, and export withholds the private k
     ididitId: receipt.receiptId
   });
   assert.equal(owned.ok, true, owned.error);
+});
+
+test('demo seed keeps Bob and Charlie above their floors', () => {
+  assert.ok(sim.DEMO_OPENING.bob.balance > sim.DEMO_OPENING.bob.floor);
+  assert.ok(sim.DEMO_OPENING.charlie.balance > sim.DEMO_OPENING.charlie.floor);
+});
+
+test('TOTP matches the RFC 6238 SHA-1 vectors', async () => {
+  const secret = new TextEncoder().encode('12345678901234567890');
+  const vectors = [
+    [59, '94287082'],
+    [1111111109, '07081804'],
+    [1111111111, '14050471'],
+    [1234567890, '89005924'],
+    [2000000000, '69279037'],
+    [20000000000, '65353130']
+  ];
+  for (const [when, code] of vectors) {
+    assert.equal(await sim.totp(secret, when, { digits: 8, period: 30, algorithm: 'SHA-1' }), code);
+  }
+  assert.equal(await sim.totp(secret, 59, { digits: 6, period: 30, algorithm: 'SHA-1' }), '287082');
+});
+
+test('wallet lock and wrong-code rejection', async () => {
+  const store = sim.createMemoryStore();
+  const created = await sim.registerPeer(store, { id: 'dana', name: 'Dana', floor: 40, at: '2026-11-06T00:00:00.000Z' });
+  assert.equal(created.ok, true, created.error);
+  const setup = await sim.setupWallet(store, 'dana', 'correct horse', { iterations: 2000 });
+  assert.equal(setup.ok, true, setup.error);
+  const stored = await store.get('dana');
+  assert.equal(stored.privateKeyJwk, null);
+  assert.equal(stored.wallet.kdf, 'PBKDF2');
+  assert.equal(stored.wallet.cipher, 'AES-GCM');
+  assert.equal(stored.wallet.locked, true);
+  assert.equal(JSON.stringify(stored).includes(setup.secretBase32), false);
+  const secret = sim.base32Decode(setup.secretBase32);
+  const now = 1_111_111_111;
+  const code = await sim.totp(secret, now, { digits: 6, period: 30, algorithm: 'SHA-1' });
+  const wrong = await sim.unlockWallet(stored, 'correct horse', code === '000000' ? '111111' : '000000', now);
+  assert.equal(wrong.ok, false);
+  assert.equal(wrong.error, 'Wrong code.');
+  assert.equal(wrong.privateKeyJwk, undefined);
+  assert.equal((await store.get('dana')).privateKeyJwk, null);
+  const badPass = await sim.unlockWallet(stored, 'nope nope', code, now);
+  assert.equal(badPass.ok, false);
+  assert.equal(badPass.error, 'Wrong passphrase.');
+  const opened = await sim.unlockWallet(stored, 'correct horse', code, now);
+  assert.equal(opened.ok, true, opened.error);
+  assert.equal(typeof opened.privateKeyJwk.d, 'string');
+  assert.equal((await store.get('dana')).privateKeyJwk, null);
+});
+
+test('the 100 genesis grant', async () => {
+  const store = sim.createMemoryStore();
+  const created = await sim.registerPeer(store, { id: 'dana', name: 'Dana', floor: 40 });
+  assert.equal(created.ok, true, created.error);
+  const dana = await store.get('dana');
+  const genesis = dana.tape[0];
+  assert.equal(genesis.type, 'genesis');
+  assert.equal(genesis.payload.balance, 100);
+  assert.equal(genesis.payload.grant, 100);
+  assert.equal(genesis.payload.unit, '$lgme');
+  assert.equal(genesis.payload.mock, true);
+  assert.equal(genesis.payload.label, 'mock');
+  assert.equal(sim.replay(dana).balance, 100);
+  assert.ok(sim.replay(dana).balance > sim.terms(dana).floor);
+});
+
+test('transfer signature survives export and import, and a tampered import is rejected', async () => {
+  const store = sim.createMemoryStore();
+  await sim.registerPeer(store, { id: 'alice', name: 'Alice', floor: 40, at: '2026-11-06T00:00:00.000Z' });
+  await sim.registerPeer(store, { id: 'bob', name: 'Bob', floor: 40, at: '2026-11-06T00:00:00.000Z' });
+  const sent = await sim.createTransfer(store, 'alice', { toId: 'bob', amount: 10, note: 'milk', at: '2026-11-06T00:01:00.000Z' });
+  assert.equal(sent.ok, true, sent.error);
+  assert.equal(sent.balance, 90);
+  assert.equal(sim.replay(await store.get('bob')).balance, 100);
+  const packed = sim.encodeMessage(sent.message);
+  const hrefs = sim.shareHrefs('', sim.shareText('10 mock $lgme', packed));
+  assert.equal(hrefs.sms.startsWith('sms:'), true);
+  assert.equal(hrefs.mailto.startsWith('mailto:'), true);
+  const opened = await sim.openMessage(packed);
+  assert.equal(opened.ok, true, opened.error);
+  assert.equal(await sim.verifyText(opened.message.publicKeyJwk, opened.message.hash, opened.message.sig), true);
+  const imported = await sim.importMessage(store, 'bob', packed, '2026-11-06T00:02:00.000Z');
+  assert.equal(imported.ok, true, imported.error);
+  assert.equal(imported.balance, 110);
+  const evil = structuredClone(sent.message);
+  evil.body.amount = 999;
+  const rejected = await sim.importMessage(store, 'bob', evil, '2026-11-06T00:03:00.000Z');
+  assert.equal(rejected.ok, false);
+  assert.match(rejected.error, /Hash/);
+  assert.equal(sim.replay(await store.get('bob')).balance, 110);
+  const tape = sim.toExport(await store.get('alice'));
+  assert.equal((await sim.openTape(JSON.stringify(tape))).ok, true);
+  tape.tape[1].prev = 'f'.repeat(64);
+  const broken = await sim.openTape(JSON.stringify(tape));
+  assert.equal(broken.ok, false);
+  assert.match(broken.error, /previous hash does not link/);
+  const report = sim.reconcile(await store.get('bob'), await sim.openTape(sim.toExport(await store.get('bob'))).then((result) => result.peer));
+  assert.equal(report.peerB.id, 'bob');
+});
+
+test('IOU stays pending until attested, and a refusal moves nothing', async () => {
+  const store = sim.createMemoryStore();
+  await sim.registerPeer(store, { id: 'alice', name: 'Alice', floor: 40, at: '2026-11-06T00:00:00.000Z' });
+  await sim.registerPeer(store, { id: 'bob', name: 'Bob', floor: 40, at: '2026-11-06T00:00:00.000Z' });
+  const pending = await sim.recordIou(store, 'alice', {
+    debtorId: 'alice',
+    creditorId: 'bob',
+    amount: 25,
+    reference: 'Repair',
+    at: '2026-11-06T00:01:00.000Z'
+  });
+  assert.equal(pending.ok, true, pending.error);
+  assert.equal(sim.replay(await store.get('alice')).balance, 100);
+  assert.equal(sim.replay(await store.get('bob')).balance, 100);
+  assert.equal((await store.get('alice')).tape.some((entry) => entry.type === 'attested'), false);
+  const attested = await sim.attestIou(store, 'bob', pending.iouId, '2026-11-06T00:02:00.000Z');
+  assert.equal(attested.ok, true, attested.error);
+  assert.equal(attested.status, 'attested');
+  assert.equal(sim.replay(await store.get('alice')).balance, 75);
+  assert.equal(sim.replay(await store.get('bob')).balance, 125);
+
+  const second = await sim.recordIou(store, 'alice', {
+    debtorId: 'alice',
+    creditorId: 'bob',
+    amount: 5,
+    reference: 'Unseen',
+    at: '2026-11-06T00:03:00.000Z'
+  });
+  const before = sim.replay(await store.get('alice')).balance;
+  const bobBefore = sim.replay(await store.get('bob')).balance;
+  const refused = await sim.refuseAttestation(store, 'bob', second.iouId, 'REFUSAL', '2026-11-06T00:04:00.000Z');
+  assert.equal(refused.ok, true, refused.error);
+  assert.equal(refused.status, 'refused');
+  assert.equal(sim.replay(await store.get('alice')).balance, before);
+  assert.equal(sim.replay(await store.get('bob')).balance, bobBefore);
+  const line = (await store.get('bob')).tape.find((entry) => entry.type === 'refusal' && entry.payload.iouId === second.iouId);
+  assert.ok(line);
+  assert.equal(line.payload.statement, 'REFUSAL');
+  assert.equal('penalty' in line.payload, false);
+  assert.equal(sim.replay(await store.get('alice')).balance, before);
 });
 
 test('pages stay simulation-only', () => {

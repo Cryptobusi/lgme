@@ -1,7 +1,38 @@
 import * as sim from './p2p-exchange-sim.mjs';
 
-const store = sim.createLocalStorageStore();
+const sessionKeys = new Map();
+const rememberedSecrets = new Map();
+const baseStore = sim.createLocalStorageStore();
+const store = {
+  async get(id) {
+    const peer = await baseStore.get(id);
+    if (peer && !peer.privateKeyJwk && sessionKeys.has(id)) peer.privateKeyJwk = structuredClone(sessionKeys.get(id));
+    return peer;
+  },
+  async set(id, value) {
+    const copy = structuredClone(value);
+    if (copy?.wallet?.ciphertext) copy.privateKeyJwk = null;
+    await baseStore.set(id, copy);
+  },
+  async remove(id) {
+    sessionKeys.delete(id);
+    rememberedSecrets.delete(id);
+    return baseStore.remove(id);
+  },
+  async listIds() {
+    return baseStore.listIds();
+  },
+  async clear() {
+    sessionKeys.clear();
+    rememberedSecrets.clear();
+    return baseStore.clear();
+  }
+};
 const SEAT_KEY = 'lgme-sim:ui:seat';
+const TABS = ['exchange', 'books', 'reconcile', 'wallet', 'devices', 'help'];
+let pendingImport = '';
+let carryAddress = '';
+let activeCodeTimer = 0;
 let catalog = [];
 let catalogNotice = 'Reference only, not a price.';
 let busy = false;
@@ -30,8 +61,10 @@ function setStatus(text, tone) {
 }
 
 function tabName() {
-  const name = location.hash.replace('#', '');
-  return ['exchange', 'books', 'reconcile'].includes(name) ? name : 'exchange';
+  const raw = decodeURIComponent(location.hash.replace(/^#/, ''));
+  if (raw.includes('lgme1.')) return 'devices';
+  const name = raw.split('&')[0];
+  return TABS.includes(name) ? name : 'exchange';
 }
 
 function rememberSeat(id) {
@@ -93,6 +126,10 @@ function formatBalances(balances) {
 }
 
 async function render() {
+  if (activeCodeTimer) {
+    clearInterval(activeCodeTimer);
+    activeCodeTimer = 0;
+  }
   const peers = await ensureBooks();
   nameById = namesOf(peers);
   const seat = currentSeat(peers);
@@ -100,7 +137,10 @@ async function render() {
   renderTabs();
   const tab = tabName();
   if (tab === 'books') await renderBooks(peers, seat);
-  else if (tab === 'reconcile') await renderReconcile(peers);
+  else if (tab === 'reconcile') await renderReconcile(peers, seat);
+  else if (tab === 'wallet') await renderWallet(peers, seat);
+  else if (tab === 'devices') await renderDevices(peers, seat);
+  else if (tab === 'help') renderHelp();
   else await renderExchange(peers, seat);
 }
 
@@ -114,7 +154,7 @@ function renderSeats(peers, seat) {
       'aria-pressed': peer.id === seat ? 'true' : 'false'
     }, [
       peer.name,
-      h('small', {}, [`${peer.balance} · floor ${peer.floor}`])
+      h('small', {}, [`${peer.mock ? peer.balance + ' mock $lgme' : peer.balance} · floor ${peer.floor}${peer.locked ? ' · locked' : ''}`])
     ]);
     button.addEventListener('click', () => {
       rememberSeat(peer.id);
@@ -123,16 +163,17 @@ function renderSeats(peers, seat) {
     });
     bar.append(button);
   }
-  bar.append(h('button', { type: 'button', class: 'seat', onClick: () => renderAddPeer(peers) }, ['Add a peer', h('small', {}, ['Opens an empty book'])]));
+  bar.append(h('button', { type: 'button', class: 'seat', onClick: () => renderAddPeer(peers) }, ['Register', h('small', {}, ['Mock grant of 100 $lgme'])]));
   bar.append(h('button', { type: 'button', class: 'seat', onClick: resetDemo }, ['Reset demo', h('small', {}, ['Clears every local book'])]));
 }
 
 function renderTabs() {
   const tab = tabName();
-  for (const name of ['exchange', 'books', 'reconcile']) {
+  for (const name of TABS) {
     const button = document.getElementById(`tab-${name}`);
     button.setAttribute('aria-selected', name === tab ? 'true' : 'false');
     button.onclick = () => {
+      if (location.hash.includes('lgme1.')) pendingImport = location.hash.slice(location.hash.indexOf('lgme1.'));
       location.hash = name;
     };
   }
@@ -141,16 +182,16 @@ function renderTabs() {
 function renderAddPeer(peers) {
   const panel = document.getElementById('panel');
   const name = h('input', { required: true, maxlength: '48', autocomplete: 'off' });
-  const balance = h('input', { type: 'number', step: '0.01', value: '0' });
-  const floor = h('input', { type: 'number', step: '0.01', value: '0' });
+  const floor = h('input', { type: 'number', step: '0.01', value: '40' });
   const limit = h('input', { type: 'number', step: '0.01', value: '-200' });
+  const passphrase = h('input', { type: 'password', minlength: '8', autocomplete: 'new-password', required: true });
   const form = h('form', { class: 'grid two' }, [
     field('Name', name),
-    field('Opening balance (simulated genesis)', balance),
     field('Floor', floor),
     field('Credit limit', limit),
+    field('Passphrase, at least 8 characters', passphrase),
     h('div', { class: 'actions' }, [
-      h('button', { type: 'submit', class: 'primary' }, ['Create book']),
+      h('button', { type: 'submit', class: 'primary' }, ['Register']),
       h('button', { type: 'button', class: 'quiet', onClick: () => render() }, ['Cancel'])
     ])
   ]);
@@ -160,28 +201,33 @@ function renderAddPeer(peers) {
     busy = true;
     try {
       const id = sim.slugPeerId(name.value, peers.map((peer) => peer.id));
-      const created = await sim.createPeer(store, {
+      const created = await sim.registerPeer(store, {
         id,
         name: name.value.trim(),
-        balance: balance.value,
         floor: floor.value,
-        creditLimit: limit.value,
-        floorNote: 'food/rent'
+        creditLimit: limit.value
       });
       if (!created.ok) {
         setStatus(created.error, 'bad');
         return;
       }
+      const setup = await sim.setupWallet(store, id, passphrase.value);
+      if (!setup.ok) {
+        setStatus(setup.error, 'bad');
+        return;
+      }
+      rememberedSecrets.set(id, setup.secretBase32);
       rememberSeat(id);
-      setStatus(`${name.value.trim()} has a separate book. Opening is genesis on their tape. Balance is not taken from anyone else.`, 'ok');
+      setStatus(`${name.value.trim()} has a mock grant of 100 $lgme on a GENESIS line. The key is locked. Scan the wallet code, then unlock with the passphrase and the 6-digit code.`, 'ok');
+      location.hash = 'wallet';
       await render();
     } finally {
       busy = false;
     }
   });
   panel.replaceChildren(
-    h('h2', {}, ['Add a peer']),
-    h('p', { class: 'muted' }, ['A new peer starts with their own key and their own tape. This does not open a shared ledger.']),
+    h('h2', {}, ['Register']),
+    h('p', { class: 'muted' }, ['A new peer receives a simulated grant of 100 $lgme. It is written as a GENESIS line labeled mock. The signing key is then encrypted with the passphrase. This is not a payment.']),
     form
   );
 }
@@ -521,6 +567,7 @@ function exchangeCard(ex, me, peers) {
   if ((ex.status === 'proposed' || ex.status === 'countersigned') && needed.includes(me.id)) {
     actions.push(h('button', { type: 'button', onClick: () => run(() => sim.settle(store, me.id, ex.id), null) }, ['Settle']));
   }
+  actions.push(h('button', { type: 'button', class: 'quiet', onClick: () => shareExchange(me, ex) }, ['Share signed copy']));
   const note = ex.status === 'refused'
     ? 'REFUSAL recorded. No balance moves. No penalty.'
     : ex.status === 'blocked'
@@ -573,7 +620,7 @@ async function renderBooks(peers, seat) {
   const above = sim.round2(view.balance - rule.floor);
   const finger = (await sim.sha256(sim.canonicalJSON(peer.publicKeyJwk))).slice(0, 16);
   const search = h('input', { type: 'search', placeholder: 'Filter by work, type, or hash' });
-  const type = h('select', {}, ['all', 'genesis', 'ididit', 'proposal', 'countersign', 'refusal', 'block', 'settlement'].map((name, index) => option(name, name === 'all' ? 'All types' : name, index === 0)));
+  const type = h('select', {}, ['all', 'genesis', 'ididit', 'proposal', 'countersign', 'refusal', 'block', 'settlement', 'transfer', 'iou', 'attested'].map((name, index) => option(name, name === 'all' ? 'All types' : name, index === 0)));
   const list = h('div', {});
   const rows = view.rows.slice().reverse();
   for (const row of rows) {
@@ -650,7 +697,7 @@ async function verify(peer) {
   else setStatus(`Verify tape: ${result.reason}.`, 'bad');
 }
 
-async function renderReconcile(peers) {
+async function renderReconcile(peers, seat) {
   const panel = document.getElementById('panel');
   const left = h('select', {}, peerOptions(peers, peers[0]?.id || ''));
   const right = h('select', {}, peerOptions(peers, peers[1]?.id || peers[0]?.id || ''));
@@ -689,12 +736,456 @@ async function renderReconcile(peers) {
       out.append(h('p', { class: 'muted' }, ['These two books share no exchanges.']));
     }
   });
+  const imported = h('textarea', { placeholder: 'Paste a tape JSON or an lgme1. code' });
+  const file = h('input', { type: 'file', accept: 'application/json,.json' });
+  const importOut = h('div', {});
+  file.addEventListener('change', async () => {
+    const chosen = file.files && file.files[0];
+    if (!chosen) return;
+    imported.value = await chosen.text();
+  });
+  const importForm = h('form', {}, [
+    field(`Compare ${peers.find((peer) => peer.id === seat)?.name || 'this book'} with an imported tape`, imported),
+    field('Or choose a .json file', file),
+    h('div', { class: 'actions' }, [h('button', { class: 'primary', type: 'submit' }, ['Verify and compare'])])
+  ]);
+  importForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const opened = await sim.openTape(imported.value);
+    importOut.replaceChildren();
+    if (!opened.ok) {
+      setStatus(opened.error, 'bad');
+      importOut.append(h('p', { class: 'bad' }, [opened.error]));
+      return;
+    }
+    const local = await store.get(seat);
+    const report = sim.reconcile(local, opened.peer);
+    paintReport(importOut, report);
+    setStatus(report.ok ? `Imported tape verified. Shared lines match. ${report.matches.length}.` : `Imported tape verified. ${report.mismatches.length} mismatch${report.mismatches.length === 1 ? '' : 'es'}.`, report.ok ? 'ok' : 'bad');
+  });
   panel.replaceChildren(
     h('h2', {}, ['Reconcile']),
-    h('p', { class: 'muted' }, ['Compare the signed copies two peers stored. A difference in amount, status, signature, refusal, or settlement is a mismatch. Neither book is corrected from the other.']),
+    h('p', { class: 'muted' }, ['Compare the signed copies two peers stored. A difference in amount, status, signature, refusal, or settlement is a mismatch. An imported tape is checked for its hash links and signatures before it is compared. Neither book is corrected from the other.']),
     form,
-    out
+    out,
+    h('h3', {}, ['Imported tape']),
+    importForm,
+    importOut
   );
+}
+
+function paintReport(out, report) {
+  out.replaceChildren();
+  for (const row of report.mismatches || []) {
+    out.append(h('article', { class: 'row' }, [
+      h('p', { class: 'pill' }, ['Mismatch']),
+      h('p', {}, [`${shortHash(row.exchangeId) || 'book'} · ${row.field}`]),
+      h('p', { class: 'bad' }, [row.detail])
+    ]));
+  }
+  for (const row of report.matches || []) {
+    out.append(h('article', { class: 'row' }, [
+      h('p', { class: 'pill' }, ['Match']),
+      h('p', { class: 'ok' }, [`${shortHash(row.exchangeId)} · ${row.status}`])
+    ]));
+  }
+  if (!(report.mismatches || []).length && !(report.matches || []).length) {
+    out.append(h('p', { class: 'muted' }, ['These two books share no exchanges.']));
+  }
+}
+
+let carryCode = '';
+let stopCamera = () => {};
+
+function pageUrl(encoded) {
+  return `${location.origin}${location.pathname}#${encoded}`;
+}
+
+function drawQr(host, text) {
+  host.replaceChildren();
+  if (!text) return;
+  const QR = globalThis.QRCode;
+  if (!QR || text.length > 2200) {
+    host.append(h('p', { class: 'legend' }, ['This message is too long for a QR code. Use copy or a .json file.']));
+    return;
+  }
+  const holder = h('div', { class: 'qr' });
+  host.append(holder);
+  try {
+    new QR(holder, { text, width: 220, height: 220, correctLevel: QR.CorrectLevel.M });
+  } catch {
+    host.replaceChildren(h('p', { class: 'legend' }, ['This message is too long for a QR code. Use copy or a .json file.']));
+  }
+}
+
+async function liveCode(secret) {
+  const now = Math.floor(Date.now() / 1000);
+  return sim.totp(sim.base32Decode(secret), now, { digits: 6, period: 30, algorithm: 'SHA-1' });
+}
+
+function stopAnyCamera() {
+  stopCamera();
+  stopCamera = () => {};
+}
+
+async function renderWallet(peers, seat) {
+  stopAnyCamera();
+  const panel = document.getElementById('panel');
+  const summary = peers.find((peer) => peer.id === seat);
+  const peer = await store.get(seat);
+  const locked = Boolean(peer.wallet?.ciphertext) && !peer.privateKeyJwk;
+  const secret = rememberedSecrets.get(seat) || '';
+  const codeLine = h('p', { class: 'nums' }, ['']);
+  async function paintCode() {
+    if (!secret) return;
+    const code = await liveCode(secret);
+    const left = 30 - (Math.floor(Date.now() / 1000) % 30);
+    codeLine.textContent = `Mock authenticator on this page session: ${code}. It changes in ${left}s. An authenticator app that scanned the code shows the same number.`;
+  }
+  if (secret) {
+    await paintCode();
+    activeCodeTimer = window.setInterval(paintCode, 1000);
+  }
+  const blocks = [
+    h('h2', {}, [`Wallet · ${summary.name}`]),
+    h('p', { class: 'muted' }, ['SIMULATION. The balance is mock $lgme. The passphrase and the 6-digit code are simulated 2FA. This page does not send the code and does not move real money.']),
+    h('div', { class: 'nums' }, [
+      h('div', {}, [h('strong', {}, [String(sim.replay(peer).balance)]), summary.mock ? 'Mock $lgme' : 'Book balance']),
+      h('div', {}, [h('strong', {}, [String(sim.terms(peer).floor)]), 'Floor']),
+      h('div', {}, [h('strong', {}, [locked ? 'Locked' : 'Open']), 'Key'])
+    ])
+  ];
+  if (secret) blocks.push(codeLine, h('div', { id: 'setup-qr' }));
+  if (!peer.wallet?.ciphertext) {
+    const passphrase = h('input', { type: 'password', minlength: '8', autocomplete: 'new-password', required: true });
+    const form = h('form', {}, [
+      h('p', { class: 'legend' }, ['This demo book is unlocked so the desk can be tried. Set a passphrase to encrypt the key at rest.']),
+      field('Passphrase', passphrase),
+      h('div', { class: 'actions' }, [h('button', { class: 'primary', type: 'submit' }, ['Encrypt and lock'])])
+    ]);
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const setup = await sim.setupWallet(store, seat, passphrase.value);
+      if (!setup.ok) { setStatus(setup.error, 'bad'); return; }
+      rememberedSecrets.set(seat, setup.secretBase32);
+      sessionKeys.delete(seat);
+      setStatus('Key encrypted. Scan the code before you reload. SIMULATION.', 'ok');
+      await render();
+    });
+    blocks.push(form);
+  } else if (locked) {
+    const passphrase = h('input', { type: 'password', autocomplete: 'current-password', required: true });
+    const code = h('input', { inputmode: 'numeric', autocomplete: 'one-time-code', maxlength: '8', required: true });
+    const form = h('form', { class: 'grid two' }, [
+      field('Passphrase', passphrase),
+      field('6-digit code', code),
+      h('div', { class: 'actions' }, [h('button', { class: 'primary', type: 'submit' }, ['Unlock'])])
+    ]);
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const stored = await baseStore.get(seat);
+      const opened = await sim.unlockWallet(stored, passphrase.value, code.value, Math.floor(Date.now() / 1000));
+      if (!opened.ok) { setStatus(opened.error, 'bad'); return; }
+      sessionKeys.set(seat, opened.privateKeyJwk);
+      rememberedSecrets.set(seat, opened.secretBase32);
+      setStatus('Wallet unlocked for this page session. The key stays encrypted in storage. SIMULATION.', 'ok');
+      await render();
+    });
+    blocks.push(h('p', { class: 'legend' }, ['Unlock asks for the passphrase and the current code. A wrong code leaves the key locked.']), form);
+  } else {
+    blocks.push(h('div', { class: 'actions' }, [h('button', { type: 'button', onClick: () => { sessionKeys.delete(seat); setStatus('Wallet locked. SIMULATION.', 'ok'); render(); } }, ['Lock'])]));
+    blocks.push(iouSection(peer));
+  }
+  panel.replaceChildren(...blocks);
+  const qrHost = document.getElementById('setup-qr');
+  if (qrHost && secret) {
+    const label = encodeURIComponent(`lgme-sim:${peer.name}`);
+    drawQr(qrHost, `otpauth://totp/${label}?secret=${secret}&issuer=lgme-sim&algorithm=SHA1&digits=6&period=30`);
+  }
+}
+
+function iouSection(peer) {
+  const debtor = h('input', { value: peer.id });
+  const creditor = h('input', { placeholder: 'peer id' });
+  const amount = h('input', { type: 'number', min: '0.01', step: '0.01', value: '25' });
+  const reference = h('input', { maxlength: '160', placeholder: 'What the dollars are for' });
+  const form = h('form', { class: 'grid two' }, [
+    field('Debtor', debtor),
+    field('Creditor', creditor),
+    field('Dollars', amount),
+    field('What for', reference),
+    h('div', { class: 'actions' }, [h('button', { class: 'primary', type: 'submit' }, ['Record pending IOU'])])
+  ]);
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const result = await sim.recordIou(store, peer.id, {
+      debtorId: debtor.value.trim(),
+      creditorId: creditor.value.trim(),
+      amount: amount.value,
+      reference: reference.value
+    });
+    if (!result.ok) { setStatus(result.error, 'bad'); return; }
+    carryCode = result.encoded;
+    setStatus('IOU recorded as pending. The balance did not change. The named attester still has to sign.', 'ok');
+    await render();
+  });
+  const rows = Object.values(peer.ious || {});
+  const list = rows.map((iou) => {
+    const actions = [];
+    if (iou.status === 'pending' && iou.attesterId === peer.id) {
+      actions.push(h('button', { type: 'button', class: 'primary', onClick: () => run(() => sim.attestIou(store, peer.id, iou.iouId), 'Attested. The book moved.') }, ['Attest']));
+      actions.push(h('button', { type: 'button', onClick: () => run(() => sim.refuseAttestation(store, peer.id, iou.iouId, 'REFUSAL'), 'REFUSAL recorded. No balance moves. No penalty.') }, ['Refuse']));
+    }
+    return h('article', { class: 'row' }, [
+      h('p', { class: 'pill' }, [iou.status || 'pending']),
+      h('p', {}, [`${iou.debtorId} owes ${iou.creditorId} ${iou.amount} · ${iou.reference}`]),
+      h('p', { class: 'legend' }, ['Unattested IOUs do not change the balance.']),
+      actions.length ? h('div', { class: 'actions' }, actions) : null
+    ]);
+  });
+  return h('div', {}, [
+    h('h3', {}, ['Dollar IOU']),
+    h('p', { class: 'legend' }, ['A dollar IOU is pending until the named counterparty attests it. Refusal is recorded and carries no penalty. The floor still blocks a debit that would spend it.']),
+    form,
+    ...list
+  ]);
+}
+
+async function renderDevices(peers, seat) {
+  stopAnyCamera();
+  const panel = document.getElementById('panel');
+  const peer = await store.get(seat);
+  const toId = h('input', { placeholder: 'peer id on the other device' });
+  const amount = h('input', { type: 'number', min: '0.01', step: '0.01', value: '10' });
+  const note = h('input', { maxlength: '160', value: 'mock $lgme' });
+  const address = h('input', { placeholder: 'phone or email, optional' });
+  const shareHost = h('div', {});
+  const form = h('form', { class: 'grid two' }, [
+    field('Send mock $lgme to peer id', toId),
+    field('Amount', amount),
+    field('Note', note),
+    field('Their phone or email, if you want a draft', address),
+    h('div', { class: 'actions' }, [h('button', { class: 'primary', type: 'submit' }, ['Sign the transfer'])])
+  ]);
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!peer.privateKeyJwk) { setStatus('Unlock the wallet before signing.', 'bad'); return; }
+    const result = await sim.createTransfer(store, seat, { toId: toId.value.trim(), amount: amount.value, note: note.value });
+    if (!result.ok) { setStatus(result.error, 'bad'); return; }
+    carryCode = result.encoded;
+    carryAddress = address.value.trim();
+    setStatus(`Signed. ${peer.name} is at ${result.balance}. Nothing was sent. Use copy, the QR, or your own text or mail app.`, 'ok');
+    await render();
+  });
+  const incoming = h('textarea', { class: 'codebox', placeholder: 'Paste an lgme1. code, a share link, or tape JSON' });
+  if (pendingImport) incoming.value = pendingImport;
+  const file = h('input', { type: 'file', accept: 'application/json,.json' });
+  file.addEventListener('change', async () => {
+    const chosen = file.files && file.files[0];
+    if (!chosen) return;
+    incoming.value = await chosen.text();
+  });
+  const preview = h('div', {});
+  const video = h('video', { class: 'cam', playsinline: true, muted: true });
+  video.hidden = true;
+  const importForm = h('form', {}, [
+    field('Incoming signed message', incoming),
+    field('.json file', file),
+    h('div', { class: 'actions' }, [
+      h('button', { type: 'submit', class: 'primary' }, ['Verify']),
+      h('button', { type: 'button', onClick: () => startScan(video, incoming, preview) }, ['Scan QR'])
+    ]),
+    video,
+    preview
+  ]);
+  importForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    await previewIncoming(seat, incoming.value, preview);
+  });
+  const outbox = (peer.outbox || []).slice().reverse().map((item) => h('p', { class: 'legend' }, [`Outbox ${item.channel || 'local'} · ${item.kind} · ${item.amount || ''} ${item.toId || ''}`]));
+  const inbox = (peer.inbox || []).slice().reverse().map((item) => h('p', { class: 'legend' }, [`Inbox ${item.kind} from ${item.fromId}`]));
+  panel.replaceChildren(
+    h('h2', {}, [`Another device · ${peer.name}`]),
+    h('p', { class: 'muted' }, ['There is no server. Copy the code, open the share link, scan the QR, or save a .json file. On the other device, verify the signature and the hash before anything is appended. sms: and mailto: only open your own app. This page never sends the message.']),
+    h('div', { class: 'actions' }, [h('button', { type: 'button', onClick: () => download(`${seat}-tape.json`, JSON.stringify(sim.toExport(peer), null, 2), 'application/json') }, ['Export tape JSON'])]),
+    h('h3', {}, ['Send mock $lgme']),
+    form,
+    shareHost,
+    h('h3', {}, ['Receive']),
+    importForm,
+    h('h3', {}, ['Simulated log']),
+    outbox.length ? h('div', {}, outbox) : h('p', { class: 'legend' }, ['Outbox is empty.']),
+    inbox.length ? h('div', {}, inbox) : h('p', { class: 'legend' }, ['Inbox is empty.'])
+  );
+  if (carryCode) showShare(shareHost, seat, carryCode, carryAddress, 'signed lgme message');
+  if (pendingImport) previewIncoming(seat, pendingImport, preview);
+}
+
+function showShare(host, seat, encoded, address, summary) {
+  const link = pageUrl(encoded);
+  const text = sim.shareText(summary, link);
+  const hrefs = sim.shareHrefs(address, text);
+  const qr = h('div', {});
+  const box = h('textarea', { class: 'codebox', readonly: true }, [encoded]);
+  const copy = h('button', { type: 'button', onClick: async () => {
+    try { await navigator.clipboard.writeText(encoded); setStatus('Code copied. SIMULATION.', 'ok'); }
+    catch { setStatus('Select the code and copy it yourself. SIMULATION.', 'bad'); }
+  } }, ['Copy code']);
+  const sms = h('a', { class: 'btn', href: hrefs.sms }, ['Open text app']);
+  const mail = h('a', { class: 'btn', href: hrefs.mailto }, ['Open mail app']);
+  const log = (channel) => () => { sim.logDispatch(store, seat, { kind: 'share', channel, simulated: true }); };
+  sms.addEventListener('click', log('sms'));
+  mail.addEventListener('click', log('mailto'));
+  host.replaceChildren(
+    h('p', { class: 'legend' }, ['SIMULATION. Nothing has been sent.']),
+    box,
+    h('div', { class: 'actions' }, [copy, sms, mail]),
+    h('p', { class: 'codebox' }, [link]),
+    qr
+  );
+  drawQr(qr, link);
+}
+
+async function previewIncoming(seat, raw, host) {
+  const trimmed = String(raw || '').trim();
+  if (!trimmed) return;
+  if (trimmed.startsWith('{') && trimmed.includes('"tape"')) {
+    const opened = await sim.openTape(trimmed);
+    if (!opened.ok) { setStatus(opened.error, 'bad'); host.replaceChildren(h('p', { class: 'bad' }, [opened.error])); return; }
+    host.replaceChildren(
+      h('p', { class: 'ok' }, [`Tape verified for ${opened.peer.name}. Hash links and signatures match.`]),
+      h('div', { class: 'actions' }, [h('button', { type: 'button', class: 'primary', onClick: () => { pendingImport = trimmed; location.hash = 'reconcile'; } }, ['Compare in reconcile'])])
+    );
+    setStatus('Tape verified. It has not been appended to your book.', 'ok');
+    return;
+  }
+  const opened = await sim.openMessage(trimmed);
+  if (!opened.ok) { setStatus(opened.error, 'bad'); host.replaceChildren(h('p', { class: 'bad' }, [opened.error])); return; }
+  const body = opened.message.body || {};
+  host.replaceChildren(
+    h('p', { class: 'ok' }, [`Signature and hash verified. ${opened.message.kind} from ${opened.message.fromId}.`]),
+    h('p', {}, [body.amount ? `${body.amount} ${body.unit || ''} ${body.note || body.reference || ''}` : opened.message.kind]),
+    h('div', { class: 'actions' }, [h('button', { type: 'button', class: 'primary', onClick: () => acceptIncoming(seat, trimmed) }, ['Append to this book'])])
+  );
+  setStatus('Verified. Nothing is appended until you confirm.', 'ok');
+}
+
+async function acceptIncoming(seat, raw) {
+  const peer = await store.get(seat);
+  if (!peer.privateKeyJwk) { setStatus('Unlock the wallet before appending.', 'bad'); return; }
+  const result = await sim.importMessage(store, seat, raw);
+  if (!result.ok) { setStatus(result.error, 'bad'); return; }
+  pendingImport = '';
+  setStatus(result.balance == null ? 'Imported. SIMULATION.' : `Imported. Balance ${result.balance}. SIMULATION.`, 'ok');
+  await render();
+}
+
+async function startScan(video, incoming, preview) {
+  stopAnyCamera();
+  if (!navigator.mediaDevices?.getUserMedia || !globalThis.jsQR) {
+    setStatus('This browser has no camera reader. Paste the code instead. SIMULATION.', 'bad');
+    return;
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    video.hidden = false;
+    video.srcObject = stream;
+    await video.play();
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    let stopped = false;
+    stopCamera = () => {
+      stopped = true;
+      stream.getTracks().forEach((track) => track.stop());
+      video.hidden = true;
+    };
+    const tick = () => {
+      if (stopped) return;
+      if (video.readyState >= 2) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0);
+        const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const found = globalThis.jsQR(image.data, image.width, image.height);
+        if (found?.data) {
+          incoming.value = found.data;
+          stopAnyCamera();
+          previewIncoming(currentSeatId(), incoming.value, preview);
+          return;
+        }
+      }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  } catch {
+    setStatus('The camera was not opened. Paste the code instead. SIMULATION.', 'bad');
+  }
+}
+
+function currentSeatId() {
+  return sessionStorage.getItem(SEAT_KEY) || '';
+}
+
+function renderHelp() {
+  stopAnyCamera();
+  const panel = document.getElementById('panel');
+  const sections = [
+    ['Floor', 'The floor is the protected balance: food, rent, and the bus. A settlement, a transfer, or an attested IOU that would lower a peer through that floor is not applied. The tape records Blocked: Floor stays senior. A cycle is judged on the net, so equal work can clear.'],
+    ['Third seat', 'The third seat is the person who can read the line and refuse it. The refusal is a REFUSAL entry. It moves no balance and carries no penalty. It does not unwind a line already shown. Silence is not a refusal. A line waits until every party has countersigned.'],
+    ['Tape', 'Each book is append-only. Every entry names the previous hash and is signed with that peer’s key. Export the JSON and verify it. If a byte changes, the hash or the signature fails and the import stops.'],
+    ['IOU and attestation', 'A dollar IOU is recorded as pending. Pending lines do not change the balance. The balance moves only when the named counterparty signs an ATTESTED entry. If they refuse, the tape records REFUSAL and the balance stays put.'],
+    ['Mock $lgme', 'Registration writes a GENESIS entry for a simulated grant of 100 $lgme, labeled mock. It is not money. The wallet holds that balance and the signing key.'],
+    ['Simulated 2FA', 'A passphrase encrypts the key at rest with AES-GCM and PBKDF2. A 6-digit TOTP, RFC 6238, is checked with WebCrypto HMAC. The setup QR can be scanned by an authenticator app. This page generates the same code while the secret is still on screen. It never sends the code. A wrong code leaves the wallet locked.'],
+    ['Another device', 'There is no server. Sign a proposal, countersign, refusal, transfer, or attestation, then carry the lgme1. code by copy, by a link whose data sits in the URL fragment, by a QR, or by a .json file. On the other device, verification runs before anything is appended. To text or email it, the page opens sms: or mailto: so you send it from your own app. The outbox and inbox are a local log of that.']
+  ];
+  panel.replaceChildren(
+    h('h2', {}, ['Help']),
+    h('p', { class: 'muted' }, ['SIMULATION. No real money, no message is sent by this page, and nothing is written to a network.']),
+    ...sections.map(([title, body]) => h('article', { class: 'card' }, [h('h3', {}, [title]), h('p', { class: 'muted' }, [body])])),
+    h('div', { class: 'actions' }, [h('button', { type: 'button', onClick: () => showWalk(0) }, ['Replay the walkthrough'])])
+  );
+}
+
+const WALK = [
+  ['SIMULATION', 'This desk is practice. It does not write to a network, move real money, or send text or email. You send a draft yourself, from your own app, if you want to.'],
+  ['Separate books', 'Alice, Bob, and Charlie each keep their own tape. On one device you switch seats. On two devices you carry a signed message. There is no central ledger.'],
+  ['Floor', 'Bob and Charlie start above their floors. A line that would spend the floor is blocked and the block stays on the tape.'],
+  ['Third seat', 'Refuse a line that skipped the order. The no is recorded. Nothing moves. There is no penalty.'],
+  ['100 mock $lgme', 'Register a new peer and the GENESIS line grants 100 $lgme, labeled mock. Then the key is locked behind a passphrase and a 6-digit code.'],
+  ['Carry the signature', 'Copy the code, open the share link, scan the QR, or save the JSON. The other device checks the signature and the hash link before it appends.']
+];
+
+function showWalk(step) {
+  let overlay = document.getElementById('walk');
+  if (!overlay) {
+    overlay = h('div', { class: 'walk', id: 'walk', role: 'dialog', 'aria-modal': 'true' });
+    document.body.append(overlay);
+  }
+  overlay.hidden = false;
+  const [title, body] = WALK[step];
+  const card = h('article', { class: 'card' }, [
+    h('p', { class: 'kicker' }, [`SIMULATION · ${step + 1} of ${WALK.length}`]),
+    h('h2', {}, [title]),
+    h('p', {}, [body]),
+    h('div', { class: 'actions' }, [
+      step > 0 ? h('button', { type: 'button', onClick: () => showWalk(step - 1) }, ['Back']) : null,
+      step < WALK.length - 1
+        ? h('button', { type: 'button', class: 'primary', onClick: () => showWalk(step + 1) }, ['Next'])
+        : h('button', { type: 'button', class: 'primary', onClick: () => { overlay.hidden = true; sessionStorage.setItem('lgme-sim:ui:seen-walk', '1'); } }, ['Start'])
+    ])
+  ]);
+  overlay.replaceChildren(card);
+}
+
+async function shareExchange(me, ex) {
+  const peer = await store.get(me.id);
+  if (!peer?.privateKeyJwk) { setStatus('Unlock the wallet before signing a copy to carry.', 'bad'); return; }
+  const kind = ex.signatures?.[peer.id] ? 'countersign' : 'proposal';
+  const sealed = await sim.sealMessage(peer, kind, { exchange: ex });
+  if (!sealed.ok) { setStatus(sealed.error, 'bad'); return; }
+  carryCode = sim.encodeMessage(sealed.message);
+  location.hash = 'devices';
+  setStatus('Signed copy is ready. Nothing has been sent. SIMULATION.', 'ok');
 }
 
 async function loadReferences() {
@@ -710,11 +1201,26 @@ async function loadReferences() {
   }
 }
 
-document.getElementById('tab-exchange').addEventListener('click', () => { location.hash = 'exchange'; });
-document.getElementById('tab-books').addEventListener('click', () => { location.hash = 'books'; });
-document.getElementById('tab-reconcile').addEventListener('click', () => { location.hash = 'reconcile'; });
-window.addEventListener('hashchange', () => { render(); });
+function captureFragment() {
+  const raw = location.hash;
+  const at = raw.indexOf('lgme1.');
+  if (at < 0) return;
+  pendingImport = decodeURIComponent(raw.slice(at));
+  history.replaceState(null, '', `${location.pathname}${location.search}#devices`);
+}
 
-loadReferences().then(render).catch((error) => {
+captureFragment();
+for (const name of TABS) {
+  document.getElementById(`tab-${name}`).addEventListener('click', () => { location.hash = name; });
+}
+window.addEventListener('hashchange', () => {
+  captureFragment();
+  render();
+});
+
+loadReferences().then(async () => {
+  await render();
+  if (!sessionStorage.getItem('lgme-sim:ui:seen-walk')) showWalk(0);
+}).catch((error) => {
   setStatus(error && error.message ? error.message : 'The books did not open.', 'bad');
 });
