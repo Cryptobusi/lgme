@@ -1,1 +1,418 @@
-PLACEHOLDER
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>lgme.app • Sovereign Provenance & Mutual Credit Simulator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #0b0f17;
+      color: #e2e8f0;
+    }
+    code, pre, .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #111827;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #1f2937;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-slate-900/60 backdrop-blur-md sticky top-0 z-40 px-6 py-3.5 flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold mono text-sm shadow-inner">
+        LG
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="font-bold text-white tracking-tight">lgme.app</span>
+          <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-cyan-950/80 text-cyan-300 border border-cyan-800/50">Mock Simulation Mode</span>
+          <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-950/80 text-purple-300 border border-purple-800/50">Target: hederica.com</span>
+        </div>
+        <p class="text-xs text-slate-400">Komunitin Mutual Credit Clearing + Auto-Secure Bilateral Ed25519 + Hedera HCS Anchor</p>
+      </div>
+    </div>
+    <!-- Actions -->
+    <div class="flex items-center gap-2.5">
+      <button id="downloadMdBtn" class="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition">
+        <i data-lucide="download" class="w-3.5 h-3.5 text-emerald-400"></i>
+        Export Spec & Logs (.md)
+      </button>
+      <button id="recordDeploymentBtn" class="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium shadow-lg shadow-emerald-950/50 transition">
+        <i data-lucide="archive" class="w-3.5 h-3.5"></i>
+        Index for hederica.com
+      </button>
+    </div>
+  </header>
+  <!-- Main Grid -->
+  <main class="flex-1 p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-7xl mx-auto w-full">
+    
+    <!-- Left Column: Interactive Simulation Control -->
+    <section class="lg:col-span-5 flex flex-col gap-6">
+      
+      <!-- Simulation Stepper -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-xl">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-semibold text-white text-sm flex items-center gap-2">
+            <i data-lucide="sliders" class="w-4 h-4 text-emerald-400"></i>
+            Interactive Program Flow Runner
+          </h2>
+          <span class="text-[11px] text-emerald-400/90 font-mono bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-800/40">Zero-Friction Engine</span>
+        </div>
+        <form id="tradeForm" class="space-y-4">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">Debtor (Buyer)</label>
+              <select id="partyA" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+                <option value="node-alice">Alice (Providore)</option>
+                <option value="node-bob">Bob (Agronomist)</option>
+                <option value="node-charlie">Charlie (Logistics)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">Creditor (Seller)</label>
+              <select id="partyB" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+                <option value="node-bob">Bob (Agronomist)</option>
+                <option value="node-alice">Alice (Providore)</option>
+                <option value="node-charlie">Charlie (Logistics)</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-3">
+            <div class="col-span-2">
+              <label class="block text-xs font-medium text-slate-400 mb-1">Service / Good Provenance</label>
+              <input id="itemDesc" type="text" value="Biomass Soil Regeneration Credits #412" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500" required>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">Mutual Units</label>
+              <input id="tradeAmount" type="number" value="75" min="1" max="500" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500" required>
+            </div>
+          </div>
+          <!-- Feature Flags (Auto-secure / Adoptive) -->
+          <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80 space-y-2">
+            <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Protocol Pipeline Controls</div>
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-slate-300">Auto-Secure Enclave Sign</span>
+              <span class="text-emerald-400 mono text-[11px] font-medium">RFC-8785 + Ed25519</span>
+            </div>
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-slate-300">Komunitin Ledger Rule</span>
+              <span class="text-cyan-400 mono text-[11px] font-medium">Zero-Sum Balance Net</span>
+            </div>
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-slate-300">Hedera Consensus (HCS)</span>
+              <span class="text-purple-400 mono text-[11px] font-medium">Topic 0.0.489104</span>
+            </div>
+          </div>
+          <button type="submit" id="executeBtn" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:opacity-95 text-white font-medium text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/30 transition">
+            <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+            Execute Auto-Secure Exchange Flow
+          </button>
+        </form>
+      </div>
+      <!-- Live Balances (Komunitin Mutual Credit state) -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold text-white text-sm flex items-center gap-2">
+            <i data-lucide="scale" class="w-4 h-4 text-cyan-400"></i>
+            Komunitin Mutual Credit Balances
+          </h3>
+          <span class="text-xs text-slate-400 mono">Sum = <span id="systemSum" class="text-emerald-400 font-bold">0.00</span></span>
+        </div>
+        <div class="space-y-2.5" id="accountsList">
+          <!-- Dynamic balances -->
+        </div>
+      </div>
+    </section>
+    <!-- Right Column: Protocol Logs, Live HCS Anchors, Deployment Status -->
+    <section class="lg:col-span-7 flex flex-col gap-6">
+      
+      <!-- Real-time Flow Inspector -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-xl flex-1 flex flex-col">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold text-white text-sm flex items-center gap-2">
+            <i data-lucide="terminal" class="w-4 h-4 text-purple-400"></i>
+            Sovereign Provenance Protocol (SPP) Execution Stream
+          </h3>
+          <button id="clearLogsBtn" class="text-[11px] text-slate-500 hover:text-slate-300 transition">Clear Stream</button>
+        </div>
+        <!-- Terminal log window -->
+        <div id="logStream" class="flex-1 bg-slate-950 border border-slate-800/80 rounded-xl p-4 mono text-xs text-slate-300 custom-scrollbar overflow-y-auto max-h-[360px] space-y-2">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+      <!-- Hedera Anchor Status & Deployment Staging for hederica.com -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-xl">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold text-white text-sm flex items-center gap-2">
+            <i data-lucide="globe" class="w-4 h-4 text-emerald-400"></i>
+            Hederica.com Deployment Index Register
+          </h3>
+          <span id="indexStatusBadge" class="text-[11px] font-mono px-2 py-0.5 rounded bg-amber-950/80 text-amber-300 border border-amber-800/40">Ready to Register</span>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs mb-3">
+          <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+            <div class="text-slate-400 text-[11px]">Sub-domain Target</div>
+            <div class="text-white font-mono font-medium mt-0.5">lgme.hederica.com</div>
+          </div>
+          <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+            <div class="text-slate-400 text-[11px]">HCS Anchor Topic</div>
+            <div class="text-emerald-400 font-mono font-medium mt-0.5">0.0.489104</div>
+          </div>
+          <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+            <div class="text-slate-400 text-[11px]">Clearing Model</div>
+            <div class="text-cyan-400 font-mono font-medium mt-0.5">Mutual Credit (CES 2.0)</div>
+          </div>
+        </div>
+        <div class="p-3 bg-slate-950/80 rounded-xl border border-slate-800 text-[11px] text-slate-400 space-y-1">
+          <div class="flex justify-between">
+            <span>Last Anchored Transaction Hash:</span>
+            <span id="lastTxHash" class="mono text-slate-300">e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</span>
+          </div>
+          <div class="flex justify-between">
+            <span>Consensus Timestamp:</span>
+            <span id="consensusTimestamp" class="mono text-purple-300">Mock Synchronized</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <!-- Modal / Notification Toast -->
+  <div id="toast" class="fixed bottom-5 right-5 hidden bg-slate-900 border border-emerald-500/50 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 z-50 text-xs">
+    <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+    <span id="toastMsg">Action complete</span>
+  </div>
+  <script>
+    // System State
+    const state = {
+      accounts: {
+        'node-alice': { name: 'Alice (Providore)', balance: 120, creditLimit: -500 },
+        'node-bob': { name: 'Bob (Agronomist)', balance: -45, creditLimit: -300 },
+        'node-charlie': { name: 'Charlie (Logistics)', balance: -75, creditLimit: -400 }
+      },
+      transactions: [],
+      logs: []
+    };
+    // Helper: SHA256 (Web Crypto API)
+    async function sha256(message) {
+      const msgBuffer = new TextEncoder().encode(message);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+    // Logging utility
+    function addLog(step, detail, status = 'info') {
+      const timestamp = new Date().toISOString().split('T')[1].slice(0, 12);
+      const logEntry = { timestamp, step, detail, status };
+      state.logs.push(logEntry);
+      const logContainer = document.getElementById('logStream');
+      const div = document.createElement('div');
+      div.className = 'flex items-start gap-2 border-b border-slate-900/60 pb-1.5';
+      
+      let badgeColor = 'text-slate-400 bg-slate-900 border-slate-800';
+      if (status === 'success') badgeColor = 'text-emerald-400 bg-emerald-950/60 border-emerald-800/50';
+      if (status === 'cyan') badgeColor = 'text-cyan-400 bg-cyan-950/60 border-cyan-800/50';
+      if (status === 'purple') badgeColor = 'text-purple-400 bg-purple-950/60 border-purple-800/50';
+      div.innerHTML = `
+        <span class="text-slate-500 text-[10px]">${timestamp}</span>
+        <span class="px-1.5 py-0.2 rounded border text-[10px] ${badgeColor}">${step}</span>
+        <span class="flex-1 text-slate-300 text-xs">${detail}</span>
+      `;
+      logContainer.appendChild(div);
+      logContainer.scrollTop = logContainer.scrollHeight;
+    }
+    // Render Balances
+    function renderBalances() {
+      const container = document.getElementById('accountsList');
+      container.innerHTML = '';
+      let sum = 0;
+      for (const [id, acc] of Object.entries(state.accounts)) {
+        sum += acc.balance;
+        const div = document.createElement('div');
+        div.className = 'flex items-center justify-between p-3 bg-slate-950 rounded-xl border border-slate-800/80';
+        
+        const balanceColor = acc.balance >= 0 ? 'text-emerald-400' : 'text-amber-400';
+        div.innerHTML = `
+          <div>
+            <div class="text-xs font-medium text-white">${acc.name}</div>
+            <div class="text-[10px] text-slate-500 font-mono">Limit: ${acc.creditLimit} units</div>
+          </div>
+          <div class="text-right">
+            <span class="mono font-bold text-sm ${balanceColor}">${acc.balance > 0 ? '+' : ''}${acc.balance}</span>
+            <span class="text-[10px] text-slate-400 ml-1">Credits</span>
+          </div>
+        `;
+        container.appendChild(div);
+      }
+      document.getElementById('systemSum').textContent = sum.toFixed(2);
+    }
+    // Toast Notification
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').innerText = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 3500);
+    }
+    // Execute Flow
+    document.getElementById('tradeForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const debtor = document.getElementById('partyA').value;
+      const creditor = document.getElementById('partyB').value;
+      const amount = parseFloat(document.getElementById('tradeAmount').value);
+      const desc = document.getElementById('itemDesc').value;
+      if (debtor === creditor) {
+        alert('Debtor and Creditor must be distinct peer nodes.');
+        return;
+      }
+      // 1. Ingestion & Canonicalization (Auto-Secure)
+      addLog('1. INGEST', `Initiating bilateral transaction: ${amount} units for "${desc}"`, 'cyan');
+      
+      const rawPayload = {
+        protocol: 'SPP/v1.2',
+        from: debtor,
+        to: creditor,
+        amount: amount,
+        reference: desc,
+        nonce: Math.floor(Math.random() * 1000000),
+        issuedAt: new Date().toISOString()
+      };
+      
+      // Canonical JSON string
+      const canonicalString = JSON.stringify(rawPayload, Object.keys(rawPayload).sort());
+      const txHash = await sha256(canonicalString);
+      addLog('2. AUTO-ENCLAVE', `Canonical hash: ${txHash.slice(0, 16)}... (RFC 8785 Ed25519 bilateral sign completed)`, 'info');
+      // 2. Komunitin Mutual Credit Clearance
+      if ((state.accounts[debtor].balance - amount) < state.accounts[debtor].creditLimit) {
+        addLog('CLEARING FAILED', `Debtor credit limit exceeded for ${debtor}. Transaction rejected.`, 'purple');
+        return;
+      }
+      state.accounts[debtor].balance -= amount;
+      state.accounts[creditor].balance += amount;
+      renderBalances();
+      addLog('3. KOMUNITIN', `Double-entry net cleared: ${debtor} (-${amount}) | ${creditor} (+${amount})`, 'cyan');
+      // 3. Hedera Consensus Anchoring (Mock HCS)
+      const hcsSequence = 100000 + state.transactions.length + 1;
+      const consensusTs = new Date().getTime() / 1000;
+      addLog('4. HEDERA HCS', `Topic 0.0.489104 - Seq #${hcsSequence} anchored - RunningHash validated`, 'success');
+      document.getElementById('lastTxHash').textContent = txHash;
+      document.getElementById('consensusTimestamp').textContent = `${consensusTs} UTC (Seq #${hcsSequence})`;
+      state.transactions.push({
+        hash: txHash,
+        sequence: hcsSequence,
+        debtor,
+        creditor,
+        amount,
+        desc,
+        timestamp: new Date().toISOString()
+      });
+      showToast(`Exchange settled & anchored under Hedera HCS #${hcsSequence}`);
+    });
+    // Clear Logs
+    document.getElementById('clearLogsBtn').addEventListener('click', () => {
+      document.getElementById('logStream').innerHTML = '';
+      state.logs = [];
+    });
+    // Generate & Download Markdown Spec and State Report
+    document.getElementById('downloadMdBtn').addEventListener('click', () => {
+      const now = new Date().toISOString();
+      let md = `# lgme.app - Sovereign Provenance & Mutual Credit Simulator Run
+**Date:** ${now}  
+**Target Index:** hederica.com  
+**Consensus Engine:** Hedera Consensus Service (HCS Topic 0.0.489104)  
+**Clearing Engine:** Komunitin Mutual Credit Protocol  
+---
+## 1. System Parameters & Architecture
+- **Auto-Secure Signing:** RFC 8785 Canonical JSON + Local Ed25519 Enclave Simulation
+- **Zero-Sum Clearing:** Komunitin double-entry accounting matrix
+- **Adoptive Interface:** Frictionless Passkey credential generation & zero pre-funding required
+---
+## 2. Mutual Credit Balances (Current Snapshot)
+
+| Node / Participant | Current Balance | Credit Limit | Status |
+| :--- | :--- | :--- | :--- |
+`;
+      for (const [id, acc] of Object.entries(state.accounts)) {
+        md += `| ${acc.name} | ${acc.balance} | ${acc.creditLimit} | Operational |\n`;
+      }
+      md += `\n**Net Balance Invariant:** Sum = ${document.getElementById('systemSum').textContent} (Proof of zero-sum closed network)\n\n`;
+      md += `---
+## 3. Anchored Transaction Log
+
+| Seq # | Canonical Hash | Debtor | Creditor | Amount | Reference |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+`;
+      if (state.transactions.length === 0) {
+        md += `*No transactions executed yet in this session.*\n`;
+      } else {
+        state.transactions.forEach(t => {
+          md += `| #${t.sequence} | \`${t.hash.slice(0, 16)}...\` | ${t.debtor} | ${t.creditor} | ${t.amount} | ${t.desc} |\n`;
+        });
+      }
+      md += `\n---
+## 4. Execution Stream Log
+\`\`\`text
+`;
+      state.logs.forEach(l => {
+        md += `[${l.timestamp}] [${l.step}] ${l.detail}\n`;
+      });
+      md += `\`\`\`
+---
+*Exported directly from lgme.app client simulator for archiving on hederica.com.*
+`;
+      const blob = new Blob([md], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `lgme_app_audit_${Date.now()}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Markdown audit downloaded successfully!');
+    });
+    // Record and Save Full Deployment for hederica.com index
+    document.getElementById('recordDeploymentBtn').addEventListener('click', () => {
+      const record = {
+        deploymentTarget: 'hederica.com',
+        subdomain: 'lgme.hederica.com',
+        appId: 'lgme-spp-clearing-engine',
+        version: '1.2.0-mock',
+        hederaTopicId: '0.0.489104',
+        clearingEngine: 'Komunitin Microservices',
+        status: 'INDEXED_READY',
+        timestamp: new Date().toISOString(),
+        snapshotBalances: state.accounts,
+        txCount: state.transactions.length
+      };
+      // Save to local storage for persistent index
+      localStorage.setItem('hederica_lgme_deployment_index', JSON.stringify(record, null, 2));
+      
+      const badge = document.getElementById('indexStatusBadge');
+      badge.textContent = 'Registered in Index';
+      badge.className = 'text-[11px] font-mono px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-800/40';
+      addLog('DEPLOY REGISTER', 'Successfully recorded deployment manifest into hederica.com registry store.', 'success');
+      showToast('Deployment indexed for hederica.com!');
+    });
+    // Initialize UI
+    renderBalances();
+    addLog('SYSTEM BOOT', 'lgme.app mock simulator initialized. Auto-secure signing pipeline active.', 'info');
+    lucide.createIcons();
+  </script>
+</body>
+</html>
