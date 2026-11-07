@@ -589,7 +589,8 @@ test('pages stay simulation-only', () => {
   const ui = readFileSync(join(root, 'js/p2p-exchange-sim-ui.mjs'), 'utf8');
   assert.equal(ui.includes("fetch('/data/dc-reference-values-v0.json')"), true);
   assert.equal(ui.includes("fetch('/data/offerup-dc-v0.json')"), true);
-  assert.equal((ui.match(/fetch\(/g) || []).length, 2);
+  assert.equal(ui.includes("fetch('/data/offerup-wanted-v0.json')"), true);
+  assert.equal((ui.match(/fetch\(/g) || []).length, 3);
   const design = readFileSync(join(root, 'docs/marketplace-design.md'), 'utf8');
   for (const word of banned) assert.equal(design.includes(word), false, `docs/marketplace-design.md contains ${word}`);
   assert.equal(design.includes('Trust Score'), false);
@@ -1190,6 +1191,51 @@ test('the standing donation is pinned in both listing kinds and never expires', 
   assert.equal(again.listing.id, ensured.listing.id);
 });
 
+test('the wanted pin stays on IwanIT and a concluded match is an IdidIt', async () => {
+  const file = JSON.parse(readFileSync(join(root, 'data/offerup-wanted-v0.json'), 'utf8'));
+  assert.deepEqual(file.items, []);
+  assert.deepEqual(sim.wantedFeed(file), []);
+  const store = await books();
+  const far = '2099-01-01T00:00:00.000Z';
+  const donation = await sim.ensureStandingDonation(store, '2026-11-07T00:00:00.000Z');
+  const wanted = await sim.ensureStandingWanted(store, '2026-11-07T00:00:00.000Z');
+  assert.equal(wanted.ok, true, wanted.error);
+  assert.equal(wanted.listing.pinned, true);
+  assert.equal(wanted.listing.kind, 'IwanIT');
+  assert.equal(wanted.listing.expiresAt, null);
+  assert.equal(wanted.listing.title, sim.STANDING_WANTED.title);
+  assert.deepEqual(wanted.listing.payments, ['Cash', 'Terms over 3 to 6 months', '$lgme services (IprovIT)']);
+  assert.equal((await sim.verifyListing(wanted.listing)).ok, true);
+  assert.equal(sim.listingVisible(wanted.listing, far), true);
+  const feed = await sim.marketFeed(store, { kind: 'IwanIT' }, far);
+  assert.equal(feed[0].title, 'Donation — soBeIT');
+  assert.equal(feed.some((card) => card.title === sim.STANDING_WANTED.title), true);
+  assert.equal((await sim.marketFeed(store, { kind: 'ihavIT' }, far)).some((card) => card.title === sim.STANDING_WANTED.title), false);
+  assert.equal(donation.listing.id !== wanted.listing.id, true);
+  const match = { title: 'Folding treadmill', price: '$50', city: 'Washington, DC', url: 'https://offerup.com/item/detail/example', kind: 'sell' };
+  const draft = sim.wantedMatchDraft(match);
+  assert.match(draft, /Nothing was sent/);
+  assert.match(draft, /Free|\$50/);
+  const invite = sim.inviteSellerText(match);
+  assert.match(invite, /Nothing was sent/);
+  assert.match(invite, /https:\/\/lgme\.app\/p2p-exchange-sim/);
+  const before = (await sim.replay(await store.get('alice'))).balance;
+  const concluded = await sim.concludeWantedMatch(store, 'alice', match, '2026-11-07T01:00:00.000Z');
+  assert.equal(concluded.ok, true, concluded.error);
+  assert.equal(concluded.unchanged, true);
+  assert.equal(concluded.penalty, false);
+  const tape = (await store.get('alice')).tape;
+  assert.equal(tape.some((entry) => entry.type === 'ididit' && entry.payload.work === match.title), true);
+  assert.equal(tape.some((entry) => entry.type === 'WANTED_CLOSED' && entry.payload.penalty === false), true);
+  assert.equal((await sim.replay(await store.get('alice'))).balance, before);
+  const ui = readFileSync(join(root, 'js/p2p-exchange-sim-ui.mjs'), 'utf8');
+  for (const phrase of ['Matches from OfferUp', 'Make an offer', 'Continue on OfferUp', 'Invite seller to lgme.app', 'Available', 'Pending reply', 'Offer made', 'Closed', 'No OfferUp matches in this file yet.', 'Reconcile as donation to the floor']) {
+    assert.equal(ui.includes(phrase), true, phrase);
+  }
+  assert.equal(ui.includes('navigator.share'), true);
+  assert.equal(ui.includes("fetch('/data/offerup-wanted-v0.json')"), true);
+});
+
 test('Install & launch hides in the app, prompts when it can, and otherwise opens the desk', () => {
   assert.equal(decideInstallAction({ standalone: true, iosSafari: false, hasPrompt: true, installed: false }), 'hide');
   assert.equal(decideInstallAction({ standalone: true, iosSafari: true, hasPrompt: false, installed: true }), 'hide');
@@ -1625,7 +1671,8 @@ test('DC reference values stay pending when a series has no number', () => {
   const ui = readFileSync(join(root, 'js/p2p-exchange-sim-ui.mjs'), 'utf8');
   assert.equal(ui.includes("fetch('/data/dc-reference-values-v0.json')"), true);
   assert.equal(ui.includes("fetch('/data/offerup-dc-v0.json')"), true);
-  assert.equal((ui.match(/fetch\(/g) || []).length, 2);
+  assert.equal(ui.includes("fetch('/data/offerup-wanted-v0.json')"), true);
+  assert.equal((ui.match(/fetch\(/g) || []).length, 3);
   assert.equal(ui.includes('REFERENCE_LABEL'), true);
   assert.equal(ui.includes("id: 'dc-reference'"), true);
   assert.equal(helper.includes("simulation reference values"), true);
@@ -1639,7 +1686,8 @@ test('DC reference values stay pending when a series has no number', () => {
   assert.equal(page.includes('id="refList"'), true);
   assert.equal(/<script(?![^>]*\bsrc=)/i.test(page), false);
   const worker = readFileSync(join(root, 'sw.js'), 'utf8');
-  assert.equal(worker.includes('lgme-v41'), true);
+  assert.equal(worker.includes('lgme-v42'), true);
+  assert.equal(worker.includes('/data/offerup-wanted-v0.json'), true);
   assert.equal(worker.includes('/js/dc-reference.mjs'), true);
   assert.equal(worker.includes('/data/dc-reference-values-v0.json'), true);
 });

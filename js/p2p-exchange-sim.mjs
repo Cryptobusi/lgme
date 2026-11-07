@@ -35,6 +35,17 @@ export const STANDING_DONATION = Object.freeze({
   kinds: Object.freeze(['ihavIT', 'IwanIT']),
   photo: '/icons/icon-512.png'
 });
+export const STANDING_WANTED = Object.freeze({
+  title: 'Wanted: working treadmill and elliptical, under $500 total budget, Washington DC area',
+  description: 'Cash, terms over 3 to 6 months, or $lgme services (IprovIT). SIMULATION. In-app $lgme stays simulated.',
+  href: '',
+  action: 'Wanted',
+  kinds: Object.freeze(['IwanIT']),
+  photo: '/icons/icon-512.png',
+  payments: Object.freeze(['Cash', 'Terms over 3 to 6 months', '$lgme services (IprovIT)'])
+});
+export const WANTED_STATUSES = Object.freeze(['Available', 'Pending reply', 'Offer made', 'Closed']);
+export const INVITE_URL = 'https://lgme.app/p2p-exchange-sim';
 export const KDF_ITERATIONS = 100000;
 
 export function layoutMode({ width, coarse = false, uaMobile = false } = {}) {
@@ -2048,7 +2059,7 @@ export function listingVisible(listing, at = nowIso()) {
 }
 
 function standingCore(listing) {
-  return {
+  const core = {
     simulated: true,
     pinned: true,
     sellerId: listing.sellerId,
@@ -2060,6 +2071,8 @@ function standingCore(listing) {
     photoHash: listing.photoHash,
     unit: '$lgme'
   };
+  if (Array.isArray(listing.payments)) core.payments = listing.payments;
+  return core;
 }
 
 export async function verifyListing(listing) {
@@ -2190,6 +2203,10 @@ export async function marketFeed(store, query = {}, at = nowIso()) {
   cards.sort((a, b) => {
     if (a.pinned && !b.pinned) return -1;
     if (!a.pinned && b.pinned) return 1;
+    if (a.pinned && b.pinned) {
+      if (a.title === STANDING_DONATION.title) return -1;
+      if (b.title === STANDING_DONATION.title) return 1;
+    }
     return String(b.createdAt).localeCompare(String(a.createdAt));
   });
   return cards;
@@ -2249,6 +2266,119 @@ export async function ensureStandingDonation(store, at = nowIso()) {
   }, at);
   await store.set(signer.id, signer);
   return { ok: true, listing };
+}
+
+async function ensurePinned(store, spec, at) {
+  const peers = await loadAll(store);
+  for (const peer of peers) {
+    const found = Object.values(peer.listings || {}).find((listing) => listing.pinned && listing.title === spec.title);
+    if (found) return { ok: true, listing: found };
+  }
+  const signer = peers.find((peer) => peer.id === 'alice' && peer.privateKeyJwk) || peers.find((peer) => peer.privateKeyJwk);
+  if (!signer) return fail('No book can hold the standing listing.');
+  const photoHash = await sha256(spec.photo);
+  const draft = {
+    sellerId: signer.id,
+    title: spec.title,
+    description: spec.description,
+    href: spec.href,
+    action: spec.action,
+    kinds: [...spec.kinds],
+    photoHash,
+    payments: spec.payments ? [...spec.payments] : undefined
+  };
+  const originHash = await sha256(canonicalJSON(standingCore(draft)));
+  const sig = await signText(signer.privateKeyJwk, originHash);
+  const listing = {
+    ...standingCore(draft),
+    id: originHash,
+    originHash,
+    sig,
+    publicKeyJwk: signer.publicKeyJwk,
+    photo: spec.photo,
+    kind: spec.kinds[0] || 'ihavIT',
+    category: 'Goods',
+    condition: 'Good',
+    pickup: 'Pickup',
+    circle: spec.kinds.includes('IwanIT') && spec.kinds.length === 1 ? 'Wanted' : 'soBeIT',
+    area: spec.kinds.length === 1 ? 'Washington DC area' : '',
+    amount: 0,
+    referenceId: null,
+    referenceAvg: null,
+    createdAt: at,
+    heartbeatAt: null,
+    expiresAt: null,
+    status: 'active'
+  };
+  signer.listings = signer.listings || {};
+  signer.listings[listing.id] = listing;
+  await appendEntry(signer, 'listing', {
+    listingId: listing.id,
+    originHash,
+    title: listing.title,
+    pinned: true,
+    href: listing.href,
+    expiresAt: null,
+    sig
+  }, at);
+  await store.set(signer.id, signer);
+  return { ok: true, listing };
+}
+
+export async function ensureStandingWanted(store, at = nowIso()) {
+  return ensurePinned(store, STANDING_WANTED, at);
+}
+
+export function normalizeWantedMatch(item) {
+  const row = normalizeOfferupItem(item);
+  const status = WANTED_STATUSES.includes(item?.status) ? item.status : 'Available';
+  return { ...row, status };
+}
+
+export function wantedFeed(catalog) {
+  const items = Array.isArray(catalog?.items) ? catalog.items : [];
+  return items.map(normalizeWantedMatch).filter((item) => item.title && item.url && item.kind);
+}
+
+export function wantedMatchDraft(match) {
+  return [
+    'SIMULATION draft. Nothing was sent.',
+    OFFERUP_CAVEAT,
+    STANDING_WANTED.title,
+    match?.title || '',
+    match?.price || '',
+    match?.city || '',
+    match?.url || '',
+    'Cash, terms over 3 to 6 months, or $lgme services (IprovIT).',
+    'In-app $lgme stays simulated.'
+  ].filter(Boolean).join('\n');
+}
+
+export function inviteSellerText(match) {
+  return [
+    'SIMULATION. Nothing was sent.',
+    `You listed ${match?.title || 'an item'} on OfferUp.`,
+    `The practice desk is here: ${INVITE_URL}`,
+    'In-app $lgme stays simulated.'
+  ].join('\n');
+}
+
+export async function concludeWantedMatch(store, peerId, match, at = nowIso()) {
+  const peer = await store.get(peerId);
+  if (!peer?.privateKeyJwk && !peer?.signingKey) return fail(peer ? 'Wallet is locked.' : 'Unknown peer.');
+  const title = String(match?.title || '').trim();
+  if (!title) return fail('Name the match.');
+  const before = replay(peer).balance;
+  const work = await recordIdidIt(store, peerId, { work: title, scope: 'OfferUp match', at });
+  if (!work.ok) return work;
+  await writeOn(store, peerId, 'WANTED_CLOSED', {
+    simulated: true,
+    title,
+    url: String(match?.url || ''),
+    receiptId: work.receiptId,
+    penalty: false
+  }, at);
+  return { ok: true, receiptId: work.receiptId, unchanged: replay(await store.get(peerId)).balance === before, penalty: false };
 }
 
 export async function circlesOf(store, at = nowIso()) {
@@ -2723,6 +2853,8 @@ export async function resetAndSeed(store) {
   if (!market.ok) return market;
   const standing = await ensureStandingDonation(store, at);
   if (!standing.ok) return standing;
+  const wanted = await ensureStandingWanted(store, at);
+  if (!wanted.ok) return wanted;
   return { ok: true, exchangeId: proposed.exchangeId, threadId: market.threadId, pendingThreadId: market.pendingThreadId };
 }
 

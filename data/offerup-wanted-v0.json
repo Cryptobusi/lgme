@@ -1,0 +1,15 @@
+{
+  "label": "Matches from OfferUp",
+  "wanted": "Wanted: working treadmill and elliptical, under $500 total budget, Washington DC area",
+  "schema": {
+    "title": "string",
+    "price": "string",
+    "city": "string",
+    "url": "string",
+    "image": "string",
+    "kind": "sell|buy|give",
+    "sourcedAt": "ISO-8601 date",
+    "status": "Available|Pending reply|Offer made|Closed"
+  },
+  "items": []
+}

@@ -70,6 +70,7 @@ let carryAddress = '';
 let activeCodeTimer = 0;
 let catalog = [];
 let offerupItems = [];
+let wantedMatches = [];
 let offerupIndex = -1;
 let openOfferFor = '';
 let catalogMeta = { date: '', notice: '', method: '' };
@@ -2032,6 +2033,92 @@ function catalogServices(list) {
   };
 }
 
+const WANTED_TRACK = 'lgme-sim:wanted-tracker';
+
+function readWantedTracker() {
+  try { return JSON.parse(localStorage.getItem(WANTED_TRACK) || '{}'); } catch { return {}; }
+}
+
+function wantedTrack(url) {
+  const row = readWantedTracker()[url];
+  return {
+    status: sim.WANTED_STATUSES.includes(row?.status) ? row.status : 'Available',
+    notes: Array.isArray(row?.notes) ? row.notes : [],
+    concluded: Boolean(row?.concluded),
+    receiptId: row?.receiptId || ''
+  };
+}
+
+function patchWanted(url, patch) {
+  const all = readWantedTracker();
+  const next = { ...wantedTrack(url), ...patch };
+  all[url] = next;
+  localStorage.setItem(WANTED_TRACK, JSON.stringify(all));
+  return next;
+}
+
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch { return false; }
+}
+
+function wantedMatchSection(seat) {
+  const cards = wantedMatches.map((item, index) => {
+    const track = wantedTrack(item.url);
+    const status = h('select', {}, sim.WANTED_STATUSES.map((name) => option(name, name, track.status === name)));
+    status.addEventListener('change', () => { patchWanted(item.url, { status: status.value }); render(); });
+    const reply = h('input', { maxlength: '240', placeholder: 'Seller reply' });
+    return h('article', { class: 'card', id: `wanted-match-${index}` }, [
+      offerupImage(item),
+      h('h3', {}, [item.title || 'Match']),
+      h('p', { class: 'price' }, [item.price || '']),
+      h('p', {}, [`${track.status} · ${item.city || 'DC area'}`]),
+      h('p', { class: 'legend' }, [sim.OFFERUP_CAVEAT]),
+      field('Availability', status),
+      track.notes.length ? h('ul', {}, track.notes.map((note) => h('li', {}, [`${note.at.slice(0, 16)} ${note.text}`]))) : null,
+      field('Log a reply', reply),
+      h('div', { class: 'actions' }, [
+        h('button', { type: 'button', onClick: () => {
+          const text = reply.value.trim();
+          if (!text) return;
+          const notes = wantedTrack(item.url).notes.concat([{ at: new Date().toISOString(), text }]);
+          patchWanted(item.url, { notes, status: wantedTrack(item.url).status === 'Available' ? 'Pending reply' : wantedTrack(item.url).status });
+          render();
+        } }, ['Log reply']),
+        h('button', { type: 'button', onClick: async () => {
+          const draft = sim.wantedMatchDraft(item);
+          await copyText(draft);
+          patchWanted(item.url, { status: 'Offer made' });
+          setStatus('Draft offer copied. Nothing was sent. Paste it on OfferUp yourself. SIMULATION.', 'ok');
+          render();
+        } }, ['Make an offer']),
+        h('a', { class: 'btn', href: item.url, target: '_blank', rel: 'noopener noreferrer' }, ['Continue on OfferUp']),
+        h('button', { type: 'button', onClick: async () => {
+          const text = sim.inviteSellerText(item);
+          await copyText(text);
+          if (navigator.share) {
+            try { await navigator.share({ title: 'lgme.app', text, url: sim.INVITE_URL }); } catch (error) { if (error && error.name === 'AbortError') return; }
+          }
+          patchWanted(item.url, { status: 'Pending reply' });
+          setStatus('Invite copied. Nothing was sent. SIMULATION.', 'ok');
+          render();
+        } }, ['Invite seller to lgme.app']),
+        h('button', { type: 'button', onClick: async () => {
+          const result = await sim.concludeWantedMatch(store, seat, item);
+          if (!result.ok) { setStatus(result.error, 'bad'); return; }
+          patchWanted(item.url, { status: 'Closed', concluded: true, receiptId: result.receiptId });
+          setStatus('Concluded. IdidIt is on this book. Invoice from the book, or reconcile as donation to the floor. SIMULATION. Nothing was sent.', 'ok');
+          location.hash = 'books';
+        } }, ['Mark concluded'])
+      ])
+    ]);
+  });
+  return h('section', { id: 'wanted-matches' }, [
+    h('h3', {}, ['Matches from OfferUp']),
+    h('p', { class: 'legend' }, [`For “${sim.STANDING_WANTED.title}”. SIMULATION. Nothing is sent.`]),
+    cards.length ? h('div', { class: 'grid' }, cards) : h('p', { class: 'empty', id: 'wanted-matches-empty' }, ['No OfferUp matches in this file yet.'])
+  ]);
+}
+
 function offerupImage(item) {
   const img = h('img', { alt: '', src: item.image || '/icons/icon-192.png' });
   img.addEventListener('error', () => {
@@ -2082,15 +2169,16 @@ async function renderMarket(peers, seat) {
         card.photo ? h('div', { class: 'slide' }, [h('img', { class: 'shot', alt: '', src: card.photo })]) : null
       ].filter(Boolean));
       const actions = [];
-      if (card.pinned) {
+      const wantedPin = card.title === sim.STANDING_WANTED.title;
+      if (card.pinned && !wantedPin) {
         actions.push(h('a', { class: 'btn primary', id: 'donation-link', href: card.href || '/lgme-coin' }, [card.action || 'Receive / send $lgme']));
-      } else if (card.sellerId === seat) {
+      } else if (card.sellerId === seat && !wantedPin) {
         actions.push(h('button', { type: 'button', class: 'primary', onClick: async () => {
           const refreshed = await sim.refreshListing(store, seat, card.id);
           setStatus(refreshed.ok ? 'Listing refreshed with a signed heartbeat. SIMULATION.' : refreshed.error, refreshed.ok ? 'ok' : 'bad');
           if (refreshed.ok) await render();
         } }, ['Refresh']));
-      } else {
+      } else if (!wantedPin) {
         actions.push(h('button', { type: 'button', class: 'primary', onClick: async () => {
           const chat = await sim.openChat(store, seat, card.id);
           if (!chat.ok) { setStatus(chat.error, 'bad'); return; }
@@ -2104,9 +2192,14 @@ async function renderMarket(peers, seat) {
         h('h2', {}, [card.title]),
         gallery,
         card.sellerId === seat ? h('div', { class: 'actions' }, [h('button', { type: 'button', id: 'listing-camera', onClick: () => showCapture(seat, { listingId: card.id, onSaved: () => render() }) }, ['Camera'])]) : null,
-        card.pinned ? h('p', { id: 'donation-copy' }, [card.description]) : h('p', { class: 'price' }, [`${card.amount} $lgme`]),
-        card.pinned ? h('p', { class: 'legend' }, ['SIMULATION. A soBeIT grant below stays on this tape. The link above is the real token page.']) : null,
-        card.pinned ? soBeItCard(peers, seat) : null,
+        card.pinned && !wantedPin ? h('p', { id: 'donation-copy' }, [card.description]) : null,
+        wantedPin ? h('p', { id: 'wanted-copy' }, [card.description]) : null,
+        wantedPin ? h('ul', { id: 'wanted-payments' }, sim.STANDING_WANTED.payments.map((item) => h('li', {}, [item]))) : null,
+        !card.pinned ? h('p', { class: 'price' }, [`${card.amount} $lgme`]) : null,
+        card.pinned && !wantedPin ? h('p', { class: 'legend' }, ['SIMULATION. A soBeIT grant below stays on this tape. The link above is the real token page.']) : null,
+        wantedPin ? h('p', { class: 'legend' }, ['SIMULATION. In-app $lgme stays simulated. A concluded match is an IdidIt on this book. Reconcile as donation to the floor needs both consents.']) : null,
+        card.pinned && !wantedPin ? soBeItCard(peers, seat) : null,
+        wantedPin ? wantedMatchSection(seat) : null,
         h('p', {}, [
           h('span', { class: card.verified ? 'badge badge-verified' : 'badge badge-unverified' }, [card.verified ? 'Verified' : 'Unverified']),
           ` ${card.sellerName} · ${card.circle} · Peer standing ${card.standing}`
@@ -2122,6 +2215,7 @@ async function renderMarket(peers, seat) {
     }
   }
   await sim.ensureStandingDonation(store);
+  await sim.ensureStandingWanted(store);
   const feed = await sim.marketFeed(store, marketQuery);
   const serviceList = await sim.marketFeed(store, { kind: 'IprovIT' });
   const search = h('input', { type: 'search', placeholder: 'Search', value: marketQuery.q, autocomplete: 'off' });
@@ -2160,12 +2254,13 @@ async function renderMarket(peers, seat) {
   const grid = h('div', { class: 'market-grid', id: 'market-grid' }, feed.map((card) => h('button', {
     type: 'button',
     class: 'card market-card',
-    id: card.pinned ? 'donation-card' : undefined,
+    id: card.title === sim.STANDING_DONATION.title ? 'donation-card' : card.title === sim.STANDING_WANTED.title ? 'wanted-card' : undefined,
     onClick: () => { openListingId = card.id; render(); }
   }, [
     h('img', { alt: '', src: card.photo || '' }),
     h('h3', {}, [card.title]),
     card.pinned ? h('p', { class: 'muted' }, [card.description]) : h('div', { class: 'price' }, [`${card.amount} $lgme`]),
+    card.title === sim.STANDING_WANTED.title ? h('p', { class: 'legend' }, [sim.STANDING_WANTED.payments.join(' · ')]) : null,
     card.pinned ? h('span', { class: 'badge badge-verified' }, [card.action || 'Receive / send $lgme']) : null,
     h('div', {}, [h('span', { class: card.verified ? 'badge badge-verified' : 'badge badge-unverified' }, [card.verified ? 'Verified' : 'Unverified'])]),
     h('small', { class: 'meta' }, [`${card.circle} · Peer standing ${card.standing}`])
@@ -2180,6 +2275,7 @@ async function renderMarket(peers, seat) {
     pills,
     filters,
     feed.length ? grid : h('p', { class: 'empty' }, ['No listings match. List one, or clear the filters.']),
+    !marketQuery.kind || marketQuery.kind === 'IwanIT' ? wantedMatchSection(seat) : null,
     offerupSection(seat, serviceList),
     referenceCatalogCard(),
     standing ? profileCard(standing) : null
@@ -2813,6 +2909,14 @@ async function loadReferences() {
     offerupItems = sim.offerupFeed(body);
   } catch {
     offerupItems = [];
+  }
+  try {
+    const response = await fetch('/data/offerup-wanted-v0.json');
+    if (!response.ok) throw new Error(String(response.status));
+    const body = await response.json();
+    wantedMatches = sim.wantedFeed(body);
+  } catch {
+    wantedMatches = [];
   }
 }
 
