@@ -747,3 +747,127 @@ test('an unverified member cannot hold more than 20 $lgme', async () => {
   assert.match(second.error, /20 \$lgme/);
   assert.equal(sim.heldBy(await store.get('dana')), 15);
 });
+
+async function phoneBooks() {
+  const store = await books();
+  const alice = await sim.bindMemberKyc(store, 'alice', { displayName: 'Alice (Providore)', phone: '+12025550101', salt: 'salt-alice' });
+  const bob = await sim.bindMemberKyc(store, 'bob', { displayName: 'Bob (Agronomist)', phone: '+12025550102', salt: 'salt-bob' });
+  assert.equal(alice.ok, true, alice.error);
+  assert.equal(bob.ok, true, bob.error);
+  assert.equal(alice.onTape, false);
+  return { store, alicePhone: '+12025550101', bobPhone: '+12025550102', aliceHash: alice.hash, bobHash: bob.hash };
+}
+
+test('a signed SMS token verifies and both tapes record the same chat hash', async () => {
+  const { store, bobPhone, aliceHash } = await phoneBooks();
+  const threadId = 'desk-chat';
+  const sent = await sim.composeChat(store, 'alice', { toId: 'bob', toPhone: bobPhone, threadId, text: 'Is the bike still there?', at: '2026-11-07T00:00:00.000Z' });
+  assert.equal(sent.ok, true, sent.error);
+  assert.match(sent.sms, /^sms:/);
+  assert.match(sent.sms, /lgme1\./);
+  assert.match(sent.tel, /^tel:\+12025550102$/);
+  const opened = await sim.openMessage(sent.encoded);
+  assert.equal(opened.ok, true, opened.error);
+  assert.equal(opened.message.body.text, 'Is the bike still there?');
+  assert.equal(opened.message.body.kycHash, aliceHash);
+  const got = await sim.acceptChatToken(store, 'bob', sent.encoded);
+  assert.equal(got.ok, true, got.error);
+  const aliceLine = (await store.get('alice')).tape.find((entry) => entry.type === 'CHAT');
+  const bobLine = (await store.get('bob')).tape.find((entry) => entry.type === 'CHAT');
+  assert.equal(aliceLine.payload.messageHash, bobLine.payload.messageHash);
+  assert.equal(aliceLine.payload.prev, sim.GENESIS);
+  assert.equal(bobLine.payload.senderKycHash, aliceHash);
+  assert.equal(bobLine.payload.seq, 1);
+  assert.equal(JSON.stringify(bobLine).includes('+12025550101'), false);
+  assert.equal(JSON.stringify(bobLine).includes('Alice (Providore)'), false);
+  assert.equal(JSON.stringify(bobLine).includes('Is the bike still there?'), false);
+  const contact = (await store.get('bob')).contacts['+12025550101'];
+  assert.equal(contact.kycHash, aliceHash);
+  assert.equal(contact.displayName, undefined);
+  assert.equal(JSON.stringify(contact).includes('salt-alice'), false);
+  const call = await sim.recordCall(store, 'bob', { phone: '+12025550101', peerKycHash: aliceHash, start: '2026-11-07T00:01:00.000Z', end: '2026-11-07T00:04:00.000Z', note: 'Asked about the bike.' });
+  assert.equal(call.ok, true, call.error);
+  assert.equal(call.audio, false);
+  assert.equal(call.leaked, false);
+  assert.match(call.tel, /^tel:/);
+  const callLine = (await store.get('bob')).tape.find((entry) => entry.type === 'CALL');
+  assert.equal(callLine.payload.peerKycHash, aliceHash);
+  assert.equal(callLine.payload.note, 'Asked about the bike.');
+  assert.equal(JSON.stringify(callLine).includes('+12025550101'), false);
+});
+
+test('a token with the wrong KYC hash is rejected', async () => {
+  const { store, bobPhone } = await phoneBooks();
+  const threadId = 'desk-chat';
+  const first = await sim.composeChat(store, 'alice', { toId: 'bob', toPhone: bobPhone, threadId, text: 'Hello', at: '2026-11-07T00:00:00.000Z' });
+  assert.equal((await sim.acceptChatToken(store, 'bob', first.encoded)).ok, true);
+  const second = await sim.composeChat(store, 'alice', { toId: 'bob', toPhone: bobPhone, threadId, text: 'Again', at: '2026-11-07T00:02:00.000Z' });
+  const opened = await sim.openMessage(second.encoded);
+  const alice = await store.get('alice');
+  const body = { ...opened.message.body, kycHash: 'ab'.repeat(32) };
+  const bind = { simulated: true, kind: 'kyc-bind', senderId: body.senderId, kycHash: body.kycHash, keyThumb: body.keyThumb };
+  body.bindSig = await sim.signText(alice.privateKeyJwk, await sim.sha256(sim.canonicalJSON(bind)));
+  const sealed = await sim.sealMessage(alice, 'chat', body);
+  const rejected = await sim.acceptChatToken(store, 'bob', sealed.message);
+  assert.equal(rejected.ok, false);
+  assert.match(rejected.error, /KYC hash/);
+  assert.equal((await store.get('bob')).tape.filter((entry) => entry.type === 'CHAT').length, 1);
+});
+
+test('a tampered local message and a sequence gap are found', async () => {
+  const { store, bobPhone, aliceHash } = await phoneBooks();
+  const threadId = 'desk-chat';
+  const sent = await sim.composeChat(store, 'alice', { toId: 'bob', toPhone: bobPhone, threadId, text: 'Original', at: '2026-11-07T00:00:00.000Z' });
+  await sim.acceptChatToken(store, 'bob', sent.encoded);
+  const local = await sim.readChat(store, 'alice', threadId);
+  local[0].text = 'Changed';
+  const remote = await sim.chatRoot(await sim.readChat(store, 'bob', threadId));
+  const report = await sim.matchChat(local, remote.hashes, remote.root);
+  assert.equal(report.matched, false);
+  assert.equal(report.index, 0);
+  assert.equal(report.divergent[0].text, 'Changed');
+  const alice = await store.get('alice');
+  const identity = await sim.memberKycHash(alice);
+  const core = {
+    simulated: true,
+    kind: 'chat',
+    threadId,
+    seq: 3,
+    prev: local[0].hash,
+    senderId: 'alice',
+    kycHash: aliceHash,
+    keyThumb: identity.keyThumb,
+    at: '2026-11-07T00:05:00.000Z',
+    text: 'Skipped one',
+    negotiation: null
+  };
+  const bindSig = await sim.signText(alice.privateKeyJwk, await sim.sha256(sim.canonicalJSON({ simulated: true, kind: 'kyc-bind', senderId: 'alice', kycHash: aliceHash, keyThumb: identity.keyThumb })));
+  const sealed = await sim.sealMessage(alice, 'chat', { ...core, bindSig, senderPhone: '+12025550101', toId: 'bob', toPhone: bobPhone });
+  const gap = await sim.acceptChatToken(store, 'bob', sealed.message);
+  assert.equal(gap.ok, false);
+  assert.match(gap.error, /Sequence gap at 3/);
+  assert.match(gap.error, /Expected 2/);
+});
+
+test('the SMS root hash matches, and a divergent text names the first message', async () => {
+  const { store, bobPhone } = await phoneBooks();
+  const threadId = 'desk-chat';
+  const sent = await sim.composeChat(store, 'alice', { toId: 'bob', toPhone: bobPhone, threadId, text: 'Same line', at: '2026-11-07T00:00:00.000Z' });
+  await sim.acceptChatToken(store, 'bob', sent.encoded);
+  const aliceRoot = await sim.chatRoot(await sim.readChat(store, 'alice', threadId));
+  const bobRoot = await sim.chatRoot(await sim.readChat(store, 'bob', threadId));
+  assert.equal(aliceRoot.root, bobRoot.root);
+  const token = await sim.composeMatch(store, 'alice', threadId, bobPhone);
+  assert.equal(token.ok, true, token.error);
+  assert.match(token.sms, /^sms:/);
+  assert.equal(token.sms.includes('lgme1.'), true);
+  const matched = await sim.acceptMatch(store, 'bob', token.encoded);
+  assert.equal(matched.matched, true);
+  assert.equal(matched.root, aliceRoot.root);
+  const broken = await sim.readChat(store, 'alice', threadId);
+  broken[0].text = 'Not the same line';
+  const again = await sim.matchChat(broken, bobRoot.hashes, bobRoot.root);
+  assert.equal(again.matched, false);
+  assert.equal(again.index, 0);
+  assert.equal(again.divergent[0].text, 'Not the same line');
+});

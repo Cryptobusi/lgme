@@ -45,6 +45,10 @@ let nameById = {};
 let marketQuery = { q: '', category: '', condition: '', pickup: '', circle: '', min: '', max: '' };
 let openListingId = '';
 let openThreadId = '';
+let pendingChat = '';
+let signedSms = null;
+let matchNote = '';
+let openCall = null;
 let listStep = 1;
 let listDraft = { photo: '', photoHash: '', title: '', category: 'Goods', condition: 'Good', pickup: 'Pickup', circle: '', area: '', amount: '', referenceId: '' };
 
@@ -1613,22 +1617,150 @@ async function renderList(seat) {
   panel.replaceChildren(h('h2', {}, ['List']), steps, h('p', { class: 'muted' }, ['The value is in $lgme. A dollar figure is only a suggestion from the reference list.']), form);
 }
 
+async function takeChatToken(seat, raw) {
+  const opened = await sim.openMessage(String(raw || '').trim());
+  if (!opened.ok) return opened;
+  if (opened.message.kind === 'chat-match') {
+    const result = await sim.acceptMatch(store, seat, opened.message);
+    if (!result.ok) return result;
+    matchNote = result.matched ? 'Matched' : `Diverges at message ${result.index + 1}${result.divergent?.[0]?.text ? ': ' + result.divergent[0].text : ''}`;
+    if (opened.message.body?.threadId) openThreadId = opened.message.body.threadId;
+    return { ok: true, matched: result.matched };
+  }
+  if (opened.message.kind !== 'chat') return { ok: false, error: 'This is not a signed text.' };
+  const result = await sim.acceptChatToken(store, seat, opened.message);
+  if (result.ok && result.threadId) openThreadId = result.threadId;
+  return result;
+}
+
+async function phoneCard(seat, otherId, threadId) {
+  const other = otherId ? await store.get(otherId) : null;
+  const phone = sim.normalizePhone(other?.kyc?.phone || '');
+  const identity = other?.kyc?.salt ? await sim.memberKycHash(other) : null;
+  const mine = await sim.memberKycHash(await store.get(seat));
+  const messages = await sim.readChat(store, seat, threadId);
+  const text = h('textarea', { maxlength: '400', placeholder: 'Write a text' });
+  const paste = h('textarea', { class: 'codebox', placeholder: 'Paste a signed text or a root' });
+  const note = h('input', { maxlength: '160', placeholder: 'Note about the call' });
+  const sms = signedSms && signedSms.threadId === threadId ? signedSms : null;
+  const form = h('form', {}, [
+    field('Text', text),
+    h('div', { class: 'actions' }, [
+      h('button', { class: 'primary', type: 'submit' }, ['Sign']),
+      phone ? h('a', { class: 'btn', href: sim.telHref(phone), onClick: () => { openCall = { phone, hash: identity?.hash || '', start: new Date().toISOString(), threadId }; } }, ['Call']) : null
+    ])
+  ]);
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const sent = await sim.composeChat(store, seat, { toId: otherId, toPhone: phone, threadId, text: text.value, negotiation: null });
+    if (!sent.ok) { setStatus(sent.error, 'bad'); return; }
+    signedSms = { threadId, sms: sent.sms, encoded: sent.encoded };
+    matchNote = '';
+    setStatus('Signed. Open SMS to hand it to your phone. This page did not send it. SIMULATION.', 'ok');
+    await render();
+  });
+  const kids = [
+    h('h3', {}, ['Text and call']),
+    h('p', { class: 'legend' }, [
+      phone && identity?.ok
+        ? `Phone ${phone}. Member hash ${identity.hash.slice(0, 12)}. The signup details stay on their phone.`
+        : 'Add a phone on the member check before texting.'
+    ]),
+    mine.ok ? h('p', { class: 'legend' }, [`Your member hash ${mine.hash.slice(0, 12)}. It is bound to your signing key.`]) : null,
+    form
+  ];
+  if (sms) {
+    kids.push(h('div', { class: 'actions' }, [
+      h('a', { class: 'btn primary', href: sms.sms }, ['Open SMS']),
+      otherId ? h('button', { type: 'button', onClick: async () => {
+        const saved = await sim.acceptChatToken(store, otherId, sms.encoded);
+        setStatus(saved.ok ? 'Recorded on the other book on this device. No SMS was sent. SIMULATION.' : saved.error, saved.ok ? 'ok' : 'bad');
+        if (saved.ok) await render();
+      } }, ['Record on the other book']) : null,
+      h('button', { type: 'button', onClick: async () => {
+        const token = await sim.composeMatch(store, seat, threadId, phone);
+        if (!token.ok) { setStatus(token.error, 'bad'); return; }
+        signedSms = { threadId, sms: token.sms, encoded: token.encoded, match: true };
+        if (otherId) {
+          const result = await sim.acceptMatch(store, otherId, token.encoded);
+          matchNote = result.ok && result.matched ? 'Matched' : result.ok ? `Diverges at message ${result.index + 1}${result.divergent?.[0]?.text ? ': ' + result.divergent[0].text : ''}` : result.error;
+        } else matchNote = 'The root is ready in Open SMS.';
+        await render();
+      } }, ['Match'])
+    ]));
+  }
+  if (matchNote) kids.push(h('p', { id: 'chat-match', class: matchNote === 'Matched' ? 'ok' : 'bad' }, [matchNote]));
+  if (openCall && openCall.threadId === threadId) {
+    const endForm = h('form', {}, [
+      field('Call note', note),
+      h('div', { class: 'actions' }, [h('button', { class: 'primary', type: 'submit' }, ['Record the call'])])
+    ]);
+    endForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const saved = await sim.recordCall(store, seat, { phone: openCall.phone, peerKycHash: openCall.hash, start: openCall.start, end: new Date().toISOString(), note: note.value });
+      setStatus(saved.ok ? 'Call noted. No audio was stored. This page did not place the call. SIMULATION.' : saved.error, saved.ok ? 'ok' : 'bad');
+      if (saved.ok) openCall = null;
+      await render();
+    });
+    kids.push(h('p', { class: 'legend' }, ['The dialer opened if your phone allowed it. Record the start and end here. No audio is kept.']), endForm);
+  }
+  kids.push(...messages.map((line) => h('div', { class: 'bubble' }, [`${line.senderId === seat ? 'You' : (nameById[line.senderId] || 'Member')}: ${line.text}`])));
+  const pasteForm = h('form', {}, [
+    field('Paste a token', paste),
+    h('div', { class: 'actions' }, [h('button', { type: 'submit' }, ['Record token'])])
+  ]);
+  pasteForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const saved = await takeChatToken(seat, paste.value);
+    setStatus(saved.ok ? (saved.matched ? 'Matched' : 'Token recorded. SIMULATION.') : saved.error, saved.ok ? 'ok' : 'bad');
+    if (saved.ok) await render();
+  });
+  kids.push(pasteForm);
+  return h('article', { class: 'card', id: 'chat-phone' }, kids);
+}
+
 async function renderChats(seat) {
   stopAnyCamera();
   const panel = document.getElementById('panel');
+  if (pendingChat) {
+    const token = pendingChat;
+    pendingChat = '';
+    const saved = await takeChatToken(seat, token);
+    setStatus(saved.ok ? 'Opened the signed token. SIMULATION.' : saved.error, saved.ok ? 'ok' : 'bad');
+  }
   const threads = await sim.listThreads(store, seat);
-  if (!openThreadId || !threads.some((thread) => thread.id === openThreadId)) {
-    panel.replaceChildren(
+  const extras = await sim.listChatThreads(store, seat);
+  const known = new Set(threads.map((thread) => thread.id));
+  if (!openThreadId || (!known.has(openThreadId) && !extras.some((item) => item.id === openThreadId))) {
+    panel.replaceChildren(...[
       h('h2', {}, ['Chats']),
-      h('p', { class: 'muted' }, ['Offers stay in the chat until both people sign. A pending hold is not a final balance.']),
+      h('p', { class: 'muted' }, ['Texts open in your own SMS app. Calls open in your phone. This page does not send them. A QR is only for an in-person handoff.']),
       threads.length ? h('div', { class: 'grid' }, threads.map((thread) => h('button', {
         type: 'button',
         class: 'card',
-        onClick: () => { openThreadId = thread.id; render(); }
+        onClick: () => { openThreadId = thread.id; matchNote = ''; render(); }
       }, [
         h('h3', {}, [thread.title || 'Listing']),
         h('p', { class: 'muted' }, [`${thread.amount} $lgme · ${thread.status}`])
-      ]))) : h('p', { class: 'empty' }, ['No chats yet. Open a listing and start one.'])
+      ]))) : null,
+      ...extras.filter((item) => !known.has(item.id)).map((item) => h('button', {
+        type: 'button',
+        class: 'card',
+        onClick: () => { openThreadId = item.id; matchNote = ''; render(); }
+      }, [
+        h('h3', {}, [item.preview || 'Text']),
+        h('p', { class: 'muted' }, [`${item.length} signed`])
+      ])),
+      !threads.length && !extras.length ? h('p', { class: 'empty' }, ['No chats yet. Open a listing and start one.']) : null
+    ].filter(Boolean));
+    return;
+  }
+  if (!known.has(openThreadId)) {
+    const card = await phoneCard(seat, '', openThreadId);
+    panel.replaceChildren(
+      h('button', { type: 'button', class: 'quiet', onClick: () => { openThreadId = ''; render(); } }, ['All chats']),
+      h('h2', {}, ['Text']),
+      card
     );
     return;
   }
@@ -1644,6 +1776,7 @@ async function renderChats(seat) {
     h('button', { type: 'button', class: 'quiet', onClick: () => { openThreadId = ''; render(); } }, ['All chats']),
     h('h2', {}, [thread.title || 'Chat']),
     h('p', { class: 'muted' }, [`${thread.amount} $lgme · ${thread.status}. SIMULATION.`]),
+    await phoneCard(seat, mine ? thread.sellerId : thread.buyerId, thread.id),
     ...thread.messages.map((line) => h('div', { class: 'bubble' }, [`${nameById[line.fromId] || line.fromId}: ${line.text}`]))
   ];
   if (!['settled', 'refused', 'cancelled', 'pending'].includes(thread.status)) {
@@ -1742,7 +1875,8 @@ function renderHelp() {
     ['IOU and attestation', 'A dollar IOU is recorded as pending. Pending lines do not change the balance. The balance moves only when the named counterparty signs an ATTESTED entry. If they refuse, the tape records REFUSAL and the balance stays put.'],
     ['Mock $lgme', 'Registration writes a GENESIS entry for a simulated grant of 100 $lgme, labeled mock. It is not money. The wallet holds that balance and the signing key.'],
     ['Simulated 2FA', 'A passphrase encrypts the key at rest with AES-GCM and PBKDF2. A 6-digit TOTP, RFC 6238, is checked with WebCrypto HMAC. The setup QR can be scanned by an authenticator app. This page generates the same code while the secret is still on screen. It never sends the code. A wrong code leaves the wallet locked.'],
-    ['Another device', 'There is no server. Sign a proposal, countersign, refusal, transfer, attestation, or handoff, then carry the lgme1. code by copy, by a link whose data sits in the URL fragment, by a QR, or by a .json file. On the other device, verification runs before anything is appended. To text or email it, the page opens sms: or mailto: so you send it from your own app. The outbox and inbox are a local log of that.'],
+    ['Another device', 'There is no server. Sign a proposal, countersign, refusal, transfer, attestation, or handoff, then carry the lgme1. code by copy, by a link whose data sits in the URL fragment, by a QR, or by a .json file. On the other device, verification runs before anything is appended. A QR is for an in-person handoff. To text or email a draft, the page opens sms: or mailto: so you send it from your own app. The outbox and inbox are a local log of that.'],
+    ['Phone chat', 'A text is signed here, then Open SMS hands it to your phone’s own messages app. The link or the pasted token is checked for the sender’s signature and the member hash. A call button opens tel: on your phone. The tape records the start, the end, the other member’s hash, and a note you type. No audio is stored. Match sends the chat root by SMS and says Matched, or names the first message that differs. This page does not send the text and does not place the call. The other person’s signup details stay on their phone. You keep the phone number and the hash.'],
     ['Market', 'Listings are signed with the peer key. The origin hash names the listing. A photo stays on this device. Offer, counter, and Accept & Sign create a pending hold. Final balances move only when the seller countersigns the buyer’s single-use handoff. A refusal is recorded and carries no penalty. Peer standing is read from the local book.']
   ];
   const install = h('div', { class: 'card' }, [
@@ -1921,7 +2055,15 @@ function captureFragment() {
   const raw = location.hash;
   const at = raw.indexOf('lgme1.');
   if (at < 0) return;
-  pendingImport = decodeURIComponent(raw.slice(at));
+  const encoded = decodeURIComponent(raw.slice(at));
+  let kind = '';
+  try { kind = sim.decodeMessage(encoded).kind; } catch { kind = ''; }
+  if (kind === 'chat' || kind === 'chat-match') {
+    pendingChat = encoded;
+    history.replaceState(null, '', `${location.pathname}${location.search}#chats`);
+    return;
+  }
+  pendingImport = encoded;
   history.replaceState(null, '', `${location.pathname}${location.search}#devices`);
 }
 

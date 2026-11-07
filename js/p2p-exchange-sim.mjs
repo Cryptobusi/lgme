@@ -26,7 +26,7 @@ export function layoutMode({ width, coarse = false, uaMobile = false } = {}) {
   if (uaMobile && coarse && w <= 1023) return 'phone';
   return 'desk';
 }
-const MESSAGE_KINDS = new Set(['proposal', 'countersign', 'refusal', 'transfer', 'attestation', 'iou', 'tape', 'handoff']);
+const MESSAGE_KINDS = new Set(['proposal', 'countersign', 'refusal', 'transfer', 'attestation', 'iou', 'tape', 'handoff', 'chat', 'chat-match']);
 
 export function canonicalJSON(value) {
   if (value === null || typeof value !== 'object') return JSON.stringify(value);
@@ -337,6 +337,9 @@ export function entryDetail(entry, names = {}) {
   if (entry.type === 'HOLD') return `Hold pending ${payload.amount} $lgme ${name(payload.buyerId)} → ${name(payload.sellerId)}`.trim();
   if (entry.type === 'HOLD_RELEASE') return 'Hold released. Nothing settled.';
   if (entry.type === 'HANDOFF') return `Handoff settled ${payload.amount} $lgme`.trim();
+  if (entry.type === 'CHAT') return `Chat ${payload.seq} ${payload.senderKycHash ? String(payload.senderKycHash).slice(0, 12) : ''}`.trim();
+  if (entry.type === 'CHAT_MATCHED') return `Chat matched ${payload.root ? String(payload.root).slice(0, 12) : ''}`.trim();
+  if (entry.type === 'CALL') return `Call ${payload.start || ''} → ${payload.end || ''}`.trim();
   if (entry.type === 'countersign') {
     return `${name(payload.by)} countersigned ${payload.exchangeId ? payload.exchangeId.slice(0, 12) : ''}`.trim();
   }
@@ -1273,6 +1276,7 @@ export async function importMessage(store, peerId, input, at = nowIso()) {
   if (message.kind === 'refusal') return applyImportedRefusal(store, peer, message, at);
   if (message.kind === 'iou') return applyImportedIou(store, peer, message, at);
   if (message.kind === 'proposal' || message.kind === 'countersign') return applyImportedExchange(store, peer, message, at);
+  if (message.kind === 'chat' || message.kind === 'chat-match') return fail('Open this token in Chats. Nothing was appended.');
   return fail('This message has no place on this book.');
 }
 
@@ -1583,6 +1587,7 @@ export async function startKyc(store, peerId, spec = {}) {
     displayName,
     phone,
     email,
+    salt: peer.kyc?.salt || bytesToHex(crypto.getRandomValues(new Uint8Array(16))),
     simulated: true
   };
   if (displayName !== peer.name) peer.name = displayName;
@@ -1689,10 +1694,19 @@ export async function refuseVouch(store, actorId, memberId, statement, at = nowI
   };
 }
 
+const DEMO_PHONE = { alice: '+12025550101', bob: '+12025550102', charlie: '+12025550103' };
+
 async function markDemoVerified(store, peerId, at) {
   const peer = await store.get(peerId);
   if (!peer) return fail('Unknown peer.');
-  peer.kyc = { status: 'VERIFIED', displayName: peer.name, simulated: true, seeded: true };
+  peer.kyc = {
+    status: 'VERIFIED',
+    displayName: peer.name,
+    phone: DEMO_PHONE[peerId] || '',
+    salt: `sim-salt-${peerId}`,
+    simulated: true,
+    seeded: true
+  };
   await appendEntry(peer, 'VERIFIED', { simulated: true, mock: true, status: 'VERIFIED', seeded: true }, at);
   await store.set(peerId, peer);
   return { ok: true, status: 'VERIFIED' };
@@ -2052,9 +2066,11 @@ export async function counterOffer(store, sellerId, threadId, amount, at = nowIs
 async function writeHold(store, thread, at) {
   const buyer = await store.get(thread.buyerId);
   const seller = await store.get(thread.sellerId);
-  if (!buyer?.privateKeyJwk || !seller?.privateKeyJwk) return fail('Both books need to be unlocked to hold the line.');
-  const blocked = spendBlock(buyer, thread.amount);
-  if (blocked) return fail(blocked);
+  if (!buyer?.privateKeyJwk && !seller?.privateKeyJwk) return fail('Wallet is locked.');
+  if (buyer?.privateKeyJwk) {
+    const blocked = spendBlock(buyer, thread.amount);
+    if (blocked) return fail(blocked);
+  }
   const holdId = await sha256(canonicalJSON({ threadId: thread.id, termsHash: thread.termsHash, amount: thread.amount }));
   const payload = {
     simulated: true,
@@ -2068,11 +2084,15 @@ async function writeHold(store, thread, at) {
     buyerSig: thread.buyerSig,
     sellerSig: thread.sellerSig
   };
-  await appendEntry(buyer, 'HOLD', { ...payload, role: 'buyer' }, at);
-  await store.set(thread.buyerId, buyer);
-  const freshSeller = await store.get(thread.sellerId);
-  await appendEntry(freshSeller, 'HOLD', { ...payload, role: 'seller' }, at);
-  await store.set(thread.sellerId, freshSeller);
+  if (buyer?.privateKeyJwk) {
+    await appendEntry(buyer, 'HOLD', { ...payload, role: 'buyer' }, at);
+    await store.set(thread.buyerId, buyer);
+  }
+  if (seller?.privateKeyJwk) {
+    const freshSeller = await store.get(thread.sellerId);
+    await appendEntry(freshSeller, 'HOLD', { ...payload, role: 'seller' }, at);
+    await store.set(thread.sellerId, freshSeller);
+  }
   thread.holdId = holdId;
   thread.status = 'pending';
   thread.expiresAt = addDays(at, LISTING_DAYS);
@@ -2352,4 +2372,406 @@ export async function resetAndSeed(store) {
   const market = await seedMarket(store, at);
   if (!market.ok) return market;
   return { ok: true, exchangeId: proposed.exchangeId, threadId: market.threadId, pendingThreadId: market.pendingThreadId };
+}
+
+export function normalizePhone(value) {
+  const raw = String(value || '').trim();
+  const keep = raw.startsWith('+') ? '+' : '';
+  const digits = raw.replace(/\D/g, '');
+  return digits ? keep + digits : '';
+}
+
+export function telHref(phone) {
+  const number = normalizePhone(phone);
+  return number ? `tel:${number}` : '';
+}
+
+function vouchIds(peer) {
+  return (peer?.tape || []).filter((entry) => entry.type === 'KYC_VOUCHED' || entry.type === 'VERIFIED').map((entry) => entry.hash);
+}
+
+export async function memberKycHash(peer) {
+  if (!peer) return fail('Unknown peer.');
+  const salt = String(peer.kyc?.salt || '');
+  if (!salt) return fail('The member salt is not on this device.');
+  const displayName = String(peer.kyc?.displayName || peer.name || '').trim();
+  const phone = normalizePhone(peer.kyc?.phone || '');
+  const keyThumb = await sha256(canonicalJSON(peer.publicKeyJwk));
+  const hash = await sha256(canonicalJSON({
+    simulated: true,
+    salt,
+    displayName,
+    phone,
+    vouchIds: vouchIds(peer),
+    keyThumb
+  }));
+  return { ok: true, hash, phone, keyThumb };
+}
+
+export async function bindMemberKyc(store, peerId, spec = {}) {
+  const peer = await store.get(peerId);
+  if (!peer) return fail('Unknown peer.');
+  const phone = normalizePhone(spec.phone == null ? peer.kyc?.phone : spec.phone);
+  const displayName = String(spec.displayName || peer.kyc?.displayName || peer.name || '').trim();
+  if (!displayName) return fail('Add a display name.');
+  if (!phone) return fail('Add a phone number on this device.');
+  peer.kyc = {
+    ...(peer.kyc || {}),
+    status: peer.kyc?.status || kycStatus(peer),
+    displayName,
+    phone,
+    salt: spec.salt || peer.kyc?.salt || bytesToHex(crypto.getRandomValues(new Uint8Array(16))),
+    simulated: true
+  };
+  const hashed = await memberKycHash(peer);
+  if (!hashed.ok) return hashed;
+  peer.kyc.kycHash = hashed.hash;
+  await store.set(peerId, peer);
+  const tape = JSON.stringify((await store.get(peerId)).tape || []);
+  return { ok: true, hash: hashed.hash, phone, onTape: tape.includes(phone) || tape.includes(hashed.hash) };
+}
+
+function bindCore(senderId, kycHash, keyThumb) {
+  return { simulated: true, kind: 'kyc-bind', senderId, kycHash, keyThumb };
+}
+
+function chatCore(message) {
+  return {
+    simulated: true,
+    kind: 'chat',
+    threadId: message.threadId,
+    seq: message.seq,
+    prev: message.prev,
+    senderId: message.senderId,
+    kycHash: message.kycHash,
+    keyThumb: message.keyThumb,
+    at: message.at,
+    text: message.text,
+    negotiation: message.negotiation || null
+  };
+}
+
+async function chatAes(privateKeyJwk) {
+  const raw = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`lgme-chat|${privateKeyJwk.d}`));
+  return crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']);
+}
+
+async function readVault(peer) {
+  if (!peer?.chatVault || !peer.privateKeyJwk) return { threads: {} };
+  try {
+    const key = await chatAes(peer.privateKeyJwk);
+    const clear = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: hexToBytes(peer.chatVault.iv) },
+      key,
+      hexToBytes(peer.chatVault.ciphertext)
+    );
+    const parsed = JSON.parse(new TextDecoder().decode(clear));
+    return parsed && typeof parsed === 'object' ? parsed : { threads: {} };
+  } catch {
+    return { threads: {} };
+  }
+}
+
+async function writeVault(peer, vault) {
+  const key = await chatAes(peer.privateKeyJwk);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const cipher = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    new TextEncoder().encode(JSON.stringify(vault))
+  );
+  peer.chatVault = { iv: bytesToHex(iv), ciphertext: bytesToHex(new Uint8Array(cipher)) };
+}
+
+export async function readChat(store, peerId, threadId) {
+  const peer = await store.get(peerId);
+  if (!peer) return [];
+  const vault = await readVault(peer);
+  return structuredClone(vault.threads?.[threadId] || []);
+}
+
+export async function listChatThreads(store, peerId) {
+  const peer = await store.get(peerId);
+  if (!peer) return [];
+  const vault = await readVault(peer);
+  return Object.entries(vault.threads || {}).map(([id, messages]) => {
+    const last = messages[messages.length - 1];
+    return { id, length: messages.length, preview: last?.text || '', at: last?.at || '' };
+  });
+}
+
+export async function auditChat(messages) {
+  let prev = GENESIS;
+  const hashes = [];
+  for (let index = 0; index < messages.length; index += 1) {
+    const message = messages[index];
+    const hash = await sha256(canonicalJSON(chatCore(message)));
+    if (hash !== message.hash || message.prev !== prev || message.seq !== index + 1) {
+      return { ok: false, index, hashes };
+    }
+    hashes.push(hash);
+    prev = hash;
+  }
+  const root = await sha256(canonicalJSON(hashes));
+  return { ok: true, hashes, root };
+}
+
+export async function chatRoot(messages) {
+  const audit = await auditChat(messages);
+  if (!audit.ok) return audit;
+  return { ok: true, root: audit.root, hashes: audit.hashes, length: audit.hashes.length };
+}
+
+export async function matchChat(messages, remoteHashes = [], remoteRoot = '') {
+  const audit = await auditChat(messages);
+  if (!audit.ok) {
+    const local = messages[audit.index] || null;
+    return { ok: true, matched: false, index: audit.index, reason: 'tamper', divergent: local ? [{ index: audit.index, seq: local.seq, text: local.text }] : [] };
+  }
+  const hashes = remoteHashes || [];
+  const root = remoteRoot || await sha256(canonicalJSON(hashes));
+  const same = audit.root === root && audit.hashes.length === hashes.length && audit.hashes.every((hash, index) => hash === hashes[index]);
+  if (same) return { ok: true, matched: true, root: audit.root, divergent: [] };
+  let index = 0;
+  const limit = Math.max(audit.hashes.length, hashes.length);
+  for (; index < limit; index += 1) {
+    if (audit.hashes[index] !== hashes[index]) break;
+  }
+  const local = messages[index] || null;
+  return {
+    ok: true,
+    matched: false,
+    index,
+    reason: 'diverge',
+    root: audit.root,
+    divergent: [{ index, seq: local?.seq || index + 1, text: local?.text || '' }]
+  };
+}
+
+async function rememberContact(peer, spec) {
+  peer.contacts = peer.contacts || {};
+  const phone = normalizePhone(spec.phone);
+  if (!phone) return;
+  const prior = peer.contacts[phone];
+  if (prior && prior.kycHash !== spec.kycHash) {
+    const error = fail('KYC hash does not match.');
+    error.mismatch = true;
+    return error;
+  }
+  if (prior && canonicalJSON(prior.publicKeyJwk) !== canonicalJSON(spec.publicKeyJwk)) {
+    return fail('KYC hash does not match.');
+  }
+  peer.contacts[phone] = {
+    phone,
+    kycHash: spec.kycHash,
+    publicKeyJwk: spec.publicKeyJwk,
+    senderId: spec.senderId
+  };
+  return { ok: true };
+}
+
+async function assertKycBinding(message) {
+  const body = message.body || message;
+  const keyThumb = await sha256(canonicalJSON(message.publicKeyJwk));
+  if (keyThumb !== body.keyThumb) return fail('KYC hash does not match.');
+  const bindHash = await sha256(canonicalJSON(bindCore(body.senderId, body.kycHash, body.keyThumb)));
+  const valid = await verifyText(message.publicKeyJwk, bindHash, body.bindSig);
+  if (!valid) return fail('KYC hash does not match.');
+  return { ok: true, keyThumb };
+}
+
+export async function composeChat(store, senderId, spec = {}) {
+  const sender = await store.get(senderId);
+  if (!sender) return fail('Unknown peer.');
+  if (!sender.privateKeyJwk) return fail('Wallet is locked.');
+  const identity = await memberKycHash(sender);
+  if (!identity.ok) return identity;
+  if (!identity.phone) return fail('Add a phone number on this device.');
+  const toPhone = normalizePhone(spec.toPhone || '');
+  const toId = String(spec.toId || '').trim();
+  if (!toPhone && !toId) return fail('Name the other phone.');
+  const text = String(spec.text || '').trim();
+  if (!text) return fail('Write a text.');
+  const threadId = String(spec.threadId || spec.toId || toPhone);
+  const at = spec.at || nowIso();
+  const vault = await readVault(sender);
+  const prior = vault.threads?.[threadId] || [];
+  const seq = prior.length + 1;
+  const prev = prior.length ? prior[prior.length - 1].hash : GENESIS;
+  const core = chatCore({
+    threadId,
+    seq,
+    prev,
+    senderId,
+    kycHash: identity.hash,
+    keyThumb: identity.keyThumb,
+    at,
+    text,
+    negotiation: spec.negotiation || null
+  });
+  const messageHash = await sha256(canonicalJSON(core));
+  const bindSig = await signText(sender.privateKeyJwk, await sha256(canonicalJSON(bindCore(senderId, identity.hash, identity.keyThumb))));
+  const body = {
+    ...core,
+    bindSig,
+    senderPhone: identity.phone,
+    toId: toId || null,
+    toPhone: toPhone || null
+  };
+  const sealed = await sealMessage(sender, 'chat', body);
+  if (!sealed.ok) return sealed;
+  await appendEntry(sender, 'CHAT', {
+    simulated: true,
+    threadId,
+    messageHash,
+    prev,
+    senderKycHash: identity.hash,
+    seq,
+    at
+  }, at);
+  const stored = {
+    ...core,
+    hash: messageHash,
+    sig: sealed.message.sig,
+    bindSig,
+    publicKeyJwk: sender.publicKeyJwk,
+    senderPhone: identity.phone,
+    toId: body.toId,
+    toPhone: body.toPhone
+  };
+  vault.threads = vault.threads || {};
+  vault.threads[threadId] = prior.concat([stored]);
+  await writeVault(sender, vault);
+  sender.outbox = sender.outbox || [];
+  const encoded = encodeMessage(sealed.message);
+  const preview = `SIMULATION lgme. This page does not send it.\n${text}\n${encoded}`;
+  const links = shareHrefs(toPhone, preview);
+  sender.outbox.push({ at, kind: 'chat', channel: 'sms', toPhone, hash: messageHash, simulated: true, text: 'SIMULATION. The page did not send a message.' });
+  await store.set(senderId, sender);
+  return { ok: true, message: sealed.message, encoded, sms: links.sms, tel: telHref(toPhone), threadId, hash: messageHash, kycHash: identity.hash, seq };
+}
+
+export async function acceptChatToken(store, recipientId, input, at = nowIso()) {
+  const opened = await openMessage(input);
+  if (!opened.ok) return opened;
+  if (opened.message.kind !== 'chat') return fail('This is not a signed text.');
+  const body = opened.message.body || {};
+  const recipient = await store.get(recipientId);
+  if (!recipient?.privateKeyJwk) return fail('Wallet is locked.');
+  if (body.senderId === recipientId) return fail('This text is already on your book.');
+  if (body.toId && body.toId !== recipientId) return fail('This text is for a different peer.');
+  const bound = await assertKycBinding(opened.message);
+  if (!bound.ok) return bound;
+  const coreHash = await sha256(canonicalJSON(chatCore(body)));
+  const contactTry = await rememberContact(recipient, {
+    phone: body.senderPhone,
+    kycHash: body.kycHash,
+    publicKeyJwk: opened.message.publicKeyJwk,
+    senderId: body.senderId
+  });
+  if (contactTry && contactTry.ok === false) return contactTry;
+  const vault = await readVault(recipient);
+  const prior = vault.threads?.[body.threadId] || [];
+  const expected = prior.length + 1;
+  if (body.seq !== expected) return fail(`Sequence gap at ${body.seq}. Expected ${expected}.`);
+  const prev = prior.length ? prior[prior.length - 1].hash : GENESIS;
+  if (body.prev !== prev) return fail('Chat hash link does not match.');
+  if ((recipient.tape || []).some((entry) => entry.type === 'CHAT' && entry.payload?.messageHash === coreHash && entry.payload?.threadId === body.threadId)) {
+    return { ok: true, duplicate: true };
+  }
+  await appendEntry(recipient, 'CHAT', {
+    simulated: true,
+    threadId: body.threadId,
+    messageHash: coreHash,
+    prev,
+    senderKycHash: body.kycHash,
+    seq: body.seq,
+    at: body.at || at
+  }, at);
+  const stored = {
+    ...chatCore(body),
+    hash: coreHash,
+    sig: opened.message.sig,
+    bindSig: body.bindSig,
+    publicKeyJwk: opened.message.publicKeyJwk,
+    senderPhone: normalizePhone(body.senderPhone),
+    toId: body.toId || null,
+    toPhone: normalizePhone(body.toPhone)
+  };
+  vault.threads = vault.threads || {};
+  vault.threads[body.threadId] = prior.concat([stored]);
+  await writeVault(recipient, vault);
+  await store.set(recipientId, recipient);
+  return { ok: true, threadId: body.threadId, hash: coreHash, seq: body.seq, kycHash: body.kycHash };
+}
+
+export async function composeMatch(store, senderId, threadId, toPhone = '') {
+  const sender = await store.get(senderId);
+  if (!sender?.privateKeyJwk) return fail('Wallet is locked.');
+  const identity = await memberKycHash(sender);
+  if (!identity.ok) return identity;
+  const messages = await readChat(store, senderId, threadId);
+  const audit = await chatRoot(messages);
+  if (!audit.ok) return fail(`The local chat breaks at message ${audit.index + 1}.`);
+  const body = {
+    simulated: true,
+    kind: 'chat-match',
+    threadId,
+    root: audit.root,
+    length: audit.length,
+    hashes: audit.hashes,
+    senderId,
+    kycHash: identity.hash,
+    keyThumb: identity.keyThumb,
+    senderPhone: identity.phone
+  };
+  body.bindSig = await signText(sender.privateKeyJwk, await sha256(canonicalJSON(bindCore(senderId, identity.hash, identity.keyThumb))));
+  const sealed = await sealMessage(sender, 'chat-match', body);
+  if (!sealed.ok) return sealed;
+  const encoded = encodeMessage(sealed.message);
+  const preview = `SIMULATION lgme. Chat root ${audit.root.slice(0, 12)}. This page does not send it.\n${encoded}`;
+  return { ok: true, encoded, root: audit.root, hashes: audit.hashes, length: audit.length, sms: shareHrefs(toPhone, preview).sms, preview };
+}
+
+export async function acceptMatch(store, recipientId, input) {
+  const opened = await openMessage(input);
+  if (!opened.ok) return opened;
+  if (opened.message.kind !== 'chat-match') return fail('This is not a chat root.');
+  const body = opened.message.body || {};
+  const recipient = await store.get(recipientId);
+  if (!recipient?.privateKeyJwk) return fail('Wallet is locked.');
+  const bound = await assertKycBinding(opened.message);
+  if (!bound.ok) return bound;
+  const contactTry = await rememberContact(recipient, {
+    phone: body.senderPhone,
+    kycHash: body.kycHash,
+    publicKeyJwk: opened.message.publicKeyJwk,
+    senderId: body.senderId
+  });
+  if (contactTry && contactTry.ok === false) return contactTry;
+  await store.set(recipientId, recipient);
+  const local = await readChat(store, recipientId, body.threadId);
+  return matchChat(local, body.hashes || [], body.root || '');
+}
+
+export async function recordCall(store, peerId, spec = {}) {
+  const peer = await store.get(peerId);
+  if (!peer?.privateKeyJwk) return fail('Wallet is locked.');
+  const peerKycHash = String(spec.peerKycHash || '').trim();
+  if (!/^[0-9a-f]{64}$/i.test(peerKycHash)) return fail('The other member hash is missing.');
+  const start = spec.start || nowIso();
+  const end = spec.end || nowIso();
+  if (new Date(end).getTime() < new Date(start).getTime()) return fail('The call ends after it starts.');
+  const note = String(spec.note || '').trim();
+  await appendEntry(peer, 'CALL', {
+    simulated: true,
+    start,
+    end,
+    peerKycHash,
+    note
+  }, end);
+  await store.set(peerId, peer);
+  const entry = (await store.get(peerId)).tape.find((row) => row.type === 'CALL' && row.payload?.start === start);
+  const packed = JSON.stringify(entry || {});
+  return { ok: true, tel: telHref(spec.phone || ''), audio: false, leaked: /audio|recording|wav|mp3/i.test(packed) };
 }
