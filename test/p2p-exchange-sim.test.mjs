@@ -1325,9 +1325,14 @@ test('Install & launch opens the desk after the prompt, a slow install check, an
 
 test('an offer waits for both signatures, then a term plan and a floor donation stay simulated', async () => {
   const file = JSON.parse(readFileSync(join(root, 'data/offerup-dc-v0.json'), 'utf8'));
-  assert.deepEqual(file.items, []);
   assert.equal(file.schema.kind, 'sell|buy|give');
-  assert.deepEqual(sim.offerupFeed(file), []);
+  const offerup = sim.offerupFeed(file);
+  assert.equal(offerup.length, 5);
+  assert.deepEqual(offerup.map((item) => item.price), ['$50', '$45', '$150', 'Free', 'Free / negotiable']);
+  assert.deepEqual(offerup.map((item) => sim.offerupKindLabel(item.kind)), ['For sale', 'For sale', 'For sale', 'Free', 'Free']);
+  assert.equal(offerup.every((item) => item.sourcedAt === '2026-11-07'), true);
+  assert.equal(sim.offerupAmount('$50'), 50);
+  assert.equal(sim.offerupAmount('Free / negotiable'), null);
   const schedule = sim.termSchedule(10, 3, '2026-11-07T00:00:00.000Z');
   assert.equal(schedule.ok, true, schedule.error);
   assert.equal(schedule.installments.map((row) => row.amount).reduce((sum, n) => sim.round2(sum + n), 0), 10);
@@ -1403,6 +1408,9 @@ test('an offer waits for both signatures, then a term plan and a floor donation 
   assert.equal(page.includes('Found on OfferUp (DC area)'), true);
   assert.equal(page.includes('No OfferUp listings in this file yet.'), true);
   assert.equal(page.includes('Continue on OfferUp'), true);
+  assert.equal(page.includes('Make an offer'), true);
+  assert.equal(page.includes("addEventListener('error'"), true);
+  assert.equal(page.includes('onerror='), false);
   assert.equal(page.includes("rel: 'noopener noreferrer'"), true);
   assert.equal(page.includes('Offer on this item'), true);
   assert.equal(page.includes('Reconcile as donation to the floor'), true);
@@ -1631,7 +1639,7 @@ test('DC reference values stay pending when a series has no number', () => {
   assert.equal(page.includes('id="refList"'), true);
   assert.equal(/<script(?![^>]*\bsrc=)/i.test(page), false);
   const worker = readFileSync(join(root, 'sw.js'), 'utf8');
-  assert.equal(worker.includes('lgme-v40'), true);
+  assert.equal(worker.includes('lgme-v41'), true);
   assert.equal(worker.includes('/js/dc-reference.mjs'), true);
   assert.equal(worker.includes('/data/dc-reference-values-v0.json'), true);
 });

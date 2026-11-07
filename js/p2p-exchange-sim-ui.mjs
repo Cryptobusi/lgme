@@ -2032,18 +2032,30 @@ function catalogServices(list) {
   };
 }
 
+function offerupImage(item) {
+  const img = h('img', { alt: '', src: item.image || '/icons/icon-192.png' });
+  img.addEventListener('error', () => {
+    if (img.dataset.fallback === '1') return;
+    img.dataset.fallback = '1';
+    img.src = '/icons/icon-192.png';
+  });
+  return img;
+}
+
 function offerupSection(seat, serviceList) {
   const cards = offerupItems.map((item, index) => h('article', { class: 'card', id: `offerup-${index}` }, [
-    item.image ? h('img', { alt: '', src: item.image }) : null,
+    offerupImage(item),
     h('h3', {}, [item.title]),
-    h('p', {}, [`${item.kind} · ${item.city || 'DC area'}${item.price == null ? '' : ` · ${item.price}`}`]),
+    h('p', { class: 'price' }, [item.price]),
+    h('p', {}, [`${sim.offerupKindLabel(item.kind)} · ${item.city || 'DC area'}`]),
     h('p', { class: 'legend' }, [sim.OFFERUP_CAVEAT]),
     h('p', { class: 'muted' }, [`As of ${item.sourcedAt || 'pending'}`]),
     h('div', { class: 'actions' }, [
-      h('a', { class: 'btn primary', href: item.url, target: '_blank', rel: 'noopener noreferrer' }, ['Continue on OfferUp']),
-      h('button', { type: 'button', onClick: () => { offerupIndex = index; openOfferFor = ''; render(); } }, ['Offer on this item'])
+      h('span', {}, ['Buy']),
+      h('button', { type: 'button', onClick: () => { offerupIndex = index; openOfferFor = ''; render(); } }, ['Make an offer']),
+      h('a', { class: 'btn primary', href: item.url, target: '_blank', rel: 'noopener noreferrer' }, ['Continue on OfferUp'])
     ]),
-    offerupIndex === index ? offerForm(seat, { external: item, amount: item.price, title: item.title }, serviceList) : null
+    offerupIndex === index ? offerForm(seat, { external: item, amount: sim.offerupAmount(item.price), title: item.title }, serviceList) : null
   ]));
   return h('section', { id: 'offerup-dc' }, [
     h('h3', {}, ['Found on OfferUp (DC area)']),

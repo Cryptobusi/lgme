@@ -3653,13 +3653,27 @@ export function normalizeOfferupItem(item) {
   const kind = ['sell', 'buy', 'give'].includes(item?.kind) ? item.kind : '';
   return {
     title: String(item?.title || '').trim(),
-    price: item?.price == null || item?.price === '' ? null : round2(item.price),
+    price: item?.price == null ? '' : String(item.price).trim(),
     city: String(item?.city || '').trim(),
     url: String(item?.url || '').trim(),
     image: String(item?.image || '').trim(),
     kind,
     sourcedAt: String(item?.sourcedAt || '').trim()
   };
+}
+
+export function offerupKindLabel(kind) {
+  if (kind === 'sell') return 'For sale';
+  if (kind === 'give') return 'Free';
+  if (kind === 'buy') return 'Wanted';
+  return '';
+}
+
+export function offerupAmount(price) {
+  const match = String(price ?? '').match(/\d+(?:\.\d+)?/);
+  if (!match) return null;
+  const number = round2(match[0]);
+  return Number.isFinite(number) ? number : null;
 }
 
 export function offerupFeed(catalog) {
@@ -3690,6 +3704,7 @@ export function offerupDraft(offer) {
     'SIMULATION draft. Nothing was sent.',
     OFFERUP_CAVEAT,
     offer?.external?.title || '',
+    offer?.external?.price || '',
     offer?.external?.city || '',
     offer?.external?.url || ''
   ];
@@ -3748,7 +3763,7 @@ export async function signOffer(store, peerId, spec = {}) {
   let schedule = [];
   let cashAmount = null;
   if (cashMode === 'full' || cashMode === 'terms') {
-    cashAmount = round2(spec.amount ?? external?.price ?? listing?.amount);
+    cashAmount = round2(spec.amount ?? (external ? offerupAmount(external.price) : null) ?? listing?.amount);
   }
   if (cashMode === 'terms') {
     const built = termSchedule(cashAmount, spec.months, at);

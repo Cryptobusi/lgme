@@ -3,12 +3,58 @@
   "notice": "Third-party listing on OfferUp, not verified by lgme. Price and availability may have changed. Deal is between you and the seller.",
   "schema": {
     "title": "string",
-    "price": "number",
+    "price": "string",
     "city": "string",
     "url": "string",
     "image": "string",
     "kind": "sell|buy|give",
     "sourcedAt": "ISO-8601 date"
   },
-  "items": []
+  "items": [
+    {
+      "title": "Folding Treadmill with Display Console",
+      "price": "$50",
+      "city": "Washington, DC",
+      "url": "https://offerup.com/item/detail/8c5cd02a-9a5c-3696-bd4b-0d03a99e8832",
+      "image": "https://images.offerup.com/SoCl6dpUrMQa-Lz4i_M88-QStSo=/250x444/c041/c0410569d5fd4b2e82386b64916b7cc6.jpg",
+      "kind": "sell",
+      "sourcedAt": "2026-11-07"
+    },
+    {
+      "title": "Gold's Gym XR 5.9 Adjustable Weight Bench (pickup only, cash)",
+      "price": "$45",
+      "city": "Alexandria, VA",
+      "url": "https://offerup.com/item/detail/c7cf0ca7-299d-3360-87e4-61fb35b3184c",
+      "image": "https://images.offerup.com/fNY29PcYUkE9Atmm2lIf2AOemAc=/250x333/76f6/76f69885d11c4b118d1b012960c4590f.jpg",
+      "kind": "sell",
+      "sourcedAt": "2026-11-07"
+    },
+    {
+      "title": "Exercise equipment ($50 per machine)",
+      "price": "$150",
+      "city": "Silver Spring, MD",
+      "url": "https://offerup.com/item/detail/fe79a751-ace4-3fc3-af12-b69edc3a9371",
+      "image": "https://images.offerup.com/MMe9Db-9R3oQFNgZrJxFJVAHVFU=/250x333/2357/2357e836a5cf4da3a4e8c649e02a44dc.jpg",
+      "kind": "sell",
+      "sourcedAt": "2026-11-07"
+    },
+    {
+      "title": "Ab wheel",
+      "price": "Free",
+      "city": "Washington, DC",
+      "url": "https://offerup.com/item/detail/ab56db26-6804-3b0d-9f30-b5710264696c",
+      "image": "https://images.offerup.com/6F8YG1zpApr2jjBQnaezW1YKJ4M=/369x250/1b86/1b862159b3bf45adb85aaf6d6598f929.jpg",
+      "kind": "give",
+      "sourcedAt": "2026-11-07"
+    },
+    {
+      "title": "Exercise bench and inversion table",
+      "price": "Free / negotiable",
+      "city": "Gaithersburg, MD",
+      "url": "https://offerup.com/item/detail/cd1e3b63-b5cf-360b-8b08-26aec899b346",
+      "image": "https://images.offerup.com/ErSdpKnEw4lcfzjSgf9eWgzJQGQ=/250x250/a8f4/a8f46f9682ac40c0979a9605f0b63b3b.jpg",
+      "kind": "give",
+      "sourcedAt": "2026-11-07"
+    }
+  ]
 }
