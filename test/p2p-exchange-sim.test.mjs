@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as sim from '../js/p2p-exchange-sim.mjs';
-import { decideInstallAction, isIosSafari, isStandalone } from '../js/install-launch.mjs';
+import { INSTALLED_WAIT_MS, bindInstallLaunch, decideInstallAction, isIosSafari, isStandalone } from '../js/install-launch.mjs';
 import * as guard from '../js/p2p-sim-guard.mjs';
 import { REFERENCE_LABEL, averagedReference, referenceLine } from '../js/dc-reference.mjs';
 
@@ -1194,6 +1194,103 @@ test('Install & launch hides in the app, prompts when it can, and otherwise open
   }
 });
 
+function installHarness(navExtras = {}, assign) {
+  const assigned = [];
+  const listeners = { win: {}, control: {} };
+  const control = {
+    getAttribute(name) { return name === 'href' ? '/p2p-exchange-sim' : null; },
+    closest() { return { querySelector() { return null; }, append() {} }; },
+    addEventListener(type, fn) { listeners.control[type] = fn; }
+  };
+  const doc = {
+    body: {},
+    querySelectorAll(sel) { return sel === '[data-install-launch]' ? [control] : []; },
+    createElement() { return { className: '', hidden: false, setAttribute() {}, textContent: '' }; }
+  };
+  const win = {
+    location: {
+      assign(path) {
+        if (assign) assign(path, assigned);
+        else assigned.push(path);
+      }
+    },
+    matchMedia() { return { matches: false }; },
+    addEventListener(type, fn) { (listeners.win[type] ||= []).push(fn); },
+    setTimeout,
+    clearTimeout
+  };
+  const nav = {
+    userAgent: 'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 Chrome/121.0.0.0 Mobile Safari/537.36',
+    platform: 'Linux',
+    maxTouchPoints: 5,
+    ...navExtras
+  };
+  bindInstallLaunch(doc, nav, win);
+  return {
+    assigned,
+    listeners,
+    click() {
+      return listeners.control.click({ preventDefault() {}, currentTarget: control });
+    },
+    prompt(outcome, { fail } = {}) {
+      const event = {
+        preventDefault() {},
+        prompt() { if (fail === 'prompt') throw new Error('prompt failed'); },
+        userChoice: fail === 'choice' ? Promise.reject(new Error('choice failed')) : Promise.resolve({ outcome })
+      };
+      listeners.win.beforeinstallprompt.forEach((fn) => fn(event));
+    }
+  };
+}
+
+test('Install & launch opens the desk after the prompt, a slow install check, and a back navigation', async () => {
+  assert.equal(INSTALLED_WAIT_MS, 500);
+  for (const outcome of ['accepted', 'dismissed']) {
+    const harness = installHarness({ getInstalledRelatedApps: async () => [] });
+    harness.prompt(outcome);
+    await harness.click();
+    assert.deepEqual(harness.assigned, ['/p2p-exchange-sim'], outcome);
+  }
+  const thrown = installHarness({ getInstalledRelatedApps: async () => [] });
+  thrown.prompt('dismissed', { fail: 'prompt' });
+  await thrown.click();
+  assert.deepEqual(thrown.assigned, ['/p2p-exchange-sim']);
+  const choice = installHarness({ getInstalledRelatedApps: async () => [] });
+  choice.prompt('accepted', { fail: 'choice' });
+  await choice.click();
+  assert.deepEqual(choice.assigned, ['/p2p-exchange-sim']);
+
+  const hung = installHarness({ getInstalledRelatedApps: () => new Promise(() => {}) });
+  const started = Date.now();
+  await hung.click();
+  const elapsed = Date.now() - started;
+  assert.ok(elapsed >= 450, String(elapsed));
+  assert.ok(elapsed < 1200, String(elapsed));
+  assert.deepEqual(hung.assigned, ['/p2p-exchange-sim']);
+
+  const back = installHarness({ getInstalledRelatedApps: async () => [] });
+  await back.click();
+  await back.click();
+  assert.equal(back.assigned.length, 1);
+  back.listeners.win.pageshow.forEach((fn) => fn({ persisted: true }));
+  await back.click();
+  assert.deepEqual(back.assigned, ['/p2p-exchange-sim', '/p2p-exchange-sim']);
+
+  let calls = 0;
+  const broken = installHarness({ getInstalledRelatedApps: async () => [] }, (path, assigned) => {
+    calls += 1;
+    if (calls === 1) throw new Error('assign failed');
+    assigned.push(path);
+  });
+  await broken.click();
+  assert.deepEqual(broken.assigned, ['/p2p-exchange-sim']);
+
+  for (const file of ['index.html', 'p2p-exchange-sim.html', 'lgme-coin.html']) {
+    const page = readFileSync(join(root, file), 'utf8');
+    assert.match(page, /<a class="install-launch" data-install-launch href="\/p2p-exchange-sim">/, file);
+  }
+});
+
 test('offline mode refuses a spend and an online challenge is acknowledged', async () => {
   const store = await books();
   const offline = await sim.createTransfer(store, 'alice', { toId: 'bob', amount: 1, navigator: { onLine: false } });
@@ -1415,7 +1512,7 @@ test('DC reference values stay pending when a series has no number', () => {
   assert.equal(page.includes('id="refList"'), true);
   assert.equal(/<script(?![^>]*\bsrc=)/i.test(page), false);
   const worker = readFileSync(join(root, 'sw.js'), 'utf8');
-  assert.equal(worker.includes('lgme-v37'), true);
+  assert.equal(worker.includes('lgme-v38'), true);
   assert.equal(worker.includes('/js/dc-reference.mjs'), true);
   assert.equal(worker.includes('/data/dc-reference-values-v0.json'), true);
 });

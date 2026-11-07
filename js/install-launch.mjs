@@ -1,5 +1,6 @@
 const APP_PATH = '/p2p-exchange-sim';
 const TIP = 'Share > Add to Home Screen';
+export const INSTALLED_WAIT_MS = 500;
 
 export function isStandalone(win, nav) {
   const media = win.matchMedia ? win.matchMedia('(display-mode: standalone)').matches : false;
@@ -28,14 +29,33 @@ export function bindInstallLaunch(doc, nav, win) {
   let launched = false;
   let installed = false;
   const installedPromise = typeof nav.getInstalledRelatedApps === 'function'
-    ? Promise.resolve(nav.getInstalledRelatedApps()).then((apps) => Array.isArray(apps) && apps.length > 0).catch(() => false)
+    ? Promise.resolve().then(() => nav.getInstalledRelatedApps()).then((apps) => Array.isArray(apps) && apps.length > 0).catch(() => false)
     : Promise.resolve(false);
   installedPromise.then((yes) => { installed = yes; });
 
   function launch() {
     if (launched) return;
-    launched = true;
     win.location.assign(APP_PATH);
+    launched = true;
+  }
+
+  function plainNavigate(control) {
+    const href = control && typeof control.getAttribute === 'function' ? control.getAttribute('href') : '';
+    win.location.assign(href || APP_PATH);
+    launched = true;
+  }
+
+  function installedWithin() {
+    return new Promise((resolve) => {
+      const timer = win.setTimeout(() => resolve(installed), INSTALLED_WAIT_MS);
+      installedPromise.then((yes) => {
+        win.clearTimeout(timer);
+        resolve(Boolean(yes));
+      }, () => {
+        win.clearTimeout(timer);
+        resolve(false);
+      });
+    });
   }
 
   function showTip(control) {
@@ -61,39 +81,43 @@ export function bindInstallLaunch(doc, nav, win) {
   }
 
   async function onClick(event) {
-    event.preventDefault();
     const control = event.currentTarget;
-    const knownInstalled = await installedPromise;
-    const action = decideInstallAction({
-      standalone: isStandalone(win, nav),
-      iosSafari: isIosSafari(nav),
-      hasPrompt: Boolean(deferred),
-      installed: knownInstalled
-    });
-    if (action === 'hide') {
-      hideForStandalone();
-      return;
-    }
-    if (action === 'tooltip') {
-      showTip(control);
-      win.setTimeout(launch, 1400);
-      return;
-    }
-    if (action === 'launch' || !deferred) {
-      launch();
-      return;
-    }
     try {
-      deferred.prompt();
-      await deferred.userChoice;
-    } catch {
+      event.preventDefault();
+      const knownInstalled = await installedWithin();
+      const action = decideInstallAction({
+        standalone: isStandalone(win, nav),
+        iosSafari: isIosSafari(nav),
+        hasPrompt: Boolean(deferred),
+        installed: knownInstalled
+      });
+      if (action === 'hide') {
+        hideForStandalone();
+        return;
+      }
+      if (action === 'tooltip') {
+        showTip(control);
+        win.setTimeout(launch, 1400);
+        return;
+      }
+      if (action === 'launch' || !deferred) {
+        launch();
+        return;
+      }
+      try {
+        deferred.prompt();
+        await deferred.userChoice;
+      } catch { /* accepted or dismissed, still open the desk */ }
+      deferred = null;
       launch();
+    } catch {
+      try { plainNavigate(control); } catch { /* the anchor href still opens the desk without this script */ }
     }
-    deferred = null;
   }
 
   hideForStandalone();
   controls.forEach((control) => control.addEventListener('click', onClick));
+  win.addEventListener('pageshow', () => { launched = false; });
   win.addEventListener('beforeinstallprompt', (event) => {
     event.preventDefault();
     deferred = event;
