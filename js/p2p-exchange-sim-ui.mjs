@@ -73,6 +73,7 @@ let catalog = [];
 let offerupItems = [];
 let wantedMatches = [];
 let thumbtackItems = [];
+let paymentMethods = { zelle: { recipient: '' }, cash: { inPersonOnly: true }, notice: 'Zelle and cash are not reversible-protected. This app does not process them.' };
 let openTailored = '';
 let offerupIndex = -1;
 let openOfferFor = '';
@@ -342,6 +343,159 @@ async function solanaCards(seat) {
     cards.push(h('article', { class: 'card', id: 'solana-payment' }, [
       h('h3', {}, [`$lgme ${status}`]),
       h('p', {}, [`${sample.amount} $lgme to ${sample.recipient}. ${sentence}`]),
+      h('div', { class: 'actions' }, actions)
+    ]));
+  }
+  return cards;
+}
+
+function zelleLine() {
+  const recipient = String(paymentMethods.zelle?.recipient || '').trim();
+  return recipient ? `Zelle recipient: ${recipient}` : 'Zelle details: ask the recipient in chat / provided on request';
+}
+
+function showOffchainPay(spec) {
+  document.getElementById('offchain-pay')?.remove();
+  const overlay = h('div', { id: 'offchain-pay', class: 'walk', role: 'dialog' });
+  const amount = h('input', { type: 'number', min: '0.01', step: '0.01', inputmode: 'decimal', value: String(spec.amount || '') });
+  const paidAt = h('input', { type: 'date', value: new Date().toISOString().slice(0, 10) });
+  const confirmation = h('input', { maxlength: '80', autocomplete: 'off', placeholder: 'Zelle confirmation number' });
+  const note = h('input', { maxlength: '240', placeholder: 'Handoff note' });
+  const file = h('input', { type: 'file', accept: 'image/*,.pdf' });
+  const preview = h('p', { class: 'legend' }, [spec.method === 'cash'
+    ? 'Cash is in person only. Do not mail cash.'
+    : zelleLine()]);
+  const form = h('form', {}, [
+    h('h2', {}, [spec.method === 'cash' ? 'Pay with cash' : 'Pay with Zelle']),
+    h('p', {}, [paymentMethods.notice || 'Zelle and cash are not reversible-protected. This app does not process them.']),
+    h('p', {}, ['The file stays on this device. The tape stores only its SHA-256 fingerprint. Nothing is uploaded.']),
+    field('Amount', amount),
+    field('Date', paidAt),
+    spec.method === 'zelle' ? field('Zelle confirmation number', confirmation) : null,
+    field(spec.method === 'cash' ? 'Handoff note' : 'Note, optional', note),
+    field(spec.method === 'cash' ? 'Receipt photo, optional' : 'Screenshot, optional', file),
+    preview,
+    h('div', { class: 'actions' }, [
+      h('button', { class: 'primary', type: 'submit' }, ['Record proof']),
+      h('button', { type: 'button', onClick: () => overlay.remove() }, ['Close'])
+    ])
+  ]);
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    let proofHash = '';
+    const chosen = file.files && file.files[0];
+    if (chosen) {
+      proofHash = await sim.hashBytes(new Uint8Array(await chosen.arrayBuffer()));
+    }
+    const recorded = await sim.recordOffchainPayment(store, spec.seat, {
+      method: spec.method,
+      amount: amount.value,
+      paidAt: paidAt.value,
+      confirmation: confirmation.value,
+      note: note.value,
+      proofHash,
+      invoiceId: spec.invoiceId || '',
+      offerId: spec.offerId || '',
+      otherId: spec.otherId || '',
+      navigator
+    });
+    if (!recorded.ok) { preview.textContent = recorded.error; return; }
+    const carried = await sim.sealOffchainHandoff(store, spec.seat, recorded.payload.paymentId);
+    if (carried.ok) carryCode = carried.encoded;
+    setStatus('Pending attestation. The payee still has to sign. Nothing is counted yet. Beta.', 'ok');
+    overlay.remove();
+    render();
+  });
+  overlay.append(h('article', { class: 'card' }, [form]));
+  document.body.append(overlay);
+}
+
+function printReceipt(receipt) {
+  const view = window.open('', 'lgme-receipt');
+  if (!view) { setStatus('Allow a window to print the receipt. Beta.', 'bad'); return; }
+  const doc = view.document;
+  doc.title = 'soBeIT receipt';
+  const add = (tag, text) => {
+    const node = doc.createElement(tag);
+    node.textContent = text;
+    doc.body.append(node);
+  };
+  add('h1', receipt.thanks);
+  add('p', `${receipt.method} ${receipt.amount} on ${receipt.paidAt}`);
+  add('p', receipt.confirmation ? `Confirmation ${receipt.confirmation}` : 'No Zelle confirmation on this receipt.');
+  add('p', receipt.proofHash ? `Proof fingerprint ${receipt.proofHash}` : 'No file fingerprint on this receipt.');
+  add('p', `Payer signature ${receipt.payerSig}`);
+  add('p', `Payee signature ${receipt.payeeSig}`);
+  add('p', 'Zelle and cash are not reversible-protected. This app does not process them.');
+  view.focus();
+  view.print();
+}
+
+async function offchainCards(seat) {
+  const ids = await store.listIds();
+  const full = [];
+  for (const id of ids) {
+    const peer = await store.get(id);
+    if (peer) full.push(peer);
+  }
+  const grouped = new Map();
+  for (const peer of full) {
+    for (const entry of peer.tape || []) {
+      if (entry.type !== 'OFFCHAIN_TX' && entry.type !== 'OFFCHAIN_REFUSAL' && entry.type !== 'OFFCHAIN_FINAL') continue;
+      const paymentId = entry.payload?.paymentId;
+      if (!paymentId) continue;
+      grouped.set(paymentId, entry.payload);
+    }
+    if (peer.id !== seat) continue;
+    for (const body of Object.values(peer.offchainPending || {})) {
+      if (body?.paymentId) grouped.set(body.paymentId, body);
+    }
+  }
+  const mine = full.find((peer) => peer.id === seat);
+  const cards = [];
+  for (const [paymentId, sample] of grouped) {
+    if (sample.payerId !== seat && sample.payeeId !== seat) continue;
+    const status = sim.offchainStatus(full, paymentId);
+    const signedHere = (mine?.tape || []).some((entry) => entry.type === 'OFFCHAIN_TX' && entry.payload?.paymentId === paymentId);
+    const actions = [];
+    if (sample.payeeId === seat && !signedHere && status === 'pending-attestation') {
+      actions.push(h('button', { type: 'button', class: 'primary', id: 'offchain-attest', onClick: async () => {
+        const result = await sim.attestOffchainPayment(store, seat, { ...sample, navigator });
+        setStatus(result.ok && result.status === 'settled'
+          ? 'Both parties signed. The invoice is paid. Beta.'
+          : result.ok ? 'Your attestation is signed. Beta.' : result.error, result.ok ? 'ok' : 'bad');
+        if (result.ok) await render();
+      } }, ['Attest']));
+      actions.push(h('button', { type: 'button', id: 'offchain-refuse', onClick: async () => {
+        const result = await sim.refuseOffchainPayment(store, seat, sample, 'REFUSAL');
+        setStatus(result.ok ? 'Refusal recorded. No penalty. The invoice is not paid. Beta.' : result.error, result.ok ? 'ok' : 'bad');
+        if (result.ok) await render();
+      } }, ['Refuse']));
+    }
+    if (status === 'settled') {
+      actions.push(h('button', { type: 'button', onClick: () => {
+        const receipt = sim.offchainReceipt(full, paymentId);
+        if (!receipt.ok) { setStatus(receipt.error, 'bad'); return; }
+        download(`offchain-${paymentId.slice(0, 12)}.json`, JSON.stringify(receipt, null, 2), 'application/json');
+      } }, ['Download receipt']));
+      actions.push(h('button', { type: 'button', onClick: () => {
+        const receipt = sim.offchainReceipt(full, paymentId);
+        if (!receipt.ok) { setStatus(receipt.error, 'bad'); return; }
+        printReceipt(receipt);
+      } }, ['Print receipt']));
+    }
+    const verify = h('input', { type: 'file', accept: 'image/*,.pdf' });
+    verify.addEventListener('change', async () => {
+      const chosen = verify.files && verify.files[0];
+      if (!chosen || !sample.proofHash) { setStatus('There is no file fingerprint on this proof. Beta.', 'bad'); return; }
+      const hash = await sim.hashBytes(new Uint8Array(await chosen.arrayBuffer()));
+      setStatus(hash === sample.proofHash ? 'The fingerprint matches. Nothing was uploaded. Beta.' : 'Not authentic. Beta.', hash === sample.proofHash ? 'ok' : 'bad');
+    });
+    cards.push(h('article', { class: 'card', id: 'offchain-payment' }, [
+      h('h3', {}, [`${sample.method} ${status}`]),
+      h('p', {}, [`${sample.amount} on ${sample.paidAt}. ${status === 'settled' ? 'Both parties signed.' : status === 'refused' ? 'Refusal recorded. No penalty.' : 'Pending attestation. The payee still has to sign.'}`]),
+      sample.proofHash ? h('p', { class: 'legend' }, [`Fingerprint ${sample.proofHash.slice(0, 12)}`]) : null,
+      sample.proofHash ? field('Verify the file again', verify) : null,
       h('div', { class: 'actions' }, actions)
     ]));
   }
@@ -1088,6 +1242,12 @@ async function renderBooks(peers, seat) {
         recipient: DONATION_ADDRESS,
         donation: true
       }) }, ['Pay donation in $lgme']));
+      actions.push(h('button', { type: 'button', id: 'pay-zelle', onClick: () => showOffchainPay({
+        seat, method: 'zelle', amount: payAmount.value || row.remaining, invoiceId: row.invoiceId, otherId: row.workerId
+      }) }, ['Pay with Zelle']));
+      actions.push(h('button', { type: 'button', id: 'pay-cash', onClick: () => showOffchainPay({
+        seat, method: 'cash', amount: payAmount.value || row.remaining, invoiceId: row.invoiceId, otherId: row.workerId
+      }) }, ['Pay with cash']));
       actions.push(h('button', { type: 'button', class: 'primary', id: 'pay-invoice', onClick: async () => {
         const result = await sim.payInvoice(store, seat, row.invoiceId, { amount: payAmount.value, passphrase: pass.value, code: code.value });
         setStatus(result.ok ? `Paid ${result.amount} $lgme. Remaining ${result.remaining}. Reward ${result.reward}. Beta.` : result.error, result.ok ? 'ok' : 'bad');
@@ -1108,6 +1268,7 @@ async function renderBooks(peers, seat) {
     ]);
   });
   const solana = await solanaCards(seat);
+  const offchain = await offchainCards(seat);
   panel.replaceChildren(
     h('h2', {}, [`${peer.name}'s book`]),
     h('p', { class: 'muted' }, [`Every line below is on this peer’s tape. Credits and debits come only from settlements, payments, and mock rewards. The running balance is a replay. Key ${finger}. Limit ${rule.creditLimit}.`]),
@@ -1124,6 +1285,12 @@ async function renderBooks(peers, seat) {
       h('h3', {}, ['Solana attestation']),
       ...solana,
       solana.length ? null : h('p', { class: 'empty' }, ['No Solana payment is waiting on this seat.'])
+    ]),
+    h('section', { id: 'offchain-payments' }, [
+      h('h3', {}, ['Cash and Zelle']),
+      h('p', { class: 'legend' }, [zelleLine()]),
+      h('p', { class: 'legend' }, ['Cash is in person only. Do not mail cash. Zelle and cash are not reversible-protected. This app does not process them. A payment is pending-attestation until the payee signs.']),
+      ...offchain
     ]),
     h('section', { id: 'invoices' }, [
       h('h3', {}, ['Receivable and payable']),
@@ -1673,6 +1840,8 @@ async function previewIncoming(seat, raw, host) {
     if (!opened.ok) { setStatus(opened.error, 'bad'); host.replaceChildren(h('p', { class: 'bad' }, [opened.error])); return; }
     const clash = sim.solanaDoubleSpend(await store.get(seat), opened.peer);
     if (!clash.ok) { setStatus(clash.error, 'bad'); host.replaceChildren(h('p', { class: 'bad' }, [clash.error])); return; }
+    const offchainClash = sim.offchainDoubleSpend(await store.get(seat), opened.peer);
+    if (!offchainClash.ok) { setStatus(offchainClash.error, 'bad'); host.replaceChildren(h('p', { class: 'bad' }, [offchainClash.error])); return; }
     host.replaceChildren(
       h('p', { class: 'ok' }, [`Tape verified for ${opened.peer.name}. Hash links and signatures match.`]),
       h('div', { class: 'actions' }, [h('button', { type: 'button', class: 'primary', onClick: () => { pendingImport = trimmed; location.hash = 'reconcile'; } }, ['Compare in reconcile'])])
@@ -2235,7 +2404,9 @@ function offerForm(seat, target, serviceList = []) {
     option('4', 'Term payments, 4 months', false),
     option('5', 'Term payments, 5 months', false),
     option('6', 'Term payments, 6 months', false),
-    option('service', 'IprovIT service only', false)
+    option('service', 'IprovIT service only', false),
+    option('zelle', 'Zelle', false),
+    option('cash', 'Cash in person', false)
   ]);
   const preview = h('p', { class: 'legend' }, ['']);
   const services = catalogServices(serviceList);
@@ -2248,7 +2419,13 @@ function offerForm(seat, target, serviceList = []) {
         : built.error;
       return;
     }
-    preview.textContent = choice === 'full' ? 'Cash in full. No installment is written until both parties sign.' : 'Pick one or more IprovIT services. A $lgme payment is signed by your wallet.';
+    preview.textContent = choice === 'full'
+      ? 'Cash in full. No installment is written until both parties sign.'
+      : choice === 'zelle'
+        ? 'Zelle is not counted until the payee attests the confirmation. This app does not process it. Zelle details: ask the recipient in chat / provided on request.'
+        : choice === 'cash'
+          ? 'Cash is in person only. Do not mail cash. It is not counted until the payee attests the receipt. This app does not process it.'
+          : 'Pick one or more IprovIT services. A $lgme payment is signed by your wallet.';
   }
   mode.addEventListener('change', paint);
   amount.addEventListener('input', paint);
@@ -2272,7 +2449,7 @@ function offerForm(seat, target, serviceList = []) {
         listingId: target.listingId || '',
         external: target.external || null,
         toId: target.toId || '',
-        cashMode: choice === 'service' ? '' : choice === 'full' ? 'full' : 'terms',
+        cashMode: choice === 'service' ? '' : choice === 'full' ? 'full' : choice === 'zelle' ? 'zelle' : choice === 'cash' ? 'cash' : 'terms',
         months: ['3', '4', '5', '6'].includes(choice) ? Number(choice) : 0,
         amount: amount.value,
         serviceIds: services.selected(),
@@ -2367,7 +2544,9 @@ function tailoredActions(item, channel, openLabel) {
     option('4', '4 month terms', saved?.pay === '4'),
     option('5', '5 month terms', saved?.pay === '5'),
     option('6', '6 month terms', saved?.pay === '6'),
-    option('service', '$lgme services (IprovIT)', saved?.pay === 'service')
+    option('service', '$lgme services (IprovIT)', saved?.pay === 'service'),
+    option('zelle', 'Zelle', saved?.pay === 'zelle'),
+    option('cash', 'Cash in person', saved?.pay === 'cash')
   ]);
   const handoff = h('select', {}, [
     option('pickup', 'Pickup', (saved?.handoff || 'pickup') === 'pickup'),
@@ -3413,6 +3592,18 @@ async function loadReferences() {
     thumbtackItems = sim.thumbtackFeed(body);
   } catch {
     thumbtackItems = [];
+  }
+  try {
+    const response = await fetch('/data/payment-methods.json', { signal: gate.signal });
+    if (!response.ok) throw new Error(String(response.status));
+    const body = await response.json();
+    paymentMethods = {
+      zelle: { recipient: String(body?.zelle?.recipient || '').trim() },
+      cash: { inPersonOnly: body?.cash?.inPersonOnly !== false },
+      notice: String(body?.notice || paymentMethods.notice)
+    };
+  } catch {
+    paymentMethods = { zelle: { recipient: '' }, cash: { inPersonOnly: true }, notice: 'Zelle and cash are not reversible-protected. This app does not process them.' };
   } finally {
     gate.stop();
   }

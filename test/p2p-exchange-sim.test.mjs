@@ -591,7 +591,8 @@ test('pages stay simulation-only', () => {
   assert.equal(ui.includes("fetch('/data/offerup-dc-v0.json', { signal: gate.signal })"), true);
   assert.equal(ui.includes("fetch('/data/offerup-wanted-v0.json', { signal: gate.signal })"), true);
   assert.equal(ui.includes("fetch('/data/thumbtack-wanted-v0.json', { signal: gate.signal })"), true);
-  assert.equal((ui.match(/fetch\(/g) || []).length, 4);
+  assert.equal(ui.includes("fetch('/data/payment-methods.json', { signal: gate.signal })"), true);
+  assert.equal((ui.match(/fetch\(/g) || []).length, 5);
   const design = readFileSync(join(root, 'docs/marketplace-design.md'), 'utf8');
   for (const word of banned) assert.equal(design.includes(word), false, `docs/marketplace-design.md contains ${word}`);
   assert.equal(design.includes('Trust Score'), false);
@@ -1735,7 +1736,8 @@ test('DC reference values stay pending when a series has no number', () => {
   assert.equal(ui.includes("fetch('/data/offerup-dc-v0.json', { signal: gate.signal })"), true);
   assert.equal(ui.includes("fetch('/data/offerup-wanted-v0.json', { signal: gate.signal })"), true);
   assert.equal(ui.includes("fetch('/data/thumbtack-wanted-v0.json', { signal: gate.signal })"), true);
-  assert.equal((ui.match(/fetch\(/g) || []).length, 4);
+  assert.equal(ui.includes("fetch('/data/payment-methods.json', { signal: gate.signal })"), true);
+  assert.equal((ui.match(/fetch\(/g) || []).length, 5);
   assert.equal(ui.includes('REFERENCE_LABEL'), true);
   assert.equal(ui.includes("id: 'dc-reference'"), true);
   assert.equal(helper.includes("simulation reference values"), true);
@@ -1750,7 +1752,7 @@ test('DC reference values stay pending when a series has no number', () => {
   assert.equal(page.includes('id="refList"'), true);
   assert.equal(/<script(?![^>]*\bsrc=)/i.test(page), false);
   const worker = readFileSync(join(root, 'sw.js'), 'utf8');
-  assert.equal(worker.includes('lgme-v50'), true);
+  assert.equal(worker.includes('lgme-v51'), true);
   const desk = readFileSync(join(root, 'p2p-exchange-sim.html'), 'utf8');
   assert.equal(desk.includes('splash-skip'), false);
   assert.equal(desk.includes('>Skip<'), false);
@@ -1861,4 +1863,108 @@ test('a Solana signature settles one invoice and only after both parties attest'
   assert.ok(ui.indexOf('findReferencePayment', attestAt) < ui.indexOf('attestSolanaTx', attestAt));
   assert.equal(ui.includes('https://solscan.io/tx/'), true);
   assert.equal(ui.includes('refuseSolanaTx'), true);
+});
+
+test('Zelle and cash stay pending until the payee attests and a proof cannot be reused', async () => {
+  const store = await books();
+  const online = { onLine: true };
+  for (const [id, phone] of [['alice', '+12025550121'], ['bob', '+12025550122']]) {
+    const peer = await store.get(id);
+    peer.kyc = { status: 'VERIFIED', displayName: peer.name, phone, salt: `salt-${id}` };
+    await store.set(id, peer);
+  }
+  const work = await sim.recordIdidIt(store, 'bob', { work: 'Bench', scope: 'hour', hours: 1, at: '2026-11-07T00:00:00.000Z' });
+  const invoice = await sim.createInvoice(store, 'bob', {
+    receiptId: work.receiptId,
+    payerId: 'alice',
+    amount: 1.5,
+    dueAt: '2026-12-01T00:00:00.000Z',
+    at: '2026-11-07T00:00:00.000Z'
+  });
+  assert.equal(invoice.ok, true, invoice.error);
+  const before = await balances(store);
+  const proof = 'ab'.repeat(32);
+  const recorded = await sim.recordOffchainPayment(store, 'alice', {
+    method: 'zelle',
+    amount: 1.5,
+    paidAt: '2026-11-07',
+    confirmation: 'ZELLE 99',
+    proofHash: proof,
+    invoiceId: invoice.invoiceId,
+    otherId: 'bob',
+    navigator: online,
+    at: '2026-11-07T01:00:00.000Z'
+  });
+  assert.equal(recorded.ok, true, recorded.error);
+  assert.equal(recorded.status, 'pending-attestation');
+  assert.equal(recorded.unchanged, true);
+  assert.equal((await store.get('bob')).tape.some((entry) => entry.type === 'OFFCHAIN_TX'), false);
+  assert.notEqual(sim.readInvoices(await store.get('bob'), '2026-11-07T01:00:00.000Z').find((row) => row.invoiceId === invoice.invoiceId).status, 'paid');
+  assert.equal(JSON.stringify((await store.get('alice')).tape).includes('screenshot-bytes'), false);
+  const duplicate = await sim.recordOffchainPayment(store, 'alice', {
+    method: 'zelle',
+    amount: 2,
+    paidAt: '2026-11-08',
+    confirmation: 'zelle99',
+    invoiceId: 'invoice-two',
+    otherId: 'bob',
+    navigator: online
+  });
+  assert.equal(duplicate.ok, false);
+  assert.match(duplicate.error, /Flagged double-spend/);
+  const sameFile = await sim.recordOffchainPayment(store, 'alice', {
+    method: 'cash',
+    amount: 2,
+    paidAt: '2026-11-08',
+    note: 'handed over',
+    proofHash: proof,
+    invoiceId: 'invoice-three',
+    otherId: 'bob',
+    navigator: online
+  });
+  assert.equal(sameFile.ok, false);
+  assert.match(sameFile.error, /Flagged double-spend/);
+  const attested = await sim.attestOffchainPayment(store, 'bob', {
+    paymentId: recorded.payload.paymentId,
+    payerId: 'alice',
+    invoiceId: invoice.invoiceId,
+    navigator: online,
+    at: '2026-11-07T02:00:00.000Z'
+  });
+  assert.equal(attested.ok, true, attested.error);
+  assert.equal(attested.status, 'settled');
+  assert.equal(attested.penalty, false);
+  assert.equal((await store.get('alice')).tape.some((entry) => entry.type === 'OFFCHAIN_FINAL'), true);
+  assert.equal((await store.get('bob')).tape.some((entry) => entry.type === 'OFFCHAIN_FINAL'), true);
+  assert.equal(sim.readInvoices(await store.get('bob'), '2026-11-07T02:00:00.000Z').find((row) => row.invoiceId === invoice.invoiceId).status, 'paid');
+  const receipt = sim.offchainReceipt([await store.get('alice'), await store.get('bob')], recorded.payload.paymentId);
+  assert.equal(receipt.ok, true, receipt.error);
+  assert.equal(receipt.proofHash, proof);
+  assert.equal(receipt.thanks, 'THANK YOU FOR YOUR SUPPORT.');
+  assert.ok(receipt.payerSig && receipt.payeeSig);
+  const cash = await sim.recordOffchainPayment(store, 'alice', {
+    method: 'cash',
+    amount: 4,
+    paidAt: '2026-11-09',
+    note: 'in person at the door',
+    otherId: 'bob',
+    navigator: online
+  });
+  assert.equal(cash.ok, true, cash.error);
+  const refusal = await sim.refuseOffchainPayment(store, 'bob', { paymentId: cash.payload.paymentId, payerId: 'alice', navigator: online }, 'REFUSAL');
+  assert.equal(refusal.ok, true, refusal.error);
+  assert.equal(refusal.status, 'refused');
+  assert.equal(refusal.penalty, false);
+  assert.equal(sim.offchainStatus([await store.get('alice'), await store.get('bob')], cash.payload.paymentId), 'refused');
+  assert.deepEqual(await balances(store), before);
+  const methods = JSON.parse(readFileSync(join(root, 'data/payment-methods.json'), 'utf8'));
+  assert.equal(methods.zelle.recipient, '');
+  const coin = readFileSync(join(root, 'lgme-coin.html'), 'utf8');
+  const grants = readFileSync(join(root, 'grants.html'), 'utf8');
+  assert.equal(coin.includes('Option C. Zelle'), true);
+  assert.equal(coin.includes('Option D. Cash'), true);
+  assert.equal(coin.includes('Zelle details: ask the recipient in chat / provided on request'), true);
+  assert.equal(coin.includes('Do not mail cash.'), true);
+  assert.equal(grants.includes('Do not mail cash.'), true);
+  assert.equal(coin.includes('$Trust') || grants.includes('$Trust'), false);
 });

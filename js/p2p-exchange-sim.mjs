@@ -66,7 +66,7 @@ export function layoutMode({ width, coarse = false, uaMobile = false } = {}) {
   if (uaMobile && coarse && w <= 1023) return 'phone';
   return 'desk';
 }
-const MESSAGE_KINDS = new Set(['proposal', 'countersign', 'refusal', 'transfer', 'attestation', 'iou', 'tape', 'handoff', 'chat', 'chat-match', 'invoice', 'offer', 'solana']);
+const MESSAGE_KINDS = new Set(['proposal', 'countersign', 'refusal', 'transfer', 'attestation', 'iou', 'tape', 'handoff', 'chat', 'chat-match', 'invoice', 'offer', 'solana', 'offchain']);
 
 export function canonicalJSON(value) {
   if (value === null || typeof value !== 'object') return JSON.stringify(value);
@@ -398,6 +398,9 @@ export function entryDetail(entry, names = {}) {
   if (entry.type === 'SOLANA_TX') return `Solana ${payload.status || 'pending-attestation'} ${payload.cluster || ''} ${payload.signature ? String(payload.signature).slice(0, 12) : ''}`.trim();
   if (entry.type === 'SOLANA_FINAL') return `Solana settled ${payload.signature ? String(payload.signature).slice(0, 12) : ''}`.trim();
   if (entry.type === 'SOLANA_REFUSAL') return 'Solana refusal. No penalty.';
+  if (entry.type === 'OFFCHAIN_TX') return `${payload.method || 'Off-chain'} ${payload.status || 'pending-attestation'} ${payload.amount ?? ''}`.trim();
+  if (entry.type === 'OFFCHAIN_FINAL') return `${payload.method || 'Off-chain'} settled ${payload.amount ?? ''}`.trim();
+  if (entry.type === 'OFFCHAIN_REFUSAL') return 'Off-chain refusal. No penalty.';
   if (entry.type === 'GRANT') return `soBeIT grant ${payload.amount} $lgme ${payload.reason || ''}`.trim();
   if (entry.type === 'MEDIA' || entry.type === 'MEDIA_RECEIVED') return `${entry.type === 'MEDIA_RECEIVED' ? 'Received' : 'Media'} ${payload.mime || ''} ${payload.hash ? String(payload.hash).slice(0, 12) : ''}`.trim();
   if (entry.type === 'countersign') {
@@ -1536,6 +1539,8 @@ export async function importMessage(store, peerId, input, at = nowIso()) {
     if (holder) {
       const clash = solanaDoubleSpend(holder, message.body);
       if (!clash.ok) return clash;
+      const offchain = offchainDoubleSpend(holder, message.body);
+      if (!offchain.ok) return offchain;
     }
     return { ok: true, kind: 'tape', peer: message.body, appended: false };
   }
@@ -1543,6 +1548,7 @@ export async function importMessage(store, peerId, input, at = nowIso()) {
   if (!peer) return fail('Unknown peer.');
   if (!peer.privateKeyJwk) return fail('Wallet is locked.');
   if (message.kind === 'solana') return importSolanaHandoff(store, peer, message, at);
+  if (message.kind === 'offchain') return importOffchainHandoff(store, peer, message, at);
   const known = message.fromId ? await store.get(message.fromId) : null;
   if (known && canonicalJSON(known.publicKeyJwk) !== canonicalJSON(message.publicKeyJwk)) {
     return fail('The signing key does not match the book already stored for that peer.');
@@ -2395,9 +2401,13 @@ export function wantedInquiry(item) {
 export function tailoredDraft(item, spec = {}) {
   const pay = spec.pay === 'service'
     ? '$lgme services (IprovIT). A payment is real $lgme from your wallet.'
-    : spec.pay === 'full' || !spec.pay
-      ? 'Pay in full'
-      : `Terms over ${spec.pay} months`;
+    : spec.pay === 'zelle'
+      ? 'Zelle. Not counted until the payee attests the confirmation. This app does not process it.'
+      : spec.pay === 'cash'
+        ? 'Cash in person only. Do not mail cash. Not counted until the payee attests the receipt.'
+        : spec.pay === 'full' || !spec.pay
+          ? 'Pay in full'
+          : `Terms over ${spec.pay} months`;
   return [
     'SIMULATION draft. Nothing was sent.',
     spec.channel === 'thumbtack' ? THUMBTACK_CAVEAT : OFFERUP_CAVEAT,
@@ -4061,6 +4071,336 @@ async function importSolanaHandoff(store, peer, message, at) {
   return { ok: true, status: 'pending-attestation', applied: false, signature };
 }
 
+const OFFCHAIN_REUSE = 'This proof was already used. A receipt settles one invoice.';
+const OFFCHAIN_DOUBLE = 'Flagged double-spend. This proof is on two invoices. Nothing was applied.';
+
+function offchainEntries(peer) {
+  return (peer?.tape || []).filter((entry) => entry.type === 'OFFCHAIN_TX' || entry.type === 'OFFCHAIN_REFUSAL' || entry.type === 'OFFCHAIN_FINAL');
+}
+
+function proofKeysOf(payload) {
+  const keys = [];
+  const confirmation = String(payload?.confirmation || '').replace(/\s+/g, '').toUpperCase();
+  if (confirmation) keys.push(`zelle:${confirmation}`);
+  const hash = String(payload?.proofHash || '').toLowerCase();
+  if (/^[0-9a-f]{64}$/.test(hash)) keys.push(`file:${hash}`);
+  const noteKey = String(payload?.noteKey || '');
+  if (noteKey) keys.push(noteKey);
+  return keys;
+}
+
+export function offchainDoubleSpend(localPeer, incoming) {
+  const local = new Map();
+  for (const entry of offchainEntries(localPeer)) {
+    const invoiceId = String(entry.payload?.invoiceId || '');
+    for (const key of proofKeysOf(entry.payload)) {
+      if (local.has(key) && local.get(key) !== invoiceId) return { ok: false, flagged: true, error: OFFCHAIN_DOUBLE, proof: key };
+      local.set(key, invoiceId);
+    }
+  }
+  const seen = new Map();
+  for (const entry of incoming?.tape || []) {
+    if (entry.type !== 'OFFCHAIN_TX' && entry.type !== 'OFFCHAIN_REFUSAL' && entry.type !== 'OFFCHAIN_FINAL') continue;
+    const invoiceId = String(entry.payload?.invoiceId || '');
+    for (const key of proofKeysOf(entry.payload)) {
+      if ((local.has(key) && local.get(key) !== invoiceId) || (seen.has(key) && seen.get(key) !== invoiceId)) {
+        return { ok: false, flagged: true, error: OFFCHAIN_DOUBLE, proof: key };
+      }
+      seen.set(key, invoiceId);
+    }
+  }
+  return { ok: true };
+}
+
+function rejectKnownProof(peers, claim) {
+  for (const peer of peers) {
+    for (const entry of offchainEntries(peer)) {
+      const invoiceId = String(entry.payload?.invoiceId || '');
+      for (const key of proofKeysOf(entry.payload)) {
+        if (!claim.keys.includes(key)) continue;
+        if (claim.invoiceId && invoiceId && claim.invoiceId !== invoiceId) return fail(OFFCHAIN_DOUBLE);
+        if (entry.type === 'OFFCHAIN_REFUSAL') return fail('This payment was refused. No penalty. Nothing was applied.');
+        if (entry.type === 'OFFCHAIN_FINAL' || entry.payload?.status === 'settled') return fail('This proof was already settled.');
+        return fail(OFFCHAIN_REUSE);
+      }
+    }
+  }
+  return { ok: true };
+}
+
+export function offchainStatus(peers, paymentId) {
+  const rows = [];
+  for (const peer of peers || []) {
+    for (const entry of offchainEntries(peer)) {
+      if (entry.payload?.paymentId === paymentId) rows.push({ peerId: peer.id, entry });
+    }
+  }
+  if (!rows.length) return 'absent';
+  if (rows.some((row) => row.entry.type === 'OFFCHAIN_REFUSAL' || row.entry.payload?.status === 'refused')) return 'refused';
+  if (rows.some((row) => row.entry.type === 'OFFCHAIN_FINAL')) return 'settled';
+  const payerId = rows.map((row) => row.entry.payload?.payerId).find(Boolean);
+  const payeeId = rows.map((row) => row.entry.payload?.payeeId).find(Boolean);
+  const payerSigned = rows.some((row) => row.entry.type === 'OFFCHAIN_TX' && row.entry.payload?.role === 'payer' && row.peerId === payerId);
+  const payeeSigned = rows.some((row) => row.entry.type === 'OFFCHAIN_TX' && row.entry.payload?.role === 'payee' && row.peerId === payeeId);
+  if (payerSigned && payeeSigned) return 'settled';
+  return 'pending-attestation';
+}
+
+async function offchainClaim(spec, payerId) {
+  const method = spec.method === 'cash' ? 'cash' : spec.method === 'zelle' ? 'zelle' : '';
+  const amount = round2(spec.amount);
+  const paidAt = String(spec.paidAt || '').trim();
+  const confirmation = String(spec.confirmation || '').replace(/\s+/g, '').toUpperCase();
+  const note = String(spec.note || '').trim();
+  const proofHash = String(spec.proofHash || '').toLowerCase();
+  const noteKey = method === 'cash' && note ? `note:${await sha256(canonicalJSON({ method: 'cash', note }))}` : '';
+  const keys = [];
+  if (confirmation) keys.push(`zelle:${confirmation}`);
+  if (/^[0-9a-f]{64}$/.test(proofHash)) keys.push(`file:${proofHash}`);
+  if (noteKey) keys.push(noteKey);
+  return {
+    method,
+    amount,
+    paidAt,
+    confirmation,
+    note,
+    proofHash: /^[0-9a-f]{64}$/.test(proofHash) ? proofHash : '',
+    noteKey,
+    keys,
+    invoiceId: String(spec.invoiceId || ''),
+    offerId: String(spec.offerId || ''),
+    payerId: String(spec.payerId || payerId),
+    payeeId: String(spec.payeeId || spec.otherId || '')
+  };
+}
+
+async function finalizeOffchain(store, payload, at) {
+  const ids = [...new Set([payload.payerId, payload.payeeId].filter(Boolean))];
+  for (const id of ids) {
+    const peer = await store.get(id);
+    if (!peer?.privateKeyJwk && !peer?.signingKey) continue;
+    const signed = (peer.tape || []).some((entry) => entry.type === 'OFFCHAIN_TX' && entry.payload?.paymentId === payload.paymentId);
+    if (!signed) continue;
+    if (!(peer.tape || []).some((entry) => entry.type === 'OFFCHAIN_FINAL' && entry.payload?.paymentId === payload.paymentId)) {
+      await appendEntry(peer, 'OFFCHAIN_FINAL', {
+        simulated: false,
+        beta: true,
+        paymentId: payload.paymentId,
+        method: payload.method,
+        amount: payload.amount,
+        paidAt: payload.paidAt,
+        confirmation: payload.confirmation,
+        proofHash: payload.proofHash,
+        noteKey: payload.noteKey,
+        invoiceId: payload.invoiceId,
+        offerId: payload.offerId,
+        payerId: payload.payerId,
+        payeeId: payload.payeeId,
+        status: 'settled',
+        penalty: false
+      }, at);
+    }
+    if (payload.invoiceId) {
+      const invoice = readInvoices(peer, at).find((row) => row.invoiceId === payload.invoiceId);
+      if (invoice && invoice.status !== 'paid' && invoice.status !== 'refused' && invoice.status !== 'donated') {
+        await appendEntry(peer, 'INVOICE_PAID', {
+          simulated: false,
+          offchain: true,
+          method: payload.method,
+          invoiceId: payload.invoiceId,
+          amount: round2(payload.amount),
+          payerId: payload.payerId,
+          workerId: payload.payeeId,
+          paymentId: payload.paymentId,
+          proofHash: payload.proofHash,
+          penalty: false
+        }, at);
+      }
+    }
+    await store.set(id, peer);
+  }
+}
+
+export async function recordOffchainPayment(store, payerId, spec = {}) {
+  const peer = await store.get(payerId);
+  if (!peer?.privateKeyJwk && !peer?.signingKey) return fail(peer ? 'Wallet is locked.' : 'Unknown peer.');
+  const gate = assertOnline(spec.navigator);
+  if (!gate.ok) return fail(gate.error);
+  const claim = await offchainClaim(spec, payerId);
+  if (!claim.method) return fail('Choose Zelle or cash.');
+  if (!Number.isFinite(claim.amount) || claim.amount <= 0) return fail('Enter an amount greater than zero.');
+  if (!claim.paidAt || Number.isNaN(new Date(claim.paidAt).getTime())) return fail('Add the date of the payment.');
+  if (claim.method === 'zelle' && !claim.confirmation) return fail('Enter the Zelle confirmation number.');
+  if (claim.method === 'cash' && !claim.proofHash && !claim.note) return fail('Add a receipt photo or a handoff note. Cash is in person only.');
+  if (!claim.keys.length) return fail('The proof is missing.');
+  const at = spec.at || nowIso();
+  const peers = await peersIn(store, [payerId, claim.payeeId]);
+  const known = rejectKnownProof(peers, claim);
+  if (!known.ok) return known;
+  const before = replay(peer).balance;
+  const paymentId = await sha256(canonicalJSON({
+    method: claim.method,
+    keys: claim.keys,
+    invoiceId: claim.invoiceId,
+    offerId: claim.offerId,
+    payerId,
+    payeeId: claim.payeeId,
+    amount: claim.amount,
+    paidAt: claim.paidAt
+  }));
+  const payload = {
+    simulated: false,
+    beta: true,
+    paymentId,
+    ...claim,
+    status: 'pending-attestation',
+    role: 'payer',
+    penalty: false
+  };
+  await appendEntry(peer, 'OFFCHAIN_TX', payload, at);
+  await store.set(payerId, peer);
+  return { ok: true, status: 'pending-attestation', payload, unchanged: replay(await store.get(payerId)).balance === before };
+}
+
+export async function attestOffchainPayment(store, payeeId, spec = {}) {
+  const payee = await store.get(payeeId);
+  if (!payee?.privateKeyJwk && !payee?.signingKey) return fail(payee ? 'Wallet is locked.' : 'Unknown peer.');
+  const gate = assertOnline(spec.navigator);
+  if (!gate.ok) return fail(gate.error);
+  const paymentId = String(spec.paymentId || '').trim();
+  if (!paymentId) return fail('The payment id is missing.');
+  const at = spec.at || nowIso();
+  const peers = await peersIn(store, [payeeId, spec.payerId]);
+  if (offchainStatus(peers, paymentId) === 'settled') return fail('This proof was already settled.');
+  if ((payee.tape || []).some((entry) => entry.type === 'OFFCHAIN_TX' && entry.payload?.paymentId === paymentId)) return fail(OFFCHAIN_REUSE);
+  const prior = peers.flatMap((peer) => (peer.tape || []).filter((entry) => entry.type === 'OFFCHAIN_TX' && entry.payload?.paymentId === paymentId).map((entry) => entry.payload));
+  const staged = payee.offchainPending?.[paymentId];
+  const source = prior[0] || staged;
+  if (!source) return fail('The payer proof is not on this device.');
+  if (source.payeeId && source.payeeId !== payeeId) return fail('This payment is for a different payee.');
+  if (source.invoiceId && spec.invoiceId && source.invoiceId !== spec.invoiceId) return fail(OFFCHAIN_DOUBLE);
+  const before = replay(payee).balance;
+  const payload = { ...source, status: 'pending-attestation', role: 'payee', payeeId, payerId: source.payerId, penalty: false };
+  await appendEntry(payee, 'OFFCHAIN_TX', payload, at);
+  if (payee.offchainPending) delete payee.offchainPending[paymentId];
+  await store.set(payeeId, payee);
+  const after = await peersIn(store, [payeeId, payload.payerId]);
+  const status = offchainStatus(after, paymentId);
+  if (status === 'settled') await finalizeOffchain(store, payload, at);
+  const fresh = await store.get(payeeId);
+  const sealed = await sealMessage(fresh, 'offchain', { ...payload, status });
+  return {
+    ok: true,
+    status,
+    payload,
+    encoded: sealed.ok ? encodeMessage(sealed.message) : '',
+    penalty: false,
+    unchanged: replay(fresh).balance === before,
+    receipt: offchainReceipt(await peersIn(store, [payeeId, payload.payerId]), paymentId)
+  };
+}
+
+export async function refuseOffchainPayment(store, peerId, spec = {}, statement = 'REFUSAL') {
+  const peer = await store.get(peerId);
+  if (!peer?.privateKeyJwk && !peer?.signingKey) return fail(peer ? 'Wallet is locked.' : 'Unknown peer.');
+  const gate = assertOnline(spec.navigator);
+  if (!gate.ok) return fail(gate.error);
+  const paymentId = String(spec.paymentId || '').trim();
+  if (!paymentId) return fail('The payment id is missing.');
+  const at = spec.at || nowIso();
+  const peers = await peersIn(store, [peerId, spec.payerId]);
+  if (offchainStatus(peers, paymentId) === 'settled') return fail('A settled line stays settled.');
+  if ((peer.tape || []).some((entry) => entry.type === 'OFFCHAIN_REFUSAL' && entry.payload?.paymentId === paymentId)) {
+    return { ok: true, status: 'refused', penalty: false, duplicate: true };
+  }
+  const source = peers.flatMap((item) => (item.tape || []).filter((entry) => entry.type === 'OFFCHAIN_TX' && entry.payload?.paymentId === paymentId).map((entry) => entry.payload))[0]
+    || peer.offchainPending?.[paymentId]
+    || spec;
+  const before = replay(peer).balance;
+  await appendEntry(peer, 'OFFCHAIN_REFUSAL', {
+    ...source,
+    paymentId,
+    status: 'refused',
+    role: 'payee',
+    payeeId: peerId,
+    penalty: false,
+    statement: String(statement || 'REFUSAL').trim() || 'REFUSAL'
+  }, at);
+  if (peer.offchainPending) delete peer.offchainPending[paymentId];
+  await store.set(peerId, peer);
+  return { ok: true, status: 'refused', penalty: false, unchanged: replay(await store.get(peerId)).balance === before };
+}
+
+export function offchainReceipt(peers, paymentId) {
+  const rows = [];
+  for (const peer of peers || []) {
+    for (const entry of offchainEntries(peer)) {
+      if (entry.payload?.paymentId === paymentId) rows.push({ peerId: peer.id, entry });
+    }
+  }
+  const payer = rows.find((row) => row.entry.type === 'OFFCHAIN_TX' && row.entry.payload?.role === 'payer');
+  const payee = rows.find((row) => row.entry.type === 'OFFCHAIN_TX' && row.entry.payload?.role === 'payee');
+  if (!payer || !payee) return { ok: false, error: 'The receipt is not final until the payee attests.' };
+  const payload = payer.entry.payload;
+  return {
+    ok: true,
+    kind: 'offchain-receipt',
+    status: 'settled',
+    method: payload.method,
+    amount: payload.amount,
+    paidAt: payload.paidAt,
+    confirmation: payload.confirmation || '',
+    proofHash: payload.proofHash || '',
+    invoiceId: payload.invoiceId || '',
+    offerId: payload.offerId || '',
+    payerId: payload.payerId,
+    payeeId: payload.payeeId,
+    payerSig: payer.entry.sig,
+    payerHash: payer.entry.hash,
+    payeeSig: payee.entry.sig,
+    payeeHash: payee.entry.hash,
+    thanks: 'THANK YOU FOR YOUR SUPPORT.'
+  };
+}
+
+export async function sealOffchainHandoff(store, peerId, paymentId) {
+  const peer = await store.get(peerId);
+  if (!peer?.privateKeyJwk && !peer?.signingKey) return fail(peer ? 'Wallet is locked.' : 'Unknown peer.');
+  const entry = (peer.tape || []).find((row) => row.type === 'OFFCHAIN_TX' && row.payload?.paymentId === paymentId);
+  if (!entry) return fail('That payment is not on this book.');
+  const sealed = await sealMessage(peer, 'offchain', entry.payload);
+  if (!sealed.ok) return sealed;
+  return { ok: true, encoded: encodeMessage(sealed.message), message: sealed.message };
+}
+
+async function importOffchainHandoff(store, peer, message, at) {
+  const body = message.body || {};
+  const paymentId = String(body.paymentId || '').trim();
+  if (!paymentId) return fail('The payment id is missing.');
+  const clash = offchainDoubleSpend(peer, { tape: [{ type: 'OFFCHAIN_TX', payload: body }] });
+  if (!clash.ok) return clash;
+  if (body.role === 'payee') {
+    if (body.payerId && body.payerId !== peer.id) return fail('This attestation is for the payer.');
+    const mine = (peer.tape || []).find((entry) => entry.type === 'OFFCHAIN_TX' && entry.payload?.paymentId === paymentId);
+    if (!mine) return fail('The payer proof is not on this book.');
+    if (mine.payload?.invoiceId && body.invoiceId && mine.payload.invoiceId !== body.invoiceId) return fail(OFFCHAIN_DOUBLE);
+    if ((peer.tape || []).some((entry) => entry.type === 'OFFCHAIN_FINAL' && entry.payload?.paymentId === paymentId)) {
+      return { ok: true, status: 'settled', duplicate: true, applied: false };
+    }
+    await finalizeOffchain(store, { ...mine.payload, ...body, payerId: peer.id }, at);
+    return { ok: true, status: 'settled', applied: true, penalty: false };
+  }
+  if (body.payeeId && body.payeeId !== peer.id) return fail('This payment is for a different payee.');
+  if ((peer.tape || []).some((entry) => (entry.type === 'OFFCHAIN_TX' || entry.type === 'OFFCHAIN_REFUSAL') && entry.payload?.paymentId === paymentId)) {
+    return fail(OFFCHAIN_REUSE);
+  }
+  peer.offchainPending = peer.offchainPending || {};
+  peer.offchainPending[paymentId] = { ...body, paymentId, status: 'pending-attestation' };
+  await rememberInbox(peer, { at, kind: 'offchain', fromId: message.fromId, hash: message.hash });
+  await store.set(peer.id, peer);
+  return { ok: true, status: 'pending-attestation', applied: false, paymentId };
+}
+
 export async function refuseInvoice(store, payerId, invoiceId, statement, at = nowIso()) {
   const payer = await store.get(payerId);
   if (!payer?.privateKeyJwk) return fail('Wallet is locked.');
@@ -4290,8 +4630,11 @@ export async function signOffer(store, peerId, spec = {}) {
     cashAmount = built.total;
   } else if (cashMode === 'full' && (!Number.isFinite(cashAmount) || cashAmount <= 0)) {
     return fail('Enter an amount greater than zero.');
+  } else if (cashMode === 'zelle' || cashMode === 'cash') {
+    cashAmount = round2(spec.amount ?? (external ? offerupAmount(external.price) : null) ?? listing?.amount);
+    if (!Number.isFinite(cashAmount) || cashAmount <= 0) return fail('Enter an amount greater than zero.');
   } else if (cashMode && cashMode !== 'full') {
-    return fail('Choose cash in full or a term plan.');
+    return fail('Choose cash in full, Zelle, cash in person, or a term plan.');
   }
   const services = [];
   for (const id of spec.serviceIds || []) {

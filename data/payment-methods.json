@@ -1,0 +1,9 @@
+{
+  "zelle": {
+    "recipient": ""
+  },
+  "cash": {
+    "inPersonOnly": true
+  },
+  "notice": "Zelle and cash are not reversible-protected. This app does not process them."
+}

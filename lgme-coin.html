@@ -125,7 +125,32 @@
         <li>Confirm.</li>
       </ol>
     </div>
+    <div class="card" id="zelle">
+      <h3>Option C. Zelle</h3>
+      <p id="zelle-recipient">Zelle details: ask the recipient in chat / provided on request</p>
+      <p>Zelle and cash are not reversible-protected. This app does not process them. A Zelle payment is not counted until the payee attests the confirmation number, and any screenshot is stored only as a SHA-256 fingerprint. Nothing is uploaded.</p>
+      <ol>
+        <li>Ask the recipient for the Zelle name in chat if it is not shown above.</li>
+        <li>In your bank app, send the gift by Zelle.</li>
+        <li>Save the confirmation number.</li>
+        <li>On the exchange desk, choose Pay with Zelle, enter the amount, the date, and the confirmation number.</li>
+        <li>Optional: add a screenshot. The desk keeps the fingerprint, not the file.</li>
+        <li>The payee taps Attest, or Refuse with no penalty. Only then is it counted.</li>
+      </ol>
+    </div>
+    <div class="card" id="cash">
+      <h3>Option D. Cash</h3>
+      <p>Cash is in person only. Do not mail cash.</p>
+      <p>Zelle and cash are not reversible-protected. This app does not process them.</p>
+      <ol>
+        <li>Meet in person and hand over the cash.</li>
+        <li>Keep a receipt photo or write a handoff note.</li>
+        <li>On the exchange desk, choose Pay with cash and enter the amount, the date, and the note or photo.</li>
+        <li>The payee taps Attest, or Refuse with no penalty. Only then is it counted.</li>
+      </ol>
+    </div>
   </div>
+  <script type="module" src="/js/payment-notice.mjs"></script>
   <script type="module" src="/js/install-launch.mjs"></script>
   <script src="/js/vendor/qrcode.js"></script>
   <script src="/js/lgme-coin-page.js"></script>
