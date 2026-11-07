@@ -1160,6 +1160,12 @@ test('real gifts are announced above the simulation and the two methods stay sep
   assert.equal(coin.includes('In-app $lgme balances stay simulated.'), true);
   const desk = readFileSync(join(root, 'p2p-exchange-sim.html'), 'utf8');
   assert.ok(desk.indexOf('give-banner') < desk.indexOf('id="beta-notice"'));
+  assert.equal(desk.includes('lgme · BETA'), true);
+  assert.match(desk, /name="description" content="Beta\. Peer-to-peer exchange that settles real \$lgme from your own Solana wallet\./);
+  assert.match(desk, /This beta needs JavaScript/);
+  assert.equal(desk.includes('This simulation needs JavaScript'), false);
+  assert.equal(desk.includes('href="/simulation-explainer"'), true);
+  assert.equal(desk.includes('href="/mutual-credit-simulator"'), true);
   const grants = readFileSync(join(root, 'grants.html'), 'utf8');
   assert.equal(grants.includes('How to propose'), true);
 });
@@ -1205,7 +1211,7 @@ test('the wanted pin stays on IwanIT and a concluded match is an IdidIt', async 
   assert.match(greenbelt.note, /Description says \$325; confirm price/);
   assert.match(greenbelt.inquiry, /I'd offer \$250/);
   assert.match(matches[0].inquiry, /Is your Schwinn 810 Treadmill still available/);
-  assert.match(matches[0].inquiry, /in-app balances are simulated/);
+  assert.match(matches[0].inquiry, /signed by your wallet/);
   const store = await books();
   const far = '2099-01-01T00:00:00.000Z';
   const donation = await sim.ensureStandingDonation(store, '2026-11-07T00:00:00.000Z');
@@ -1266,7 +1272,7 @@ test('the wanted pin stays on IwanIT and a concluded match is an IdidIt', async 
   assert.match(pros[0].city, /confirm ZIP/);
   assert.match(pros[0].price, /\$99\/hr/);
   assert.match(pros[0].inquiry, /call-out, labor and parts/);
-  assert.match(pros[0].inquiry, /in-app balances are simulated/);
+  assert.match(pros[0].inquiry, /signed by your wallet/);
   assert.equal(pros.filter((item) => item.isIprovIT).length, 1);
   assert.equal(/recommend|best pro|endorsed/i.test(JSON.stringify(thumb)), false);
   assert.deepEqual(sim.thumbtackIprov(thumb).map((item) => item.title), ['The Repair Extraordinaire']);
@@ -1734,7 +1740,7 @@ test('DC reference values stay pending when a series has no number', () => {
   assert.equal(page.includes('id="refList"'), true);
   assert.equal(/<script(?![^>]*\bsrc=)/i.test(page), false);
   const worker = readFileSync(join(root, 'sw.js'), 'utf8');
-  assert.equal(worker.includes('lgme-v46'), true);
+  assert.equal(worker.includes('lgme-v47'), true);
   assert.equal(worker.includes('/data/thumbtack-wanted-v0.json'), true);
   assert.equal(worker.includes('/data/offerup-wanted-v0.json'), true);
   assert.equal(worker.includes('/js/dc-reference.mjs'), true);

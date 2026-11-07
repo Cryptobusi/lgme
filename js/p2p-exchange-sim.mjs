@@ -1,5 +1,5 @@
 /**
- * Peer-to-peer mutual-credit simulation.
+ * Peer-to-peer beta desk. Agreed $lgme settles from the member's own Solana wallet.
  * Each peer's book lives only in that peer's own store key.
  * Signing is local ECDSA. Links are SHA-256. Nothing here opens a network.
  */
@@ -37,7 +37,7 @@ export const STANDING_DONATION = Object.freeze({
 });
 export const STANDING_WANTED = Object.freeze({
   title: 'Wanted: working treadmill and elliptical, under $500 total budget, Washington DC area',
-  description: 'Cash, terms over 3 to 6 months, or $lgme services (IprovIT). SIMULATION. In-app $lgme stays simulated.',
+  description: 'Cash, terms over 3 to 6 months, or $lgme services (IprovIT). Beta. A payment is real $lgme from your wallet.',
   href: '',
   action: 'Wanted',
   kinds: Object.freeze(['IwanIT']),
@@ -46,7 +46,7 @@ export const STANDING_WANTED = Object.freeze({
 });
 export const STANDING_REPAIR = Object.freeze({
   title: 'Wanted: exercise equipment repair/service (treadmill, elliptical), Washington DC area',
-  description: 'SIMULATION. In-app $lgme stays simulated. A Thumbtack pro is not affiliated with this desk.',
+  description: 'Beta. A Thumbtack pro is not affiliated with this desk. A payment is real $lgme from your wallet.',
   href: '',
   action: 'Wanted',
   kinds: Object.freeze(['IwanIT']),
@@ -913,7 +913,7 @@ export function toExport(peer) {
   const view = replay(peer);
   return {
     simulated: true,
-    label: 'personal tape (simulated)',
+    label: 'personal tape (local record)',
     id: peer.id,
     name: peer.name,
     publicKeyJwk: peer.publicKeyJwk,
@@ -1175,7 +1175,7 @@ export async function openMessage(input) {
   } catch {
     return fail('The message could not be read.');
   }
-  if (!message || message.simulated !== true || !MESSAGE_KINDS.has(message.kind)) return fail('This is not a simulated lgme message.');
+  if (!message || message.simulated !== true || !MESSAGE_KINDS.has(message.kind)) return fail('This is not an lgme message.');
   const hash = await sha256(canonicalJSON(message.body));
   if (hash !== message.hash) return fail('Hash does not match. Import stopped.');
   const valid = await verifyText(message.publicKeyJwk, message.hash, message.sig);
@@ -1419,7 +1419,7 @@ export async function autoDeliverTransfer(store, fromId, spec) {
   if (!from) return fail('Unknown peer.');
   const gate = assertOnline(spec.navigator);
   if (!gate.ok) return { ok: false, error: gate.error, sent: false };
-  if (!from.wallet?.ciphertext) return { ok: false, error: 'Set up simulated 2FA before auto-send.', sent: false };
+  if (!from.wallet?.ciphertext) return { ok: false, error: 'Set up the book passphrase and code before auto-send.', sent: false };
   const toId = String(spec.toId || '').trim();
   const amount = round2(spec.amount);
   if (!/^[a-z0-9-]{1,32}$/.test(toId) || toId === fromId) return { ok: false, error: 'Name a different peer id.', sent: false };
@@ -2366,12 +2366,12 @@ export function wantedInquiry(item) {
   if (item?.inquiry) return item.inquiry;
   const title = item?.title || 'item';
   const price = item?.price || 'your price';
-  return `Hi! Is your ${title} still available and fully working? I'd offer ${price} after a quick demonstration. What pickup or delivery works? We can continue here on OfferUp, or use lgme.app to record our agreed terms (its in-app balances are simulated).`;
+  return `Hi! Is your ${title} still available and fully working? I'd offer ${price} after a quick demonstration. What pickup or delivery works? We can continue here on OfferUp, or use lgme.app to record our agreed terms (a $lgme payment is signed by your wallet).`;
 }
 
 export function tailoredDraft(item, spec = {}) {
   const pay = spec.pay === 'service'
-    ? '$lgme services (IprovIT). In-app $lgme stays simulated.'
+    ? '$lgme services (IprovIT). A payment is real $lgme from your wallet.'
     : spec.pay === 'full' || !spec.pay
       ? 'Pay in full'
       : `Terms over ${spec.pay} months`;
@@ -2432,7 +2432,7 @@ export function wantedMatchDraft(match) {
     match?.city || '',
     match?.url || '',
     'Cash, terms over 3 to 6 months, or $lgme services (IprovIT).',
-    'In-app $lgme stays simulated.'
+    'A payment is real $lgme from your wallet.'
   ].filter(Boolean).join('\n');
 }
 
@@ -2441,7 +2441,7 @@ export function inviteSellerText(match) {
     'SIMULATION. Nothing was sent.',
     `You listed ${match?.title || 'an item'} on OfferUp.`,
     `The practice desk is here: ${INVITE_URL}`,
-    'In-app $lgme stays simulated.'
+    'A payment is real $lgme from your wallet.'
   ].join('\n');
 }
 
@@ -3230,7 +3230,7 @@ export async function composeChat(store, senderId, spec = {}) {
   const encoded = encodeMessage(sealed.message);
   const preview = `SIMULATION lgme. This page does not send it.\n${text}\n${encoded}`;
   const links = shareHrefs(toPhone, preview);
-  sender.outbox.push({ at, kind: 'chat', channel: 'sms', toPhone, hash: messageHash, simulated: true, text: 'SIMULATION. The page did not send a message.' });
+  sender.outbox.push({ at, kind: 'chat', channel: 'sms', toPhone, hash: messageHash, simulated: true, text: 'Beta. The page did not send a message.' });
   await store.set(senderId, sender);
   return { ok: true, message: sealed.message, encoded, sms: links.sms, tel: telHref(toPhone), threadId, hash: messageHash, kycHash: identity.hash, seq };
 }
@@ -3962,8 +3962,8 @@ export function offerupDraft(offer) {
     lines.push(`Term plan: ${cash.amount} over ${cash.months} months`);
     for (const row of cash.schedule || []) lines.push(`  ${row.n}. ${row.amount} due ${String(row.dueAt).slice(0, 10)}`);
   }
-  for (const service of services) lines.push(`IprovIT service: ${service.title} (${service.amount} $lgme, simulated)`);
-  lines.push('In-app $lgme balances stay simulated. Paste this on OfferUp yourself.');
+  for (const service of services) lines.push(`IprovIT service: ${service.title} (${service.amount} $lgme, signed by your wallet)`);
+  lines.push('A $lgme payment is signed by your wallet. Paste this on OfferUp yourself.');
   return lines.filter(Boolean).join('\n');
 }
 

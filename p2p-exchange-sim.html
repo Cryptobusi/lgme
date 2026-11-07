@@ -11,8 +11,8 @@
   <script src="/js/p2p-layout.js"></script>
   <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-  <title>P2P exchange sim · lgme</title>
-  <meta name="description" content="SIMULATION. Peer-to-peer mutual credit in this browser. Separate books, countersigned exchanges, third-seat refusal, and a floor that stays senior." />
+  <title>P2P exchange · lgme</title>
+  <meta name="description" content="Beta. Peer-to-peer exchange that settles real $lgme from your own Solana wallet. Separate books, countersigned agreements, third-seat refusal, and a floor that stays senior." />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;1,6..72,500&display=swap" />
   <link rel="stylesheet" href="/menu.css" />
   <style>
@@ -191,9 +191,9 @@
       <a href="/simulation-explainer">Simulation explainer</a>
       <a href="/the-third-seat">Third seat</a>
     </nav>
-    <p class="kicker">lgme · SIMULATION <button type="button" id="install-app" data-install hidden>Install</button> <a class="quiet-link" href="#help">Help</a></p>
+    <p class="kicker">lgme · BETA <button type="button" id="install-app" data-install hidden>Install</button> <a class="quiet-link" href="#help">Help</a></p>
     <h1>P2P exchange</h1>
-    <p class="muted lede">A practice market and a peer desk. List an item, sign an offer, and hand it off. Each person keeps their own book. A floor stays senior, and a refusal moves nothing.</p>
+    <p class="muted lede">Beta. List an item, sign an offer, and settle real $lgme from your own Solana wallet. Each person keeps their own book. A floor stays senior, and a refusal moves nothing.</p>
     <div id="seatbar" class="seatbar" aria-label="Peers"></div>
     <div class="tabs" role="tablist" aria-label="Desk sections">
       <button type="button" id="tab-market" role="tab">Market</button>
@@ -223,7 +223,7 @@
         <p class="muted">A work receipt names the job and who did it. It is not cash. It moves a balance only when a countersigned exchange claims it, and that claim is written on each party’s own tape.</p>
       </article>
     </div>
-    <noscript><p>This simulation needs JavaScript in the browser. It still does not use a network.</p></noscript>
+    <noscript><p>This beta needs JavaScript in the browser. Settlement uses your own Solana wallet. This page does not hold a seed phrase.</p></noscript>
   </div>
   <nav class="tabbar" aria-label="Phone">
     <button type="button" data-tab="market">Market</button>

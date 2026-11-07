@@ -391,14 +391,14 @@ function renderAddPeer(peers) {
   });
   panel.replaceChildren(
     h('h2', {}, ['Register']),
-    h('p', { class: 'muted' }, ['A new peer receives a simulated grant of 100 $lgme. It is written as a GENESIS line labeled mock. The signing key is then encrypted with the passphrase. This is not a payment.']),
+    h('p', { class: 'muted' }, ['A new peer receives a local grant of 100 on this book. It is written as a GENESIS line. It is not Solana $lgme. The book key is then encrypted with the passphrase.']),
     form
   );
 }
 
 async function resetDemo() {
   if (busy) return;
-  if (!confirm('Reset the demo? This clears every simulated book in this browser.')) return;
+  if (!confirm('Reset the demo? This clears every local book in this browser. It does not move Solana $lgme.')) return;
   busy = true;
   try {
     await sim.resetAndSeed(store);
@@ -806,7 +806,7 @@ async function renderBooks(peers, seat) {
     const token = pendingInvoice;
     pendingInvoice = '';
     const saved = await sim.acceptInvoice(store, seat, token);
-    setStatus(saved.ok ? 'Invoice recorded on this book. The balance did not move. SIMULATION.' : saved.error, saved.ok ? 'ok' : 'bad');
+    setStatus(saved.ok ? 'Invoice recorded on this book. The balance did not move. Beta.' : saved.error, saved.ok ? 'ok' : 'bad');
   }
   const panel = document.getElementById('panel');
   const peer = await store.get(seat);
@@ -902,7 +902,7 @@ async function renderBooks(peers, seat) {
         mediaHashes: hashes
       });
       if (!created.ok) { setStatus(`Work recorded. ${created.error}`, 'bad'); await render(); return; }
-      setStatus('Invoice signed. The balance did not move. Open SMS from the ledger to remind. SIMULATION.', 'ok');
+      setStatus('Invoice signed. The balance did not move. Open SMS from the ledger to remind. Beta.', 'ok');
       await render();
     } finally {
       busy = false;
@@ -920,12 +920,12 @@ async function renderBooks(peers, seat) {
     if (row.remaining > 0 && row.status !== 'refused' && row.status !== 'donated') {
       actions.push(h('button', { type: 'button', onClick: async () => {
         const result = await sim.remindInvoice(store, seat, row.invoiceId);
-        setStatus(result.ok ? 'Reminder recorded on the tapes. Nothing was sent. No penalty. SIMULATION.' : result.error, result.ok ? 'ok' : 'bad');
+        setStatus(result.ok ? 'Reminder recorded on the tapes. Nothing was sent. No penalty. Beta.' : result.error, result.ok ? 'ok' : 'bad');
         if (result.ok) await render();
       } }, ['Remind']));
       actions.push(h('button', { type: 'button', id: 'donate-floor', onClick: async () => {
         const result = await sim.consentFloorDonation(store, seat, row.invoiceId);
-        setStatus(result.closed ? result.message : 'Your consent is signed. The other party still has to consent. No penalty. SIMULATION.', result.ok ? 'ok' : 'bad');
+        setStatus(result.closed ? result.message : 'Your consent is signed. The other party still has to consent. No penalty. Beta.', result.ok ? 'ok' : 'bad');
         if (result.ok) await render();
       } }, ['Reconcile as donation to the floor']));
     }
@@ -935,7 +935,7 @@ async function renderBooks(peers, seat) {
         const payload = (await store.get(seat)).tape.find((entry) => entry.type === 'INVOICE' && entry.payload?.invoiceId === row.invoiceId)?.payload;
         const sealed = await sim.sealMessage(await store.get(seat), 'invoice', payload);
         if (!sealed.ok) { setStatus(sealed.error, 'bad'); return; }
-        const href = sim.shareHrefs(row.payerPhone, `SIMULATION lgme. Invoice ${row.amount} $lgme. This page does not send it.\n${sim.encodeMessage(sealed.message)}`).sms;
+        const href = sim.shareHrefs(row.payerPhone, `Beta lgme. Invoice ${row.amount} $lgme. This page does not send it.\n${sim.encodeMessage(sealed.message)}`).sms;
         event.currentTarget.href = href;
         window.location.href = href;
       } }, ['Remind by SMS']));
@@ -959,12 +959,12 @@ async function renderBooks(peers, seat) {
       }) }, ['Pay donation in $lgme']));
       actions.push(h('button', { type: 'button', class: 'primary', id: 'pay-invoice', onClick: async () => {
         const result = await sim.payInvoice(store, seat, row.invoiceId, { amount: payAmount.value, passphrase: pass.value, code: code.value });
-        setStatus(result.ok ? `Paid ${result.amount} $lgme. Remaining ${result.remaining}. Reward ${result.reward}. SIMULATION.` : result.error, result.ok ? 'ok' : 'bad');
+        setStatus(result.ok ? `Paid ${result.amount} $lgme. Remaining ${result.remaining}. Reward ${result.reward}. Beta.` : result.error, result.ok ? 'ok' : 'bad');
         if (result.ok) await render();
       } }, ['Pay with code']));
       actions.push(h('button', { type: 'button', onClick: async () => {
         const result = await sim.refuseInvoice(store, seat, row.invoiceId, note.value || 'REFUSAL');
-        setStatus(result.ok ? 'REFUSAL recorded. No balance moves. No penalty. No reward. SIMULATION.' : result.error, result.ok ? 'ok' : 'bad');
+        setStatus(result.ok ? 'REFUSAL recorded. No balance moves. No penalty. No reward. Beta.' : result.error, result.ok ? 'ok' : 'bad');
         if (result.ok) await render();
       } }, ['Refuse']));
     }
@@ -1167,7 +1167,7 @@ async function renderWallet(peers, seat) {
   }
   const blocks = [
     h('h2', {}, [`Wallet · ${summary.name} `, h('span', { class: sim.kycStatus(peer) === 'VERIFIED' ? 'badge badge-verified' : 'badge badge-unverified' }, [sim.kycStatus(peer) === 'VERIFIED' ? 'Verified' : 'Unverified'])]),
-    h('p', { class: 'muted' }, ['SIMULATION. The balance is mock $lgme. The passphrase and the 6-digit code are simulated 2FA. This page does not send the code and does not move real money.']),
+    h('p', { class: 'muted' }, ['Beta. The book key is local. The passphrase and the 6-digit code unlock that book. They are not a Solana seed. A $lgme payment is signed by your wallet.']),
     h('div', { class: 'balance-hero' }, [
       coinMark(),
       h('div', {}, [h('strong', {}, [String(sim.replay(peer).balance)]), summary.mock ? 'Mock $lgme' : 'Book balance']),
@@ -1190,7 +1190,7 @@ async function renderWallet(peers, seat) {
       if (!setup.ok) { setStatus(setup.error, 'bad'); return; }
       rememberedSecrets.set(seat, setup.secretBase32);
       sessionKeys.delete(seat);
-      setStatus('Key encrypted. Scan the code before you reload. SIMULATION.', 'ok');
+      setStatus('Key encrypted. Scan the code before you reload. Beta.', 'ok');
       await render();
     });
     blocks.push(form, iouSection(peer));
@@ -1209,12 +1209,12 @@ async function renderWallet(peers, seat) {
       if (!opened.ok) { setStatus(opened.error, 'bad'); return; }
       sessionKeys.set(seat, opened.privateKeyJwk);
       rememberedSecrets.set(seat, opened.secretBase32);
-      setStatus('Wallet unlocked for this page session. The key stays encrypted in storage. SIMULATION.', 'ok');
+      setStatus('Wallet unlocked for this page session. The key stays encrypted in storage. Beta.', 'ok');
       await render();
     });
     blocks.push(h('p', { class: 'legend' }, ['Unlock asks for the passphrase and the current code. A wrong code leaves the key locked.']), form);
   } else {
-    blocks.push(h('div', { class: 'actions' }, [h('button', { type: 'button', onClick: () => { sessionKeys.delete(seat); setStatus('Wallet locked. SIMULATION.', 'ok'); render(); } }, ['Lock'])]));
+    blocks.push(h('div', { class: 'actions' }, [h('button', { type: 'button', onClick: () => { sessionKeys.delete(seat); setStatus('Wallet locked. Beta.', 'ok'); render(); } }, ['Lock'])]));
     blocks.push(iouSection(peer));
   }
   blocks.push(deskLinks());
@@ -1238,7 +1238,7 @@ function kycCard(peer, peers) {
   if (status === 'VERIFIED') {
     return h('article', { class: 'card', id: 'kyc' }, [
       h('h3', {}, ['You are verified']),
-      h('p', { class: 'muted' }, ['A member vouched for this book. You can send. SIMULATION.']),
+      h('p', { class: 'muted' }, ['A member vouched for this book. You can send. Beta.']),
       steps
     ]);
   }
@@ -1261,7 +1261,7 @@ function kycCard(peer, peers) {
       event.preventDefault();
       const result = await sim.startKyc(store, peer.id, { displayName: displayName.value, phone: phone.value, email: email.value });
       if (!result.ok) { setStatus(result.error, 'bad'); return; }
-      setStatus('Details saved on this device. Next, confirm your code. SIMULATION.', 'ok');
+      setStatus('Details saved on this device. Next, confirm your code. Beta.', 'ok');
       await render();
     });
     body.push(form);
@@ -1279,13 +1279,13 @@ function kycCard(peer, peers) {
         const setup = await sim.setupWallet(store, peer.id, pass.value);
         if (!setup.ok) { setStatus(setup.error, 'bad'); return; }
         rememberedSecrets.set(peer.id, setup.secretBase32);
-        setStatus('Code is ready. Enter it to finish this step. SIMULATION.', 'ok');
+        setStatus('Code is ready. Enter it to finish this step. Beta.', 'ok');
         await render();
         return;
       }
       const result = await sim.confirmKyc2fa(store, peer.id, { passphrase: pass.value, code: code.value, unixSeconds: Math.floor(Date.now() / 1000) });
       if (!result.ok) { setStatus(result.error, 'bad'); return; }
-      setStatus('Code confirmed. A verified member still has to vouch. SIMULATION.', 'ok');
+      setStatus('Code confirmed. A verified member still has to vouch. Beta.', 'ok');
       await render();
     });
     body.push(form);
@@ -1312,7 +1312,7 @@ function kycCard(peer, peers) {
       event.preventDefault();
       const result = await sim.vouchMember(store, voucher.value, peer.id, { passphrase: pass.value, code: code.value, unixSeconds: Math.floor(Date.now() / 1000) });
       if (!result.ok) { setStatus(result.error, 'bad'); return; }
-      setStatus('Verified. A member vouched. SIMULATION.', 'ok');
+      setStatus('Verified. A member vouched. Beta.', 'ok');
       await render();
     });
     body.push(form, selfieStep(peer));
@@ -1333,11 +1333,11 @@ function selfieStep(peer) {
       await video.play();
       stopCamera = () => { stream.getTracks().forEach((track) => track.stop()); video.hidden = true; };
     } catch {
-      setStatus('The camera preview did not open. Nothing was stored. SIMULATION.', 'bad');
+      setStatus('The camera preview did not open. Nothing was stored. Beta.', 'bad');
     }
-  } }, ['Preview a simulated selfie']);
+  } }, ['Preview a selfie']);
   const hashBtn = h('button', { type: 'button', class: 'primary', onClick: async () => {
-    if (video.readyState < 2) { setStatus('Open the preview first. SIMULATION.', 'bad'); return; }
+    if (video.readyState < 2) { setStatus('Open the preview first. Beta.', 'bad'); return; }
     const canvas = document.createElement('canvas');
     canvas.width = video.videoWidth || 320;
     canvas.height = video.videoHeight || 240;
@@ -1420,7 +1420,7 @@ async function renderDevices(peers, seat) {
     field('Note', note),
     field('Their phone or email, if you want a draft', address),
     h('p', { class: 'legend' }, [peer.wallet?.ciphertext
-      ? 'Auto-send stays on this device. A valid code delivers the signed transfer into the other book and posts a simulated notice. A wrong code sends nothing.'
+      ? 'Auto-send stays on this device. A valid code delivers the signed note into the other book. A wrong code sends nothing. Solana $lgme still needs your wallet.'
       : 'This demo book has no authenticator yet. Signing prepares a code you can carry. Set up 2FA on the wallet to auto-deliver on this device.']),
     sim.kycStatus(peer) === 'VERIFIED' ? null : h('p', { class: 'legend' }, ['Unverified members can send up to 20 $lgme. Receiving is open.'])
   ]);
@@ -1444,8 +1444,8 @@ async function renderDevices(peers, seat) {
       carryAddress = address.value.trim();
       if (result.encoded && deliveryChannel) deliveryChannel.postMessage({ encoded: result.encoded });
       const line = result.delivered
-        ? `Delivered. ${peer.name} is at ${result.balance}. The other book appended it. SIMULATION.`
-        : `Signed. ${peer.name} is at ${result.balance}. Carry the code to the other device. SIMULATION.`;
+        ? `Delivered. ${peer.name} is at ${result.balance}. The other book appended it. Beta.`
+        : `Signed. ${peer.name} is at ${result.balance}. Carry the code to the other device. Beta.`;
       setStatus(line, 'ok');
       toast(line);
       await render();
@@ -1510,8 +1510,8 @@ function showShare(host, seat, encoded, address, summary) {
   const qr = h('div', {});
   const box = h('textarea', { class: 'codebox', readonly: true }, [encoded]);
   const copy = h('button', { type: 'button', onClick: async () => {
-    try { await navigator.clipboard.writeText(encoded); setStatus('Code copied. SIMULATION.', 'ok'); }
-    catch { setStatus('Select the code and copy it yourself. SIMULATION.', 'bad'); }
+    try { await navigator.clipboard.writeText(encoded); setStatus('Code copied. Beta.', 'ok'); }
+    catch { setStatus('Select the code and copy it yourself. Beta.', 'bad'); }
   } }, ['Copy code']);
   const sms = h('a', { class: 'btn', href: hrefs.sms }, ['Open text app']);
   const mail = h('a', { class: 'btn', href: hrefs.mailto }, ['Open mail app']);
@@ -1519,7 +1519,7 @@ function showShare(host, seat, encoded, address, summary) {
   sms.addEventListener('click', log('sms'));
   mail.addEventListener('click', log('mailto'));
   host.replaceChildren(
-    h('p', { class: 'legend' }, ['SIMULATION. Nothing has been sent.']),
+    h('p', { class: 'legend' }, ['Beta. Nothing has been sent.']),
     box,
     h('div', { class: 'actions' }, [copy, sms, mail]),
     h('p', { class: 'codebox' }, [link]),
@@ -1558,14 +1558,14 @@ async function acceptIncoming(seat, raw) {
   const result = await sim.importMessage(store, seat, raw);
   if (!result.ok) { setStatus(result.error, 'bad'); return; }
   pendingImport = '';
-  setStatus(result.balance == null ? 'Imported. SIMULATION.' : `Imported. Balance ${result.balance}. SIMULATION.`, 'ok');
+  setStatus(result.balance == null ? 'Imported. Beta.' : `Imported. Balance ${result.balance}. Beta.`, 'ok');
   await render();
 }
 
 async function startScan(video, incoming, preview, onFound) {
   stopAnyCamera();
   if (!navigator.mediaDevices?.getUserMedia || !globalThis.jsQR) {
-    setStatus('This browser has no camera reader. Paste the code instead. SIMULATION.', 'bad');
+    setStatus('This browser has no camera reader. Paste the code instead. Beta.', 'bad');
     return;
   }
   try {
@@ -1601,7 +1601,7 @@ async function startScan(video, incoming, preview, onFound) {
     };
     requestAnimationFrame(tick);
   } catch {
-    setStatus('The camera was not opened. Paste the code instead. SIMULATION.', 'bad');
+    setStatus('The camera was not opened. Paste the code instead. Beta.', 'bad');
   }
 }
 
@@ -1640,7 +1640,7 @@ function contributionMethods() {
   drawQr(qrHost, DONATE_ADDRESS);
   return h('section', { class: 'contrib' }, [
     h('h3', {}, ['soBeIT contributions']),
-    h('p', { class: 'legend' }, ['Real token on Solana. Not financial advice. High risk; you may lose everything. Always verify the mint address. The in-app $lgme balances are a simulation and are not this token.']),
+    h('p', { class: 'legend' }, ['Real token on Solana. Not financial advice. High risk; you may lose everything. Always verify the mint address. A wallet balance is read from Solana. The local tape records signatures and is not a second mint.']),
     h('article', { class: 'card pump-wallet' }, [
       h('h3', {}, ['Pump.fun wallet']),
       h('p', {}, ['Wallet name ', h('span', { class: 'wallet-name' }, ['@EgonAnon'])]),
@@ -1670,18 +1670,18 @@ function passkeyCard() {
   return h('article', { class: 'card', id: 'passkey' }, [
     h('h3', {}, ['Unlock']),
     h('p', {}, [PASSKEY_WORDING]),
-    h('p', { class: 'muted' }, ['SIMULATION. A passphrase is the fallback, and it is not a short PIN. The 6-digit code stays optional. Recovery codes are shown once.']),
+    h('p', { class: 'muted' }, ['Beta. A passphrase is the fallback, and it is not a short PIN. The 6-digit code stays optional. Recovery codes are shown once.']),
     button
   ]);
 }
 
 async function startPasskey() {
   if (location.hostname !== 'lgme.app') {
-    setStatus('This browser can use a passphrase here. The device unlock is for lgme.app. SIMULATION.', 'ok');
+    setStatus('This browser can use a passphrase here. The device unlock is for lgme.app. Beta.', 'ok');
     return;
   }
   if (!globalThis.PublicKeyCredential) {
-    setStatus('This browser has no device unlock. Use a passphrase. SIMULATION.', 'bad');
+    setStatus('This browser has no device unlock. Use a passphrase. Beta.', 'bad');
     return;
   }
   const challenge = crypto.getRandomValues(new Uint8Array(32));
@@ -1689,9 +1689,9 @@ async function startPasskey() {
   try {
     await navigator.credentials.create(options);
     freshAuth.set(sessionStorage.getItem(SEAT_KEY) || '', Date.now());
-    setStatus('This device can unlock the book. SIMULATION. No real money moved.', 'ok');
+    setStatus('This device can unlock the book. Beta. The book key is not a Solana key.', 'ok');
   } catch {
-    setStatus('The device did not unlock. Use a passphrase. SIMULATION.', 'bad');
+    setStatus('The device did not unlock. Use a passphrase. Beta.', 'bad');
   }
 }
 
@@ -1713,7 +1713,7 @@ function soBeItCard(peers, seat) {
   });
   return h('article', { class: 'card', id: 'sobeit' }, [
     h('h3', {}, ['soBeIT']),
-    h('p', { class: 'muted' }, ['A simulated grant on this tape. The grantor signs it. It is attested on the member book. It is not the Solana token.']),
+    h('p', { class: 'muted' }, ['A local grant on this tape. The grantor signs it. It is attested on the member book. It is not the Solana token.']),
     form,
     contributionMethods()
   ]);
@@ -1936,7 +1936,7 @@ function showCapture(seat, link = {}) {
     urls.forEach((url) => URL.revokeObjectURL(url));
     stopStream();
     overlay.remove();
-    setStatus('Saved on this phone, encrypted. Only the hash is on the tape. Nothing was uploaded. SIMULATION.', 'ok');
+    setStatus('Saved on this phone, encrypted. Only the hash is on the tape. Nothing was uploaded. Beta.', 'ok');
     if (link.onSaved) await link.onSaved();
   });
   overlay.append(
@@ -1994,7 +1994,7 @@ async function chatMediaBubble(seat, line) {
         const checked = await sim.verifyMedia(owner, { ...line.media, publicKeyJwk: owner.publicKeyJwk }, bytes);
         setStatus(checked.authentic ? 'Verified. The file matches the tape.' : 'Not authentic', checked.authentic ? 'ok' : 'bad');
       } }, ['Verify']),
-      bytes ? h('button', { type: 'button', onClick: () => shareMediaFile(bytes, line.media.mime, `SIMULATION lgme. Media ${line.media.hash.slice(0, 12)}. This page does not upload it.`) }, ['Share']) : null
+      bytes ? h('button', { type: 'button', onClick: () => shareMediaFile(bytes, line.media.mime, `Beta lgme. Media ${line.media.hash.slice(0, 12)}. This page does not upload it.`) }, ['Share']) : null
     ]));
   }
   return h('div', { class: 'bubble media-bubble', id: line.media?.hash ? 'chat-media' : undefined }, nodes.filter(Boolean));
@@ -2004,8 +2004,8 @@ async function shareMediaFile(bytes, mime, text) {
   const file = new File([bytes], mime.startsWith('video') ? 'lgme-video.webm' : 'lgme-photo.jpg', { type: mime || 'image/jpeg' });
   if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
     try {
-      await navigator.share({ files: [file], text, title: 'SIMULATION lgme' });
-      setStatus('Handed to your phone’s share sheet. This page did not upload it. SIMULATION.', 'ok');
+      await navigator.share({ files: [file], text, title: 'Beta lgme' });
+      setStatus('Handed to your phone’s share sheet. This page did not upload it. Beta.', 'ok');
       return;
     } catch (error) {
       if (error && error.name === 'AbortError') return;
@@ -2035,7 +2035,7 @@ function offerCards(peer, seat) {
   if (!rows.length) return [];
   return [
     h('h3', {}, ['Offers']),
-    h('p', { class: 'legend' }, ['A contract waits for both signatures. Collection is a reminder and a reconciliation. There is no penalty. SIMULATION.']),
+    h('p', { class: 'legend' }, ['A contract waits for both signatures. Collection is a reminder and a reconciliation. There is no penalty. Beta.']),
     ...rows.map((offer) => h('article', { class: 'card', id: `offer-${offer.id.slice(0, 8)}` }, [
       h('h3', {}, [`${offer.title} · ${offer.status}`]),
       offer.thanks ? h('p', {}, [offer.thanks]) : null,
@@ -2043,14 +2043,14 @@ function offerCards(peer, seat) {
       offer.status === 'awaiting' && !offer.consents?.[seat]
         ? h('button', { type: 'button', class: 'primary', onClick: async () => {
           const result = await sim.countersignOffer(store, seat, offer.id, { automate: true });
-          setStatus(result.ok ? (result.contract ? 'Both signed. The contract is on both tapes. Nothing was sent. SIMULATION.' : result.error || 'Signed.') : result.error, result.ok ? 'ok' : 'bad');
+          setStatus(result.ok ? (result.contract ? 'Both signed. The contract is on both tapes. Nothing was sent. Beta.' : result.error || 'Signed.') : result.error, result.ok ? 'ok' : 'bad');
           if (result.ok) await render();
         } }, ['Sign consent'])
         : null,
       offer.status === 'contract'
         ? h('button', { type: 'button', onClick: async () => {
           const result = await sim.consentContractDonation(store, seat, offer.id);
-          setStatus(result.closed ? result.message : 'Your consent is signed. The other party still has to consent. No penalty. SIMULATION.', result.ok ? 'ok' : 'bad');
+          setStatus(result.closed ? result.message : 'Your consent is signed. The other party still has to consent. No penalty. Beta.', result.ok ? 'ok' : 'bad');
           if (result.ok) await render();
         } }, ['Reconcile as donation to the floor'])
         : null
@@ -2079,14 +2079,14 @@ function offerForm(seat, target, serviceList = []) {
         : built.error;
       return;
     }
-    preview.textContent = choice === 'full' ? 'Cash in full. No installment is written until both parties sign.' : 'Pick one or more IprovIT services. The value stays simulated.';
+    preview.textContent = choice === 'full' ? 'Cash in full. No installment is written until both parties sign.' : 'Pick one or more IprovIT services. A $lgme payment is signed by your wallet.';
   }
   mode.addEventListener('change', paint);
   amount.addEventListener('input', paint);
   paint();
   const form = h('form', { id: 'offer-form' }, [
     h('h3', {}, ['Offer on this item']),
-    h('p', { class: 'legend' }, ['SIMULATION. Both parties sign before a contract exists. An OfferUp draft is copied by hand. Nothing is sent.']),
+    h('p', { class: 'legend' }, ['Beta. Both parties sign before a contract exists. An OfferUp draft is copied by hand. Nothing is sent.']),
     field('Amount', amount),
     field('How to pay', mode),
     services.box,
@@ -2112,9 +2112,9 @@ function offerForm(seat, target, serviceList = []) {
       if (!result.ok) { setStatus(result.error, 'bad'); return; }
       if (result.draft) {
         try { await navigator.clipboard.writeText(result.draft); } catch { /* the draft stays on screen */ }
-        setStatus('Draft offer copied. Nothing was sent. Paste it on OfferUp yourself. SIMULATION.', 'ok');
+        setStatus('Draft offer copied. Nothing was sent. Paste it on OfferUp yourself. Beta.', 'ok');
       } else {
-        setStatus(result.contract ? 'Both signed. SIMULATION.' : 'Your consent is signed. The other party still has to sign. Nothing was sent. SIMULATION.', 'ok');
+        setStatus(result.contract ? 'Both signed. Beta.' : 'Your consent is signed. The other party still has to sign. Nothing was sent. Beta.', 'ok');
       }
       openOfferFor = '';
       offerupIndex = -1;
@@ -2136,7 +2136,7 @@ function catalogServices(list) {
     box: h('fieldset', {}, [
       h('legend', {}, ['IprovIT services']),
       boxes.length
-        ? h('p', { class: 'legend', id: 'iprov-services' }, ['Services listed as IprovIT can be offered in place of cash. In-app $lgme stays simulated.'])
+        ? h('p', { class: 'legend', id: 'iprov-services' }, ['Services listed as IprovIT can be offered in place of cash. A $lgme payment is signed by your wallet.'])
         : h('p', { class: 'legend', id: 'iprov-services' }, ['No IprovIT services are listed yet.']),
       ...boxes.map((row) => h('label', { class: 'row' }, [row.box, ` ${row.title}`]))
     ])
@@ -2240,7 +2240,7 @@ function tailoredActions(item, channel, openLabel) {
     const row = tailoredOf(item.url);
     if (!sim.tailoredOpenEnabled(row?.status)) return;
     await copyText(row.draft);
-    setStatus('Draft copied. Nothing was sent. SIMULATION.', 'ok');
+    setStatus('Draft copied. Nothing was sent. Beta.', 'ok');
   });
   const form = h('div', {}, [
     field('Offer amount', amount),
@@ -2303,10 +2303,10 @@ function wantedMatchSection(seat) {
         } }, ['Log reply']),
         h('button', { type: 'button', onClick: async () => {
           const row = tailoredOf(item.url);
-          if (!sim.tailoredOpenEnabled(row?.status)) { setStatus('Approve the draft first. Nothing was sent. SIMULATION.', 'bad'); return; }
+          if (!sim.tailoredOpenEnabled(row?.status)) { setStatus('Approve the draft first. Nothing was sent. Beta.', 'bad'); return; }
           await copyText(row.draft);
           patchWanted(item.url, { status: 'Offer made' });
-          setStatus('Draft offer copied. Nothing was sent. Paste it on OfferUp yourself. SIMULATION.', 'ok');
+          setStatus('Draft offer copied. Nothing was sent. Paste it on OfferUp yourself. Beta.', 'ok');
           render();
         } }, ['Make an offer']),
         tailoredActions(item, 'offerup', 'Continue on OfferUp'),
@@ -2317,14 +2317,14 @@ function wantedMatchSection(seat) {
             try { await navigator.share({ title: 'lgme.app', text, url: sim.INVITE_URL }); } catch (error) { if (error && error.name === 'AbortError') return; }
           }
           patchWanted(item.url, { status: 'Pending reply' });
-          setStatus('Invite copied. Nothing was sent. SIMULATION.', 'ok');
+          setStatus('Invite copied. Nothing was sent. Beta.', 'ok');
           render();
         } }, ['Invite seller to lgme.app']),
         h('button', { type: 'button', onClick: async () => {
           const result = await sim.concludeWantedMatch(store, seat, item);
           if (!result.ok) { setStatus(result.error, 'bad'); return; }
           patchWanted(item.url, { status: 'Closed', concluded: true, receiptId: result.receiptId });
-          setStatus('Concluded. IdidIt is on this book. Invoice from the book, or reconcile as donation to the floor. SIMULATION. Nothing was sent.', 'ok');
+          setStatus('Concluded. IdidIt is on this book. Invoice from the book, or reconcile as donation to the floor. Beta. Nothing was sent.', 'ok');
           location.hash = 'books';
         } }, ['Mark concluded'])
       ])
@@ -2332,7 +2332,7 @@ function wantedMatchSection(seat) {
   });
   return h('section', { id: 'wanted-matches' }, [
     h('h3', {}, ['Matches from OfferUp']),
-    h('p', { class: 'legend' }, [`For “${sim.STANDING_WANTED.title}”. SIMULATION. Nothing is sent.`]),
+    h('p', { class: 'legend' }, [`For “${sim.STANDING_WANTED.title}”. Beta. Nothing is sent.`]),
     sim.suggestedWantedPair(wantedMatches) ? h('p', { id: 'wanted-pair' }, [sim.suggestedWantedPair(wantedMatches)]) : null,
     cards.length ? h('div', { class: 'grid' }, cards) : h('p', { class: 'empty', id: 'wanted-matches-empty' }, ['No OfferUp matches in this file yet.'])
   ]);
@@ -2369,16 +2369,16 @@ function thumbtackCard(item, seat) {
       } }, ['Log reply']),
       h('button', { type: 'button', onClick: async () => {
         const row = tailoredOf(item.url);
-        if (!sim.tailoredOpenEnabled(row?.status)) { setStatus('Approve the draft first. Nothing was sent. SIMULATION.', 'bad'); return; }
+        if (!sim.tailoredOpenEnabled(row?.status)) { setStatus('Approve the draft first. Nothing was sent. Beta.', 'bad'); return; }
         await copyText(item.inquiry || sim.wantedInquiry(item));
-        setStatus('Inquiry copied. Nothing was sent. SIMULATION.', 'ok');
+        setStatus('Inquiry copied. Nothing was sent. Beta.', 'ok');
       } }, ['Copy inquiry']),
       h('button', { type: 'button', onClick: async () => {
         const row = tailoredOf(item.url);
-        if (!sim.tailoredOpenEnabled(row?.status)) { setStatus('Approve the draft first. Nothing was sent. SIMULATION.', 'bad'); return; }
+        if (!sim.tailoredOpenEnabled(row?.status)) { setStatus('Approve the draft first. Nothing was sent. Beta.', 'bad'); return; }
         await copyText(row.draft);
         patchWanted(item.url, { status: 'Offer made' });
-        setStatus('Draft offer copied. Nothing was sent. Paste it on Thumbtack yourself. SIMULATION.', 'ok');
+        setStatus('Draft offer copied. Nothing was sent. Paste it on Thumbtack yourself. Beta.', 'ok');
         render();
       } }, ['Make an offer']),
       h('button', { type: 'button', onClick: async () => {
@@ -2387,7 +2387,7 @@ function thumbtackCard(item, seat) {
         if (navigator.share) {
           try { await navigator.share({ title: 'lgme.app', text, url: sim.INVITE_URL }); } catch (error) { if (error && error.name === 'AbortError') return; }
         }
-        setStatus('Invite copied. Nothing was sent. SIMULATION.', 'ok');
+        setStatus('Invite copied. Nothing was sent. Beta.', 'ok');
       } }, ['Invite seller to lgme.app'])
     ]),
     tailoredActions(item, 'thumbtack', 'Continue on Thumbtack'),
@@ -2400,7 +2400,7 @@ function thumbtackSection(seat) {
   const rest = thumbtackItems.filter((item) => !item.isIprovIT);
   return h('section', { id: 'thumbtack-matches' }, [
     h('h3', {}, ['Matches from Thumbtack']),
-    h('p', { class: 'legend' }, [`For “${sim.STANDING_REPAIR.title}”. ${sim.THUMBTACK_CAVEAT} SIMULATION. Nothing is sent.`]),
+    h('p', { class: 'legend' }, [`For “${sim.STANDING_REPAIR.title}”. ${sim.THUMBTACK_CAVEAT} Beta. Nothing is sent.`]),
     h('p', { class: 'legend' }, ['Ratings are shown as listed on Thumbtack. Not an endorsement by lgme.']),
     rest.length ? h('div', { class: 'grid' }, rest.map((item) => thumbtackCard(item, seat))) : h('p', { class: 'empty', id: 'thumbtack-empty' }, ['No Thumbtack pros in this file yet.']),
     h('h3', {}, ['Listed from Thumbtack (not affiliated)']),
@@ -2430,9 +2430,9 @@ function offerupSection(seat, serviceList) {
       h('span', {}, ['Buy']),
       h('button', { type: 'button', onClick: async () => {
         const row = tailoredOf(item.url);
-        if (!sim.tailoredOpenEnabled(row?.status)) { setStatus('Approve the draft first. Nothing was sent. SIMULATION.', 'bad'); return; }
+        if (!sim.tailoredOpenEnabled(row?.status)) { setStatus('Approve the draft first. Nothing was sent. Beta.', 'bad'); return; }
         await copyText(row.draft);
-        setStatus('Draft offer copied. Nothing was sent. Paste it on OfferUp yourself. SIMULATION.', 'ok');
+        setStatus('Draft offer copied. Nothing was sent. Paste it on OfferUp yourself. Beta.', 'ok');
       } }, ['Make an offer'])
     ]),
     tailoredActions(item, 'offerup', 'Continue on OfferUp')
@@ -2469,7 +2469,7 @@ async function renderMarket(peers, seat) {
       } else if (card.sellerId === seat && !wantedPin && !repairPin) {
         actions.push(h('button', { type: 'button', class: 'primary', onClick: async () => {
           const refreshed = await sim.refreshListing(store, seat, card.id);
-          setStatus(refreshed.ok ? 'Listing refreshed with a signed heartbeat. SIMULATION.' : refreshed.error, refreshed.ok ? 'ok' : 'bad');
+          setStatus(refreshed.ok ? 'Listing refreshed with a signed heartbeat. Beta.' : refreshed.error, refreshed.ok ? 'ok' : 'bad');
           if (refreshed.ok) await render();
         } }, ['Refresh']));
       } else if (!wantedPin && !repairPin) {
@@ -2490,8 +2490,8 @@ async function renderMarket(peers, seat) {
         wantedPin || repairPin ? h('p', { id: wantedPin ? 'wanted-copy' : 'repair-copy' }, [card.description]) : null,
         wantedPin || repairPin ? h('ul', { id: wantedPin ? 'wanted-payments' : 'repair-payments' }, (wantedPin ? sim.STANDING_WANTED : sim.STANDING_REPAIR).payments.map((item) => h('li', {}, [item]))) : null,
         !card.pinned ? h('p', { class: 'price' }, [`${card.amount} $lgme`]) : null,
-        card.pinned && !wantedPin ? h('p', { class: 'legend' }, ['SIMULATION. A soBeIT grant below stays on this tape. The link above is the real token page.']) : null,
-        wantedPin || repairPin ? h('p', { class: 'legend' }, ['SIMULATION. In-app $lgme stays simulated. A concluded match is an IdidIt on this book. Reconcile as donation to the floor needs both consents.']) : null,
+        card.pinned && !wantedPin ? h('p', { class: 'legend' }, ['Beta. A soBeIT grant below stays on this tape. The link above is the real token page.']) : null,
+        wantedPin || repairPin ? h('p', { class: 'legend' }, ['Beta. A concluded match is an IdidIt on this book. A $lgme payment is signed by your wallet. Reconcile as donation to the floor needs both consents.']) : null,
         card.pinned && !wantedPin && !repairPin ? soBeItCard(peers, seat) : null,
         wantedPin ? wantedMatchSection(seat) : null,
         repairPin ? thumbtackSection(seat) : null,
@@ -2566,7 +2566,7 @@ async function renderMarket(peers, seat) {
   const filters = h('details', {}, [h('summary', {}, ['Filters']), form]);
   panel.replaceChildren(
     h('h2', {}, ['Market']),
-    h('p', { class: 'muted' }, [`Ad-free. ${me ? me.name : 'You'} · Peer standing ${standing ? standing.standing : ''}. Nothing here is a paid placement. SIMULATION.`]),
+    h('p', { class: 'muted' }, [`Ad-free. ${me ? me.name : 'You'} · Peer standing ${standing ? standing.standing : ''}. Nothing here is a paid placement. Beta.`]),
     kinds,
     pills,
     filters,
@@ -2617,7 +2617,7 @@ async function renderList(seat) {
       try {
         const packed = await compressPhoto(chosen);
         listDraft = { ...listDraft, ...packed };
-        setStatus('Photo compressed on this device. It is not uploaded. SIMULATION.', 'ok');
+        setStatus('Photo compressed on this device. It is not uploaded. Beta.', 'ok');
         await render();
       } catch {
         setStatus('That photo could not be read. Nothing was stored.', 'bad');
@@ -2730,7 +2730,7 @@ async function renderList(seat) {
       listDraft = { photo: '', photoHash: '', title: '', category: 'Goods', condition: 'Good', pickup: 'Pickup', circle: '', area: '', amount: '', referenceId: '' };
       listStep = 1;
       openListingId = created.listing.id;
-      setStatus('Listed and signed. The photo stayed on this device. SIMULATION.', 'ok');
+      setStatus('Listed and signed. The photo stayed on this device. Beta.', 'ok');
       location.hash = 'market';
     } finally {
       busy = false;
@@ -2778,7 +2778,7 @@ async function phoneCard(seat, otherId, threadId) {
     if (!sent.ok) { setStatus(sent.error, 'bad'); return; }
     signedSms = { threadId, sms: sent.sms, encoded: sent.encoded };
     matchNote = '';
-    setStatus('Signed. Open SMS to hand it to your phone. This page did not send it. SIMULATION.', 'ok');
+    setStatus('Signed. Open SMS to hand it to your phone. This page did not send it. Beta.', 'ok');
     await render();
   });
   const kids = [
@@ -2796,7 +2796,7 @@ async function phoneCard(seat, otherId, threadId) {
       h('a', { class: 'btn primary', href: sms.sms }, ['Open SMS']),
       otherId ? h('button', { type: 'button', onClick: async () => {
         const saved = await sim.acceptChatToken(store, otherId, sms.encoded);
-        setStatus(saved.ok ? 'Recorded on the other book on this device. No SMS was sent. SIMULATION.' : saved.error, saved.ok ? 'ok' : 'bad');
+        setStatus(saved.ok ? 'Recorded on the other book on this device. No SMS was sent. Beta.' : saved.error, saved.ok ? 'ok' : 'bad');
         if (saved.ok) await render();
       } }, ['Record on the other book']) : null,
       h('button', { type: 'button', onClick: async () => {
@@ -2820,7 +2820,7 @@ async function phoneCard(seat, otherId, threadId) {
     endForm.addEventListener('submit', async (event) => {
       event.preventDefault();
       const saved = await sim.recordCall(store, seat, { phone: openCall.phone, peerKycHash: openCall.hash, start: openCall.start, end: new Date().toISOString(), note: note.value });
-      setStatus(saved.ok ? 'Call noted. No audio was stored. This page did not place the call. SIMULATION.' : saved.error, saved.ok ? 'ok' : 'bad');
+      setStatus(saved.ok ? 'Call noted. No audio was stored. This page did not place the call. Beta.' : saved.error, saved.ok ? 'ok' : 'bad');
       if (saved.ok) openCall = null;
       await render();
     });
@@ -2847,7 +2847,7 @@ async function phoneCard(seat, otherId, threadId) {
     if (!saved.ok) { setStatus(saved.error || 'Not authentic', 'bad'); return; }
     const peer = await store.get(seat);
     if (peer?.privateKeyJwk) await saveMediaFile(seat, peer.privateKeyJwk, hash, bytes, claim.media.mime);
-    setStatus('Verified and saved on this phone. SIMULATION.', 'ok');
+    setStatus('Verified and saved on this phone. Beta.', 'ok');
     await render();
   });
   kids.push(field('Save a received file', received));
@@ -2858,7 +2858,7 @@ async function phoneCard(seat, otherId, threadId) {
   pasteForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     const saved = await takeChatToken(seat, paste.value);
-    setStatus(saved.ok ? (saved.matched ? 'Matched' : 'Token recorded. SIMULATION.') : saved.error, saved.ok ? 'ok' : 'bad');
+    setStatus(saved.ok ? (saved.matched ? 'Matched' : 'Token recorded. Beta.') : saved.error, saved.ok ? 'ok' : 'bad');
     if (saved.ok) await render();
   });
   kids.push(pasteForm);
@@ -2872,7 +2872,7 @@ async function renderChats(seat) {
     const token = pendingChat;
     pendingChat = '';
     const saved = await takeChatToken(seat, token);
-    setStatus(saved.ok ? 'Opened the signed token. SIMULATION.' : saved.error, saved.ok ? 'ok' : 'bad');
+    setStatus(saved.ok ? 'Opened the signed token. Beta.' : saved.error, saved.ok ? 'ok' : 'bad');
   }
   const threads = await sim.listThreads(store, seat);
   const extras = await sim.listChatThreads(store, seat);
@@ -2921,7 +2921,7 @@ async function renderChats(seat) {
   const nodes = [
     h('button', { type: 'button', class: 'quiet', onClick: () => { openThreadId = ''; render(); } }, ['All chats']),
     h('h2', {}, [thread.title || 'Chat']),
-    h('p', { class: 'muted' }, [`${thread.amount} $lgme · ${thread.status}. SIMULATION.`]),
+    h('p', { class: 'muted' }, [`${thread.amount} $lgme · ${thread.status}. Beta.`]),
     await phoneCard(seat, mine ? thread.sellerId : thread.buyerId, thread.id),
     ...thread.messages.map((line) => h('div', { class: 'bubble' }, [`${nameById[line.fromId] || line.fromId}: ${line.text}`]))
   ];
@@ -2929,7 +2929,7 @@ async function renderChats(seat) {
     nodes.push(h('div', { class: 'chips' }, [
       chip('Is this available?', false, async () => {
         const posted = await sim.postChat(store, seat, thread.id, 'Is this available?');
-        setStatus(posted.ok ? 'Asked. Nothing was sent off this device. SIMULATION.' : posted.error, posted.ok ? 'ok' : 'bad');
+        setStatus(posted.ok ? 'Asked. Nothing was sent off this device. Beta.' : posted.error, posted.ok ? 'ok' : 'bad');
         if (posted.ok) await render();
       }),
       chip('Make an offer', false, () => { offer.focus(); })
@@ -2949,7 +2949,7 @@ async function renderChats(seat) {
       const result = mine
         ? await sim.makeOffer(store, seat, thread.id, offer.value)
         : await sim.counterOffer(store, seat, thread.id, offer.value);
-      setStatus(result.ok ? 'Signed the amount. Final balances have not moved. SIMULATION.' : result.error, result.ok ? 'ok' : 'bad');
+      setStatus(result.ok ? 'Signed the amount. Final balances have not moved. Beta.' : result.error, result.ok ? 'ok' : 'bad');
       if (result.ok) await render();
     });
     nodes.push(form);
@@ -2962,8 +2962,8 @@ async function renderChats(seat) {
       nodes.push(h('div', { class: 'actions' }, [
         h('button', { type: 'button', class: 'primary', onClick: () => settleHandoff(thread.sellerId, shown.encoded) }, ['Settle on this device']),
         h('button', { type: 'button', onClick: async () => {
-          try { await navigator.clipboard.writeText(shown.encoded); setStatus('Copied. This page did not send it. SIMULATION.', 'ok'); }
-          catch { setStatus('Copy did not run. The code is on screen. SIMULATION.', 'bad'); }
+          try { await navigator.clipboard.writeText(shown.encoded); setStatus('Copied. This page did not send it. Beta.', 'ok'); }
+          catch { setStatus('Copy did not run. The code is on screen. Beta.', 'bad'); }
         } }, ['Copy']),
         h('button', { type: 'button', onClick: () => download(`handoff-${thread.id.slice(0, 8)}.json`, shown.encoded, 'application/json') }, ['File'])
       ]));
@@ -2987,27 +2987,27 @@ async function renderChats(seat) {
 
 async function signDeal(seat, threadId) {
   const result = await sim.acceptAndSign(store, seat, threadId);
-  setStatus(result.ok ? (result.thread.status === 'pending' ? 'Pending hold. Final balances have not moved. SIMULATION.' : 'Signed. Waiting for the other signature. SIMULATION.') : result.error, result.ok ? 'ok' : 'bad');
+  setStatus(result.ok ? (result.thread.status === 'pending' ? 'Pending hold. Final balances have not moved. Beta.' : 'Signed. Waiting for the other signature. Beta.') : result.error, result.ok ? 'ok' : 'bad');
   if (result.ok) await render();
 }
 
 async function refuseDeal(seat, threadId, statement) {
   const result = await sim.refuseDeal(store, seat, threadId, statement || 'REFUSAL');
-  setStatus(result.ok ? 'REFUSAL recorded. No balance moves. No penalty. SIMULATION.' : result.error, result.ok ? 'ok' : 'bad');
+  setStatus(result.ok ? 'REFUSAL recorded. No balance moves. No penalty. Beta.' : result.error, result.ok ? 'ok' : 'bad');
   if (result.ok) await render();
 }
 
 async function cancelDeal(seat, threadId) {
   const result = await sim.cancelDeal(store, seat, threadId);
-  setStatus(result.ok ? 'Hold released. Final balances stay put. SIMULATION.' : result.error, result.ok ? 'ok' : 'bad');
+  setStatus(result.ok ? 'Hold released. Final balances stay put. Beta.' : result.error, result.ok ? 'ok' : 'bad');
   if (result.ok) await render();
 }
 
 async function settleHandoff(sellerId, encoded) {
   const result = await sim.sellerHandoff(store, sellerId, String(encoded || '').trim());
   if (!result.ok) { setStatus(result.error, 'bad'); return; }
-  setStatus(`Settled. Buyer ${result.buyerBalance} · seller ${result.sellerBalance}. SIMULATION.`, 'ok');
-  toast('Handoff settled on both books. SIMULATION.');
+  setStatus(`Settled. Buyer ${result.buyerBalance} · seller ${result.sellerBalance}. Beta.`, 'ok');
+  toast('Handoff settled on both books. Beta.');
   await render();
 }
 
@@ -3019,7 +3019,7 @@ function renderHelp() {
     ['Third seat', 'The third seat is the person who can read the line and refuse it. The refusal is a REFUSAL entry. It moves no balance and carries no penalty. It does not unwind a line already shown. Silence is not a refusal. A line waits until every party has countersigned.'],
     ['Tape', 'Each book is append-only. Every entry names the previous hash and is signed with that peer’s key. Export the JSON and verify it. If a byte changes, the hash or the signature fails and the import stops.'],
     ['IOU and attestation', 'A dollar IOU is recorded as pending. Pending lines do not change the balance. The balance moves only when the named counterparty signs an ATTESTED entry. If they refuse, the tape records REFUSAL and the balance stays put.'],
-    ['Mock $lgme', 'Registration writes a GENESIS entry for a simulated grant of 100 $lgme, labeled mock. It is not money. The wallet holds that balance and the signing key.'],
+    ['Local book', 'Registration writes a GENESIS entry for a local grant of 100. It is not Solana $lgme. Your wallet signs a real payment.'],
     ['Simulated 2FA', 'A passphrase encrypts the key at rest with AES-GCM and PBKDF2. A 6-digit TOTP, RFC 6238, is checked with WebCrypto HMAC. The setup QR can be scanned by an authenticator app. This page generates the same code while the secret is still on screen. It never sends the code. A wrong code leaves the wallet locked.'],
     ['Another device', 'There is no server. Sign a proposal, countersign, refusal, transfer, attestation, or handoff, then carry the lgme1. code by copy, by a link whose data sits in the URL fragment, by a QR, or by a .json file. On the other device, verification runs before anything is appended. A QR is for an in-person handoff. To text or email a draft, the page opens sms: or mailto: so you send it from your own app. The outbox and inbox are a local log of that.'],
     ['Phone chat', 'A text is signed here, then Open SMS hands it to your phone’s own messages app. The link or the pasted token is checked for the sender’s signature and the member hash. A call button opens tel: on your phone. The tape records the start, the end, the other member’s hash, and a note you type. No audio is stored. Match sends the chat root by SMS and says Matched, or names the first message that differs. This page does not send the text and does not place the call. The other person’s signup details stay on their phone. You keep the phone number and the hash.'],
@@ -3029,13 +3029,13 @@ function renderHelp() {
   ];
   const install = h('div', { class: 'card' }, [
     h('h3', {}, ['Install']),
-    h('p', { class: 'muted' }, ['Installed, this simulation opens straight into the desk. The browser does the install. This page does not send anything.']),
+    h('p', { class: 'muted' }, ['Installed, this beta opens straight into the desk. The browser does the install. This page does not send a message for you.']),
     h('button', { type: 'button', class: 'primary', 'data-install': '1', hidden: true, onClick: promptInstall }, ['Install']),
-    h('p', { id: 'ios-install', class: 'legend', hidden: true }, ['On iPhone or iPad, open Share, then Add to Home Screen. The icon opens this simulation.'])
+    h('p', { id: 'ios-install', class: 'legend', hidden: true }, ['On iPhone or iPad, open Share, then Add to Home Screen. The icon opens this beta.'])
   ]);
   panel.replaceChildren(
     h('h2', {}, ['Help']),
-    h('p', { class: 'muted' }, ['SIMULATION. No real money, no message is sent by this page, and nothing is written to a network.']),
+    h('p', { class: 'muted' }, ['Beta. Real $lgme moves only when your Solana wallet signs. This page does not send a message for you and does not write to Hedera.']),
     h('button', { type: 'button', class: 'card mag-card', onClick: () => { location.hash = 'resources'; } }, [
       h('span', { class: 'kicker' }, ['Magazine']),
       h('h3', {}, ['Resources']),
@@ -3068,7 +3068,7 @@ function renderResources() {
   const article = ARTICLES.find((item) => item.id === id);
   if (!article) {
     panel.replaceChildren(
-      h('p', { class: 'kicker' }, ['SIMULATION · Resources']),
+      h('p', { class: 'kicker' }, ['Beta · Resources']),
       h('h2', {}, ['The magazine']),
       h('p', { class: 'muted' }, ['The explainer, the simulator, and the third-seat story, kept in this app so they can be read offline.']),
       h('div', { class: 'mag' }, ARTICLES.map((item) => h('button', {
@@ -3086,7 +3086,7 @@ function renderResources() {
   }
   panel.replaceChildren(
     h('button', { type: 'button', class: 'quiet', onClick: () => { location.hash = 'resources'; } }, ['All articles']),
-    h('p', { class: 'kicker' }, [`SIMULATION · ${article.kicker}`]),
+    h('p', { class: 'kicker' }, [`Beta · ${article.kicker}`]),
     h('h2', {}, [article.title]),
     h('p', { class: 'muted' }, [article.deck]),
     ...article.blocks.map(renderBlock)
@@ -3145,7 +3145,7 @@ function showSplash() {
 }
 
 const WALK = [
-  ['SIMULATION', 'This desk is practice. It does not write to a network, move real money, or send text or email. You send a draft yourself, from your own app, if you want to.'],
+  ['Beta', 'This desk settles agreed $lgme from your own Solana wallet. It does not hold a seed phrase, write to Hedera, or send text or email. You send a draft yourself, from your own app, if you want to.'],
   ['Separate books', 'Alice, Bob, and Charlie each keep their own tape. On one device you switch seats. On two devices you carry a signed message. There is no central ledger.'],
   ['Floor', 'Bob and Charlie start above their floors. A line that would spend the floor is blocked and the block stays on the tape.'],
   ['Third seat', 'Refuse a line that skipped the order. The no is recorded. Nothing moves. There is no penalty.'],
@@ -3162,7 +3162,7 @@ function showWalk(step) {
   overlay.hidden = false;
   const [title, body] = WALK[step];
   const card = h('article', { class: 'card' }, [
-    h('p', { class: 'kicker' }, [`SIMULATION · ${step + 1} of ${WALK.length}`]),
+    h('p', { class: 'kicker' }, [`Beta · ${step + 1} of ${WALK.length}`]),
     h('h2', {}, [title]),
     h('p', {}, [body]),
     h('div', { class: 'actions' }, [
@@ -3183,7 +3183,7 @@ async function shareExchange(me, ex) {
   if (!sealed.ok) { setStatus(sealed.error, 'bad'); return; }
   carryCode = sim.encodeMessage(sealed.message);
   location.hash = 'devices';
-  setStatus('Signed copy is ready. Nothing has been sent. SIMULATION.', 'ok');
+  setStatus('Signed copy is ready. Nothing has been sent. Beta.', 'ok');
 }
 
 async function loadReferences() {
@@ -3277,14 +3277,14 @@ deliveryChannel?.addEventListener('message', async (event) => {
   if (opened.message.kind === 'handoff') {
     const settled = await sim.sellerHandoff(store, opened.message.body.sellerId, encoded);
     if (!settled.ok || settled.thread?.status !== 'settled') return;
-    toast('Handoff settled on both books. SIMULATION.');
+    toast('Handoff settled on both books. Beta.');
     await render();
     return;
   }
   if (opened.message.kind !== 'transfer') return;
   const result = await sim.acceptAutoDelivery(store, opened.message.body.toId, encoded);
   if (!result.ok || result.duplicate) return;
-  toast(`Received ${opened.message.body.amount} mock $lgme. SIMULATION.`);
+  toast(`Received ${opened.message.body.amount} mock $lgme. Beta.`);
   await render();
 });
 
