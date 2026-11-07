@@ -82,7 +82,8 @@
       <h3>$lgme loyalty discount</h3>
       <p>When a deal is paid in $lgme, the desk suggests a loyalty discount. The usual suggestion is 5%. The people in the deal can change the percent, up to the cap in the payment settings. Cash and Zelle get no discount.</p>
       <p>Both parties sign the percent. Either one can decline, and then there is no discount. The payer still pays the full agreed price in $lgme. After that payment is final, the floor pays the discount back to the payer as a rebate.</p>
-      <p>The floor funds this rebate because the app supports the floor. This page holds no floor key. The floor operator signs the rebate in their own wallet. If the floor balance would fall through the reserve, the rebate waits. There is no penalty.</p>
+      <p>The floor funds this rebate because the app supports the floor. This page holds no floor key. The floor operator signs the rebate in their own wallet. If the floor balance would fall through the reserve, the rebate waits. There is no penalty. The cap is US$ 25 each 30 days. The reserve is US$ 100.</p>
+      <p id="peg-note">Pegged to US$ at time of transaction. $lgme is not a stablecoin. Pegged to US$. The price used never moves more than 5% from recent reference prices, for stable value.</p>
     </div>
     <p>Real gifts, by either method below. They are not the practice desk. In-app $lgme balances stay simulated.</p>
     <div class="card warn">
@@ -104,8 +105,10 @@
         <li>Confirm. The transfer is irreversible.</li>
         <li>Optional: paste the transaction id below. This page shows a receipt and a Solscan link. It does not send the gift.</li>
       </ol>
-      <p><label for="gift-amount">Amount of $lgme</label></p>
+      <p><label for="gift-amount">Amount in US$</label></p>
       <input id="gift-amount" inputmode="decimal" autocomplete="off" placeholder="For example 1" />
+      <p id="lgme-equivalent"></p>
+      <p id="quote-countdown"></p>
       <div class="actions">
         <button type="button" id="copy-donate">Copy address</button>
         <a class="btn primary" id="solana-pay" href="solana:6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY?spl-token=7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump&amp;label=soBeIT&amp;message=THANK+YOU+FOR+YOUR+SUPPORT.">Open in your wallet</a>

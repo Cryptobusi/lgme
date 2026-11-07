@@ -5,6 +5,9 @@
  */
 
 import { ACK_MS, CO_SIGN_ABOVE, FORK, OFFLINE_SPEND, REPLAY, STALE_ACK, ackFresh, assertOnline, coSignReason, expiryFrom, fraudPenalty, handoffToken, passphraseReason } from './p2p-sim-guard.mjs';
+import { ALT_CHOICES, DEFAULT_CLAMP_BAND, HISTORY_UNAVAILABLE, NO_COIN, PEG_LABEL, PEG_NOTE, QUOTE_MS, applyPegBands, buildPegQuote, clampBand, round6, withinLock } from './lgme-price.mjs';
+
+export { ALT_CHOICES, DEFAULT_CLAMP_BAND, HISTORY_UNAVAILABLE, NO_COIN, PEG_LABEL, PEG_NOTE, QUOTE_MS };
 
 export const GENESIS = '0'.repeat(64);
 export { ACK_MS, CO_SIGN_ABOVE, OFFLINE_SPEND, handoffToken };
@@ -32,9 +35,9 @@ export const FLOOR_REBATE_LABEL = 'The floor funds this rebate because the app s
 export const LOYALTY_DEFAULTS = Object.freeze({
   defaultPercent: 5,
   maxPercentPerDeal: 15,
-  capAmountPerPeriod: 25,
+  capUsdPerPeriod: 25,
   periodDays: 30,
-  reserve: 100
+  reserveUsd: 100
 });
 export const STANDING_DONATION = Object.freeze({
   title: 'Donation — soBeIT',
@@ -400,8 +403,13 @@ export function entryDetail(entry, names = {}) {
   if (entry.type === 'CHAT') return `Chat ${payload.seq} ${payload.senderKycHash ? String(payload.senderKycHash).slice(0, 12) : ''}`.trim();
   if (entry.type === 'CHAT_MATCHED') return `Chat matched ${payload.root ? String(payload.root).slice(0, 12) : ''}`.trim();
   if (entry.type === 'CALL') return `Call ${payload.start || ''} → ${payload.end || ''}`.trim();
-  if (entry.type === 'INVOICE') return `Invoice ${payload.amount} $lgme due ${payload.dueAt || ''}`.trim();
-  if (entry.type === 'INVOICE_PAID') return `Invoice paid ${payload.amount} $lgme`.trim();
+  if (entry.type === 'INVOICE') return `Invoice US$ ${payload.amount} due ${payload.dueAt || ''}`.trim();
+  if (entry.type === 'INVOICE_PAID') return `Invoice paid US$ ${payload.amount}`.trim();
+  if (entry.type === 'PRICE_LOCK') return `Price lock US$ ${payload.usdAmount} · ${payload.lgmeAmount} $lgme`.trim();
+  if (entry.type === 'PRICE_SEEN') return `Saw price lock ${payload.lockId ? String(payload.lockId).slice(0, 12) : ''}`.trim();
+  if (entry.type === 'PRICE_REQUEST') return `Wallet request ${payload.lgmeAmount} $lgme`.trim();
+  if (entry.type === 'PRICE_CLAMP') return `Price clamp ${payload.rawPrice} to ${payload.clampedPrice}`.trim();
+  if (entry.type === 'ALT_SETTLEMENT' || entry.type === 'ALT_AGREED') return `${payload.choice || 'Alternate'} settlement ${payload.status || ''}`.trim();
   if (entry.type === 'INVOICE_REFUSED') return payload.statement || 'INVOICE_REFUSED';
   if (entry.type === 'REWARD') return `In-app points ${payload.amount}, not $lgme tokens`.trim();
   if (entry.type === 'SOLANA_TX') return `Solana ${payload.status || 'pending-attestation'} ${payload.cluster || ''} ${payload.signature ? String(payload.signature).slice(0, 12) : ''}`.trim();
@@ -3998,7 +4006,7 @@ async function maybeFloorRebate(store, payload, at) {
   const percent = Number(consents[0].percent);
   if (!consents.every((row) => Number(row.percent) === percent)) return { ok: true, due: false };
   const rules = consents[0].rules || loyaltyRules({});
-  const raw = round2(Number(payload.amount) * percent / 100);
+  const raw = round2(Number(payload.usdAmount ?? payload.amount) * percent / 100);
   const start = new Date(at).getTime() - rules.periodDays * 86400000;
   const counted = new Set();
   const used = rebateEntries(peers).reduce((sum, entry) => {
@@ -4009,7 +4017,7 @@ async function maybeFloorRebate(store, payload, at) {
     if (new Date(entry.at).getTime() < start) return sum;
     return round2(sum + Number(entry.payload?.amount || 0));
   }, 0);
-  const room = round2(rules.capAmountPerPeriod - used);
+  const room = round2((rules.capUsdPerPeriod ?? rules.capAmountPerPeriod) - used);
   const amount = round2(Math.min(raw, Math.max(0, room)));
   const paymentId = await sha256(canonicalJSON({ kind: 'floor-rebate', invoiceId: payload.invoiceId, signature: payload.signature }));
   const body = {
@@ -4019,12 +4027,14 @@ async function maybeFloorRebate(store, payload, at) {
     invoiceId: payload.invoiceId,
     settlement: payload.signature,
     percent,
-    fullAmount: round2(payload.amount),
+    fullAmount: round2(payload.usdAmount ?? payload.amount),
     amount,
+    usdAmount: amount,
     payerId: payload.payerId,
     payeeId: payload.payeeId,
     payerWallet: consents.find((row) => row.payerWallet)?.payerWallet || '',
-    reserve: rules.reserve,
+    reserve: rules.reserveUsd ?? rules.reserve,
+    reserveUsd: rules.reserveUsd ?? rules.reserve,
     penalty: false,
     label: FLOOR_REBATE_LABEL
   };
@@ -4084,11 +4094,13 @@ export async function reviewFloorRebate(store, actorId, spec = {}) {
   if (rebateEntries(peers).some((entry) => entry.type === 'FLOOR_REBATE_PAID' && entry.payload?.invoiceId === invoiceId)) {
     return { ok: true, status: 'paid', penalty: false };
   }
-  const amount = round2(due.payload.amount);
-  const reserve = Number(due.payload.reserve ?? LOYALTY_DEFAULTS.reserve);
+  const amount = round2(due.payload.usdAmount ?? due.payload.amount);
+  const reserve = Number(due.payload.reserveUsd ?? due.payload.reserve ?? LOYALTY_DEFAULTS.reserveUsd);
   const balance = Number(spec.balance);
+  const price = Number(spec.price);
   const at = spec.at || nowIso();
-  if (!Number.isFinite(balance) || round2(balance - amount) < reserve) {
+  const balanceUsd = Number.isFinite(balance) && price > 0 ? round2(balance * price) : NaN;
+  if (!Number.isFinite(balanceUsd) || round2(balanceUsd - amount) < reserve) {
     await writeRebate(store, [due.payload.payerId, due.payload.payeeId], 'FLOOR_REBATE_DEFERRED', {
       ...due.payload,
       status: 'deferred',
@@ -4128,6 +4140,10 @@ export async function recordFloorRebate(store, actorId, spec = {}) {
   }
   const due = rebateEntries(peers).find((entry) => entry.type === 'FLOOR_REBATE_DUE' && entry.payload?.invoiceId === invoiceId);
   if (!due) return fail('No floor rebate is due for this payment.');
+  if (spec.amount != null && spec.amount !== '') {
+    const match = matchSolanaRequest(peers, { invoiceId, amount: spec.amount, lockId: spec.lockId || '', purpose: 'rebate' });
+    if (!match.ok) return match;
+  }
   const at = spec.at || nowIso();
   await writeRebate(store, [due.payload.payerId, due.payload.payeeId], 'FLOOR_REBATE_PAID', {
     ...due.payload,
@@ -4138,6 +4154,259 @@ export async function recordFloorRebate(store, actorId, spec = {}) {
     label: FLOOR_REBATE_LABEL
   }, at);
   return { ok: true, status: 'paid', penalty: false, amount: due.payload.amount, label: FLOOR_REBATE_LABEL };
+}
+
+const QUOTE_EXPIRED = 'The price lock expired. Quote again. Both parties see the new amount before a wallet request.';
+
+function priceRows(peers, type) {
+  const rows = [];
+  for (const peer of peers || []) {
+    for (const entry of peer?.tape || []) {
+      if (entry.type === type) rows.push(entry.payload || {});
+    }
+  }
+  return rows;
+}
+
+function latestLock(peers, invoiceId, purpose) {
+  const rows = priceRows(peers, 'PRICE_LOCK').filter((row) => (row.invoiceId || '') === (invoiceId || '') && (!purpose || row.purpose === purpose));
+  return rows.length ? rows[rows.length - 1] : null;
+}
+
+function findLock(peers, lockId) {
+  return priceRows(peers, 'PRICE_LOCK').find((row) => row.lockId === lockId) || null;
+}
+
+export function matchSolanaRequest(peers, claim) {
+  const rows = priceRows(peers, 'PRICE_REQUEST').filter((row) => {
+    if ((row.invoiceId || '') !== (claim.invoiceId || '')) return false;
+    if (claim.lockId && row.lockId !== claim.lockId) return false;
+    if (claim.purpose && row.purpose && row.purpose !== claim.purpose) return false;
+    return Boolean(row.requestCreatedAt) && withinLock(row, row.requestCreatedAt);
+  });
+  if (!rows.length) return { ok: false, blocked: true, alternatives: [...ALT_CHOICES], error: NO_COIN };
+  const request = rows.find((row) => round6(row.lgmeAmount) === round6(claim.amount));
+  if (!request) return fail('The on-chain amount does not match the price lock.');
+  return { ok: true, request };
+}
+
+async function copyQuote(store, otherId, type, payload, at) {
+  if (!otherId) return;
+  await writeOn(store, otherId, type, payload, at);
+}
+
+export async function openQuote(store, peerId, spec = {}) {
+  const peer = await store.get(peerId);
+  if (!peer?.privateKeyJwk && !peer?.signingKey) return fail(peer ? 'Wallet is locked.' : 'Unknown peer.');
+  const gate = assertOnline(spec.navigator);
+  if (!gate.ok) return fail(gate.error);
+  const source = String(spec.priceSource || spec.source || '');
+  const raw = Number(spec.price);
+  if (!(raw > 0) || !source || source === 'manual') {
+    return { ok: false, blocked: true, alternatives: [...ALT_CHOICES], error: NO_COIN };
+  }
+  const invoiceId = String(spec.invoiceId || '');
+  const otherId = String(spec.otherId || spec.payeeId || '');
+  const purpose = spec.purpose === 'rebate' || spec.purpose === 'donation' ? spec.purpose : 'settlement';
+  const at = spec.at || nowIso();
+  const band = clampBand(spec.rules?.band ?? spec.band);
+  const peers = await peersIn(store, [peerId, otherId]);
+  let previous = Number(spec.previousPrice);
+  if (!(previous > 0)) {
+    const prior = latestLock(peers, invoiceId, purpose);
+    if (prior) previous = Number(prior.price);
+  }
+  const historyOn = spec.history === 'ok' || (Array.isArray(spec.candles) && spec.candles.length > 0 && spec.history !== HISTORY_UNAVAILABLE);
+  const banded = applyPegBands({
+    raw,
+    previous: previous > 0 ? previous : 0,
+    candles: historyOn ? spec.candles : [],
+    now: new Date(at).getTime(),
+    rules: { band, holdDays: spec.rules?.holdDays },
+    history: historyOn
+  });
+  if (!banded.ok) return banded;
+  const built = buildPegQuote({ usdAmount: spec.usdAmount ?? spec.amount, price: banded.price, source, timestamp: at });
+  if (!built.ok) return { ...built, blocked: true, alternatives: [...ALT_CHOICES] };
+  const lockId = await sha256(canonicalJSON({ invoiceId, otherId, purpose, at, price: built.price, usd: built.usdAmount, source }));
+  const payload = {
+    simulated: false,
+    beta: true,
+    lockId,
+    invoiceId,
+    payerId: peerId,
+    payeeId: otherId,
+    purpose,
+    usdAmount: built.usdAmount,
+    lgmeAmount: built.lgmeAmount,
+    price: built.price,
+    rawPrice: raw,
+    effectivePrice: banded.effectivePrice,
+    previousPrice: previous > 0 ? previous : null,
+    clamped: banded.clamped,
+    bounded: banded.bounded,
+    anchors: banded.anchors,
+    history: banded.history,
+    clampBand: band,
+    priceSource: source,
+    priceTimestamp: built.priceTimestamp,
+    expiresAt: built.expiresAt,
+    requestCreatedAt: '',
+    penalty: false,
+    label: PEG_NOTE
+  };
+  await appendEntry(peer, 'PRICE_LOCK', payload, at);
+  const clampPayload = banded.clamped ? {
+    simulated: false,
+    beta: true,
+    lockId,
+    invoiceId,
+    rawPrice: raw,
+    effectivePrice: banded.effectivePrice,
+    clampedPrice: banded.effectivePrice,
+    bands: banded.bounded,
+    anchors: banded.anchors,
+    history: banded.history,
+    band,
+    previousPrice: previous > 0 ? previous : null,
+    penalty: false,
+    label: PEG_NOTE
+  } : null;
+  if (clampPayload) await appendEntry(peer, 'PRICE_CLAMP', clampPayload, at);
+  await store.set(peerId, peer);
+  await copyQuote(store, otherId === peerId ? '' : otherId, 'PRICE_LOCK', payload, at);
+  if (clampPayload) await copyQuote(store, otherId === peerId ? '' : otherId, 'PRICE_CLAMP', clampPayload, at);
+  return { ok: true, lock: payload, clamped: banded.clamped, requote: false };
+}
+
+export async function acknowledgeQuote(store, peerId, spec = {}) {
+  const peer = await store.get(peerId);
+  if (!peer?.privateKeyJwk && !peer?.signingKey) return fail(peer ? 'Wallet is locked.' : 'Unknown peer.');
+  const gate = assertOnline(spec.navigator);
+  if (!gate.ok) return fail(gate.error);
+  const lockId = String(spec.lockId || '');
+  const peers = await peersIn(store, [peerId, spec.otherId]);
+  const lock = findLock(peers, lockId);
+  if (!lock) return fail('No price lock.');
+  const at = spec.at || nowIso();
+  if (!withinLock(lock, at)) return { ok: false, expired: true, requote: true, alternatives: [...ALT_CHOICES], error: QUOTE_EXPIRED };
+  const parties = [lock.payerId, lock.payeeId].filter(Boolean);
+  if (parties.length && !parties.includes(peerId)) return fail('Only the two parties can see this amount.');
+  const seen = (peer.tape || []).some((entry) => entry.type === 'PRICE_SEEN' && entry.payload?.lockId === lockId && entry.payload?.peerId === peerId);
+  if (!seen) {
+    await appendEntry(peer, 'PRICE_SEEN', {
+      simulated: false,
+      lockId,
+      invoiceId: lock.invoiceId,
+      peerId,
+      usdAmount: lock.usdAmount,
+      lgmeAmount: lock.lgmeAmount,
+      price: lock.price,
+      penalty: false,
+      label: PEG_LABEL
+    }, at);
+    await store.set(peerId, peer);
+  }
+  return { ok: true, lock, expired: false };
+}
+
+export async function issueSolanaRequest(store, peerId, spec = {}) {
+  const peer = await store.get(peerId);
+  if (!peer?.privateKeyJwk && !peer?.signingKey) return fail(peer ? 'Wallet is locked.' : 'Unknown peer.');
+  const gate = assertOnline(spec.navigator);
+  if (!gate.ok) return fail(gate.error);
+  const lockId = String(spec.lockId || '');
+  const peers = await peersIn(store, [peerId]);
+  const lock = findLock(peers, lockId);
+  if (!lock) return fail('No price lock.');
+  const at = spec.at || nowIso();
+  if (!withinLock(lock, at)) return { ok: false, expired: true, requote: true, alternatives: [...ALT_CHOICES], error: QUOTE_EXPIRED };
+  const seen = new Set(priceRows(peers, 'PRICE_SEEN').filter((row) => row.lockId === lockId).map((row) => row.peerId));
+  const parties = [lock.payerId, lock.payeeId].filter(Boolean);
+  if (parties.length >= 2) {
+    if (!parties.every((id) => seen.has(id))) return fail('Both parties see the new amount before the wallet request.');
+  } else if (!seen.has(lock.payerId)) {
+    return fail('See the amount before the wallet request.');
+  }
+  const payload = { ...lock, requestCreatedAt: at };
+  const ids = parties.length ? parties : [peerId];
+  for (const id of ids) {
+    const book = await store.get(id);
+    if (!book) continue;
+    const already = (book.tape || []).some((entry) => entry.type === 'PRICE_REQUEST' && entry.payload?.lockId === lockId);
+    if (already) continue;
+    if (!book.privateKeyJwk && !book.signingKey) continue;
+    await appendEntry(book, 'PRICE_REQUEST', payload, at);
+    await store.set(id, book);
+  }
+  return { ok: true, ...payload, lgmeAmount: lock.lgmeAmount, requestCreatedAt: at, expired: false };
+}
+
+export async function proposeAltSettlement(store, peerId, spec = {}) {
+  const peer = await store.get(peerId);
+  if (!peer?.privateKeyJwk && !peer?.signingKey) return fail(peer ? 'Wallet is locked.' : 'Unknown peer.');
+  const gate = assertOnline(spec.navigator);
+  if (!gate.ok) return fail(gate.error);
+  const choice = spec.choice === 'barter' ? 'barter' : spec.choice === 'terms' ? 'terms' : '';
+  if (!choice) return fail('Choose pay in terms or barter.');
+  const at = spec.at || nowIso();
+  const usdAmount = round2(spec.usdAmount ?? spec.amount);
+  let schedule = [];
+  let months = 0;
+  if (choice === 'terms') {
+    const built = termSchedule(usdAmount, spec.months, at);
+    if (!built.ok) return built;
+    schedule = built.installments;
+    months = Number(spec.months);
+  } else if (!Number.isFinite(usdAmount) || usdAmount <= 0) {
+    return fail('Enter an amount greater than zero.');
+  }
+  const invoiceId = String(spec.invoiceId || '');
+  const otherId = String(spec.otherId || spec.payeeId || '');
+  if (!otherId || otherId === peerId) return fail('Name the other party.');
+  const altId = await sha256(canonicalJSON({ choice, invoiceId, payerId: peerId, payeeId: otherId, usdAmount, months, at }));
+  const payload = {
+    simulated: false,
+    beta: true,
+    altId,
+    choice,
+    invoiceId,
+    payerId: peerId,
+    payeeId: otherId,
+    usdAmount,
+    months,
+    schedule,
+    serviceIds: spec.serviceIds || [],
+    status: 'proposed',
+    consented: false,
+    note: choice === 'barter' ? 'IprovIT equivalent value' : 'Terms over 3 to 6 months',
+    penalty: false,
+    label: PEG_LABEL
+  };
+  await appendEntry(peer, 'ALT_SETTLEMENT', payload, at);
+  await store.set(peerId, peer);
+  await copyQuote(store, otherId, 'ALT_SETTLEMENT', payload, at);
+  return { ok: true, altId, choice, consented: false, alternatives: [...ALT_CHOICES], coin: false };
+}
+
+export async function consentAltSettlement(store, peerId, spec = {}) {
+  const peer = await store.get(peerId);
+  if (!peer?.privateKeyJwk && !peer?.signingKey) return fail(peer ? 'Wallet is locked.' : 'Unknown peer.');
+  const gate = assertOnline(spec.navigator);
+  if (!gate.ok) return fail(gate.error);
+  const altId = String(spec.altId || '');
+  const peers = await peersIn(store, [peerId]);
+  const proposal = priceRows(peers, 'ALT_SETTLEMENT').find((row) => row.altId === altId);
+  if (!proposal) return fail('No alternate settlement.');
+  const parties = [proposal.payerId, proposal.payeeId].filter(Boolean);
+  if (!parties.includes(peerId)) return fail('Only the two parties can consent.');
+  if (peerId === proposal.payerId) return { ok: true, consented: false, choice: proposal.choice, status: 'proposed' };
+  const at = spec.at || nowIso();
+  const agreed = { ...proposal, status: 'agreed', consented: true, penalty: false };
+  await appendEntry(peer, 'ALT_AGREED', agreed, at);
+  await store.set(peerId, peer);
+  await copyQuote(store, proposal.payerId, 'ALT_AGREED', agreed, at);
+  return { ok: true, consented: true, choice: proposal.choice, status: 'agreed', coin: false, schedule: proposal.schedule || [] };
 }
 
 export async function recordSolanaTx(store, peerId, spec = {}) {
@@ -4151,8 +4420,24 @@ export async function recordSolanaTx(store, peerId, spec = {}) {
   const peers = await peersIn(store, [peerId, claim.payeeId]);
   const known = rejectKnownSignature(peers, claim);
   if (!known.ok) return known;
+  const match = matchSolanaRequest(peers, { ...claim, amount: spec.amount, lockId: String(spec.lockId || ''), purpose: spec.purpose || 'settlement' });
+  if (!match.ok) return match;
+  const quote = match.request;
   const before = replay(peer).balance;
-  const payload = { ...claim, status: 'pending-attestation', role: 'payer' };
+  const payload = {
+    ...claim,
+    amount: quote.lgmeAmount,
+    usdAmount: quote.usdAmount,
+    lgmeAmount: quote.lgmeAmount,
+    price: quote.price,
+    priceSource: quote.priceSource,
+    priceTimestamp: quote.priceTimestamp,
+    requestCreatedAt: quote.requestCreatedAt,
+    lockId: quote.lockId,
+    status: 'pending-attestation',
+    role: 'payer',
+    label: PEG_LABEL
+  };
   await appendEntry(peer, 'SOLANA_TX', payload, at);
   await store.set(peerId, peer);
   return { ok: true, status: 'pending-attestation', payload, unchanged: replay(await store.get(peerId)).balance === before };
@@ -4819,9 +5104,9 @@ function loyaltyRules(raw = {}) {
   return {
     defaultPercent: num(raw.defaultPercent, LOYALTY_DEFAULTS.defaultPercent),
     maxPercentPerDeal: num(raw.maxPercentPerDeal, LOYALTY_DEFAULTS.maxPercentPerDeal),
-    capAmountPerPeriod: num(raw.capAmountPerPeriod, LOYALTY_DEFAULTS.capAmountPerPeriod),
+    capUsdPerPeriod: num(raw.capUsdPerPeriod ?? raw.capAmountPerPeriod, LOYALTY_DEFAULTS.capUsdPerPeriod),
     periodDays: num(raw.periodDays, LOYALTY_DEFAULTS.periodDays) || LOYALTY_DEFAULTS.periodDays,
-    reserve: num(raw.reserve, LOYALTY_DEFAULTS.reserve)
+    reserveUsd: num(raw.reserveUsd ?? raw.reserve, LOYALTY_DEFAULTS.reserveUsd)
   };
 }
 

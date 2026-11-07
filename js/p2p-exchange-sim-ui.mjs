@@ -3,6 +3,7 @@ import { ARTICLES } from './p2p-resources.mjs';
 import { PASSKEY_WORDING, createIndexedDbVault, deviceKeyForMigration, importNonExtractable, openJson, passkeyCreationOptions, sealJson } from './p2p-sim-guard.mjs';
 import { REFERENCE_LABEL, optionLabel, referenceLine } from './dc-reference.mjs';
 import { DONATION_ADDRESS, MINT, buildTransferRequest, createReference, findReferencePayment, isValidPublicKey, readTokenBalance } from './solana-pay.mjs';
+import { fetchLgmePrice as quoteLgme } from './lgme-price.mjs';
 
 const sessionKeys = new Map();
 const sessionCrypto = new Map();
@@ -77,7 +78,8 @@ let paymentMethods = {
   zelle: { recipient: '' },
   cash: { inPersonOnly: true },
   notice: 'Zelle and cash are not reversible-protected. This app does not process them.',
-  loyalty: { ...sim.LOYALTY_DEFAULTS }
+  loyalty: { ...sim.LOYALTY_DEFAULTS },
+  peg: { band: sim.DEFAULT_CLAMP_BAND, holdDays: 7 }
 };
 let openTailored = '';
 let offerupIndex = -1;
@@ -163,28 +165,122 @@ function showSolanaPay(spec) {
   const overlay = h('div', { id: 'solana-pay', class: 'walk', role: 'dialog' });
   const recipient = h('input', { value: spec.recipient || '' });
   if (spec.donation) recipient.readOnly = true;
-  const amount = h('input', { value: String(spec.amount || '') });
+  const usd = h('input', { value: String(spec.amount || '') });
+  usd.readOnly = true;
   const cluster = h('select', {}, [
     option('mainnet-beta', 'Mainnet', solanaCluster() === 'mainnet-beta'),
     option('devnet', 'Devnet test mode', solanaCluster() === 'devnet')
   ]);
-  const preview = h('p', { class: 'legend', id: 'solana-request' }, ['Confirm the amount and the recipient before a wallet link is created.']);
+  const preview = h('p', { class: 'legend', id: 'solana-request' }, ['Fetching the US$ price.']);
+  const countdown = h('p', { id: 'quote-countdown' }, ['Price lock 15s']);
+  const clampNote = h('p', { id: 'clamp-note' }, ['']);
   const link = h('a', { id: 'solana-link', href: '#', target: '_blank', rel: 'noopener noreferrer' }, ['Open in your wallet']);
   link.hidden = true;
   const chain = h('a', { id: 'solana-chain', href: '#', target: '_blank', rel: 'noopener noreferrer' }, ['View on Solscan']);
   chain.hidden = true;
   const qrHost = h('div', { id: 'solana-qr' });
+  const altHost = h('div', { id: 'coin-alternatives' });
   let reference = '';
+  let lock = null;
+  let timer = 0;
+  let lgmeAmount = 0;
+  function stopClock() {
+    if (timer) clearInterval(timer);
+    timer = 0;
+  }
+  function paint() {
+    if (!lock) return;
+    preview.textContent = `US$ ${lock.usdAmount} · ${lock.lgmeAmount} $lgme · ${lock.priceSource} · ${lock.price} US$ per $lgme.`;
+    const parts = [sim.PEG_NOTE];
+    if (lock.history === 'history unavailable') parts.push('history unavailable');
+    if (lock.clamped) parts.push(`Raw price ${lock.rawPrice}. Locked price ${lock.price}. Bands ${(lock.bounded || []).join(', ')}.`);
+    clampNote.textContent = parts.join(' ');
+  }
+  function arm() {
+    stopClock();
+    const end = new Date(lock.expiresAt).getTime();
+    const tick = async () => {
+      const left = Math.max(0, end - Date.now());
+      countdown.textContent = left > 0 ? `Price lock ${Math.ceil(left / 1000)}s` : 'The 15 second lock expired. Quoting again.';
+      if (left > 0) return;
+      stopClock();
+      link.hidden = true;
+      const previous = lock?.price;
+      lock = null;
+      lgmeAmount = 0;
+      await pull(previous);
+    };
+    timer = setInterval(tick, 250);
+    tick();
+  }
+  async function pull(previousPrice) {
+    const priced = await quoteLgme();
+    if (!priced.ok) { showBlocked(priced.error); return; }
+    const opened = await sim.openQuote(store, spec.seat, {
+      usdAmount: usd.value,
+      price: priced.price,
+      priceSource: priced.source,
+      previousPrice: previousPrice || '',
+      band: paymentMethods.peg?.band,
+      rules: paymentMethods.peg,
+      candles: priced.candles || [],
+      history: priced.history || 'history unavailable',
+      invoiceId: spec.invoiceId || '',
+      otherId: spec.otherId || '',
+      purpose: spec.purpose || 'settlement',
+      navigator
+    });
+    if (!opened.ok) { showBlocked(opened.error); return; }
+    lock = opened.lock;
+    altHost.replaceChildren();
+    paint();
+    arm();
+  }
+  async function proposeAlt(choice, months) {
+    const result = await sim.proposeAltSettlement(store, spec.seat, {
+      choice,
+      months,
+      usdAmount: usd.value,
+      invoiceId: spec.invoiceId || '',
+      otherId: spec.otherId || '',
+      navigator
+    });
+    preview.textContent = result.ok
+      ? 'Your consent is signed. The other party still has to consent. Coin settlement stays closed.'
+      : result.error;
+  }
+  function showBlocked(message) {
+    stopClock();
+    link.hidden = true;
+    lock = null;
+    preview.textContent = message || sim.NO_COIN;
+    countdown.textContent = sim.NO_COIN;
+    if (altHost.childElementCount) return;
+    const months = h('select', {}, [3, 4, 5, 6].map((n) => option(String(n), `${n} month terms`, n === 3)));
+    altHost.append(
+      h('p', {}, ['Pay in terms is 3 to 6 month installments. Barter is an IprovIT service of the same US$ value. Both parties consent.']),
+      field('Term length', months),
+      h('div', { class: 'actions' }, [
+        h('button', { type: 'button', id: 'pay-terms', onClick: () => proposeAlt('terms', months.value) }, ['Pay in terms']),
+        h('button', { type: 'button', id: 'pay-barter', onClick: () => proposeAlt('barter') }, ['Barter'])
+      ])
+    );
+  }
   overlay.append(h('article', { class: 'card' }, [
     h('h2', {}, ['Confirm $lgme payment']),
     h('p', {}, ['Beta. Real tokens. Irreversible. Start small. This page does not hold a Solana key.']),
+    h('p', { id: 'peg-label' }, [sim.PEG_LABEL]),
+    h('p', { id: 'peg-note' }, [sim.PEG_NOTE]),
     h('p', { class: 'legend' }, [`Mint ${MINT}`]),
-    field('Amount', amount),
+    field('Amount in US$', usd),
     field(spec.donation ? 'Floor wallet @EgonAnon' : 'Payee Solana address', recipient),
     field('Network', cluster),
     preview,
+    countdown,
+    clampNote,
     chain,
     qrHost,
+    altHost,
     h('div', { class: 'actions' }, [
       h('button', { type: 'button', onClick: async () => {
         const provider = globalThis.phantom?.solana || globalThis.solflare || (globalThis.solana?.isPhantom ? globalThis.solana : null);
@@ -197,56 +293,96 @@ function showSolanaPay(spec) {
           if (!spec.donation) recipient.value = key;
         } catch { preview.textContent = 'The wallet was not connected.'; }
       } }, ['Use this wallet']),
-      h('button', { type: 'button', class: 'primary', id: 'solana-confirm', onClick: () => {
+      h('button', { type: 'button', id: 'see-amount', onClick: async () => {
+        if (!lock) { countdown.textContent = 'Wait for the price.'; return; }
+        const seen = await sim.acknowledgeQuote(store, spec.seat, { lockId: lock.lockId, navigator });
+        if (!seen.ok) {
+          if (seen.requote) { await pull(lock.price); return; }
+          countdown.textContent = seen.error;
+          return;
+        }
+        countdown.textContent = 'You see this amount. The other party sees it on their seat before the wallet request.';
+      } }, ['I see this amount']),
+      h('button', { type: 'button', class: 'primary', id: 'solana-confirm', onClick: async () => {
+        if (!lock) { countdown.textContent = 'Wait for the price.'; return; }
         localStorage.setItem(CLUSTER_KEY, cluster.value);
+        const issued = await sim.issueSolanaRequest(store, spec.seat, { lockId: lock.lockId, navigator });
+        if (!issued.ok) {
+          if (issued.requote) {
+            countdown.textContent = issued.error;
+            const previous = lock.price;
+            lock = null;
+            link.hidden = true;
+            await pull(previous);
+            return;
+          }
+          countdown.textContent = issued.error;
+          return;
+        }
         reference = createReference();
+        lgmeAmount = issued.lgmeAmount;
         const built = buildTransferRequest({
           recipient: recipient.value.trim(),
-          amount: amount.value,
+          amount: issued.lgmeAmount,
           reference,
           mint: MINT,
           label: 'lgme beta',
-          message: cluster.value === 'devnet' ? 'devnet test' : 'mainnet $lgme'
+          message: `US$ ${issued.usdAmount}`
         });
         if (!built.ok) { preview.textContent = built.error; return; }
-        preview.textContent = `Confirm ${amount.value} $lgme to ${recipient.value.trim()} on ${cluster.value}. Your wallet signs it. Nothing is sent until then.`;
+        preview.textContent = `US$ ${issued.usdAmount} is ${issued.lgmeAmount} $lgme. Your wallet signs it. Nothing is sent until then.`;
         link.href = built.url;
         link.hidden = false;
         qrHost.replaceChildren();
         if (globalThis.QRCode) new globalThis.QRCode(qrHost, { text: built.url, width: 180, height: 180 });
-      } }, ['Confirm amount']),
+      } }, ['Open in wallet']),
       h('button', { type: 'button', id: 'solana-check', onClick: async (event) => {
-        if (!reference) { preview.textContent = 'Confirm the amount first.'; return; }
+        if (!reference || !lock) { preview.textContent = 'Open the wallet request first.'; return; }
         const button = event.currentTarget;
         if (button.disabled) return;
         button.disabled = true;
         let found;
         try {
-          found = await findReferencePayment(cluster.value, reference, { mint: MINT, recipient: recipient.value.trim(), amount: amount.value });
+          found = await findReferencePayment(cluster.value, reference, { mint: MINT, recipient: recipient.value.trim(), amount: lgmeAmount });
         } finally {
           button.disabled = false;
         }
         if (!found.ok) { preview.textContent = found.error; return; }
-        const recorded = await sim.recordSolanaTx(store, spec.seat, {
-          signature: found.signature,
-          reference,
-          mint: MINT,
-          amount: amount.value,
-          recipient: recipient.value.trim(),
-          invoiceId: spec.invoiceId,
-          otherId: spec.otherId,
-          cluster: cluster.value,
-          navigator
-        });
+        const recorded = spec.purpose === 'rebate'
+          ? await sim.recordFloorRebate(store, spec.seat, {
+            signature: found.signature,
+            reference,
+            invoiceId: spec.invoiceId,
+            amount: lgmeAmount,
+            lockId: lock.lockId,
+            navigator
+          })
+          : await sim.recordSolanaTx(store, spec.seat, {
+            signature: found.signature,
+            reference,
+            mint: MINT,
+            amount: lgmeAmount,
+            recipient: recipient.value.trim(),
+            invoiceId: spec.invoiceId,
+            otherId: spec.otherId,
+            lockId: lock.lockId,
+            purpose: spec.purpose || 'settlement',
+            cluster: cluster.value,
+            navigator
+          });
         if (!recorded.ok) { preview.textContent = recorded.error; return; }
         chain.href = solscanHref(found.signature, cluster.value);
         chain.hidden = false;
-        preview.textContent = 'Pending attestation. The payee still has to sign on their own seat. No invoice is paid yet.';
-        setStatus(`Pending attestation. ${found.signature.slice(0, 12)} is finalized on ${cluster.value}. The payee still has to sign. Beta.`, 'ok');
-        const carried = await sim.sealSolanaHandoff(store, spec.seat, found.signature);
-        if (carried.ok) {
-          carryCode = carried.encoded;
-          carryAddress = '';
+        preview.textContent = spec.purpose === 'rebate'
+          ? 'Floor rebate is on both tapes. Beta.'
+          : 'Pending attestation. The payee still has to sign on their own seat. No invoice is paid yet.';
+        setStatus(preview.textContent, 'ok');
+        if (spec.purpose !== 'rebate') {
+          const carried = await sim.sealSolanaHandoff(store, spec.seat, found.signature);
+          if (carried.ok) {
+            carryCode = carried.encoded;
+            carryAddress = '';
+          }
         }
         render();
       } }, ['Check payment']),
@@ -256,10 +392,11 @@ function showSolanaPay(spec) {
         const balance = await readTokenBalance(cluster.value, owner);
         preview.textContent = balance.ok ? `Read-only wallet balance: ${balance.amount} $lgme on ${cluster.value}.` : balance.error;
       } }, ['Read wallet balance']),
-      h('button', { type: 'button', onClick: () => overlay.remove() }, ['Close'])
+      h('button', { type: 'button', onClick: () => { stopClock(); overlay.remove(); } }, ['Close'])
     ])
   ]));
   document.body.append(overlay);
+  pull();
 }
 
 function solscanHref(signature, cluster) {
@@ -464,50 +601,42 @@ async function floorRebateSection(seat) {
     seen.add(row.invoiceId);
     const wallet = h('input', { value: row.payerWallet || '', maxlength: '64', placeholder: 'Payer Solana address' });
     const preview = h('p', { class: 'legend' }, [sim.FLOOR_REBATE_LABEL]);
-    const link = h('a', { href: '#', target: '_blank', rel: 'noopener noreferrer' }, ['Open floor rebate in your wallet']);
-    link.hidden = true;
-    let reference = '';
     cards.push(h('article', { class: 'card', id: 'floor-rebate-due' }, [
-      h('h3', {}, [`Rebate due ${row.amount} $lgme`]),
+      h('h3', {}, [`Rebate due US$ ${row.usdAmount || row.amount}`]),
       h('p', {}, [sim.FLOOR_REBATE_LABEL]),
       h('p', { class: 'legend' }, ['From @EgonAnon 6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY. This desk holds no floor key.']),
       field('Payer address', wallet),
       preview,
       h('div', { class: 'actions' }, [
         h('button', { type: 'button', onClick: async () => {
+          const priced = await quoteLgme();
           const balance = await readTokenBalance(solanaCluster(), DONATION_ADDRESS);
           if (!balance.ok) { preview.textContent = balance.error; return; }
-          const review = await sim.reviewFloorRebate(store, seat, { invoiceId: row.invoiceId, balance: balance.amount, payerWallet: wallet.value.trim(), navigator });
+          const review = await sim.reviewFloorRebate(store, seat, {
+            invoiceId: row.invoiceId,
+            balance: balance.amount,
+            price: priced.ok ? priced.price : 0,
+            payerWallet: wallet.value.trim(),
+            navigator
+          });
           if (!review.ok) { preview.textContent = review.error; return; }
           if (review.status === 'deferred') {
             preview.textContent = 'Deferred. The floor reserve stays in place. No penalty.';
             render();
             return;
           }
+          if (!priced.ok) { preview.textContent = priced.error; return; }
           if (!isValidPublicKey(wallet.value.trim())) { preview.textContent = 'Enter the payer Solana address.'; return; }
-          reference = createReference();
-          const built = buildTransferRequest({
-            recipient: wallet.value.trim(),
+          preview.textContent = `Floor balance ${balance.amount} $lgme. Rebate US$ ${review.amount}. ${sim.PEG_NOTE}`;
+          showSolanaPay({
+            seat,
             amount: review.amount,
-            reference,
-            mint: MINT,
-            label: 'floor rebate',
-            message: sim.FLOOR_REBATE_LABEL
+            invoiceId: row.invoiceId,
+            otherId: row.payerId,
+            recipient: wallet.value.trim(),
+            purpose: 'rebate'
           });
-          if (!built.ok) { preview.textContent = built.error; return; }
-          link.href = built.url;
-          link.hidden = false;
-          preview.textContent = `Floor balance ${balance.amount}. Rebate ${review.amount}. Sign from the floor wallet.`;
-        } }, ['Read floor balance']),
-        h('button', { type: 'button', onClick: async () => {
-          if (!reference) { preview.textContent = 'Read the floor balance first.'; return; }
-          const found = await findReferencePayment(solanaCluster(), reference, { mint: MINT, recipient: wallet.value.trim(), amount: row.amount });
-          if (!found.ok) { preview.textContent = found.error; return; }
-          const recorded = await sim.recordFloorRebate(store, seat, { signature: found.signature, reference, invoiceId: row.invoiceId, navigator });
-          setStatus(recorded.ok ? 'Floor rebate is on both tapes. Beta.' : recorded.error, recorded.ok ? 'ok' : 'bad');
-          if (recorded.ok) render();
-        } }, ['Check rebate']),
-        link
+        } }, ['Read floor balance'])
       ])
     ]));
   }
@@ -1237,7 +1366,7 @@ async function renderBooks(peers, seat) {
   const mediaHashes = h('input', { placeholder: 'Optional media hashes' });
   const extra = h('div', { id: 'invoice-fields' }, [
     field('Payer', payer),
-    field('Amount in $lgme', invoiceAmount),
+    field('Amount in US$', invoiceAmount),
     field('Due date', due),
     field('Optional $ reference', reference),
     h('p', { class: 'legend' }, [`${REFERENCE_LABEL}. Reference only, not a price.`]),
@@ -1247,7 +1376,7 @@ async function renderBooks(peers, seat) {
   invoiceOn.addEventListener('change', () => { extra.hidden = !invoiceOn.checked; });
   const receiptForm = h('form', { id: 'ididit-form' }, [
     h('div', { class: 'grid three' }, [field('Work', work), field('Scope', scope), field('Hours', hours)]),
-    h('label', { class: 'row' }, [invoiceOn, 'Invoice in $lgme']),
+    h('label', { class: 'row' }, [invoiceOn, 'Invoice in US$']),
     extra,
     h('div', { class: 'actions' }, [h('button', { type: 'submit', class: 'primary' }, ['Record IdidIt'])])
   ]);
@@ -3733,13 +3862,26 @@ async function loadReferences() {
       loyalty: {
         defaultPercent: Number(body?.loyalty?.defaultPercent ?? sim.LOYALTY_DEFAULTS.defaultPercent),
         maxPercentPerDeal: Number(body?.loyalty?.maxPercentPerDeal ?? sim.LOYALTY_DEFAULTS.maxPercentPerDeal),
-        capAmountPerPeriod: Number(body?.loyalty?.capAmountPerPeriod ?? sim.LOYALTY_DEFAULTS.capAmountPerPeriod),
+        capUsdPerPeriod: Number(body?.loyalty?.capUsdPerPeriod ?? body?.loyalty?.capAmountPerPeriod ?? sim.LOYALTY_DEFAULTS.capUsdPerPeriod),
+        capAmountPerPeriod: Number(body?.loyalty?.capUsdPerPeriod ?? body?.loyalty?.capAmountPerPeriod ?? sim.LOYALTY_DEFAULTS.capUsdPerPeriod),
         periodDays: Number(body?.loyalty?.periodDays ?? sim.LOYALTY_DEFAULTS.periodDays),
-        reserve: Number(body?.loyalty?.reserve ?? sim.LOYALTY_DEFAULTS.reserve)
+        reserveUsd: Number(body?.loyalty?.reserveUsd ?? body?.loyalty?.reserve ?? sim.LOYALTY_DEFAULTS.reserveUsd),
+        reserve: Number(body?.loyalty?.reserveUsd ?? body?.loyalty?.reserve ?? sim.LOYALTY_DEFAULTS.reserveUsd)
+      },
+      peg: {
+        band: Number(body?.peg?.band ?? sim.DEFAULT_CLAMP_BAND),
+        holdDays: Number(body?.peg?.holdDays ?? 7),
+        quoteSeconds: Number(body?.peg?.quoteSeconds ?? 15)
       }
     };
   } catch {
-    paymentMethods = { zelle: { recipient: '' }, cash: { inPersonOnly: true }, notice: 'Zelle and cash are not reversible-protected. This app does not process them.' };
+    paymentMethods = {
+      zelle: { recipient: '' },
+      cash: { inPersonOnly: true },
+      notice: 'Zelle and cash are not reversible-protected. This app does not process them.',
+      loyalty: { ...sim.LOYALTY_DEFAULTS },
+      peg: { band: sim.DEFAULT_CLAMP_BAND, holdDays: 7, quoteSeconds: 15 }
+    };
   } finally {
     gate.stop();
   }

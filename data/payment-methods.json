@@ -9,8 +9,13 @@
   "loyalty": {
     "defaultPercent": 5,
     "maxPercentPerDeal": 15,
-    "capAmountPerPeriod": 25,
+    "capUsdPerPeriod": 25,
     "periodDays": 30,
-    "reserve": 100
+    "reserveUsd": 100
+  },
+  "peg": {
+    "band": 0.05,
+    "quoteSeconds": 15,
+    "holdDays": 7
   }
 }

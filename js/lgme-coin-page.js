@@ -30,15 +30,47 @@
 
     var amount = document.getElementById('gift-amount');
     var pay = document.getElementById('solana-pay');
-    function refreshPay() {
-      var figure = String(amount && amount.value || '').trim();
-      var number = Number(figure);
-      var url = payUrl(Number.isFinite(number) && number > 0 ? String(number) : '');
+    var quoteTimer = 0;
+    function paintGift(url) {
       if (pay) pay.href = url;
       drawGift(url);
     }
-    if (amount) amount.addEventListener('input', refreshPay);
-    refreshPay();
+    function loadQuote(mod) {
+      var usd = Number(amount && amount.value);
+      var eq = document.getElementById('lgme-equivalent');
+      var clock = document.getElementById('quote-countdown');
+      mod.fetchLgmePrice().then(function (priced) {
+        if (!priced.ok || !(usd > 0)) {
+          if (quoteTimer) clearInterval(quoteTimer);
+          if (eq) eq.textContent = priced.ok ? 'Enter a US$ amount.' : 'No $lgme price is available. Coin settlement is closed. Pay in terms or barter. Both parties consent.';
+          if (clock) clock.textContent = priced.history === 'history unavailable' ? 'history unavailable' : '';
+          paintGift(payUrl(''));
+          return;
+        }
+        var banded = mod.applyPegBands({ raw: priced.price, candles: priced.candles, now: Date.now(), history: priced.history === 'ok', rules: { band: 0.05 } });
+        var lgme = mod.lgmeForUsd(usd, banded.price);
+        var until = Date.now() + mod.QUOTE_MS;
+        if (eq) eq.textContent = 'US$ ' + usd + ' is ' + lgme + ' $lgme.';
+        paintGift(payUrl(String(lgme)));
+        if (quoteTimer) clearInterval(quoteTimer);
+        quoteTimer = setInterval(function () {
+          var left = Math.max(0, until - Date.now());
+          if (clock) clock.textContent = left > 0 ? 'Price lock ' + Math.ceil(left / 1000) + 's' : 'The 15 second lock expired. Quoting again.';
+          if (banded.history === 'history unavailable' && clock && left > 0) clock.textContent += ' history unavailable';
+          if (left <= 0) {
+            clearInterval(quoteTimer);
+            loadQuote(mod);
+          }
+        }, 250);
+      }).catch(function () {
+        if (eq) eq.textContent = 'No $lgme price is available. Coin settlement is closed. Pay in terms or barter. Both parties consent.';
+        paintGift(payUrl(''));
+      });
+    }
+    import('/js/lgme-price.mjs').then(function (mod) {
+      if (amount) amount.addEventListener('input', function () { loadQuote(mod); });
+      loadQuote(mod);
+    });
 
     var receipt = document.getElementById('tx-receipt');
     if (receipt) receipt.addEventListener('click', function () {
