@@ -2,6 +2,7 @@ import * as sim from './p2p-exchange-sim.mjs';
 import { ARTICLES } from './p2p-resources.mjs';
 import { PASSKEY_WORDING, createIndexedDbVault, deviceKeyForMigration, importNonExtractable, openJson, passkeyCreationOptions, sealJson } from './p2p-sim-guard.mjs';
 import { REFERENCE_LABEL, optionLabel, referenceLine } from './dc-reference.mjs';
+import { DONATION_ADDRESS, MINT, buildTransferRequest, createReference, findReferencePayment, isValidPublicKey, readTokenBalance } from './solana-pay.mjs';
 
 const sessionKeys = new Map();
 const sessionCrypto = new Map();
@@ -143,6 +144,97 @@ function peerOptions(peers, selected, placeholder) {
   if (placeholder != null) nodes.push(option('', placeholder, !selected));
   for (const peer of peers) nodes.push(option(peer.id, peer.name, peer.id === selected));
   return nodes;
+}
+
+const CLUSTER_KEY = 'lgme-beta:cluster';
+
+function solanaCluster() {
+  return localStorage.getItem(CLUSTER_KEY) === 'devnet' ? 'devnet' : 'mainnet-beta';
+}
+
+function showSolanaPay(spec) {
+  document.getElementById('solana-pay')?.remove();
+  const overlay = h('div', { id: 'solana-pay', class: 'walk', role: 'dialog' });
+  const recipient = h('input', { value: spec.recipient || '' });
+  if (spec.donation) recipient.readOnly = true;
+  const amount = h('input', { value: String(spec.amount || '') });
+  const cluster = h('select', {}, [
+    option('mainnet-beta', 'Mainnet', solanaCluster() === 'mainnet-beta'),
+    option('devnet', 'Devnet test mode', solanaCluster() === 'devnet')
+  ]);
+  const preview = h('p', { class: 'legend', id: 'solana-request' }, ['Confirm the amount and the recipient before a wallet link is created.']);
+  const link = h('a', { id: 'solana-link', href: '#', target: '_blank', rel: 'noopener noreferrer' }, ['Open in your wallet']);
+  link.hidden = true;
+  const qrHost = h('div', { id: 'solana-qr' });
+  let reference = '';
+  overlay.append(h('article', { class: 'card' }, [
+    h('h2', {}, ['Confirm $lgme payment']),
+    h('p', {}, ['Beta. Real tokens. Irreversible. Start small. This page does not hold a Solana key.']),
+    h('p', { class: 'legend' }, [`Mint ${MINT}`]),
+    field('Amount', amount),
+    field(spec.donation ? 'Floor wallet @EgonAnon' : 'Payee Solana address', recipient),
+    field('Network', cluster),
+    preview,
+    qrHost,
+    h('div', { class: 'actions' }, [
+      h('button', { type: 'button', onClick: async () => {
+        const provider = globalThis.phantom?.solana || globalThis.solflare || (globalThis.solana?.isPhantom ? globalThis.solana : null);
+        if (!provider?.connect) { preview.textContent = 'Install Phantom or Solflare, or paste the public address. No seed phrase is used.'; return; }
+        try {
+          const connected = await provider.connect();
+          const key = connected?.publicKey?.toString?.() || provider.publicKey?.toString?.() || '';
+          if (!isValidPublicKey(key)) { preview.textContent = 'The wallet did not share a public address.'; return; }
+          if (!spec.donation) recipient.value = key;
+        } catch { preview.textContent = 'The wallet was not connected.'; }
+      } }, ['Use this wallet']),
+      h('button', { type: 'button', class: 'primary', id: 'solana-confirm', onClick: () => {
+        localStorage.setItem(CLUSTER_KEY, cluster.value);
+        reference = createReference();
+        const built = buildTransferRequest({
+          recipient: recipient.value.trim(),
+          amount: amount.value,
+          reference,
+          mint: MINT,
+          label: 'lgme beta',
+          message: cluster.value === 'devnet' ? 'devnet test' : 'mainnet $lgme'
+        });
+        if (!built.ok) { preview.textContent = built.error; return; }
+        preview.textContent = `Confirm ${amount.value} $lgme to ${recipient.value.trim()} on ${cluster.value}. Your wallet signs it. Nothing is sent until then.`;
+        link.href = built.url;
+        link.hidden = false;
+        qrHost.replaceChildren();
+        if (globalThis.QRCode) new globalThis.QRCode(qrHost, { text: built.url, width: 180, height: 180 });
+      } }, ['Confirm amount']),
+      h('button', { type: 'button', id: 'solana-check', onClick: async () => {
+        if (!reference) { preview.textContent = 'Confirm the amount first.'; return; }
+        const found = await findReferencePayment(cluster.value, reference, { mint: MINT, recipient: recipient.value.trim(), amount: amount.value });
+        if (!found.ok) { preview.textContent = found.error; return; }
+        const recorded = await sim.recordSolanaTx(store, spec.seat, {
+          signature: found.signature,
+          reference,
+          mint: MINT,
+          amount: amount.value,
+          recipient: recipient.value.trim(),
+          invoiceId: spec.invoiceId,
+          otherId: spec.otherId,
+          cluster: cluster.value
+        });
+        if (!recorded.ok) { preview.textContent = recorded.error; return; }
+        if (spec.donation) await sim.consentFloorDonation(store, spec.seat, spec.invoiceId);
+        setStatus(`Payment ${found.signature.slice(0, 12)} is on ${cluster.value}. The tape recorded the signature. Beta.`, 'ok');
+        overlay.remove();
+        render();
+      } }, ['Check payment']),
+      link,
+      h('button', { type: 'button', onClick: async () => {
+        const owner = recipient.value.trim();
+        const balance = await readTokenBalance(cluster.value, owner);
+        preview.textContent = balance.ok ? `Read-only wallet balance: ${balance.amount} $lgme on ${cluster.value}.` : balance.error;
+      } }, ['Read wallet balance']),
+      h('button', { type: 'button', onClick: () => overlay.remove() }, ['Close'])
+    ])
+  ]));
+  document.body.append(overlay);
 }
 
 function field(label, control) {
@@ -849,6 +941,22 @@ async function renderBooks(peers, seat) {
       } }, ['Remind by SMS']));
     }
     if (row.role === 'AP' && row.remaining > 0 && row.status !== 'refused') {
+      actions.push(h('button', { type: 'button', class: 'primary', id: 'pay-solana', onClick: () => showSolanaPay({
+        seat,
+        amount: payAmount.value || row.remaining,
+        invoiceId: row.invoiceId,
+        otherId: row.workerId,
+        recipient: '',
+        donation: false
+      }) }, ['Settle in $lgme']));
+      actions.push(h('button', { type: 'button', onClick: () => showSolanaPay({
+        seat,
+        amount: payAmount.value || row.remaining,
+        invoiceId: row.invoiceId,
+        otherId: '',
+        recipient: DONATION_ADDRESS,
+        donation: true
+      }) }, ['Pay donation in $lgme']));
       actions.push(h('button', { type: 'button', class: 'primary', id: 'pay-invoice', onClick: async () => {
         const result = await sim.payInvoice(store, seat, row.invoiceId, { amount: payAmount.value, passphrase: pass.value, code: code.value });
         setStatus(result.ok ? `Paid ${result.amount} $lgme. Remaining ${result.remaining}. Reward ${result.reward}. SIMULATION.` : result.error, result.ok ? 'ok' : 'bad');

@@ -150,7 +150,7 @@ export const ARTICLES = [
     title: 'How this desk stays shut',
     deck: 'Online to spend. Read-only when offline. The books stay here.',
     blocks: [
-      { type: 'p', text: 'SIMULATION. Nothing on this page writes to a network or moves real money. The rules below are how the practice books refuse a spend that is not live between two peers.' },
+      { type: 'p', text: 'Beta. Agreed payments settle in real $lgme on Solana. Transfers are irreversible. Use at your own risk and start small. This desk never asks for a seed phrase or a Solana private key. Your wallet signs each payment. The local tape records the transaction signature. It does not write to Hedera. Offline, you can read the books. You cannot spend.' },
       { type: 'p', text: 'Spends, invoices, handoffs, and signed chats need the browser online, and both peers must sign a challenge and an acknowledgement within 10 minutes. Offline, you can read the books. You cannot spend.' },
       { type: 'p', text: 'The signing key is kept in this browser as a non-extractable key. A wallet can also unlock with fingerprint / face / device PIN (your phone decides). A passphrase is the fallback, and it is not a short PIN. A 6-digit code remains an optional second factor. Recovery codes are shown once.' },
       { type: 'p', text: 'Each mock $lgme bundle carries a serial from the opening line. A receipt checks that chain. If the same serial names two next owners, both books get a signed fraud proof and the cheater’s floor and standing move against them.' },

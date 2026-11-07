@@ -1032,7 +1032,7 @@ test('a coded payment settles the invoice and a partial leaves the rest open', a
   assert.equal(rest.remaining, 0);
   assert.equal(rest.reward, 0.2);
   assert.equal(sim.replay(await store.get('alice')).balance, 110);
-  assert.equal(sim.replay(await store.get('bob')).balance, 90.2);
+  assert.equal(sim.replay(await store.get('bob')).balance, 90);
 });
 
 test('a refused invoice moves nothing and pays no reward', async () => {
@@ -1159,7 +1159,7 @@ test('real gifts are announced above the simulation and the two methods stay sep
   assert.equal(coin.includes('https://x.com/Trancesage'), true);
   assert.equal(coin.includes('In-app $lgme balances stay simulated.'), true);
   const desk = readFileSync(join(root, 'p2p-exchange-sim.html'), 'utf8');
-  assert.ok(desk.indexOf('give-banner') < desk.indexOf('SIMULATION. Practice books only.'));
+  assert.ok(desk.indexOf('give-banner') < desk.indexOf('id="beta-notice"'));
   const grants = readFileSync(join(root, 'grants.html'), 'utf8');
   assert.equal(grants.includes('How to propose'), true);
 });
@@ -1734,7 +1734,7 @@ test('DC reference values stay pending when a series has no number', () => {
   assert.equal(page.includes('id="refList"'), true);
   assert.equal(/<script(?![^>]*\bsrc=)/i.test(page), false);
   const worker = readFileSync(join(root, 'sw.js'), 'utf8');
-  assert.equal(worker.includes('lgme-v45'), true);
+  assert.equal(worker.includes('lgme-v46'), true);
   assert.equal(worker.includes('/data/thumbtack-wanted-v0.json'), true);
   assert.equal(worker.includes('/data/offerup-wanted-v0.json'), true);
   assert.equal(worker.includes('/js/dc-reference.mjs'), true);

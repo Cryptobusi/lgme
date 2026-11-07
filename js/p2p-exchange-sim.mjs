@@ -294,13 +294,6 @@ export function replay(peer) {
       balance = applied.balance;
       debits = round2(debits + debit);
       credits = round2(credits + credit);
-    } else if (entry.type === 'REWARD') {
-      const amount = round2(entry.payload?.amount || 0);
-      if (Number.isFinite(amount) && amount > 0) {
-        credit = amount;
-        balance = round2(balance + amount);
-        credits = round2(credits + credit);
-      }
     } else if (entry.type === 'GRANT' && entry.payload?.role !== 'grantor' && entry.payload?.memberId === peer.id) {
       const amount = round2(entry.payload?.amount || 0);
       if (Number.isFinite(amount) && amount > 0) {
@@ -397,7 +390,8 @@ export function entryDetail(entry, names = {}) {
   if (entry.type === 'INVOICE') return `Invoice ${payload.amount} $lgme due ${payload.dueAt || ''}`.trim();
   if (entry.type === 'INVOICE_PAID') return `Invoice paid ${payload.amount} $lgme`.trim();
   if (entry.type === 'INVOICE_REFUSED') return payload.statement || 'INVOICE_REFUSED';
-  if (entry.type === 'REWARD') return `Mock reward ${payload.amount} $lgme`.trim();
+  if (entry.type === 'REWARD') return `In-app points ${payload.amount}, not $lgme tokens`.trim();
+  if (entry.type === 'SOLANA_TX') return `Solana ${payload.cluster || ''} ${payload.signature ? String(payload.signature).slice(0, 12) : ''}`.trim();
   if (entry.type === 'GRANT') return `soBeIT grant ${payload.amount} $lgme ${payload.reason || ''}`.trim();
   if (entry.type === 'MEDIA' || entry.type === 'MEDIA_RECEIVED') return `${entry.type === 'MEDIA_RECEIVED' ? 'Received' : 'Media'} ${payload.mime || ''} ${payload.hash ? String(payload.hash).slice(0, 12) : ''}`.trim();
   if (entry.type === 'countersign') {
@@ -3740,8 +3734,8 @@ export async function payInvoice(store, payerId, invoiceId, spec = {}) {
       await appendEntry(freshWorker, 'REWARD', {
         simulated: true,
         mock: true,
-        label: 'mock',
-        unit: '$lgme',
+        label: 'in-app points, not a token',
+        unit: 'points',
         amount: reward,
         rate: REWARD_RATE,
         invoiceId,
@@ -3761,8 +3755,41 @@ export async function payInvoice(store, payerId, invoiceId, spec = {}) {
     receiptId: invoice.receiptId,
     payerBalance: payerAfter,
     workerBalance: workerAfter,
-    moved: payerAfter === round2(beforePayer - figure) && workerAfter === round2(beforeWorker + figure + reward)
+    moved: payerAfter === round2(beforePayer - figure) && workerAfter === round2(beforeWorker + figure)
   };
+}
+
+export async function recordSolanaTx(store, peerId, spec = {}) {
+  const peer = await store.get(peerId);
+  if (!peer?.privateKeyJwk && !peer?.signingKey) return fail(peer ? 'Wallet is locked.' : 'Unknown peer.');
+  const gate = assertOnline(spec.navigator);
+  if (!gate.ok) return fail(gate.error);
+  const signature = String(spec.signature || '').trim();
+  if (!signature) return fail('The transaction signature is missing.');
+  const at = spec.at || nowIso();
+  const before = replay(peer).balance;
+  const payload = {
+    simulated: false,
+    beta: true,
+    signature,
+    reference: String(spec.reference || ''),
+    mint: String(spec.mint || ''),
+    amount: round2(spec.amount),
+    recipient: String(spec.recipient || ''),
+    invoiceId: String(spec.invoiceId || ''),
+    cluster: spec.cluster === 'devnet' ? 'devnet' : 'mainnet-beta'
+  };
+  await appendEntry(peer, 'SOLANA_TX', payload, at);
+  await store.set(peerId, peer);
+  const otherId = spec.otherId || '';
+  if (otherId) {
+    const other = await store.get(otherId);
+    if (other?.privateKeyJwk || other?.signingKey) {
+      await appendEntry(other, 'SOLANA_TX', payload, at);
+      await store.set(otherId, other);
+    }
+  }
+  return { ok: true, payload, unchanged: replay(await store.get(peerId)).balance === before };
 }
 
 export async function refuseInvoice(store, payerId, invoiceId, statement, at = nowIso()) {
