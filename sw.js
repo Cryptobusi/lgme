@@ -1,5 +1,5 @@
 // lgme.app shell. HTML is fetched from the network first so a published change shows.
-const CACHE_NAME = "lgme-v35";
+const CACHE_NAME = "lgme-v36";
 const SHELL = [
   "/",
   "/manifest.json",

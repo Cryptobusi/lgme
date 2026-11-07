@@ -147,6 +147,14 @@ export function createMemoryVault() {
   };
 }
 
+export function deviceKeyForMigration(existing) {
+  try {
+    const bytes = new Uint8Array(existing);
+    if (bytes.length === 32) return bytes;
+  } catch { /* a missing key gets a new one */ }
+  return crypto.getRandomValues(new Uint8Array(32));
+}
+
 export function createIndexedDbVault() {
   const open = () => new Promise((resolve, reject) => {
     const request = indexedDB.open('lgme-sim-vault', 1);

@@ -1,6 +1,6 @@
 import * as sim from './p2p-exchange-sim.mjs';
 import { ARTICLES } from './p2p-resources.mjs';
-import { PASSKEY_WORDING, createIndexedDbVault, importNonExtractable, openJson, passkeyCreationOptions, sealJson } from './p2p-sim-guard.mjs';
+import { PASSKEY_WORDING, createIndexedDbVault, deviceKeyForMigration, importNonExtractable, openJson, passkeyCreationOptions, sealJson } from './p2p-sim-guard.mjs';
 
 const sessionKeys = new Map();
 const sessionCrypto = new Map();
@@ -2719,11 +2719,12 @@ async function bootVault() {
     const peer = await baseStore.get(id);
     if (!peer) continue;
     if (peer.privateKeyJwk && !peer.keyVault) {
+      const existingDek = await vault.getMeta(id);
+      const dek = deviceKeyForMigration(existingDek);
       const signing = await importNonExtractable(peer.privateKeyJwk);
-      const dek = crypto.getRandomValues(new Uint8Array(32));
       const wrap = await sealJson(dek, { privateKeyJwk: peer.privateKeyJwk });
       await vault.put(id, signing);
-      await vault.putMeta(id, dek);
+      if (dek !== existingDek) await vault.putMeta(id, dek);
       const current = await baseStore.get(id);
       if (!current?.privateKeyJwk || current.keyVault) {
         sessionCrypto.set(id, signing);

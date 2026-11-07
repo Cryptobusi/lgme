@@ -1343,6 +1343,12 @@ test('the key vault finishes its write and still opens a sealed member salt', as
     const opened = await guard.openJson(back, sealed);
     assert.equal(opened.salt, 'sim-salt-alice');
     assert.equal((await again.get('alice')).kind, 'signing');
+    const kept = guard.deviceKeyForMigration(back);
+    assert.equal(kept.length, 32);
+    assert.equal(kept[0], 9);
+    const fresh = guard.deviceKeyForMigration(null);
+    assert.equal(fresh.length, 32);
+    assert.equal(guard.deviceKeyForMigration(new Uint8Array(16)).length, 32);
   } finally {
     if (previous === undefined) delete globalThis.indexedDB;
     else globalThis.indexedDB = previous;
