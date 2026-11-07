@@ -1,4 +1,6 @@
     (function () {
+      var fonts = document.getElementById("site-fonts");
+      if (fonts) fonts.media = "all";
       var t = document.getElementById("menu-toggle");
       var n = document.getElementById("main-nav");
       if (!t || !n) return;

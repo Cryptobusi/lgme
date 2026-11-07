@@ -181,8 +181,9 @@ function showSolanaPay(spec) {
         const provider = globalThis.phantom?.solana || globalThis.solflare || (globalThis.solana?.isPhantom ? globalThis.solana : null);
         if (!provider?.connect) { preview.textContent = 'Install Phantom or Solflare, or paste the public address. No seed phrase is used.'; return; }
         try {
-          const connected = await provider.connect();
-          const key = connected?.publicKey?.toString?.() || provider.publicKey?.toString?.() || '';
+          const connected = await withDeadline(provider.connect(), 15000, 'The wallet did not answer.');
+          if (!connected.ok) { preview.textContent = 'The wallet was not connected.'; return; }
+          const key = connected.value?.publicKey?.toString?.() || provider.publicKey?.toString?.() || '';
           if (!isValidPublicKey(key)) { preview.textContent = 'The wallet did not share a public address.'; return; }
           if (!spec.donation) recipient.value = key;
         } catch { preview.textContent = 'The wallet was not connected.'; }
@@ -205,9 +206,17 @@ function showSolanaPay(spec) {
         qrHost.replaceChildren();
         if (globalThis.QRCode) new globalThis.QRCode(qrHost, { text: built.url, width: 180, height: 180 });
       } }, ['Confirm amount']),
-      h('button', { type: 'button', id: 'solana-check', onClick: async () => {
+      h('button', { type: 'button', id: 'solana-check', onClick: async (event) => {
         if (!reference) { preview.textContent = 'Confirm the amount first.'; return; }
-        const found = await findReferencePayment(cluster.value, reference, { mint: MINT, recipient: recipient.value.trim(), amount: amount.value });
+        const button = event.currentTarget;
+        if (button.disabled) return;
+        button.disabled = true;
+        let found;
+        try {
+          found = await findReferencePayment(cluster.value, reference, { mint: MINT, recipient: recipient.value.trim(), amount: amount.value });
+        } finally {
+          button.disabled = false;
+        }
         if (!found.ok) { preview.textContent = found.error; return; }
         const recorded = await sim.recordSolanaTx(store, spec.seat, {
           signature: found.signature,
@@ -270,12 +279,32 @@ function formatBalances(balances) {
   return Object.entries(balances).map(([id, balance]) => `${nameById[id] || id} ${balance}`).join(' · ');
 }
 
+let rendering = false;
+let renderQueued = false;
+
 async function render() {
+  if (rendering) {
+    renderQueued = true;
+    return;
+  }
+  rendering = true;
+  try {
+    do {
+      renderQueued = false;
+      await renderNow();
+    } while (renderQueued);
+  } finally {
+    rendering = false;
+  }
+}
+
+async function renderNow() {
   if (activeCodeTimer) {
     clearInterval(activeCodeTimer);
     activeCodeTimer = 0;
   }
   const peers = await ensureBooks();
+  if (renderQueued) return;
   nameById = namesOf(peers);
   const seat = currentSeat(peers);
   renderSeats(peers, seat);
@@ -1687,7 +1716,11 @@ async function startPasskey() {
   const challenge = crypto.getRandomValues(new Uint8Array(32));
   const options = passkeyCreationOptions('lgme-sim', 'lgme', challenge);
   try {
-    await navigator.credentials.create(options);
+    const created = await withDeadline(navigator.credentials.create(options), 45000, 'The device did not answer.');
+    if (!created.ok) {
+      setStatus('The device did not unlock. Use a passphrase. Beta.', 'bad');
+      return;
+    }
     freshAuth.set(sessionStorage.getItem(SEAT_KEY) || '', Date.now());
     setStatus('This device can unlock the book. Beta. The book key is not a Solana key.', 'ok');
   } catch {
@@ -3117,7 +3150,15 @@ async function promptInstall() {
 
 function showSplash() {
   const splash = document.getElementById('splash');
-  if (!splash || sessionStorage.getItem('lgme-sim:ui:splash')) return Promise.resolve();
+  const video = document.getElementById('splash-video');
+  if (!splash || sessionStorage.getItem('lgme-sim:ui:splash')) {
+    if (video) {
+      video.pause();
+      video.removeAttribute('src');
+      video.querySelectorAll('source').forEach((source) => source.remove());
+    }
+    return Promise.resolve();
+  }
   splash.hidden = false;
   return new Promise((resolve) => {
     let closed = false;
@@ -3126,17 +3167,15 @@ function showSplash() {
       closed = true;
       splash.hidden = true;
       sessionStorage.setItem('lgme-sim:ui:splash', '1');
-      const video = document.getElementById('splash-video');
       if (video) video.pause();
       resolve();
     };
-    document.getElementById('splash-skip').addEventListener('click', done);
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const video = document.getElementById('splash-video');
     if (reduce && video) video.remove();
     if (!reduce && video) {
-      video.play().catch(() => {});
       video.addEventListener('ended', done);
+      video.addEventListener('error', done);
+      video.play().catch(() => {});
       setTimeout(done, 6200);
     } else {
       setTimeout(done, 1200);
@@ -3186,9 +3225,25 @@ async function shareExchange(me, ex) {
   setStatus('Signed copy is ready. Nothing has been sent. Beta.', 'ok');
 }
 
+function withDeadline(promise, ms, message) {
+  const settled = Promise.resolve(promise).then((value) => ({ ok: true, value }), (error) => ({ ok: false, error }));
+  let timer = 0;
+  const deadline = new Promise((resolve) => {
+    timer = setTimeout(() => resolve({ ok: false, error: new Error(message || 'This took too long.') }), ms);
+  });
+  return Promise.race([settled, deadline]).finally(() => clearTimeout(timer));
+}
+
+function fetchSignal(ms) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return { signal: controller.signal, stop() { clearTimeout(timer); } };
+}
+
 async function loadReferences() {
+  const gate = fetchSignal(8000);
   try {
-    const response = await fetch('/data/dc-reference-values-v0.json');
+    const response = await fetch('/data/dc-reference-values-v0.json', { signal: gate.signal });
     if (!response.ok) throw new Error(String(response.status));
     const body = await response.json();
     catalog = Array.isArray(body.items) ? body.items : [];
@@ -3200,7 +3255,7 @@ async function loadReferences() {
     catalogNotice = `Reference list did not load. You can still name the work yourself. ${REFERENCE_LABEL}. Reference only, not a price.`;
   }
   try {
-    const response = await fetch('/data/offerup-dc-v0.json');
+    const response = await fetch('/data/offerup-dc-v0.json', { signal: gate.signal });
     if (!response.ok) throw new Error(String(response.status));
     const body = await response.json();
     offerupItems = sim.offerupFeed(body);
@@ -3208,7 +3263,7 @@ async function loadReferences() {
     offerupItems = [];
   }
   try {
-    const response = await fetch('/data/offerup-wanted-v0.json');
+    const response = await fetch('/data/offerup-wanted-v0.json', { signal: gate.signal });
     if (!response.ok) throw new Error(String(response.status));
     const body = await response.json();
     wantedMatches = sim.wantedFeed(body);
@@ -3216,12 +3271,14 @@ async function loadReferences() {
     wantedMatches = [];
   }
   try {
-    const response = await fetch('/data/thumbtack-wanted-v0.json');
+    const response = await fetch('/data/thumbtack-wanted-v0.json', { signal: gate.signal });
     if (!response.ok) throw new Error(String(response.status));
     const body = await response.json();
     thumbtackItems = sim.thumbtackFeed(body);
   } catch {
     thumbtackItems = [];
+  } finally {
+    gate.stop();
   }
 }
 
@@ -3366,8 +3423,7 @@ async function bootVault() {
 
 bootVault().catch(() => {});
 
-loadReferences().then(async () => {
-  await showSplash();
+Promise.all([loadReferences(), showSplash()]).then(async () => {
   await render();
   if (!sessionStorage.getItem('lgme-sim:ui:seen-walk')) showWalk(0);
 }).catch((error) => {

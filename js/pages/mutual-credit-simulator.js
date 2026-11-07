@@ -398,7 +398,10 @@ import { REFERENCE_LABEL, optionLabel, referenceLine } from '/js/dc-reference.mj
       const select = document.getElementById('refItem');
       const detail = document.getElementById('refDetail');
       try {
-        const response = await fetch('/data/dc-reference-values-v0.json');
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 8000);
+        const response = await fetch('/data/dc-reference-values-v0.json', { signal: controller.signal });
+        clearTimeout(timer);
         if (!response.ok) throw new Error(String(response.status));
         const catalog = await response.json();
         state.refs = Array.isArray(catalog.items) ? catalog.items : [];

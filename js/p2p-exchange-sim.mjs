@@ -166,9 +166,13 @@ export function createLocalStorageStore(storage = globalThis.localStorage) {
   return {
     async get(id) {
       const raw = storage.getItem(PEER_PREFIX + id);
-      return raw ? JSON.parse(raw) : null;
+      if (!raw) return null;
+      if (raw.length > 40000) await new Promise((resolve) => setTimeout(resolve, 0));
+      return JSON.parse(raw);
     },
     async set(id, value) {
+      const tape = value && value.tape;
+      if (Array.isArray(tape) && tape.length > 40) await new Promise((resolve) => setTimeout(resolve, 0));
       storage.setItem(PEER_PREFIX + id, JSON.stringify(value));
     },
     async remove(id) {
@@ -796,11 +800,17 @@ export async function settle(store, peerId, exchangeId, at = nowIso()) {
   return { ok: true, exchangeId, status: 'settled', balances };
 }
 
+function breathe(index) {
+  if (index > 0 && index % 8 === 0) return new Promise((resolve) => setTimeout(resolve, 0));
+  return Promise.resolve();
+}
+
 export async function verifyTape(peer) {
   if (!peer || !peer.tape || !peer.tape.length) return { ok: false, reason: 'Tape is empty' };
   let prev = GENESIS;
   let signingKey = peer.tape[0]?.payload?.publicKeyJwk || peer.publicKeyJwk;
   for (let i = 0; i < peer.tape.length; i++) {
+    await breathe(i);
     const entry = peer.tape[i];
     if (entry.index !== i) return { ok: false, index: i, reason: `break at #${i}: index does not match the tape` };
     if (entry.prev !== prev) {
@@ -832,7 +842,10 @@ export async function verifyTape(peer) {
 export async function verifyBook(peer) {
   const tape = await verifyTape(peer);
   if (!tape.ok) return tape;
-  for (const ex of Object.values(peer.exchanges || {})) {
+  const exchanges = Object.values(peer.exchanges || {});
+  for (let index = 0; index < exchanges.length; index += 1) {
+    await breathe(index);
+    const ex = exchanges[index];
     const id = await sha256(canonicalJSON(coreOf(ex)));
     if (id !== ex.id) return { ok: false, reason: `Exchange ${String(ex.id).slice(0, 12)} does not match its hash` };
     for (const [pid, rec] of Object.entries(ex.signatures || {})) {
@@ -3085,6 +3098,7 @@ export async function auditChat(messages) {
   let prev = GENESIS;
   const hashes = [];
   for (let index = 0; index < messages.length; index += 1) {
+    await breathe(index);
     const message = messages[index];
     const hash = await sha256(canonicalJSON(chatCore(message)));
     if (hash !== message.hash || message.prev !== prev || message.seq !== index + 1) {

@@ -106,7 +106,16 @@ export function bindInstallLaunch(doc, nav, win) {
       }
       try {
         deferred.prompt();
-        await deferred.userChoice;
+        await new Promise((resolve) => {
+          const timer = win.setTimeout(resolve, 8000);
+          Promise.resolve(deferred.userChoice).then(() => {
+            win.clearTimeout(timer);
+            resolve();
+          }, () => {
+            win.clearTimeout(timer);
+            resolve();
+          });
+        });
       } catch { /* accepted or dismissed, still open the desk */ }
       deferred = null;
       launch();

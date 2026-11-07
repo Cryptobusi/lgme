@@ -1,5 +1,6 @@
 // lgme.app shell. HTML is fetched from the network first so a published change shows.
-const CACHE_NAME = "lgme-v47";
+const CACHE_NAME = "lgme-v48";
+const NET_MS = 8000;
 const SHELL = [
   "/",
   "/manifest.json",
@@ -41,9 +42,18 @@ const SHELL = [
   "/preparation",
 ];
 
+function timedFetch(request, ms) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return fetch(request, { signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => Promise.all(SHELL.map((url) => cache.add(url).catch(() => null)))).then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then((cache) => Promise.all(SHELL.map((url) => timedFetch(new Request(url), NET_MS).then((response) => {
+      if (response && response.ok) return cache.put(url, response);
+      return null;
+    }).catch(() => null)))).then(() => self.skipWaiting())
   );
 });
 
@@ -67,33 +77,23 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
   if (/\.(mp4|webm)$/i.test(url.pathname)) return;
 
-  if (isHtml(request, url)) {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(url.pathname, copy));
-          return response;
-        })
-        .catch(() => {
-          if (url.pathname === "/p2p-exchange-sim" || url.pathname === "/p2p-exchange-sim.html") {
-            return caches.match("/p2p-exchange-sim").then((hit) => hit || caches.match("/p2p-exchange-sim.html")).then((hit) => hit || caches.match("/"));
-          }
-          return caches.match(url.pathname).then((hit) => hit || caches.match("/"));
-        })
-    );
-    return;
-  }
+  const fallback = () => {
+    const path = url.pathname === "/p2p-exchange-sim" || url.pathname === "/p2p-exchange-sim.html"
+      ? caches.match("/p2p-exchange-sim").then((hit) => hit || caches.match("/p2p-exchange-sim.html")).then((hit) => hit || caches.match("/"))
+      : caches.match(url.pathname).then((hit) => hit || (isHtml(request, url) ? caches.match("/") : null));
+    return path.then((hit) => hit || new Response("Offline", { status: 503, headers: { "content-type": "text/plain; charset=utf-8" } }));
+  };
 
   event.respondWith(
-    fetch(request)
+    timedFetch(request, NET_MS)
       .then((response) => {
         if (response && response.ok) {
           const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(url.pathname, copy));
+          caches.open(CACHE_NAME).then((cache) => cache.put(url.pathname, copy)).catch(() => {});
         }
-        return response;
+        if (response && (response.ok || response.type === "opaqueredirect")) return response;
+        return fallback();
       })
-      .catch(() => caches.match(url.pathname))
+      .catch(() => fallback())
   );
 });

@@ -104,18 +104,30 @@ export function rpcUrl(cluster) {
   return RPC[cluster] || '';
 }
 
+export const RPC_TIMEOUT_MS = 8000;
+
 export async function rpc(cluster, method, params) {
   const url = rpcUrl(cluster);
   if (!url) return { ok: false, error: 'Choose mainnet or devnet.' };
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params })
-  });
-  if (!response.ok) return { ok: false, error: `The RPC returned ${response.status}.` };
-  const body = await response.json();
-  if (body.error) return { ok: false, error: body.error.message || 'The RPC rejected the request.' };
-  return { ok: true, result: body.result };
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), RPC_TIMEOUT_MS);
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
+      signal: controller.signal
+    });
+    if (!response.ok) return { ok: false, error: `The RPC returned ${response.status}.` };
+    const body = await response.json();
+    if (body.error) return { ok: false, error: body.error.message || 'The RPC rejected the request.' };
+    return { ok: true, result: body.result };
+  } catch (error) {
+    const aborted = error && error.name === 'AbortError';
+    return { ok: false, error: aborted ? 'The Solana network did not answer in time.' : 'The Solana network did not answer.' };
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export async function findReferencePayment(cluster, reference, expected) {
