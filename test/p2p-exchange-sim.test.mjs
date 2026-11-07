@@ -953,3 +953,118 @@ test('a signature from the wrong owner is rejected, and a matching file is recei
   assert.equal(mismatch.error, 'Not authentic');
   assert.equal((await store.get('bob')).tape.filter((entry) => entry.type === 'MEDIA_RECEIVED').length, 1);
 });
+
+async function invoiced(amount, dueAt = '2026-12-01T00:00:00.000Z') {
+  const store = await books();
+  for (const [id, phone] of [['alice', '+12025550101'], ['bob', '+12025550102']]) {
+    const peer = await store.get(id);
+    peer.kyc = { ...(peer.kyc || {}), status: 'VERIFIED' };
+    await store.set(id, peer);
+    const bound = await sim.bindMemberKyc(store, id, { displayName: peer.name, phone, salt: `salt-${id}` });
+    assert.equal(bound.ok, true, bound.error);
+  }
+  const work = await sim.recordIdidIt(store, 'bob', { work: 'Soil credits', scope: 'bench', hours: 2, at: '2026-11-07T00:00:00.000Z' });
+  assert.equal(work.ok, true, work.error);
+  const before = await balances(store);
+  const invoice = await sim.createInvoice(store, 'bob', {
+    receiptId: work.receiptId,
+    payerId: 'alice',
+    amount,
+    dueAt,
+    at: '2026-11-07T00:00:00.000Z'
+  });
+  assert.equal(invoice.ok, true, invoice.error);
+  assert.equal(invoice.unchanged, true);
+  assert.deepEqual(await balances(store), before);
+  assert.match(invoice.sms, /^sms:/);
+  return { store, invoice, receiptId: work.receiptId, before };
+}
+
+test('an invoice does not move a balance', async () => {
+  const { store, invoice } = await invoiced(12, '2026-10-01T00:00:00.000Z');
+  const view = sim.readInvoices(await store.get('bob'), '2026-11-07T00:00:00.000Z');
+  const row = view.find((item) => item.invoiceId === invoice.invoiceId);
+  assert.equal(row.role, 'AR');
+  assert.equal(row.status, 'overdue');
+  assert.equal(row.bucket, '31-60');
+  assert.equal(row.remaining, 12);
+  assert.equal((await store.get('alice')).tape.some((entry) => entry.type === 'transfer'), false);
+  assert.match(sim.invoicesToCsv(await store.get('bob'), '2026-11-07T00:00:00.000Z'), /AR/);
+});
+
+test('a coded payment settles the invoice and a partial leaves the rest open', async () => {
+  const { store, invoice, receiptId } = await invoiced(10);
+  const now = 1700000000;
+  const setup = await sim.setupWallet(store, 'alice', 'correct horse', { iterations: 2000 });
+  assert.equal(setup.ok, true, setup.error);
+  const wrong = await sim.payInvoice(store, 'alice', invoice.invoiceId, { amount: 4, passphrase: 'correct horse', code: '000000', unixSeconds: now, at: '2026-11-07T01:00:00.000Z' });
+  assert.equal(wrong.paid, false);
+  assert.equal(sim.replay(await store.get('alice')).balance, 120);
+  const code = await sim.totp(sim.base32Decode(setup.secretBase32), now, { digits: 6, period: 30, algorithm: 'SHA-1' });
+  const part = await sim.payInvoice(store, 'alice', invoice.invoiceId, { amount: 4, passphrase: 'correct horse', code, unixSeconds: now, at: '2026-11-07T01:00:00.000Z' });
+  assert.equal(part.ok, true, part.error);
+  assert.equal(part.remaining, 6);
+  assert.equal(part.reward, 0);
+  assert.equal(part.receiptId, receiptId);
+  assert.equal(sim.replay(await store.get('alice')).balance, 116);
+  assert.equal(sim.replay(await store.get('bob')).balance, 84);
+  assert.equal((await store.get('bob')).tape.some((entry) => entry.type === 'REWARD'), false);
+  const paid = (await store.get('bob')).tape.find((entry) => entry.type === 'INVOICE_PAID');
+  assert.equal(paid.payload.receiptId, receiptId);
+  const rest = await sim.payInvoice(store, 'alice', invoice.invoiceId, { amount: 6, passphrase: 'correct horse', code, unixSeconds: now, at: '2026-11-07T02:00:00.000Z' });
+  assert.equal(rest.ok, true, rest.error);
+  assert.equal(rest.remaining, 0);
+  assert.equal(rest.reward, 0.2);
+  assert.equal(sim.replay(await store.get('alice')).balance, 110);
+  assert.equal(sim.replay(await store.get('bob')).balance, 90.2);
+});
+
+test('a refused invoice moves nothing and pays no reward', async () => {
+  const { store, invoice, before } = await invoiced(10);
+  const refused = await sim.refuseInvoice(store, 'alice', invoice.invoiceId, 'REFUSAL', '2026-11-07T03:00:00.000Z');
+  assert.equal(refused.ok, true, refused.error);
+  assert.equal(refused.unchanged, true);
+  assert.equal(refused.reward, 0);
+  assert.equal(refused.status, 'refused');
+  const line = (await store.get('alice')).tape.find((entry) => entry.type === 'INVOICE_REFUSED');
+  assert.equal(line.payload.role, 'third-seat');
+  assert.equal(line.payload.penalty, false);
+  assert.deepEqual(await balances(store), before);
+  assert.equal((await store.get('bob')).tape.some((entry) => entry.type === 'REWARD'), false);
+});
+
+test('a reward is minted only when the invoice is paid, and the period cap holds', async () => {
+  const { store } = await invoiced(10);
+  assert.equal(sim.rewardTotal(await store.get('bob')), 0);
+  const dana = await sim.createPeer(store, { id: 'dana', name: 'Dana', balance: 1000, floor: 0, creditLimit: -50, at: '2026-11-06T00:00:00.000Z' });
+  assert.equal(dana.ok, true, dana.error);
+  const book = await store.get('dana');
+  book.kyc = { status: 'VERIFIED', displayName: 'Dana', phone: '+12025550109', salt: 'salt-dana' };
+  await store.set('dana', book);
+  const bound = await sim.bindMemberKyc(store, 'dana', { displayName: 'Dana', phone: '+12025550109', salt: 'salt-dana' });
+  assert.equal(bound.ok, true, bound.error);
+  async function bill(amount, at) {
+    const work = await sim.recordIdidIt(store, 'bob', { work: `Job ${amount}`, scope: 'bench', hours: 1, at });
+    return sim.createInvoice(store, 'bob', { receiptId: work.receiptId, payerId: 'dana', amount, dueAt: '2026-12-01T00:00:00.000Z', at });
+  }
+  const first = await bill(400, '2026-11-08T00:00:00.000Z');
+  const paid = await sim.payInvoice(store, 'dana', first.invoiceId, { at: '2026-11-08T01:00:00.000Z' });
+  assert.equal(paid.ok, true, paid.error);
+  assert.equal(paid.reward, 5);
+  assert.equal(sim.replay(await store.get('dana')).balance, 600);
+  const second = await bill(100, '2026-11-09T00:00:00.000Z');
+  const again = await sim.payInvoice(store, 'dana', second.invoiceId, { at: '2026-11-09T01:00:00.000Z' });
+  assert.equal(again.ok, true, again.error);
+  assert.equal(again.reward, 0);
+  assert.equal(sim.rewardTotal(await store.get('bob')), 5);
+});
+
+test('the floor blocks an invoice payment', async () => {
+  const { store, invoice, before } = await invoiced(81);
+  const blocked = await sim.payInvoice(store, 'alice', invoice.invoiceId, { at: '2026-11-07T04:00:00.000Z' });
+  assert.equal(blocked.ok, false);
+  assert.equal(blocked.error, 'Blocked: Floor stays senior');
+  assert.deepEqual(await balances(store), before);
+  assert.equal((await store.get('alice')).tape.some((entry) => entry.type === 'INVOICE_PAID'), false);
+  assert.equal((await store.get('bob')).tape.some((entry) => entry.type === 'REWARD'), false);
+});

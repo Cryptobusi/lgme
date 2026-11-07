@@ -16,6 +16,9 @@ export const DEMO_OPENING = Object.freeze({
 
 export const MOCK_GRANT = 100;
 export const UNVERIFIED_SEND_LIMIT = 20;
+export const REWARD_RATE = 0.02;
+export const REWARD_CAP = 5;
+export const REWARD_PERIOD_DAYS = 30;
 export const LISTING_DAYS = 14;
 export const KDF_ITERATIONS = 100000;
 
@@ -26,7 +29,7 @@ export function layoutMode({ width, coarse = false, uaMobile = false } = {}) {
   if (uaMobile && coarse && w <= 1023) return 'phone';
   return 'desk';
 }
-const MESSAGE_KINDS = new Set(['proposal', 'countersign', 'refusal', 'transfer', 'attestation', 'iou', 'tape', 'handoff', 'chat', 'chat-match']);
+const MESSAGE_KINDS = new Set(['proposal', 'countersign', 'refusal', 'transfer', 'attestation', 'iou', 'tape', 'handoff', 'chat', 'chat-match', 'invoice']);
 
 export function canonicalJSON(value) {
   if (value === null || typeof value !== 'object') return JSON.stringify(value);
@@ -254,6 +257,13 @@ export function replay(peer) {
       balance = applied.balance;
       debits = round2(debits + debit);
       credits = round2(credits + credit);
+    } else if (entry.type === 'REWARD') {
+      const amount = round2(entry.payload?.amount || 0);
+      if (Number.isFinite(amount) && amount > 0) {
+        credit = amount;
+        balance = round2(balance + amount);
+        credits = round2(credits + credit);
+      }
     }
     rows.push({
       index: entry.index,
@@ -340,6 +350,10 @@ export function entryDetail(entry, names = {}) {
   if (entry.type === 'CHAT') return `Chat ${payload.seq} ${payload.senderKycHash ? String(payload.senderKycHash).slice(0, 12) : ''}`.trim();
   if (entry.type === 'CHAT_MATCHED') return `Chat matched ${payload.root ? String(payload.root).slice(0, 12) : ''}`.trim();
   if (entry.type === 'CALL') return `Call ${payload.start || ''} → ${payload.end || ''}`.trim();
+  if (entry.type === 'INVOICE') return `Invoice ${payload.amount} $lgme due ${payload.dueAt || ''}`.trim();
+  if (entry.type === 'INVOICE_PAID') return `Invoice paid ${payload.amount} $lgme`.trim();
+  if (entry.type === 'INVOICE_REFUSED') return payload.statement || 'INVOICE_REFUSED';
+  if (entry.type === 'REWARD') return `Mock reward ${payload.amount} $lgme`.trim();
   if (entry.type === 'MEDIA' || entry.type === 'MEDIA_RECEIVED') return `${entry.type === 'MEDIA_RECEIVED' ? 'Received' : 'Media'} ${payload.mime || ''} ${payload.hash ? String(payload.hash).slice(0, 12) : ''}`.trim();
   if (entry.type === 'countersign') {
     return `${name(payload.by)} countersigned ${payload.exchangeId ? payload.exchangeId.slice(0, 12) : ''}`.trim();
@@ -1278,6 +1292,7 @@ export async function importMessage(store, peerId, input, at = nowIso()) {
   if (message.kind === 'iou') return applyImportedIou(store, peer, message, at);
   if (message.kind === 'proposal' || message.kind === 'countersign') return applyImportedExchange(store, peer, message, at);
   if (message.kind === 'chat' || message.kind === 'chat-match') return fail('Open this token in Chats. Nothing was appended.');
+  if (message.kind === 'invoice') return fail('Open this invoice in the ledger. Nothing was appended.');
   return fail('This message has no place on this book.');
 }
 
@@ -1761,7 +1776,8 @@ export function peerProfile(peer, at = nowIso()) {
     ageDays,
     status: kycStatus(peer),
     standing: peerStanding(peer),
-    held: heldBy(peer)
+    held: heldBy(peer),
+    rewards: rewardTotal(peer)
   };
 }
 
@@ -2894,4 +2910,313 @@ export async function receiveMedia(store, recipientId, spec = {}) {
   await appendEntry(recipient, 'MEDIA_RECEIVED', { ...core, sig: spec.sig, coreHash }, at);
   await store.set(recipientId, recipient);
   return { ok: true, authentic: true, hash };
+}
+
+export function rewardTotal(peer) {
+  let sum = 0;
+  for (const entry of peer?.tape || []) {
+    if (entry.type === 'REWARD') sum = round2(sum + Number(entry.payload?.amount || 0));
+  }
+  return sum;
+}
+
+function rewardInPeriod(peer, at) {
+  const start = new Date(at).getTime() - REWARD_PERIOD_DAYS * 86400000;
+  let sum = 0;
+  for (const entry of peer?.tape || []) {
+    if (entry.type !== 'REWARD') continue;
+    if (new Date(entry.at).getTime() < start) continue;
+    sum = round2(sum + Number(entry.payload?.amount || 0));
+  }
+  return sum;
+}
+
+export function invoiceCore(spec) {
+  const referenceAvg = spec.referenceAvg == null || spec.referenceAvg === '' ? null : spec.referenceAvg;
+  return {
+    simulated: true,
+    kind: 'invoice',
+    receiptId: spec.receiptId,
+    workerId: spec.workerId,
+    payerId: spec.payerId,
+    payerPhone: normalizePhone(spec.payerPhone || ''),
+    payerKycHash: String(spec.payerKycHash || ''),
+    amount: round2(spec.amount),
+    referenceId: spec.referenceId || null,
+    referenceAvg,
+    dueAt: spec.dueAt,
+    mediaHashes: Array.isArray(spec.mediaHashes) ? spec.mediaHashes : [],
+    unit: '$lgme'
+  };
+}
+
+function daysPastDue(dueAt, at) {
+  return Math.floor((new Date(at).getTime() - new Date(dueAt).getTime()) / 86400000);
+}
+
+export function ageBucket(dueAt, at) {
+  const days = daysPastDue(dueAt, at);
+  if (days <= 30) return '0-30';
+  if (days <= 60) return '31-60';
+  return '60+';
+}
+
+function decorateInvoice(row, at) {
+  const paid = round2(row.paid || 0);
+  const remaining = row.refused ? 0 : round2(Math.max(0, row.amount - paid));
+  let status = 'open';
+  if (row.refused) status = 'refused';
+  else if (remaining <= 0) status = 'paid';
+  else if (daysPastDue(row.dueAt, at) > 0) status = 'overdue';
+  else if (daysPastDue(row.dueAt, at) === 0) status = 'due';
+  return { ...row, paid, remaining, status, bucket: ageBucket(row.dueAt, at) };
+}
+
+export function readInvoices(peer, at = nowIso()) {
+  const map = new Map();
+  for (const entry of peer?.tape || []) {
+    const payload = entry.payload || {};
+    if (entry.type === 'INVOICE' && payload.invoiceId) {
+      map.set(payload.invoiceId, { ...payload, paid: 0, refused: false, at: entry.at });
+    } else if (entry.type === 'INVOICE_PAID' && map.has(payload.invoiceId)) {
+      const row = map.get(payload.invoiceId);
+      row.paid = round2(row.paid + Number(payload.amount || 0));
+    } else if (entry.type === 'INVOICE_REFUSED' && map.has(payload.invoiceId)) {
+      map.get(payload.invoiceId).refused = true;
+    }
+  }
+  return [...map.values()].map((row) => {
+    const view = decorateInvoice(row, at);
+    view.role = peer.id === row.workerId ? 'AR' : peer.id === row.payerId ? 'AP' : '';
+    return view;
+  });
+}
+
+export function invoiceBuckets(peer, at = nowIso()) {
+  const buckets = { '0-30': 0, '31-60': 0, '60+': 0 };
+  for (const row of readInvoices(peer, at)) {
+    if (row.role !== 'AR' || row.remaining <= 0 || row.status === 'refused') continue;
+    buckets[row.bucket] = round2(buckets[row.bucket] + row.remaining);
+  }
+  return buckets;
+}
+
+export function invoicesToCsv(peer, at = nowIso()) {
+  const header = ['role', 'invoiceId', 'receiptId', 'workerId', 'payerId', 'payerPhone', 'amount', 'paid', 'remaining', 'status', 'bucket', 'dueAt'];
+  const lines = [header.join(',')];
+  for (const row of readInvoices(peer, at)) {
+    lines.push([
+      row.role, row.invoiceId, row.receiptId, row.workerId, row.payerId, row.payerPhone,
+      row.amount, row.paid, row.remaining, row.status, row.bucket, row.dueAt
+    ].map((value) => `"${String(value ?? '').replaceAll('"', '""')}"`).join(','));
+  }
+  return lines.join('\n');
+}
+
+async function copyInvoice(store, peerId, payload, at) {
+  const peer = await store.get(peerId);
+  if (!peer?.privateKeyJwk) return;
+  if ((peer.tape || []).some((entry) => entry.type === 'INVOICE' && entry.payload?.invoiceId === payload.invoiceId)) return;
+  await appendEntry(peer, 'INVOICE', payload, at);
+  await store.set(peerId, peer);
+}
+
+export async function createInvoice(store, workerId, spec = {}) {
+  const worker = await store.get(workerId);
+  if (!worker?.privateKeyJwk) return fail('Wallet is locked.');
+  const receiptId = String(spec.receiptId || '');
+  if (!worker.receipts?.[receiptId] && !(worker.tape || []).some((entry) => entry.type === 'ididit' && entry.payload?.receiptId === receiptId)) {
+    return fail('Record the work before invoicing it.');
+  }
+  const payerId = String(spec.payerId || '').trim();
+  const payer = payerId ? await store.get(payerId) : null;
+  let payerPhone = normalizePhone(spec.payerPhone || payer?.kyc?.phone || '');
+  let payerKycHash = String(spec.payerKycHash || '');
+  if (!payerKycHash && payer) {
+    const hashed = await memberKycHash(payer);
+    if (!hashed.ok) return hashed;
+    payerKycHash = hashed.hash;
+    if (!payerPhone) payerPhone = hashed.phone;
+  }
+  if (!payerPhone || !/^[0-9a-f]{64}$/i.test(payerKycHash)) return fail('Address the invoice to a phone and a member hash.');
+  const amount = round2(spec.amount);
+  if (!Number.isFinite(amount) || amount <= 0) return fail('Enter an amount greater than zero.');
+  const dueAt = spec.dueAt || '';
+  if (!dueAt || Number.isNaN(new Date(dueAt).getTime())) return fail('Add a due date.');
+  const mediaHashes = (spec.mediaHashes || []).filter((hash) => /^[0-9a-f]{64}$/i.test(hash));
+  const core = invoiceCore({ ...spec, workerId, payerId, payerPhone, payerKycHash, amount, dueAt, mediaHashes });
+  const invoiceId = await sha256(canonicalJSON(core));
+  const sig = await signText(worker.privateKeyJwk, invoiceId);
+  const at = spec.at || nowIso();
+  const before = replay(worker).balance;
+  const payerBefore = payer ? replay(payer).balance : null;
+  const payload = { ...core, invoiceId, sig, workerKey: worker.publicKeyJwk };
+  await appendEntry(worker, 'INVOICE', payload, at);
+  await store.set(workerId, worker);
+  if (payer?.privateKeyJwk) await copyInvoice(store, payerId, payload, at);
+  const sealed = await sealMessage(worker, 'invoice', payload);
+  const encoded = sealed.ok ? encodeMessage(sealed.message) : '';
+  return {
+    ok: true,
+    invoiceId,
+    encoded,
+    sms: shareHrefs(payerPhone, `SIMULATION lgme. Invoice ${amount} $lgme. This page does not send it.\n${encoded}`).sms,
+    balance: replay(await store.get(workerId)).balance,
+    unchanged: replay(await store.get(workerId)).balance === before && (payerBefore == null || replay(await store.get(payerId)).balance === payerBefore)
+  };
+}
+
+export async function acceptInvoice(store, payerId, input, at = nowIso()) {
+  const opened = await openMessage(input);
+  if (!opened.ok) return opened;
+  if (opened.message.kind !== 'invoice') return fail('This is not an invoice.');
+  const body = opened.message.body || {};
+  if (body.payerId && body.payerId !== payerId) return fail('This invoice is for a different peer.');
+  const valid = await verifyText(body.workerKey || opened.message.publicKeyJwk, body.invoiceId, body.sig);
+  if (!valid) return fail('The invoice signature does not verify.');
+  await copyInvoice(store, payerId, body, at);
+  return { ok: true, invoiceId: body.invoiceId };
+}
+
+function findInvoice(peer, invoiceId, at) {
+  return readInvoices(peer, at).find((row) => row.invoiceId === invoiceId) || null;
+}
+
+export async function payInvoice(store, payerId, invoiceId, spec = {}) {
+  const payer = await store.get(payerId);
+  if (!payer) return fail('Unknown peer.');
+  const at = spec.at || nowIso();
+  const invoice = findInvoice(payer, invoiceId, at);
+  if (!invoice) return fail('That invoice is not on this book.');
+  if (invoice.payerId !== payerId) return fail('Only the payer can pay this invoice.');
+  if (invoice.refused) return fail('This invoice was refused.');
+  if (invoice.remaining <= 0) return fail('This invoice is already paid.');
+  const figure = spec.amount == null || spec.amount === '' ? invoice.remaining : round2(spec.amount);
+  if (!Number.isFinite(figure) || figure <= 0) return fail('Enter an amount greater than zero.');
+  if (figure - invoice.remaining > 1e-9) return fail('That is more than the amount still open.');
+  let key = payer.privateKeyJwk;
+  if (payer.wallet?.ciphertext) {
+    const unlocked = await unlockWallet(payer, spec.passphrase, spec.code, spec.unixSeconds ?? Math.floor(Date.now() / 1000));
+    if (!unlocked.ok) return { ok: false, error: unlocked.error, paid: false };
+    key = unlocked.privateKeyJwk;
+  }
+  if (!key) return fail('Set up the 6-digit code first.');
+  const limited = sendLimitReason(payer, figure);
+  if (limited) return fail(limited);
+  const next = round2(replay(payer).balance - heldBy(payer) - figure);
+  const blocked = floorBlockReason(payer, next);
+  if (blocked) return fail(blocked);
+  const worker = await store.get(invoice.workerId);
+  if (!worker?.privateKeyJwk) return fail('The worker book is not on this device.');
+  const beforePayer = replay(payer).balance;
+  const beforeWorker = replay(worker).balance;
+  const paymentId = await sha256(canonicalJSON({ invoiceId, amount: figure, at }));
+  const paid = {
+    simulated: true,
+    invoiceId,
+    receiptId: invoice.receiptId,
+    paymentId,
+    amount: figure,
+    payerId,
+    workerId: invoice.workerId,
+    unit: '$lgme'
+  };
+  const signer = { ...payer, privateKeyJwk: key };
+  await appendEntry(signer, 'transfer', {
+    fromId: payerId,
+    toId: invoice.workerId,
+    amount: figure,
+    unit: '$lgme',
+    note: `Invoice ${invoiceId.slice(0, 12)}`,
+    direction: 'out',
+    mock: true,
+    invoiceId,
+    receiptId: invoice.receiptId
+  }, at);
+  await appendEntry(signer, 'INVOICE_PAID', paid, at);
+  signer.privateKeyJwk = payer.wallet?.ciphertext ? null : key;
+  await store.set(payerId, signer);
+  const freshWorker = await store.get(invoice.workerId);
+  await appendEntry(freshWorker, 'transfer', {
+    fromId: payerId,
+    toId: invoice.workerId,
+    amount: figure,
+    unit: '$lgme',
+    note: `Invoice ${invoiceId.slice(0, 12)}`,
+    direction: 'in',
+    mock: true,
+    invoiceId,
+    receiptId: invoice.receiptId
+  }, at);
+  await appendEntry(freshWorker, 'INVOICE_PAID', paid, at);
+  let reward = 0;
+  const remaining = round2(invoice.remaining - figure);
+  if (remaining <= 0) {
+    const room = round2(REWARD_CAP - rewardInPeriod(freshWorker, at));
+    const raw = round2(invoice.amount * REWARD_RATE);
+    reward = round2(Math.max(0, Math.min(raw, room)));
+    if (reward > 0) {
+      await appendEntry(freshWorker, 'REWARD', {
+        simulated: true,
+        mock: true,
+        label: 'mock',
+        unit: '$lgme',
+        amount: reward,
+        rate: REWARD_RATE,
+        invoiceId,
+        receiptId: invoice.receiptId
+      }, at);
+    }
+  }
+  await store.set(invoice.workerId, freshWorker);
+  const payerAfter = replay(await store.get(payerId)).balance;
+  const workerAfter = replay(await store.get(invoice.workerId)).balance;
+  return {
+    ok: true,
+    paid: true,
+    amount: figure,
+    remaining,
+    reward,
+    receiptId: invoice.receiptId,
+    payerBalance: payerAfter,
+    workerBalance: workerAfter,
+    moved: payerAfter === round2(beforePayer - figure) && workerAfter === round2(beforeWorker + figure + reward)
+  };
+}
+
+export async function refuseInvoice(store, payerId, invoiceId, statement, at = nowIso()) {
+  const payer = await store.get(payerId);
+  if (!payer?.privateKeyJwk) return fail('Wallet is locked.');
+  const invoice = findInvoice(payer, invoiceId, at);
+  if (!invoice) return fail('That invoice is not on this book.');
+  if (invoice.payerId !== payerId) return fail('Only the payer can refuse this invoice.');
+  if (invoice.status === 'paid') return fail('A settled line stays settled.');
+  const before = replay(payer).balance;
+  const workerBefore = replay(await store.get(invoice.workerId)).balance;
+  const text = String(statement || 'REFUSAL').trim() || 'REFUSAL';
+  const payload = {
+    simulated: true,
+    role: 'third-seat',
+    statement: text,
+    penalty: false,
+    invoiceId,
+    receiptId: invoice.receiptId,
+    payerId,
+    workerId: invoice.workerId
+  };
+  await appendEntry(payer, 'INVOICE_REFUSED', payload, at);
+  await store.set(payerId, payer);
+  const worker = await store.get(invoice.workerId);
+  if (worker?.privateKeyJwk) {
+    await appendEntry(worker, 'INVOICE_REFUSED', payload, at);
+    await store.set(invoice.workerId, worker);
+  }
+  const freshPayer = await store.get(payerId);
+  const freshWorker = await store.get(invoice.workerId);
+  return {
+    ok: true,
+    unchanged: replay(freshPayer).balance === before && replay(freshWorker).balance === workerBefore,
+    reward: rewardTotal(freshWorker),
+    status: findInvoice(freshPayer, invoiceId, at)?.status
+  };
 }

@@ -46,6 +46,7 @@ let marketQuery = { q: '', category: '', condition: '', pickup: '', circle: '', 
 let openListingId = '';
 let openThreadId = '';
 let pendingChat = '';
+let pendingInvoice = '';
 let signedSms = null;
 let matchNote = '';
 let openCall = null;
@@ -639,6 +640,12 @@ async function run(action, okMessage) {
 }
 
 async function renderBooks(peers, seat) {
+  if (pendingInvoice) {
+    const token = pendingInvoice;
+    pendingInvoice = '';
+    const saved = await sim.acceptInvoice(store, seat, token);
+    setStatus(saved.ok ? 'Invoice recorded on this book. The balance did not move. SIMULATION.' : saved.error, saved.ok ? 'ok' : 'bad');
+  }
   const panel = document.getElementById('panel');
   const peer = await store.get(seat);
   const names = namesOf(peers);
@@ -647,7 +654,7 @@ async function renderBooks(peers, seat) {
   const above = sim.round2(view.balance - rule.floor);
   const finger = (await sim.sha256(sim.canonicalJSON(peer.publicKeyJwk))).slice(0, 16);
   const search = h('input', { type: 'search', placeholder: 'Filter by work, type, or hash' });
-  const type = h('select', {}, ['all', 'genesis', 'ididit', 'proposal', 'countersign', 'refusal', 'block', 'settlement', 'transfer', 'iou', 'attested'].map((name, index) => option(name, name === 'all' ? 'All types' : name, index === 0)));
+  const type = h('select', {}, ['all', 'genesis', 'ididit', 'INVOICE', 'INVOICE_PAID', 'INVOICE_REFUSED', 'REWARD', 'proposal', 'countersign', 'refusal', 'block', 'settlement', 'transfer', 'iou', 'attested'].map((name, index) => option(name, name === 'all' ? 'All types' : name, index === 0)));
   const list = h('div', {});
   const rows = view.rows.slice().reverse();
   for (const row of rows) {
@@ -684,29 +691,121 @@ async function renderBooks(peers, seat) {
   empty.hidden = rows.length !== 0;
   search.addEventListener('input', applyFilter);
   type.addEventListener('change', applyFilter);
-  const work = h('input', { maxlength: '160', required: true });
+  const work = h('input', { maxlength: '160', required: true, id: 'ididit-work' });
   const scope = h('input', { maxlength: '160' });
   const hours = h('input', { type: 'number', min: '0', step: '0.01' });
-  const receiptForm = h('form', { class: 'grid three' }, [
-    field('Work', work),
-    field('Scope', scope),
-    field('Hours', hours),
+  const invoiceOn = h('input', { type: 'checkbox', id: 'invoice-toggle' });
+  const payer = h('select', {}, peerOptions(peers.filter((item) => item.id !== seat), ''));
+  const invoiceAmount = h('input', { type: 'number', min: '0.01', step: '0.01', inputmode: 'decimal', id: 'invoice-amount' });
+  const due = h('input', { type: 'date', id: 'invoice-due', value: new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10) });
+  const reference = h('select', {}, [option('', 'No dollar reference', true), ...catalog.map((item) => option(item.id, item.name, false))]);
+  const mediaHashes = h('input', { placeholder: 'Optional media hashes' });
+  const extra = h('div', { id: 'invoice-fields' }, [
+    field('Payer', payer),
+    field('Amount in $lgme', invoiceAmount),
+    field('Due date', due),
+    field('Optional $ reference', reference),
+    h('p', { class: 'legend' }, ['Reference only, not a price.']),
+    field('Linked media hashes', mediaHashes)
+  ]);
+  extra.hidden = true;
+  invoiceOn.addEventListener('change', () => { extra.hidden = !invoiceOn.checked; });
+  const receiptForm = h('form', { id: 'ididit-form' }, [
+    h('div', { class: 'grid three' }, [field('Work', work), field('Scope', scope), field('Hours', hours)]),
+    h('label', { class: 'row' }, [invoiceOn, 'Invoice in $lgme']),
+    extra,
     h('div', { class: 'actions' }, [h('button', { type: 'submit', class: 'primary' }, ['Record IdidIt'])])
   ]);
   receiptForm.addEventListener('submit', async (event) => {
     event.preventDefault();
-    await run(() => sim.recordIdidIt(store, seat, { work: work.value, scope: scope.value, hours: hours.value }), null);
+    if (busy) return;
+    busy = true;
+    try {
+      const recorded = await sim.recordIdidIt(store, seat, { work: work.value, scope: scope.value, hours: hours.value });
+      if (!recorded.ok) { setStatus(recorded.error, 'bad'); return; }
+      if (!invoiceOn.checked) {
+        setStatus(`IdidIt recorded. Balance stays ${recorded.balance}. A receipt is not cash.`, 'ok');
+        await render();
+        return;
+      }
+      const item = catalog.find((row) => row.id === reference.value);
+      const hashes = mediaHashes.value.split(/[\s,]+/).filter((hash) => /^[0-9a-f]{64}$/i.test(hash));
+      const created = await sim.createInvoice(store, seat, {
+        receiptId: recorded.receiptId,
+        payerId: payer.value,
+        amount: invoiceAmount.value,
+        dueAt: due.value ? new Date(`${due.value}T00:00:00.000Z`).toISOString() : '',
+        referenceId: item ? item.id : null,
+        referenceAvg: item ? item.avg_value_usd : null,
+        mediaHashes: hashes
+      });
+      if (!created.ok) { setStatus(`Work recorded. ${created.error}`, 'bad'); await render(); return; }
+      setStatus('Invoice signed. The balance did not move. Open SMS from the ledger to remind. SIMULATION.', 'ok');
+      await render();
+    } finally {
+      busy = false;
+    }
+  });
+  const now = new Date().toISOString();
+  const invoices = sim.readInvoices(peer, now);
+  const buckets = sim.invoiceBuckets(peer, now);
+  const invoiceCards = invoices.map((row) => {
+    const payAmount = h('input', { type: 'number', min: '0.01', step: '0.01', inputmode: 'decimal', value: String(row.remaining || '') });
+    const pass = h('input', { type: 'password', autocomplete: 'current-password' });
+    const code = h('input', { inputmode: 'numeric', autocomplete: 'one-time-code', maxlength: '8' });
+    const note = h('input', { maxlength: '160', placeholder: 'REFUSAL' });
+    const actions = [];
+    if (row.role === 'AR' && row.remaining > 0 && row.status !== 'refused') {
+      actions.push(h('a', { class: 'btn', href: '#', onClick: async (event) => {
+        event.preventDefault();
+        const payload = (await store.get(seat)).tape.find((entry) => entry.type === 'INVOICE' && entry.payload?.invoiceId === row.invoiceId)?.payload;
+        const sealed = await sim.sealMessage(await store.get(seat), 'invoice', payload);
+        if (!sealed.ok) { setStatus(sealed.error, 'bad'); return; }
+        const href = sim.shareHrefs(row.payerPhone, `SIMULATION lgme. Invoice ${row.amount} $lgme. This page does not send it.\n${sim.encodeMessage(sealed.message)}`).sms;
+        event.currentTarget.href = href;
+        window.location.href = href;
+      } }, ['Remind by SMS']));
+    }
+    if (row.role === 'AP' && row.remaining > 0 && row.status !== 'refused') {
+      actions.push(h('button', { type: 'button', class: 'primary', id: 'pay-invoice', onClick: async () => {
+        const result = await sim.payInvoice(store, seat, row.invoiceId, { amount: payAmount.value, passphrase: pass.value, code: code.value });
+        setStatus(result.ok ? `Paid ${result.amount} $lgme. Remaining ${result.remaining}. Reward ${result.reward}. SIMULATION.` : result.error, result.ok ? 'ok' : 'bad');
+        if (result.ok) await render();
+      } }, ['Pay with code']));
+      actions.push(h('button', { type: 'button', onClick: async () => {
+        const result = await sim.refuseInvoice(store, seat, row.invoiceId, note.value || 'REFUSAL');
+        setStatus(result.ok ? 'REFUSAL recorded. No balance moves. No penalty. No reward. SIMULATION.' : result.error, result.ok ? 'ok' : 'bad');
+        if (result.ok) await render();
+      } }, ['Refuse']));
+    }
+    return h('article', { class: 'card', id: row.role === 'AR' ? 'invoice-ar' : 'invoice-ap' }, [
+      h('h3', {}, [`${row.role} · ${row.status} · ${row.amount} $lgme`]),
+      h('p', { class: 'muted' }, [`Paid ${row.paid}. Remaining ${row.remaining}. Bucket ${row.bucket}. Due ${row.dueAt.slice(0, 10)}. Phone ${row.payerPhone}. Hash ${row.payerKycHash.slice(0, 12)}.`]),
+      row.role === 'AP' && row.remaining > 0 ? h('div', {}, [field('Amount', payAmount), field('Passphrase', pass), field('6-digit code', code), field('Refusal note', note)]) : null,
+      h('div', { class: 'actions' }, actions)
+    ]);
   });
   panel.replaceChildren(
     h('h2', {}, [`${peer.name}'s book`]),
-    h('p', { class: 'muted' }, [`Every line below is on this peer’s tape. Credits and debits come only from settlements. The running balance is a replay. Key ${finger}. Limit ${rule.creditLimit}.`]),
+    h('p', { class: 'muted' }, [`Every line below is on this peer’s tape. Credits and debits come only from settlements, payments, and mock rewards. The running balance is a replay. Key ${finger}. Limit ${rule.creditLimit}.`]),
     h('div', { class: 'nums' }, [
       h('div', {}, [h('strong', {}, [String(view.balance)]), 'Balance']),
       h('div', {}, [h('strong', {}, [String(rule.floor)]), `Floor · ${rule.floorNote}`]),
       h('div', {}, [h('strong', {}, [above >= 0 ? String(above) : 'below']), above >= 0 ? 'Above the floor' : 'Below the floor']),
+      h('div', {}, [h('strong', {}, [String(sim.rewardTotal(peer))]), 'Rewards']),
       h('div', {}, [h('strong', {}, [String(view.credits)]), 'Credits']),
       h('div', {}, [h('strong', {}, [String(view.debits)]), 'Debits'])
     ]),
+    h('section', { id: 'invoices' }, [
+      h('h3', {}, ['Receivable and payable']),
+      h('p', { class: 'muted' }, [`Open, due, and overdue stay off the balance until a coded payment. Ageing ${buckets['0-30']} in 0-30, ${buckets['31-60']} in 31-60, ${buckets['60+']} in 60+.`]),
+      ...invoiceCards,
+      invoices.length ? null : h('p', { class: 'empty' }, ['No invoices on this book.']),
+      h('div', { class: 'actions' }, [h('button', { type: 'button', onClick: () => download(`${peer.id}-ar-ap.csv`, sim.invoicesToCsv(peer, now), 'text/csv') }, ['Export AR/AP'])])
+    ]),
+    h('h3', {}, ['Record work']),
+    h('p', { class: 'legend' }, ['IdidIt stores the fact of the work on this tape. It does not change the balance. Invoice in $lgme is optional.']),
+    receiptForm,
     h('div', { class: 'actions' }, [
       h('button', { type: 'button', onClick: () => verify(peer) }, ['Verify tape']),
       h('button', { type: 'button', onClick: () => download(`${peer.id}-tape.csv`, sim.toCsv(peer, names), 'text/csv') }, ['Export CSV']),
@@ -714,10 +813,7 @@ async function renderBooks(peers, seat) {
     ]),
     h('div', { class: 'grid two' }, [field('Search', search), field('Type', type)]),
     list,
-    empty,
-    h('h3', {}, ['Record work']),
-    h('p', { class: 'legend' }, ['IdidIt stores the fact of the work on this tape. It does not change the balance.']),
-    receiptForm
+    empty
   );
 }
 
@@ -1326,7 +1422,7 @@ function profileCard(profile) {
       `${profile.status === 'VERIFIED' ? 'Verified' : 'Unverified'}. Account age ${profile.ageDays} day${profile.ageDays === 1 ? '' : 's'}. Clearing history ${profile.clearingCount}.`
     ]),
     h('p', { class: 'muted' }, [
-      `${profile.balance} $lgme · floor ${profile.floor} · ${profile.aboveFloor} above the floor. Credit use versus the floor ${Math.round(profile.utilization * 100)}%.${profile.held ? ` Held ${profile.held} $lgme.` : ''}`
+      `${profile.balance} $lgme · floor ${profile.floor} · ${profile.aboveFloor} above the floor. Credit use versus the floor ${Math.round(profile.utilization * 100)}%. Rewards ${profile.rewards || 0} $lgme.${profile.held ? ` Held ${profile.held} $lgme.` : ''}`
     ])
   ]);
 }
@@ -2188,6 +2284,7 @@ function renderHelp() {
     ['Another device', 'There is no server. Sign a proposal, countersign, refusal, transfer, attestation, or handoff, then carry the lgme1. code by copy, by a link whose data sits in the URL fragment, by a QR, or by a .json file. On the other device, verification runs before anything is appended. A QR is for an in-person handoff. To text or email a draft, the page opens sms: or mailto: so you send it from your own app. The outbox and inbox are a local log of that.'],
     ['Phone chat', 'A text is signed here, then Open SMS hands it to your phone’s own messages app. The link or the pasted token is checked for the sender’s signature and the member hash. A call button opens tel: on your phone. The tape records the start, the end, the other member’s hash, and a note you type. No audio is stored. Match sends the chat root by SMS and says Matched, or names the first message that differs. This page does not send the text and does not place the call. The other person’s signup details stay on their phone. You keep the phone number and the hash.'],
     ['Photos and video', 'The camera and the gallery stay on this phone. Photos are compressed and video is kept short. The file is encrypted in this browser. The tape stores only the signed hash, the type, the size, and the length. Share hands the file to your own apps. The signed text carries the hash. A file that does not match says Not authentic. Nothing is uploaded.'],
+    ['Invoices', 'Invoice in $lgme is optional on a work receipt. An unpaid invoice does not change a balance. A reminder opens your own SMS app. The payer pays with the 6-digit code when the wallet is locked. Floors still hold. A refusal is recorded and carries no penalty. A paid receipt can earn a small mock reward, capped each period. Unpaid and refused receipts earn none.'],
     ['Market', 'Listings are signed with the peer key. The origin hash names the listing. A photo stays on this device. Offer, counter, and Accept & Sign create a pending hold. Final balances move only when the seller countersigns the buyer’s single-use handoff. A refusal is recorded and carries no penalty. Peer standing is read from the local book.']
   ];
   const install = h('div', { class: 'card' }, [
@@ -2372,6 +2469,11 @@ function captureFragment() {
   if (kind === 'chat' || kind === 'chat-match') {
     pendingChat = encoded;
     history.replaceState(null, '', `${location.pathname}${location.search}#chats`);
+    return;
+  }
+  if (kind === 'invoice') {
+    pendingInvoice = encoded;
+    history.replaceState(null, '', `${location.pathname}${location.search}#books`);
     return;
   }
   pendingImport = encoded;
