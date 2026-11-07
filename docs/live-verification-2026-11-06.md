@@ -118,3 +118,23 @@ Checked live after the contribution cards shipped, at a 390×844 phone viewport 
 ![Donation listing contributions](verification/phone-contrib-donation.png)
 
 ![In-app coin panel](verification/phone-contrib-wallet.png)
+
+## Addendum — Install & launch
+
+Checked live at 390×844 after the orange control shipped. The homepage, `/p2p-exchange-sim`, and `/lgme-coin` each returned HTTP 200. The service worker cache is `lgme-v30`.
+
+| Check | Result |
+| --- | --- |
+| Control at the top | Pass. Text `Install & launch`, href `/p2p-exchange-sim`, orange `#F97316`, on all three pages |
+| Install prompt | Pass. A click calls `beforeinstallprompt` when the page has one, and stays on the page if the prompt is dismissed |
+| No prompt | Pass. The next click opens `/p2p-exchange-sim` |
+| Standalone | Pass. With `display-mode: standalone`, the bar is hidden |
+| iPhone Safari tooltip | Covered by the decision test: `Share > Add to Home Screen`, then open the desk. A physical iPhone was not used |
+
+The offline suite is 40 pass, 0 fail.
+
+![Homepage](verification/phone-install-home.png)
+
+![Practice desk](verification/phone-install-sim.png)
+
+![Coin page](verification/phone-install-coin.png)
