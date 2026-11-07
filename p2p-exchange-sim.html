@@ -8,14 +8,7 @@
   <meta name="apple-mobile-web-app-title" content="lgme" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="theme-color" content="#F97316" />
-  <script>
-    (function () {
-      var w = window.innerWidth || 1024;
-      var coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
-      var phone = w <= 767 || (coarse && w <= 1023);
-      document.documentElement.classList.add(phone ? 'phone' : 'desk');
-    })();
-  </script>
+  <script src="/js/p2p-layout.js"></script>
   <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
   <title>P2P exchange sim · lgme</title>

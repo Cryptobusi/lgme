@@ -33,7 +33,7 @@
     <h2>Mock simulation login</h2>
     <div class="mock-login">
       <p><strong>Design-research mock</strong> — any username/password will pass.</p>
-      <form id="mockForm" onsubmit="return mockLogin(event)">
+      <form id="mockForm">
         <label>Username / Email<br><input type="text" id="user" placeholder="anything" required></label>
         <label>Password<br><input type="password" id="pass" placeholder="anything" required></label>
         <button type="submit">Login</button>
@@ -119,13 +119,6 @@ docker compose -f docker-compose.prod.yml up -d</code></pre>
   </section>
   <p class="muted"><a href="/">Desk</a> · <a href="/disclosures">Disclosures</a> · Not an offer. Not an investment.</p>
 
-  <script>
-    function mockLogin(e) {
-      e.preventDefault();
-      document.getElementById('success').style.display = 'block';
-      document.getElementById('mockForm').style.display = 'none';
-      return false;
-    }
-  </script>
+  <script src="/js/mock-login.js"></script>
 </body>
 </html>

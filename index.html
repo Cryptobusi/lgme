@@ -342,22 +342,7 @@
     <p class="muted"><a href="/docs/Status_Snapshot_2026-10-16.md" download>Status snapshot (16 Oct 2026) →</a> · <a href="/docs/Status_for_Next_Followup_2026-10-15.md" download>Status for next follow-up (15 Oct) →</a> · <a href="/docs/Status_Snapshot_2026-10-15.md" download>Status snapshot (15 Oct 2026) →</a> · <a href="/docs/Status_for_Next_Followup_2026-10-13_v2.md" download>Status for next follow-up (13 Oct v2) →</a> · <a href="/docs/Status_Snapshot_2026-10-13.md" download>Status snapshot (13 Oct 2026) →</a> · <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Tape_and_Inscription_Plan.md">Example plan →</a> · <a href="/docs/Tape_and_Inscription_Plan.md" download>Download plan (MD)</a></p>
   </section>
   <p class="muted"><a href="/">Desk</a> · <a href="/disclosures">Disclosures</a> · Not an offer. Not an investment.</p>
-  <script>
-    (function () {
-      var t = document.getElementById("menu-toggle");
-      var n = document.getElementById("main-nav");
-      if (!t || !n) return;
-      function toggle() {
-        var open = n.classList.toggle("open");
-        t.classList.toggle("open", open);
-        t.setAttribute("aria-expanded", open ? "true" : "false");
-      }
-      t.addEventListener("click", toggle);
-      t.addEventListener("keydown", function (e) {
-        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
-      });
-    })();
-  </script>
+  <script src="/js/home-menu.js"></script>
   <script type="module" src="/js/install-launch.mjs"></script>
 </body>
 </html>
