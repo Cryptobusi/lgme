@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#39e36a" />
+  <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+  <title>AI + DLT for Human Agency · lgme</title>
+  <meta name="description" content="A design reading: pair AI with a public ledger so people keep the constraints. The browser desk is a demo. Hedera receipts, personal agents, and a funded floor are not live." />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;1,6..72,500&display=swap" />
+  <link rel="stylesheet" href="/menu.css" />
+  <style>
+    :root {
+      --bg: #0c100c;
+      --fg: #f4f1e8;
+      --muted: #c5d0c2;
+      --gold: #c6a15b;
+      --line: #2c352b;
+      --panel: #141a13;
+    }
+    html { background: var(--bg); color: var(--fg); overflow-x: clip; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: Figtree, sans-serif;
+      font-size: 1.05rem;
+      line-height: 1.6;
+      max-width: 46rem;
+      margin: 0 auto;
+      padding: 1.5rem 1.25rem 4rem;
+    }
+    .kicker { margin: 0; font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); }
+    h1, h2 { font-family: Newsreader, serif; font-weight: 500; letter-spacing: -0.02em; }
+    h1 { font-size: clamp(2.1rem, 6vw, 3.2rem); line-height: 1.05; margin: 0.55rem 0 0.4rem; }
+    h2 { font-size: clamp(1.45rem, 4vw, 1.85rem); line-height: 1.15; margin: 2.2rem 0 0.7rem; border-top: 1px solid var(--line); padding-top: 1.4rem; }
+    p { margin: 0.8rem 0; }
+    .muted { color: var(--muted); }
+    a { color: var(--fg); text-underline-offset: 0.18em; }
+    a:hover { color: var(--gold); }
+    ul { margin: 0.5rem 0 1rem; padding-left: 1.2rem; }
+    li { margin: 0.4rem 0; }
+    li::marker { color: var(--gold); }
+    .note {
+      border-left: 2px solid var(--gold);
+      margin: 1.1rem 0 1.4rem;
+      padding: 0.15rem 0 0.15rem 1rem;
+      color: #e4d3a2;
+    }
+    .table-wrap { overflow-x: auto; margin: 1rem 0 0.35rem; border: 1px solid var(--line); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+    caption { caption-side: bottom; text-align: left; color: var(--muted); font-size: 0.88rem; padding: 0.55rem 0.7rem 0.7rem; }
+    th, td { text-align: left; vertical-align: top; padding: 0.65rem 0.7rem; border-bottom: 1px solid var(--line); }
+    th { color: var(--fg); font-weight: 600; background: var(--panel); }
+    td { color: var(--muted); }
+    tbody th { color: var(--fg); font-weight: 600; width: 8.5rem; }
+    @media (max-width: 700px) {
+      .table-wrap { overflow: visible; border: 0; }
+      thead { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+      table, tbody, tr, th, td { display: block; width: auto; }
+      tr { border: 1px solid var(--line); margin: 0 0 0.85rem; }
+      tbody th { width: auto; }
+      td:last-child { border-bottom: 0; }
+      td::before {
+        content: attr(data-label);
+        display: block;
+        color: var(--gold);
+        font-size: 0.72rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-bottom: 0.25rem;
+      }
+    }
+    .links a { display: inline-block; margin: 0.2rem 0.9rem 0.2rem 0; min-height: 44px; line-height: 44px; }
+  </style>
+</head>
+<body>
+  <nav class="deskmenu" aria-label="Desk">
+    <a href="/">Home</a>
+    <a href="/exchange">Exchange</a>
+    <a href="/hederica">Hederica</a>
+    <a href="/charter">Charter</a>
+    <a href="/the-third-seat">Third seat</a>
+    <a href="/disclosures">Disclosures</a>
+  </nav>
+  <p class="kicker">Design reading · lgme</p>
+  <h1>AI + DLT for Human Agency</h1>
+  <p class="note">This is a proposal and a design reading. It is not a proven live architecture, not a financial offer, and not evidence that a basket, a wage, or a token return is funded. The browser desk is a demonstration. Deeds on this site are not written to Hedera.</p>
+  <p>An economic operating system that pairs artificial intelligence with distributed ledger technology is infrastructure for human self-determination. People would set the constraints. Software would help with coordination and the dull bookkeeping. A public tape would show what was actually written. The aim is to turn the usual incentives around: agency first, extraction last. The pages below say what that pairing is for, then what this site can do today.</p>
+
+  <h2>Two layers, aimed at agency</h2>
+  <p>The design pairs the two tools because each one fails when it is asked to do the other’s job. Neither layer, alone or together, is a finished economy on this site.</p>
+  <p><strong>The ledger is a tamper-evident receipt.</strong> Cryptographic provenance, a strict order of messages, and a log anyone can open can show who signed, what was named, and the sequence. Where a zero-knowledge proof is used, it can show that a computation or a credential claim held, without publishing the raw secret. That is as far as the receipt goes. A receipt does not establish real-world truth, and a signed offline claim can still be false. It does not by itself stop money creation, rent, or censorship in systems that never write here. It does not turn an offline act into a fact. It shows what this book recorded, and it leaves a visible gap where the record is missing.</p>
+  <p>In this project the design names Hedera Consensus Service for that receipt. <strong>Not written to Hedera.</strong> The Tape on the home page lists example topic IDs and says so. The mutual-credit demo labels the same limit on screen, and its log line is “Not written to Hedera.” The exchange desk notes that Hedera’s Cursor MCP is on testnet only, that a transaction there does not settle until a wallet signs it, and that this desk does not use it. If a consensus message is submitted later, the fee is paid in HBAR under Hedera’s published schedule. This page does not fix a dollar price.</p>
+  <p><strong>The model is a clerk, unless a later design earns more.</strong> The aspiration is a cognitive layer: local agents that help a person notice a mutual need, draft an exchange, and keep the accounting without forcing the person into a rigid office. Fiduciary personal agents — models that negotiate, reject harsh terms, and protect attention — are that aspiration. They are not a legal status, and this site does not confer one. No such agent runs here. The home-page glossary already names the agent a registrar: the app can explain, and it cannot tap pay. The third-seat notes call the same role a clerk. It does not mint, and it does not decide who deserves the basket.</p>
+
+  <h2>Core mechanics</h2>
+  <div class="table-wrap">
+    <table>
+      <caption>Comparison of a centralized habit, the proposed agency design, and what lgme runs today. On a narrow screen each row is stacked. The right-hand column, “What lgme runs today,” is the limit.</caption>
+      <thead>
+        <tr>
+          <th scope="col">Dimension</th>
+          <th scope="col">Legacy Web2 / centralized habit</th>
+          <th scope="col">Proposed AI + DLT design</th>
+          <th scope="col">What lgme runs today</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">Value accounting</th>
+          <td data-label="Legacy Web2 / centralized habit">Care, tutoring, and civic labor often never reach a balance sheet. The unit stays fiat, and unrecorded work is easy for a platform to capture later.</td>
+          <td data-label="Proposed AI + DLT design">Multi-asset provenance as a design: a micro-deed, a stretch of sweat equity, or compute time would be a named receipt, not a speculative trade. Consensus fees, if a message is sent, are paid in HBAR under the published schedule.</td>
+          <td data-label="What lgme runs today">Hederica describes that receipt. The exchange and mutual-credit desks can record a simulated line in this browser, including a signed offer once both people accept. Nothing in that flow is written to Hedera.</td>
+        </tr>
+        <tr>
+          <th scope="row">Agent role</th>
+          <td data-label="Legacy Web2 / centralized habit">Feeds tuned to hold attention and to sell it.</td>
+          <td data-label="Proposed AI + DLT design">Personal agents that negotiate, reject harsh terms, and guard attention. Aspiration only. Not a legal fiduciary, and not an office this site creates.</td>
+          <td data-label="What lgme runs today">A registrar on the glossary, a clerk in the notes. The app can explain. It cannot tap pay, and it does not mint.</td>
+        </tr>
+        <tr>
+          <th scope="row">Safety floor</th>
+          <td data-label="Legacy Web2 / centralized habit">Help that a clerk can grant or withhold, often in exchange for data about the person.</td>
+          <td data-label="Proposed AI + DLT design">Floor seniority. Named living costs clear first, and only from surplus that is already named and still available. A shortfall stays visible. No fund is guaranteed.</td>
+          <td data-label="What lgme runs today">The practice books carry a simulated floor (demo profiles note food and rent) and block a debit that would cross it. A simulated floor rebate can be deferred when its period cap is used. Neither pays a real basket. The third-seat page works a five-band specimen that sums to $1,470 and says the basket is not guaranteed when the surplus is absent. That figure is a specimen, not cash on hand.</td>
+        </tr>
+        <tr>
+          <th scope="row">Market clearing</th>
+          <td data-label="Legacy Web2 / centralized habit">An intermediary often stands between the two people and charges for the introduction. This page does not assign that charge a rate.</td>
+          <td data-label="Proposed AI + DLT design">Shown bilateral commitments, including a path from A to B to C when each hop is written. Transitive trust graphs and zero-knowledge automated market makers are proposals. They are not running. This page claims no fee level.</td>
+          <td data-label="What lgme runs today">The desk can settle a simulated swap. When no coin price is available, the two people can choose terms or a one-step barter, and both must consent. That choice is not a computed multi-hop path, and it is not a zero-knowledge market.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p>In this design, people stay the principals. They set the value constraints. An agent may optimize only inside those constraints. The ledger keeps the audit trail of what was shown. The third seat is the person: they can refuse a line that skipped the order. On the desk, a refusal can be written so the no stays on the record. A refusal on a public record does not void a legal duty, and it does not bind anyone who never joined the arrangement. A counterparty may ignore the tape. A court may or may not recognize it. Neither follows automatically.</p>
+
+  <h2>What this site and the companion book are attempting</h2>
+  <p>This site, the lgme.app project, and the longer book at <a href="https://www.egonomicanonymous.live/">egonomicanonymous.live</a> are an explicit attempt at that alternative. The framing is the Sovereign Provenance Protocol: political economy treated as constitutional software, rather than as another speculative token app. The protocol texts are design research. Disclosures say so, and they win where a page sounds like a membership or a return. No cooperative is formed here. No membership is offered. An hour described on these pages is not cash, not a deposit, not a security, and not a token offered for sale.</p>
+  <p>A separate Solana token, $lgme, has its own page and its own risk notice. It is not this protocol’s ledger. This reading does not sell it, and it does not describe any other token.</p>
+
+  <h2>1. The core economic thesis</h2>
+  <p>The project’s claim is that verification often costs more than ordinary community life is worth to a bank.</p>
+  <ul>
+    <li>Tutoring a peer, helping a neighbor, or clearing a shared walkway can be real economic use.</li>
+    <li>Ordinary payment rails, contracts, and accounting can erase that use because they cost more to clear than the act.</li>
+  </ul>
+  <p>The planned answer is an IdidIt receipt: one consensus message that names the job, the person, and the sequence. The message would be the credit. It would not be cash at the register. It would become a source of exchange value only when someone claims it against another shown item, and that claim would also have to appear on the tape. <strong>Not written to Hedera.</strong> Until a real topic is submitted and its identifier is published, the receipt is a design. The fee, if that submission happens, is paid in HBAR under the published schedule.</p>
+
+  <h2>2. Constitutional principles</h2>
+  <p>The companion book states operating rules meant to keep a quiet fee, a quiet mint, and a skipped floor from counting as policy. Three of them carry this reading. The home page also keeps a glossary of eight book words — Floor, Mint, Issue, Tape, Charge, Agent, Thin, and Desert — as the local vocabulary of the desk. The three below are the rules this essay relies on. They are limits on a design, not powers the software already has.</p>
+  <p><strong>Floor seniority.</strong> Basic named costs are prioritized, and they clear only from surplus that has been named and is still available. If that surplus is short, the shortfall stays visible. The rule can force a named surplus to be used before a residual claim. It cannot invent the surplus, and it cannot guarantee the basket. The exchange desk’s own wording is the small form: the basket is paid first, from what is already named. Retire — cancellation — happens only against a named surplus. A deficit is not a retirement.</p>
+  <p><strong>The public tape.</strong> Issuance, lien, fee, and agent decision are meant to be posted in an open sequence. “If it cannot be shown, it is not policy” means an unpublished change writes nothing in this book. It does not mean the world outside the tape has been audited. The practice desks keep that sequence in the browser. The Hedera copy of it is still an example list.</p>
+  <p><strong>The third seat.</strong> The person is not only a user or a liquidity source. In the design they hold a seat, and they can log a no to an automated action or a fee that skips the order. Logging the no records the refusal. It does not void a legal duty, and it does not bind a nonparticipant. The how-it-works specimen shows one refused ride share that never posted, and one item left open. The count did not grow to cover the refusal.</p>
+
+  <h2>3. What the design is trying to get right</h2>
+  <p><strong>Automation without a visible rule.</strong> Unchecked agents in an extractive setting will optimize against the person. The tape is the attempt to make the constraint checkable: same rules for state, firm, and person, and a seat that can refuse a line that cannot be shown. The attempt is a design. The clerk on this site does not govern anyone.</p>
+  <p><strong>A receipt separated from a mint.</strong> Recording work without turning the record into a speculative coin is the attempt to avoid a pump as the reason for the book. The separation is incomplete in public: the coin page exists, it names a real Solana mint, and it warns that the in-app balances are a simulation. Read that page for the coin. Do not read this one as the coin.</p>
+
+  <h2>4. Where it still fails outside the demo</h2>
+  <p><strong>Cognitive load.</strong> The language across this site and egonomicanonymous.live is dense. It draws on self-binding, psychoanalysis, and constitutional metaphor. A safety check that everyday people will use has to feel as ordinary as a card tap. This reading does not claim that bar has been met. The exchange desk is the practical surface — offers, refusals, and a floor block in the browser — and it is still a demonstration you have to learn.</p>
+  <p><strong>The oracle gap.</strong> A signature can show that a message was ordered. It cannot, by itself, show that a neighbor was cared for. Offline and physical acts still need a witness. A local web of endorsements can narrow the gap, and it needs enough people before it holds. That limit stays open. Zero-knowledge proofs, where the design mentions them, would cover a computation or a credential claim. They are not an operating oracle for physical work. No zero-knowledge automated market is running. The one-step barter choice on the desk is a human decision when a coin price is missing. It is not an agent searching paths.</p>
+  <p><strong>A receipt is not a veto over the rest of the economy.</strong> Tamper-evident order on this tape does not automatically prevent money creation, fee extraction, or censorship by systems that never write to it. Adoption is voluntary and may stay small. The desk can refuse a simulated line. It cannot make a nonparticipant honor the refusal.</p>
+
+  <h2>Close</h2>
+  <p>Treat human agency as the thing the ledger is for. In this reading, AI and a public ledger are shields only to the extent the rules are shown, the surplus is real and named, and the person can still say no. What you can open today is a browser desk and a set of pages that keep the book in public view. What remains a proposal is the funded floor, the fiduciary agent, the Hedera receipt, and any path-finding market. An unpublished change is not a change. A missing name writes nothing.</p>
+  <p class="links">
+    <a href="/exchange">Open the practice desk</a>
+    <a href="/hederica">Hederica</a>
+    <a href="/charter">Charter</a>
+    <a href="/the-third-seat">Third seat</a>
+    <a href="/how-it-works">How it works</a>
+    <a href="/mutual-credit">Mutual credit demo</a>
+    <a href="/disclosures">Disclosures</a>
+    <a href="https://www.egonomicanonymous.live/">Companion book</a>
+  </p>
+  <p class="muted"><a href="/">Desk</a> · <a href="/disclosures">Disclosures</a> · Not an offer. Not an investment.</p>
+</body>
+</html>

@@ -208,6 +208,10 @@
     .plates a { display: block; }
     .plates img { width: 100%; height: auto; display: block; border: 1px solid var(--line); background: var(--panel); }
     @media (min-width: 720px) { .plates { grid-template-columns: 1fr 1fr; align-items: start; } }
+    .agency { margin: 0.2rem 0 1.15rem; padding: 0.15rem 0 0.15rem 1rem; border-left: 2px solid var(--gold); }
+    .agency h2 { font-size: clamp(1.55rem, 4.4vw, 2.05rem); line-height: 1.12; margin: 0.3rem 0 0.35rem; }
+    .agency p { margin: 0.45rem 0; }
+    .agency .enter { margin-top: 0.35rem; }
     .topsecret { border: 4px solid #dc2626; background: #1a0a0a; padding: 1.5rem; margin: 0 0 2rem; text-align: center; }
     .topsecret h2 { color: #f87171; margin: 0 0 0.5rem; font-size: clamp(1.4rem, 3vw, 2rem); }
     .topsecret .badge { display: inline-block; background: #dc2626; color: white; font-weight: 700; padding: 0.25rem 0.75rem; font-size: 0.8rem; letter-spacing: 0.2em; margin-bottom: 1rem; }
@@ -317,6 +321,12 @@
   <script type="module" src="/js/personal-images-apply.mjs"></script>
   <p class="launch-bar"><a class="install-launch" data-install-launch href="/exchange">Install &amp; launch</a></p>
   <p class="give-banner" role="note"><span>Real donations &amp; grants accepted</span> <a href="/lgme-coin#give">Give via soBeIT</a> <a href="/lgme-coin#give">How to give</a> <a href="/grants">Grants</a></p>
+  <aside class="agency" id="agency" aria-labelledby="agency-title">
+    <p class="kicker">Reading</p>
+    <h2 id="agency-title">AI + DLT for human agency</h2>
+    <p class="muted">The machines can keep the book. They do not get the seat. This reading pairs a public ledger with AI so a person still sets the limits — and it separates the browser desk you can open now from the floor, the personal agents, and the Hedera receipts that are still a design.</p>
+    <p><a class="enter" href="/ai-dlt-human-agency">Read the full page</a></p>
+  </aside>
   <p class="kicker" style="margin:0 0 0.35rem;"><a href="/lgme-coin">$lgme on pump.fun</a></p>
   <div class="menu-toggle" id="menu-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="main-nav">
     <span class="kicker">Menu</span>
@@ -353,6 +363,7 @@
     <span class="menu-group">About</span>
     <a href="/manifesto">Manifesto</a>
     <a href="/architecture">Architecture</a>
+    <a href="/ai-dlt-human-agency">AI + DLT</a>
     <a href="/nswo">NSWO</a>
     <a href="/dominion">Dominion</a>
     <a href="/hederica">Hederica</a>
