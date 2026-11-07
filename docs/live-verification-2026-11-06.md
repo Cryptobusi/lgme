@@ -205,3 +205,13 @@ Still simulation only. No network write, no blockchain, and no central ledger. O
 ![Device unlock](verification/phone-hard-wallet.png)
 
 ![Short handoff QR](verification/phone-hard-handoff.png)
+
+## Addendum — script CSP
+
+`script-src` is `'self'` on the live response. Inline scripts and event-handler attributes were moved into same-origin files. Inline styles stay allowed. The preparation page may still frame YouTube.
+
+Checked live at 390×844 and 1280×800: 47 pages, all HTTP 200, no CSP violations, no console errors. The home menu opens, the mutual-credit simulator still has its execute control, the practice desk opens on Market, and the coin page copy button changes to Copied. The install control still points at `/p2p-exchange-sim`.
+
+![Home menu](verification/phone-csp-home.png)
+
+![Practice desk](verification/phone-csp-desk.png)
