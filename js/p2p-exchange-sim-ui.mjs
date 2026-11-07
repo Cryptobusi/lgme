@@ -1773,29 +1773,51 @@ const DONATE_ADDRESS = '6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY';
 
 function contributionMethods() {
   const copy = h('button', { type: 'button' }, ['Copy address']);
-  copy.addEventListener('click', async () => {
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(DONATE_ADDRESS);
-    } catch { /* the address stays on screen */ }
+  copy.addEventListener('click', () => {
     copy.textContent = 'Copied';
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(DONATE_ADDRESS).catch(() => {});
+    }
   });
   const qrHost = h('div', {});
   drawQr(qrHost, DONATE_ADDRESS);
-  return h('section', { class: 'contrib' }, [
+  const payUrl = `solana:${DONATE_ADDRESS}?spl-token=${MINT}&label=soBeIT&message=THANK+YOU+FOR+YOUR+SUPPORT.`;
+  drawQr(qrHost, payUrl);
+  return h('section', { class: 'contrib', id: 'sobeit-give' }, [
     h('h3', {}, ['soBeIT contributions']),
-    h('p', { class: 'legend' }, ['Real token on Solana. Not financial advice. High risk; you may lose everything. Always verify the mint address. A wallet balance is read from Solana. The local tape records signatures and is not a second mint.']),
+    h('p', {}, [h('a', { class: 'btn primary', href: '/lgme-coin#give' }, ['Give via soBeIT'])]),
+    h('p', { class: 'legend' }, ['Real token on Solana. Not financial advice. High risk; you may lose everything. Always verify the mint address. Transfers are irreversible. Never share a seed phrase. This page never asks for one. A wallet balance is read from Solana. The local tape records signatures and is not a second mint.']),
+    h('p', {}, ['THANK YOU FOR YOUR SUPPORT.']),
     h('article', { class: 'card pump-wallet' }, [
-      h('h3', {}, ['Pump.fun wallet']),
-      h('p', {}, ['Wallet name ', h('span', { class: 'wallet-name' }, ['@EgonAnon'])]),
+      h('h3', {}, ['Option A. $lgme or SOL']),
+      h('p', {}, ['Pump.fun wallet. Wallet name ', h('span', { class: 'wallet-name' }, ['@EgonAnon'])]),
+      h('ol', {}, [
+        h('li', {}, ['Install Phantom or Solflare.']),
+        h('li', {}, ['Buy or hold $lgme. Mint ', MINT, '. ', h('a', { href: `https://pump.fun/coin/${MINT}` }, ['Open the coin on pump.fun']), '.']),
+        h('li', {}, ['Tap Send, or scan the QR.']),
+        h('li', {}, ['Check the address. It starts with 6SYz and ends with okLY.']),
+        h('li', {}, ['Confirm. The transfer is irreversible.'])
+      ]),
       h('p', {}, ['Solana address']),
       h('p', { class: 'addr donate-address' }, [DONATE_ADDRESS]),
-      h('div', { class: 'actions' }, [copy]),
+      h('div', { class: 'actions' }, [
+        copy,
+        h('a', { class: 'btn primary', href: payUrl }, ['Open in your wallet'])
+      ]),
       qrHost
     ]),
     h('article', { class: 'card x-money' }, [
-      h('h3', {}, ['X Money']),
+      h('h3', {}, ['Option B. X Money']),
       h('p', {}, ['Send via X Money to ', h('a', { href: 'https://x.com/Trancesage' }, ['@Trancesage'])]),
-      h('p', {}, ['This is a separate account from the Solana wallet.'])
+      h('p', {}, ['This is a separate account from the Solana wallet.']),
+      h('ol', {}, [
+        h('li', {}, ['Open the X app.']),
+        h('li', {}, ['Open Money.']),
+        h('li', {}, ['Tap Send.']),
+        h('li', {}, ['Choose @Trancesage.']),
+        h('li', {}, ['Enter the amount.']),
+        h('li', {}, ['Confirm.'])
+      ])
     ])
   ]);
 }

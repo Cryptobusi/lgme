@@ -1147,6 +1147,7 @@ test('real gifts are announced above the simulation and the two methods stay sep
     const give = body.indexOf('class="give-banner"');
     assert.ok(launch >= 0 && give > launch && give - launch < 500, file);
     assert.equal(page.includes(banner), true, file);
+    assert.equal(page.includes('href="/lgme-coin#give">Give via soBeIT</a>'), true, file);
     assert.equal(page.includes('href="/lgme-coin#give">How to give</a>'), true, file);
     assert.equal(page.includes('href="/grants">Grants</a>'), true, file);
     assert.equal(page.includes('$Trust'), false, file);
@@ -1158,6 +1159,12 @@ test('real gifts are announced above the simulation and the two methods stay sep
   assert.equal(coin.includes('6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY'), true);
   assert.equal(coin.includes('https://x.com/Trancesage'), true);
   assert.equal(coin.includes('In-app $lgme balances stay simulated.'), true);
+  assert.equal(coin.includes('id="copy-donate"'), true);
+  assert.equal(coin.includes('id="solana-pay"'), true);
+  assert.equal(coin.includes('Never share a seed phrase'), true);
+  assert.equal(coin.includes('THANK YOU FOR YOUR SUPPORT.'), true);
+  assert.equal(coin.includes('Install Phantom or Solflare.'), true);
+  assert.equal(readFileSync(join(root, 'js/p2p-exchange-sim-ui.mjs'), 'utf8').includes('Give via soBeIT'), true);
   const desk = readFileSync(join(root, 'p2p-exchange-sim.html'), 'utf8');
   assert.ok(desk.indexOf('give-banner') < desk.indexOf('id="beta-notice"'));
   assert.equal(desk.includes('lgme · BETA'), true);
@@ -1168,6 +1175,8 @@ test('real gifts are announced above the simulation and the two methods stay sep
   assert.equal(desk.includes('href="/mutual-credit-simulator"'), true);
   const grants = readFileSync(join(root, 'grants.html'), 'utf8');
   assert.equal(grants.includes('How to propose'), true);
+  assert.equal(grants.includes('class="give-now"'), true);
+  assert.equal(grants.includes('href="/lgme-coin#give">Give via soBeIT</a>'), true);
 });
 
 test('the standing donation is pinned in both listing kinds and never expires', async () => {
@@ -1741,7 +1750,7 @@ test('DC reference values stay pending when a series has no number', () => {
   assert.equal(page.includes('id="refList"'), true);
   assert.equal(/<script(?![^>]*\bsrc=)/i.test(page), false);
   const worker = readFileSync(join(root, 'sw.js'), 'utf8');
-  assert.equal(worker.includes('lgme-v49'), true);
+  assert.equal(worker.includes('lgme-v50'), true);
   const desk = readFileSync(join(root, 'p2p-exchange-sim.html'), 'utf8');
   assert.equal(desk.includes('splash-skip'), false);
   assert.equal(desk.includes('>Skip<'), false);

@@ -32,6 +32,9 @@
     ol { margin:0.4rem 0 0; padding-left:1.2rem; }
     li { margin:0.35rem 0; }
     .qr { display:inline-block; background:#fff; padding:8px; border-radius:8px; }
+    .warn { border-color: var(--accent); }
+    input { font: inherit; width: 100%; min-height: 44px; padding: 0.45rem 0.6rem; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); box-sizing: border-box; }
+    #tx-out { word-break: break-all; }
     .launch-bar { position: relative; display: flex; margin: 0; padding: 0.45rem 1.1rem; background: var(--panel); border-bottom: 1px solid var(--line); }
     .launch-bar[hidden] { display: none; }
     .install-launch { font: inherit; font-size: 0.82rem; font-weight: 600; min-height: 44px; padding: 0.35rem 0.85rem; border: 0; border-radius: 999px; background: #F97316; color: #1c1b19; text-decoration: none; display: inline-flex; align-items: center; }
@@ -43,7 +46,7 @@
 </head>
 <body>
   <p class="launch-bar"><a class="install-launch" data-install-launch href="/p2p-exchange-sim">Install &amp; launch</a></p>
-  <p class="give-banner" role="note"><span>Real donations &amp; grants accepted</span> <a href="/lgme-coin#give">How to give</a> <a href="/grants">Grants</a></p>
+  <p class="give-banner" role="note"><span>Real donations &amp; grants accepted</span> <a href="/lgme-coin#give">Give via soBeIT</a> <a href="/lgme-coin#give">How to give</a> <a href="/grants">Grants</a></p>
   <p class="notice">Real token on Solana. Not financial advice. High risk; you may lose everything. Always verify the mint address. The in-app $lgme balances are a simulation and are not this token.</p>
   <div class="wrap">
     <p class="muted"><a href="/">Desk</a> · <a href="/p2p-exchange-sim">Practice desk</a></p>
@@ -76,20 +79,51 @@
 
     <h2 id="give">soBeIT contributions</h2>
     <p>Real gifts, by either method below. They are not the practice desk. In-app $lgme balances stay simulated.</p>
+    <div class="card warn">
+      <p>Not financial advice. Transfers are irreversible. Always verify the mint and the address. Never share a seed phrase. This page never asks for one, and it does not hold a key.</p>
+      <p>THANK YOU FOR YOUR SUPPORT.</p>
+    </div>
     <div class="card" id="pump-wallet">
-      <h3>Pump.fun wallet</h3>
-      <p>Wallet name <span id="wallet-name">@EgonAnon</span></p>
+      <h3>Option A. $lgme or SOL</h3>
+      <p>Pump.fun wallet. Wallet name <span id="wallet-name">@EgonAnon</span></p>
       <p>Solana address</p>
       <p class="addr" id="donate">6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY</p>
+      <p>Check the address before you confirm. It starts with <strong>6SYz</strong> and ends with <strong>okLY</strong>.</p>
+      <p>Mint <span class="addr">7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump</span>. <a href="https://pump.fun/coin/7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump">Open the $lgme page on pump.fun</a>.</p>
+      <ol>
+        <li>Install Phantom or Solflare.</li>
+        <li>Buy or hold $lgme. Match the mint above. You can also send SOL to the same address.</li>
+        <li>Enter an amount, then tap Send or scan the QR.</li>
+        <li>In the wallet, check that the address starts with 6SYz and ends with okLY.</li>
+        <li>Confirm. The transfer is irreversible.</li>
+        <li>Optional: paste the transaction id below. This page shows a receipt and a Solscan link. It does not send the gift.</li>
+      </ol>
+      <p><label for="gift-amount">Amount of $lgme</label></p>
+      <input id="gift-amount" inputmode="decimal" autocomplete="off" placeholder="For example 1" />
       <div class="actions">
         <button type="button" id="copy-donate">Copy address</button>
+        <a class="btn primary" id="solana-pay" href="solana:6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY?spl-token=7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump&amp;label=soBeIT&amp;message=THANK+YOU+FOR+YOUR+SUPPORT.">Open in your wallet</a>
       </div>
-      <div id="donate-qr" class="qr" aria-label="QR of the donate address"></div>
+      <div id="donate-qr" class="qr" aria-label="QR for the soBeIT gift"></div>
+      <p><label for="tx-id">Transaction id, optional</label></p>
+      <input id="tx-id" autocomplete="off" spellcheck="false" placeholder="Paste the signature from your wallet" />
+      <div class="actions">
+        <button type="button" id="tx-receipt">Show receipt</button>
+      </div>
+      <p id="tx-out" class="muted"></p>
     </div>
     <div class="card" id="x-money">
-      <h3>X Money</h3>
+      <h3>Option B. X Money</h3>
       <p>Send via X Money to <a href="https://x.com/Trancesage">@Trancesage</a></p>
       <p>This is a separate account from the Solana wallet.</p>
+      <ol>
+        <li>Open the X app.</li>
+        <li>Open Money.</li>
+        <li>Tap Send.</li>
+        <li>Choose @Trancesage.</li>
+        <li>Enter the amount.</li>
+        <li>Confirm.</li>
+      </ol>
     </div>
   </div>
   <script type="module" src="/js/install-launch.mjs"></script>
