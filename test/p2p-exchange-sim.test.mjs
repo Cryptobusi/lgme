@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as sim from '../js/p2p-exchange-sim.mjs';
+import { decideInstallAction, isIosSafari, isStandalone } from '../js/install-launch.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -1152,4 +1153,34 @@ test('the standing donation is pinned in both listing kinds and never expires', 
   assert.equal(page.includes('https://pump.fun/coin/7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump'), true);
   const again = await sim.ensureStandingDonation(store, far);
   assert.equal(again.listing.id, ensured.listing.id);
+});
+
+test('Install & launch hides in the app, prompts when it can, and otherwise opens the desk', () => {
+  assert.equal(decideInstallAction({ standalone: true, iosSafari: false, hasPrompt: true, installed: false }), 'hide');
+  assert.equal(decideInstallAction({ standalone: true, iosSafari: true, hasPrompt: false, installed: true }), 'hide');
+  assert.equal(decideInstallAction({ standalone: false, iosSafari: true, hasPrompt: false, installed: false }), 'tooltip');
+  assert.equal(decideInstallAction({ standalone: false, iosSafari: false, hasPrompt: true, installed: false }), 'prompt');
+  assert.equal(decideInstallAction({ standalone: false, iosSafari: false, hasPrompt: true, installed: true }), 'launch');
+  assert.equal(decideInstallAction({ standalone: false, iosSafari: false, hasPrompt: false, installed: false }), 'launch');
+  assert.equal(isStandalone({ matchMedia: () => ({ matches: true }) }, {}), true);
+  assert.equal(isStandalone({ matchMedia: () => ({ matches: false }) }, { standalone: true }), true);
+  assert.equal(isStandalone({ matchMedia: () => ({ matches: false }) }, { standalone: false }), false);
+  assert.equal(isIosSafari({ userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1', platform: 'iPhone', maxTouchPoints: 5 }), true);
+  assert.equal(isIosSafari({ userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/120.0.0.0 Mobile/15E148 Safari/604.1', platform: 'iPhone', maxTouchPoints: 5 }), false);
+  assert.equal(isIosSafari({ userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36', platform: 'Linux', maxTouchPoints: 0 }), false);
+  const source = readFileSync(join(root, 'js/install-launch.mjs'), 'utf8');
+  assert.equal(source.includes('Share > Add to Home Screen'), true);
+  assert.equal(source.includes('beforeinstallprompt'), true);
+  assert.equal(source.includes('appinstalled'), true);
+  assert.equal(source.includes('getInstalledRelatedApps'), true);
+  assert.equal(source.includes("location.assign('/p2p-exchange-sim')") || source.includes('location.assign(APP_PATH)'), true);
+  for (const file of ['index.html', 'p2p-exchange-sim.html', 'lgme-coin.html']) {
+    const page = readFileSync(join(root, file), 'utf8');
+    assert.equal(page.includes('data-install-launch'), true, file);
+    assert.equal(page.includes('Install &amp; launch'), true, file);
+    assert.equal(page.includes('/js/install-launch.mjs'), true, file);
+    assert.equal(page.includes('#F97316'), true, file);
+    const top = page.slice(page.indexOf('<body>'), page.indexOf('<body>') + 280);
+    assert.equal(top.includes('data-install-launch'), true, file + ' top');
+  }
 });

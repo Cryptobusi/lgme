@@ -157,6 +157,10 @@
     .capture button, .capture .btn { color:#fff; border-color:#444; }
     .coin { width:2.5rem; height:2.5rem; border-radius:50%; object-fit:cover; display:block; }
     .balance-hero .coin { width:3.25rem; height:3.25rem; }
+    .launch-bar { position: relative; display: flex; margin: 0; padding: 0.45rem 1rem; background: var(--panel); border-bottom: 1px solid var(--line); }
+    .launch-bar[hidden] { display: none; }
+    .install-launch { font: inherit; font-size: 0.82rem; font-weight: 600; min-height: 44px; padding: 0.35rem 0.85rem; border: 0; border-radius: 999px; background: #F97316; color: #1c1b19; text-decoration: none; display: inline-flex; align-items: center; }
+    .install-tip { position: absolute; left: 1rem; top: 100%; z-index: 8; margin-top: 0.25rem; background: #1c1b19; color: #fff; border: 1px solid #F97316; border-radius: 8px; padding: 0.4rem 0.65rem; font-size: 0.82rem; }
     .coin-pin { margin:0; padding:0.4rem 1rem; font-size:0.82rem; background:var(--panel); border-bottom:1px solid var(--line); }
     .coin-pin a { color:var(--accent-text); text-decoration:none; }
     .splash { position:fixed; inset:0; z-index:60; display:grid; place-items:center; background:var(--bg); padding:1.25rem; }
@@ -169,6 +173,7 @@
   </style>
 </head>
 <body>
+  <p class="launch-bar"><a class="install-launch" data-install-launch href="/p2p-exchange-sim">Install &amp; launch</a></p>
   <div id="splash" class="splash" role="dialog" aria-label="lgme" hidden>
     <div class="splash-card">
       <div class="splash-coin">
@@ -233,6 +238,7 @@
   </nav>
   <div id="toast" role="status" aria-live="polite" hidden></div>
   <p class="sim-banner" role="note">SIMULATION. Floor stays senior. A refusal is recorded, moves no balance, and carries no penalty. The 2FA, the $lgme, and the messages are simulated. This page never sends them.</p>
+  <script type="module" src="/js/install-launch.mjs"></script>
   <script src="/js/vendor/qrcode.js"></script>
   <script src="/js/vendor/jsQR.js"></script>
   <script type="module" src="/js/p2p-exchange-sim-ui.mjs"></script>

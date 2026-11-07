@@ -37,6 +37,11 @@
       text-transform: uppercase;
       color: var(--gold);
     }
+    .launch-bar { position: relative; display: flex; margin: -1.5rem -1.25rem 0.85rem; padding: 0.55rem 1.25rem; }
+    .launch-bar[hidden] { display: none; }
+    .install-launch { appearance: none; font: inherit; font-size: 0.82rem; font-weight: 600; min-height: 44px; padding: 0.35rem 0.85rem; border: 0; border-radius: 999px; background: #F97316; color: #1c1b19; text-decoration: none; display: inline-flex; align-items: center; }
+    .install-launch:hover { color: #1c1b19; }
+    .install-tip { position: absolute; left: 1.25rem; top: calc(100% - 0.35rem); z-index: 8; background: #1c1b19; color: #fff; border: 1px solid #F97316; border-radius: 8px; padding: 0.4rem 0.65rem; font-size: 0.82rem; }
     h1, h2 { font-family: Newsreader, serif; font-weight: 500; letter-spacing: -0.02em; }
     h1 { font-size: clamp(2.4rem, 7vw, 3.7rem); line-height: 1.02; margin: 0.6rem 0 0; }
     h2 { font-size: clamp(1.8rem, 4vw, 2.35rem); line-height: 1.12; margin: 0.4rem 0 0.9rem; }
@@ -193,6 +198,7 @@
   </style>
 </head>
 <body>
+  <p class="launch-bar"><a class="install-launch" data-install-launch href="/p2p-exchange-sim">Install &amp; launch</a></p>
   <p class="kicker" style="margin:0 0 0.35rem;"><a href="/lgme-coin">$lgme on pump.fun</a></p>
   <div class="menu-toggle" id="menu-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="main-nav">
     <span class="kicker">Menu</span>
@@ -352,5 +358,6 @@
       });
     })();
   </script>
+  <script type="module" src="/js/install-launch.mjs"></script>
 </body>
 </html>

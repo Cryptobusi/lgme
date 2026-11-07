@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>$lgme on Solana · lgme</title>
   <meta name="description" content="Real $lgme token on Solana. Not financial advice. The practice balances in the app are a simulation and are not this token." />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#F97316" />
   <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500&display=swap" />
   <style>
@@ -29,9 +32,14 @@
     ol { margin:0.4rem 0 0; padding-left:1.2rem; }
     li { margin:0.35rem 0; }
     .qr { display:inline-block; background:#fff; padding:8px; border-radius:8px; }
+    .launch-bar { position: relative; display: flex; margin: 0; padding: 0.45rem 1.1rem; background: var(--panel); border-bottom: 1px solid var(--line); }
+    .launch-bar[hidden] { display: none; }
+    .install-launch { font: inherit; font-size: 0.82rem; font-weight: 600; min-height: 44px; padding: 0.35rem 0.85rem; border: 0; border-radius: 999px; background: #F97316; color: #1c1b19; text-decoration: none; display: inline-flex; align-items: center; }
+    .install-tip { position: absolute; left: 1.1rem; top: 100%; z-index: 8; margin-top: 0.25rem; background: #1c1b19; color: #fff; border: 1px solid #F97316; border-radius: 8px; padding: 0.4rem 0.65rem; font-size: 0.82rem; }
   </style>
 </head>
 <body>
+  <p class="launch-bar"><a class="install-launch" data-install-launch href="/p2p-exchange-sim">Install &amp; launch</a></p>
   <p class="notice">Real token on Solana. Not financial advice. High risk; you may lose everything. Always verify the mint address. The in-app $lgme balances are a simulation and are not this token.</p>
   <div class="wrap">
     <p class="muted"><a href="/">Desk</a> · <a href="/p2p-exchange-sim">Practice desk</a></p>
@@ -79,6 +87,7 @@
       <p>This is a separate account from the Solana wallet.</p>
     </div>
   </div>
+  <script type="module" src="/js/install-launch.mjs"></script>
   <script src="/js/vendor/qrcode.js"></script>
   <script>
     function copyFrom(id, button) {
