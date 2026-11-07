@@ -1,0 +1,81 @@
+{
+  "results": [
+    {
+      "name": "phone splash",
+      "pass": true,
+      "detail": "splash shown then skipped"
+    },
+    {
+      "name": "phone simulation label and token link",
+      "pass": true,
+      "detail": "{\"sim\":true,\"trust\":false,\"pin\":\"$lgme on pump.fun\",\"href\":\"/lgme-coin\"}"
+    },
+    {
+      "name": "phone pinned donation in both kinds",
+      "pass": true,
+      "detail": "{\"href\":\"/lgme-coin\",\"text\":\"Receive / send $lgme\",\"copy\":\"help grow n floor, thank you.\",\"sim\":true}"
+    },
+    {
+      "name": "phone offer accept handoff",
+      "pass": true,
+      "detail": "Settled. Buyer 112 · seller 88. SIMULATION."
+    },
+    {
+      "name": "phone SMS token and match",
+      "pass": true,
+      "detail": "matched"
+    },
+    {
+      "name": "phone media file verify",
+      "pass": true,
+      "detail": "Verified. The file matches the tape."
+    },
+    {
+      "name": "phone invoice pay reward",
+      "pass": true,
+      "detail": "94.12 Balance | 50 Floor · food/rent | 44.12 Above the floor | 0.12 Rewards | 14.12 Credits | 0 Debits"
+    },
+    {
+      "name": "phone soBeIT grant",
+      "pass": true,
+      "detail": "Simulated grant recorded. Balance 99.12. No real funds moved."
+    },
+    {
+      "name": "phone resources",
+      "pass": true,
+      "detail": "magazine opened"
+    },
+    {
+      "name": "phone register KYC 2FA and send",
+      "pass": true,
+      "detail": "verified and delivered"
+    },
+    {
+      "name": "phone IOU attest",
+      "pass": true,
+      "detail": "Attested. The book moved. Bob (Agronomist) 96.12 · Alice (Providore) 113"
+    },
+    {
+      "name": "phone installability",
+      "pass": true,
+      "detail": "{\"manifest\":\"https://lgme.app/manifest.webmanifest\",\"scope\":\"https://lgme.app/\",\"active\":true}"
+    },
+    {
+      "name": "phone coin page exact strings",
+      "pass": true,
+      "detail": "{\"mint\":\"7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump\",\"donate\":\"6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY\",\"buy\":\"https://pump.fun/coin/7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump\",\"trust\":false,\"sim\":true}"
+    },
+    {
+      "name": "desktop splash and layout",
+      "pass": true,
+      "detail": "desktop market 1265"
+    },
+    {
+      "name": "desktop resources and wallet",
+      "pass": true,
+      "detail": "wallet and resources"
+    }
+  ],
+  "errors": [],
+  "warnings": []
+}
