@@ -559,6 +559,10 @@ test('resources magazine keeps the explainer sections', () => {
     'The third seat',
     'The broken car',
     'Practice market',
+    'IprovIT',
+    'Found on OfferUp (DC area)',
+    'Reconcile as donation to the floor',
+    'THANK YOU FOR YOUR SUPPORT.',
     'How this desk stays shut',
     'SPP_Overview.pptx'
   ]) {
@@ -584,7 +588,8 @@ test('pages stay simulation-only', () => {
   assert.equal(engine.includes('fetch('), false);
   const ui = readFileSync(join(root, 'js/p2p-exchange-sim-ui.mjs'), 'utf8');
   assert.equal(ui.includes("fetch('/data/dc-reference-values-v0.json')"), true);
-  assert.equal((ui.match(/fetch\(/g) || []).length, 1);
+  assert.equal(ui.includes("fetch('/data/offerup-dc-v0.json')"), true);
+  assert.equal((ui.match(/fetch\(/g) || []).length, 2);
   const design = readFileSync(join(root, 'docs/marketplace-design.md'), 'utf8');
   for (const word of banned) assert.equal(design.includes(word), false, `docs/marketplace-design.md contains ${word}`);
   assert.equal(design.includes('Trust Score'), false);
@@ -601,6 +606,7 @@ async function sampleListing(store, sellerId, spec = {}) {
     circle: spec.circle || 'Walkway',
     area: spec.area || 'Near the path',
     amount: spec.amount ?? 12,
+    kind: spec.kind,
     photo,
     photoHash: await sim.sha256(photo),
     at: spec.at || '2026-11-06T00:00:00.000Z'
@@ -1317,6 +1323,92 @@ test('Install & launch opens the desk after the prompt, a slow install check, an
   }
 });
 
+test('an offer waits for both signatures, then a term plan and a floor donation stay simulated', async () => {
+  const file = JSON.parse(readFileSync(join(root, 'data/offerup-dc-v0.json'), 'utf8'));
+  assert.deepEqual(file.items, []);
+  assert.equal(file.schema.kind, 'sell|buy|give');
+  assert.deepEqual(sim.offerupFeed(file), []);
+  const schedule = sim.termSchedule(10, 3, '2026-11-07T00:00:00.000Z');
+  assert.equal(schedule.ok, true, schedule.error);
+  assert.equal(schedule.installments.map((row) => row.amount).reduce((sum, n) => sim.round2(sum + n), 0), 10);
+  assert.equal(schedule.installments[0].dueAt.slice(0, 10), '2026-12-07');
+  assert.equal(sim.termSchedule(10, 2, '2026-11-07T00:00:00.000Z').ok, false);
+  const store = await books();
+  for (const [id, phone] of [['alice', '+12025550101'], ['bob', '+12025550102']]) {
+    const peer = await store.get(id);
+    peer.kyc = { status: 'VERIFIED', displayName: peer.name, phone, salt: `salt-${id}` };
+    await store.set(id, peer);
+  }
+  const service = await sampleListing(store, 'bob', { title: 'Soil hours', kind: 'IprovIT', amount: 12, category: 'Services' });
+  assert.equal(service.listing.kind, 'IprovIT');
+  const external = await sim.signOffer(store, 'alice', {
+    external: { title: 'Lamp', price: 20, city: 'Washington', url: 'https://offerup.com/item/example', image: '', kind: 'sell', sourcedAt: '2026-11-07' },
+    cashMode: 'full',
+    amount: 20,
+    at: '2026-11-07T00:00:00.000Z'
+  });
+  assert.equal(external.ok, true, external.error);
+  assert.equal(external.contract, false);
+  assert.equal(external.sent, false);
+  assert.equal(external.offer.status, 'draft');
+  assert.match(external.draft, /Third-party listing on OfferUp, not verified by lgme/);
+  assert.match(external.draft, /Nothing was sent/);
+  const listed = await sampleListing(store, 'bob', { title: 'Hand saw', amount: 10 });
+  const first = await sim.signOffer(store, 'alice', {
+    listingId: listed.listing.id,
+    cashMode: 'terms',
+    months: 3,
+    amount: 10,
+    serviceIds: [service.listing.id],
+    automate: true,
+    at: '2026-11-07T00:00:00.000Z'
+  });
+  assert.equal(first.ok, true, first.error);
+  assert.equal(first.contract, false);
+  assert.equal(first.offer.status, 'awaiting');
+  const before = await balances(store);
+  const second = await sim.countersignOffer(store, 'bob', first.offer.id, { automate: true, at: '2026-11-07T00:10:00.000Z' });
+  assert.equal(second.ok, true, second.error);
+  assert.equal(second.contract, true);
+  assert.equal(second.invoiceIds.length, 3);
+  assert.deepEqual(await balances(store), before);
+  const aliceBook = await store.get('alice');
+  const bobBook = await store.get('bob');
+  assert.equal(aliceBook.tape.filter((entry) => entry.type === 'INVOICE').length, 3);
+  assert.equal(bobBook.tape.filter((entry) => entry.type === 'INVOICE').length, 3);
+  assert.equal(aliceBook.tape.some((entry) => entry.type === 'SERIAL_AUDIT' && entry.payload.penalty === false), true);
+  assert.equal(bobBook.tape.some((entry) => entry.type === 'SERIAL_AUDIT'), true);
+  const overdue = sim.overdueInvoices(aliceBook, '2027-03-01T00:00:00.000Z');
+  assert.equal(overdue.length, 3);
+  assert.ok(overdue[0].dueAt <= overdue[2].dueAt);
+  const reminded = await sim.remindInvoice(store, 'bob', second.invoiceIds[0], '2027-03-01T00:00:00.000Z');
+  assert.equal(reminded.ok, true, reminded.error);
+  assert.equal(reminded.penalty, false);
+  assert.equal(reminded.unchanged, true);
+  assert.equal((await store.get('alice')).tape.some((entry) => entry.type === 'REMINDER'), true);
+  const part = await sim.payInvoice(store, 'alice', second.invoiceIds[0], { amount: 1, at: '2026-12-08T00:00:00.000Z' });
+  assert.equal(part.ok, true, part.error);
+  assert.ok(part.remaining > 0);
+  const one = await sim.consentFloorDonation(store, 'alice', second.invoiceIds[1], '2026-12-08T00:00:00.000Z');
+  assert.equal(one.closed, false);
+  const both = await sim.consentFloorDonation(store, 'bob', second.invoiceIds[1], '2026-12-08T00:00:00.000Z');
+  assert.equal(both.ok, true, both.error);
+  assert.equal(both.closed, true);
+  assert.equal(both.penalty, false);
+  assert.equal(both.message, 'THANK YOU FOR YOUR SUPPORT.');
+  const closed = sim.readInvoices(await store.get('alice'), '2026-12-08T00:00:00.000Z').find((row) => row.invoiceId === second.invoiceIds[1]);
+  assert.equal(closed.status, 'donated');
+  assert.equal(closed.thanks, 'THANK YOU FOR YOUR SUPPORT.');
+  const page = readFileSync(join(root, 'js/p2p-exchange-sim-ui.mjs'), 'utf8');
+  assert.equal(page.includes('Found on OfferUp (DC area)'), true);
+  assert.equal(page.includes('No OfferUp listings in this file yet.'), true);
+  assert.equal(page.includes('Continue on OfferUp'), true);
+  assert.equal(page.includes("rel: 'noopener noreferrer'"), true);
+  assert.equal(page.includes('Offer on this item'), true);
+  assert.equal(page.includes('Reconcile as donation to the floor'), true);
+  assert.equal(page.includes('IprovIT · I provide it'), true);
+});
+
 test('offline mode refuses a spend and an online challenge is acknowledged', async () => {
   const store = await books();
   const offline = await sim.createTransfer(store, 'alice', { toId: 'bob', amount: 1, navigator: { onLine: false } });
@@ -1524,7 +1616,8 @@ test('DC reference values stay pending when a series has no number', () => {
   assert.equal(helper.includes('fetch('), false);
   const ui = readFileSync(join(root, 'js/p2p-exchange-sim-ui.mjs'), 'utf8');
   assert.equal(ui.includes("fetch('/data/dc-reference-values-v0.json')"), true);
-  assert.equal((ui.match(/fetch\(/g) || []).length, 1);
+  assert.equal(ui.includes("fetch('/data/offerup-dc-v0.json')"), true);
+  assert.equal((ui.match(/fetch\(/g) || []).length, 2);
   assert.equal(ui.includes('REFERENCE_LABEL'), true);
   assert.equal(ui.includes("id: 'dc-reference'"), true);
   assert.equal(helper.includes("simulation reference values"), true);
@@ -1538,7 +1631,7 @@ test('DC reference values stay pending when a series has no number', () => {
   assert.equal(page.includes('id="refList"'), true);
   assert.equal(/<script(?![^>]*\bsrc=)/i.test(page), false);
   const worker = readFileSync(join(root, 'sw.js'), 'utf8');
-  assert.equal(worker.includes('lgme-v39'), true);
+  assert.equal(worker.includes('lgme-v40'), true);
   assert.equal(worker.includes('/js/dc-reference.mjs'), true);
   assert.equal(worker.includes('/data/dc-reference-values-v0.json'), true);
 });

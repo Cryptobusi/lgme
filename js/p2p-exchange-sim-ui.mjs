@@ -69,6 +69,9 @@ let pendingImport = '';
 let carryAddress = '';
 let activeCodeTimer = 0;
 let catalog = [];
+let offerupItems = [];
+let offerupIndex = -1;
+let openOfferFor = '';
 let catalogMeta = { date: '', notice: '', method: '' };
 let catalogNotice = `${REFERENCE_LABEL}. Reference only, not a price.`;
 let busy = false;
@@ -811,7 +814,7 @@ async function renderBooks(peers, seat) {
     }
   });
   const now = new Date().toISOString();
-  const invoices = sim.readInvoices(peer, now);
+  const invoices = sim.sortInvoices(sim.readInvoices(peer, now), now);
   const buckets = sim.invoiceBuckets(peer, now);
   const invoiceCards = invoices.map((row) => {
     const payAmount = h('input', { type: 'number', min: '0.01', step: '0.01', inputmode: 'decimal', value: String(row.remaining || '') });
@@ -819,7 +822,19 @@ async function renderBooks(peers, seat) {
     const code = h('input', { inputmode: 'numeric', autocomplete: 'one-time-code', maxlength: '8' });
     const note = h('input', { maxlength: '160', placeholder: 'REFUSAL' });
     const actions = [];
-    if (row.role === 'AR' && row.remaining > 0 && row.status !== 'refused') {
+    if (row.remaining > 0 && row.status !== 'refused' && row.status !== 'donated') {
+      actions.push(h('button', { type: 'button', onClick: async () => {
+        const result = await sim.remindInvoice(store, seat, row.invoiceId);
+        setStatus(result.ok ? 'Reminder recorded on the tapes. Nothing was sent. No penalty. SIMULATION.' : result.error, result.ok ? 'ok' : 'bad');
+        if (result.ok) await render();
+      } }, ['Remind']));
+      actions.push(h('button', { type: 'button', id: 'donate-floor', onClick: async () => {
+        const result = await sim.consentFloorDonation(store, seat, row.invoiceId);
+        setStatus(result.closed ? result.message : 'Your consent is signed. The other party still has to consent. No penalty. SIMULATION.', result.ok ? 'ok' : 'bad');
+        if (result.ok) await render();
+      } }, ['Reconcile as donation to the floor']));
+    }
+    if (row.role === 'AR' && row.remaining > 0 && row.status !== 'refused' && row.status !== 'donated') {
       actions.push(h('a', { class: 'btn', href: '#', onClick: async (event) => {
         event.preventDefault();
         const payload = (await store.get(seat)).tape.find((entry) => entry.type === 'INVOICE' && entry.payload?.invoiceId === row.invoiceId)?.payload;
@@ -844,7 +859,8 @@ async function renderBooks(peers, seat) {
     }
     return h('article', { class: 'card', id: row.role === 'AR' ? 'invoice-ar' : 'invoice-ap' }, [
       h('h3', {}, [`${row.role} · ${row.status} · ${row.amount} $lgme`]),
-      h('p', { class: 'muted' }, [`Paid ${row.paid}. Remaining ${row.remaining}. Bucket ${row.bucket}. Due ${row.dueAt.slice(0, 10)}. Phone ${row.payerPhone}. Hash ${row.payerKycHash.slice(0, 12)}.`]),
+      h('p', { class: 'muted' }, [`Paid ${row.paid}. Remaining ${row.remaining}. Bucket ${row.bucket}. Due ${String(row.dueAt).slice(0, 10)}. Phone ${row.payerPhone}. Hash ${String(row.payerKycHash || '').slice(0, 12)}.`]),
+      row.thanks ? h('p', { class: 'legend' }, [row.thanks]) : null,
       row.role === 'AP' && row.remaining > 0 ? h('div', {}, [field('Amount', payAmount), field('Passphrase', pass), field('6-digit code', code), field('Refusal note', note)]) : null,
       h('div', { class: 'actions' }, actions)
     ]);
@@ -860,6 +876,7 @@ async function renderBooks(peers, seat) {
       h('div', {}, [h('strong', {}, [String(view.credits)]), 'Credits']),
       h('div', {}, [h('strong', {}, [String(view.debits)]), 'Debits'])
     ]),
+    h('section', { id: 'offers' }, offerCards(peer, seat)),
     h('section', { id: 'invoices' }, [
       h('h3', {}, ['Receivable and payable']),
       h('p', { class: 'muted' }, [`Open, due, and overdue stay off the balance until a coded payment. Ageing ${buckets['0-30']} in 0-30, ${buckets['31-60']} in 31-60, ${buckets['60+']} in 60+.`]),
@@ -1902,6 +1919,138 @@ function chip(label, on, click) {
   return h('button', { type: 'button', class: 'chip', 'aria-pressed': on ? 'true' : 'false', onClick: click }, [label]);
 }
 
+function offerCards(peer, seat) {
+  const rows = Object.values(peer.offers || {});
+  if (!rows.length) return [];
+  return [
+    h('h3', {}, ['Offers']),
+    h('p', { class: 'legend' }, ['A contract waits for both signatures. Collection is a reminder and a reconciliation. There is no penalty. SIMULATION.']),
+    ...rows.map((offer) => h('article', { class: 'card', id: `offer-${offer.id.slice(0, 8)}` }, [
+      h('h3', {}, [`${offer.title} · ${offer.status}`]),
+      offer.thanks ? h('p', {}, [offer.thanks]) : null,
+      offer.external ? h('p', { class: 'legend' }, [sim.offerupDraft(offer)]) : null,
+      offer.status === 'awaiting' && !offer.consents?.[seat]
+        ? h('button', { type: 'button', class: 'primary', onClick: async () => {
+          const result = await sim.countersignOffer(store, seat, offer.id, { automate: true });
+          setStatus(result.ok ? (result.contract ? 'Both signed. The contract is on both tapes. Nothing was sent. SIMULATION.' : result.error || 'Signed.') : result.error, result.ok ? 'ok' : 'bad');
+          if (result.ok) await render();
+        } }, ['Sign consent'])
+        : null,
+      offer.status === 'contract'
+        ? h('button', { type: 'button', onClick: async () => {
+          const result = await sim.consentContractDonation(store, seat, offer.id);
+          setStatus(result.closed ? result.message : 'Your consent is signed. The other party still has to consent. No penalty. SIMULATION.', result.ok ? 'ok' : 'bad');
+          if (result.ok) await render();
+        } }, ['Reconcile as donation to the floor'])
+        : null
+    ]))
+  ];
+}
+
+function offerForm(seat, target, serviceList = []) {
+  const amount = h('input', { type: 'number', min: '0.01', step: '0.01', value: target.amount != null ? String(target.amount) : '' });
+  const mode = h('select', {}, [
+    option('full', 'Cash in full', true),
+    option('3', 'Term payments, 3 months', false),
+    option('4', 'Term payments, 4 months', false),
+    option('5', 'Term payments, 5 months', false),
+    option('6', 'Term payments, 6 months', false),
+    option('service', 'IprovIT service only', false)
+  ]);
+  const preview = h('p', { class: 'legend' }, ['']);
+  const services = catalogServices(serviceList);
+  function paint() {
+    const choice = mode.value;
+    if (choice !== 'full' && choice !== 'service') {
+      const built = sim.termSchedule(amount.value, Number(choice), new Date().toISOString());
+      preview.textContent = built.ok
+        ? built.installments.map((row) => `${row.n}. ${row.amount} due ${row.dueAt.slice(0, 10)}`).join(' · ')
+        : built.error;
+      return;
+    }
+    preview.textContent = choice === 'full' ? 'Cash in full. No installment is written until both parties sign.' : 'Pick one or more IprovIT services. The value stays simulated.';
+  }
+  mode.addEventListener('change', paint);
+  amount.addEventListener('input', paint);
+  paint();
+  const form = h('form', { id: 'offer-form' }, [
+    h('h3', {}, ['Offer on this item']),
+    h('p', { class: 'legend' }, ['SIMULATION. Both parties sign before a contract exists. An OfferUp draft is copied by hand. Nothing is sent.']),
+    field('Amount', amount),
+    field('How to pay', mode),
+    services.box,
+    preview,
+    h('div', { class: 'actions' }, [h('button', { class: 'primary', type: 'submit' }, [target.external ? 'Copy draft offer' : 'Sign consent'])])
+  ]);
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (busy) return;
+    busy = true;
+    try {
+      const choice = mode.value;
+      const result = await sim.signOffer(store, seat, {
+        listingId: target.listingId || '',
+        external: target.external || null,
+        toId: target.toId || '',
+        cashMode: choice === 'service' ? '' : choice === 'full' ? 'full' : 'terms',
+        months: ['3', '4', '5', '6'].includes(choice) ? Number(choice) : 0,
+        amount: amount.value,
+        serviceIds: services.selected(),
+        automate: choice !== 'full' && choice !== 'service'
+      });
+      if (!result.ok) { setStatus(result.error, 'bad'); return; }
+      if (result.draft) {
+        try { await navigator.clipboard.writeText(result.draft); } catch { /* the draft stays on screen */ }
+        setStatus('Draft offer copied. Nothing was sent. Paste it on OfferUp yourself. SIMULATION.', 'ok');
+      } else {
+        setStatus(result.contract ? 'Both signed. SIMULATION.' : 'Your consent is signed. The other party still has to sign. Nothing was sent. SIMULATION.', 'ok');
+      }
+      openOfferFor = '';
+      offerupIndex = -1;
+      await render();
+    } finally {
+      busy = false;
+    }
+  });
+  return form;
+}
+
+function catalogServices(list) {
+  const boxes = (list || []).map((item) => {
+    const box = h('input', { type: 'checkbox', value: item.id });
+    return { box, id: item.id, title: `${item.title} · ${item.amount} $lgme` };
+  });
+  return {
+    selected: () => boxes.filter((row) => row.box.checked).map((row) => row.id),
+    box: h('fieldset', {}, [
+      h('legend', {}, ['IprovIT services']),
+      boxes.length
+        ? h('p', { class: 'legend', id: 'iprov-services' }, ['Services listed as IprovIT can be offered in place of cash. In-app $lgme stays simulated.'])
+        : h('p', { class: 'legend', id: 'iprov-services' }, ['No IprovIT services are listed yet.']),
+      ...boxes.map((row) => h('label', { class: 'row' }, [row.box, ` ${row.title}`]))
+    ])
+  };
+}
+
+function offerupSection(seat, serviceList) {
+  const cards = offerupItems.map((item, index) => h('article', { class: 'card', id: `offerup-${index}` }, [
+    item.image ? h('img', { alt: '', src: item.image }) : null,
+    h('h3', {}, [item.title]),
+    h('p', {}, [`${item.kind} · ${item.city || 'DC area'}${item.price == null ? '' : ` · ${item.price}`}`]),
+    h('p', { class: 'legend' }, [sim.OFFERUP_CAVEAT]),
+    h('p', { class: 'muted' }, [`As of ${item.sourcedAt || 'pending'}`]),
+    h('div', { class: 'actions' }, [
+      h('a', { class: 'btn primary', href: item.url, target: '_blank', rel: 'noopener noreferrer' }, ['Continue on OfferUp']),
+      h('button', { type: 'button', onClick: () => { offerupIndex = index; openOfferFor = ''; render(); } }, ['Offer on this item'])
+    ]),
+    offerupIndex === index ? offerForm(seat, { external: item, amount: item.price, title: item.title }, serviceList) : null
+  ]));
+  return h('section', { id: 'offerup-dc' }, [
+    h('h3', {}, ['Found on OfferUp (DC area)']),
+    cards.length ? h('div', { class: 'grid' }, cards) : h('p', { class: 'empty', id: 'offerup-empty' }, ['No OfferUp listings in this file yet.'])
+  ]);
+}
+
 async function renderMarket(peers, seat) {
   stopAnyCamera();
   const panel = document.getElementById('panel');
@@ -1913,6 +2062,7 @@ async function renderMarket(peers, seat) {
       openListingId = '';
     } else {
       const seller = await store.get(card.sellerId);
+      const serviceList = await sim.marketFeed(store, { kind: 'IprovIT' });
       const profile = sim.peerProfile(seller);
       const slides = await mediaSlides(card.sellerId, sim.listMedia(seller, { listingId: card.id }).filter((record) => !record.ownerId || record.ownerId === card.sellerId));
       const gallery = h('div', { class: 'carousel', id: 'listing-gallery' }, [
@@ -1935,6 +2085,7 @@ async function renderMarket(peers, seat) {
           openThreadId = chat.thread.id;
           location.hash = 'chats';
         } }, ['Chat']));
+        actions.push(h('button', { type: 'button', id: 'offer-on-item', onClick: () => { offerupIndex = -1; openOfferFor = card.id; render(); } }, ['Offer on this item']));
       }
       panel.replaceChildren(...[
         h('button', { type: 'button', class: 'quiet', onClick: () => { openListingId = ''; render(); } }, ['Back to the market']),
@@ -1952,6 +2103,7 @@ async function renderMarket(peers, seat) {
         card.referenceAvg == null ? null : h('p', { class: 'legend' }, [`Reference only, not a price. About ${card.referenceAvg}.`]),
         h('p', { class: 'legend' }, [card.signatureOk ? `Origin ${shortHash(card.originHash)} verifies.` : 'Origin hash does not verify.']),
         profileCard(profile),
+        openOfferFor === card.id ? offerForm(seat, { listingId: card.id, title: card.title, amount: card.amount, toId: card.sellerId === seat ? '' : card.sellerId }, serviceList) : null,
         h('div', { class: 'actions' }, actions)
       ].filter(Boolean));
       return;
@@ -1959,6 +2111,7 @@ async function renderMarket(peers, seat) {
   }
   await sim.ensureStandingDonation(store);
   const feed = await sim.marketFeed(store, marketQuery);
+  const serviceList = await sim.marketFeed(store, { kind: 'IprovIT' });
   const search = h('input', { type: 'search', placeholder: 'Search', value: marketQuery.q, autocomplete: 'off' });
   const condition = h('select', {}, [option('', 'Any condition', !marketQuery.condition), ...CONDITIONS.map((item) => option(item, item, marketQuery.condition === item))]);
   const pickup = h('select', {}, [option('', 'Any pickup', !marketQuery.pickup), ...PICKUPS.map((item) => option(item, item, marketQuery.pickup === item))]);
@@ -1985,7 +2138,8 @@ async function renderMarket(peers, seat) {
   const kinds = h('div', { class: 'chips', id: 'kind-pills' }, [
     chip('All', !marketQuery.kind, () => { marketQuery.kind = ''; render(); }),
     chip('ihavIT', marketQuery.kind === 'ihavIT', () => { marketQuery.kind = 'ihavIT'; render(); }),
-    chip('IwanIT', marketQuery.kind === 'IwanIT', () => { marketQuery.kind = 'IwanIT'; render(); })
+    chip('IwanIT', marketQuery.kind === 'IwanIT', () => { marketQuery.kind = 'IwanIT'; render(); }),
+    chip('IprovIT', marketQuery.kind === 'IprovIT', () => { marketQuery.kind = 'IprovIT'; render(); })
   ]);
   const pills = h('div', { class: 'chips' }, [
     chip('All', !marketQuery.category, () => { marketQuery.category = ''; render(); }),
@@ -2014,6 +2168,7 @@ async function renderMarket(peers, seat) {
     pills,
     filters,
     feed.length ? grid : h('p', { class: 'empty' }, ['No listings match. List one, or clear the filters.']),
+    offerupSection(seat, serviceList),
     referenceCatalogCard(),
     standing ? profileCard(standing) : null
   );
@@ -2098,7 +2253,7 @@ async function renderList(seat) {
   }
   if (listStep === 2) {
     const title = h('input', { required: true, maxlength: '80', value: listDraft.title });
-    const kind = h('select', {}, sim.LISTING_KINDS.map((item) => option(item, item === 'ihavIT' ? 'ihavIT · I have it' : 'IwanIT · I want it', (listDraft.kind || 'ihavIT') === item)));
+    const kind = h('select', {}, sim.LISTING_KINDS.map((item) => option(item, item === 'ihavIT' ? 'ihavIT · I have it' : item === 'IwanIT' ? 'IwanIT · I want it' : 'IprovIT · I provide it', (listDraft.kind || 'ihavIT') === item)));
     const category = h('select', {}, CATEGORIES.map((item) => option(item, item, listDraft.category === item)));
     const condition = h('select', {}, CONDITIONS.map((item) => option(item, item, listDraft.condition === item)));
     const pickup = h('select', {}, PICKUPS.map((item) => option(item, item, listDraft.pickup === item)));
@@ -2638,6 +2793,14 @@ async function loadReferences() {
     catalog = [];
     catalogMeta = { date: '', notice: '', method: '' };
     catalogNotice = `Reference list did not load. You can still name the work yourself. ${REFERENCE_LABEL}. Reference only, not a price.`;
+  }
+  try {
+    const response = await fetch('/data/offerup-dc-v0.json');
+    if (!response.ok) throw new Error(String(response.status));
+    const body = await response.json();
+    offerupItems = sim.offerupFeed(body);
+  } catch {
+    offerupItems = [];
   }
 }
 

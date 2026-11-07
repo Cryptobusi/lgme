@@ -1,0 +1,14 @@
+{
+  "label": "Found on OfferUp (DC area)",
+  "notice": "Third-party listing on OfferUp, not verified by lgme. Price and availability may have changed. Deal is between you and the seller.",
+  "schema": {
+    "title": "string",
+    "price": "number",
+    "city": "string",
+    "url": "string",
+    "image": "string",
+    "kind": "sell|buy|give",
+    "sourcedAt": "ISO-8601 date"
+  },
+  "items": []
+}

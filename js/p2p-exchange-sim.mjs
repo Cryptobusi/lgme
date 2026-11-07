@@ -23,7 +23,10 @@ export const REWARD_RATE = 0.02;
 export const REWARD_CAP = 5;
 export const REWARD_PERIOD_DAYS = 30;
 export const LISTING_DAYS = 14;
-export const LISTING_KINDS = Object.freeze(['ihavIT', 'IwanIT']);
+export const LISTING_KINDS = Object.freeze(['ihavIT', 'IwanIT', 'IprovIT']);
+export const TERM_MONTHS = Object.freeze([3, 4, 5, 6]);
+export const OFFERUP_CAVEAT = 'Third-party listing on OfferUp, not verified by lgme. Price and availability may have changed. Deal is between you and the seller.';
+export const DONATION_THANKS = 'THANK YOU FOR YOUR SUPPORT.';
 export const STANDING_DONATION = Object.freeze({
   title: 'Donation — soBeIT',
   description: 'help grow n floor, thank you.',
@@ -41,7 +44,7 @@ export function layoutMode({ width, coarse = false, uaMobile = false } = {}) {
   if (uaMobile && coarse && w <= 1023) return 'phone';
   return 'desk';
 }
-const MESSAGE_KINDS = new Set(['proposal', 'countersign', 'refusal', 'transfer', 'attestation', 'iou', 'tape', 'handoff', 'chat', 'chat-match', 'invoice']);
+const MESSAGE_KINDS = new Set(['proposal', 'countersign', 'refusal', 'transfer', 'attestation', 'iou', 'tape', 'handoff', 'chat', 'chat-match', 'invoice', 'offer']);
 
 export function canonicalJSON(value) {
   if (value === null || typeof value !== 'object') return JSON.stringify(value);
@@ -2028,7 +2031,7 @@ export function listingCore(spec) {
     referenceId: spec.referenceId || null,
     referenceAvg: spec.referenceAvg == null || spec.referenceAvg === '' ? null : spec.referenceAvg,
     photoHash: String(spec.photoHash || ''),
-    kind: spec.kind === 'IwanIT' ? 'IwanIT' : 'ihavIT',
+    kind: spec.kind === 'IwanIT' || spec.kind === 'IprovIT' ? spec.kind : 'ihavIT',
     description: String(spec.description || '').trim(),
     unit: '$lgme'
   };
@@ -3297,13 +3300,14 @@ export function ageBucket(dueAt, at) {
 
 function decorateInvoice(row, at) {
   const paid = round2(row.paid || 0);
-  const remaining = row.refused ? 0 : round2(Math.max(0, row.amount - paid));
+  const remaining = row.refused || row.donated ? 0 : round2(Math.max(0, row.amount - paid));
   let status = 'open';
-  if (row.refused) status = 'refused';
+  if (row.donated) status = 'donated';
+  else if (row.refused) status = 'refused';
   else if (remaining <= 0) status = 'paid';
   else if (daysPastDue(row.dueAt, at) > 0) status = 'overdue';
   else if (daysPastDue(row.dueAt, at) === 0) status = 'due';
-  return { ...row, paid, remaining, status, bucket: ageBucket(row.dueAt, at) };
+  return { ...row, paid, remaining, status, bucket: ageBucket(row.dueAt, at), thanks: row.thanks || '' };
 }
 
 export function readInvoices(peer, at = nowIso()) {
@@ -3317,6 +3321,10 @@ export function readInvoices(peer, at = nowIso()) {
       row.paid = round2(row.paid + Number(payload.amount || 0));
     } else if (entry.type === 'INVOICE_REFUSED' && map.has(payload.invoiceId)) {
       map.get(payload.invoiceId).refused = true;
+    } else if (entry.type === 'DONATION_CLOSE' && map.has(payload.invoiceId)) {
+      const row = map.get(payload.invoiceId);
+      row.donated = true;
+      row.thanks = payload.message || DONATION_THANKS;
     }
   }
   return [...map.values()].map((row) => {
@@ -3324,6 +3332,19 @@ export function readInvoices(peer, at = nowIso()) {
     view.role = peer.id === row.workerId ? 'AR' : peer.id === row.payerId ? 'AP' : '';
     return view;
   });
+}
+
+export function sortInvoices(rows, at = nowIso()) {
+  const rank = { overdue: 0, due: 1, open: 2, paid: 3, refused: 4, donated: 5 };
+  return [...rows].sort((a, b) => {
+    const byStatus = (rank[a.status] ?? 9) - (rank[b.status] ?? 9);
+    if (byStatus) return byStatus;
+    return daysPastDue(b.dueAt, at) - daysPastDue(a.dueAt, at);
+  });
+}
+
+export function overdueInvoices(peer, at = nowIso()) {
+  return sortInvoices(readInvoices(peer, at), at).filter((row) => row.status === 'overdue' && row.remaining > 0);
 }
 
 export function invoiceBuckets(peer, at = nowIso()) {
@@ -3618,4 +3639,349 @@ export async function verifyGrant(entry) {
   const valid = await verifyText(payload.publicKeyJwk, hash, payload.sig);
   if (!valid) return fail('The grantor signature does not verify.');
   return { ok: true, attested: payload.attested === true };
+}
+
+function addMonths(iso, months) {
+  const date = new Date(iso);
+  const day = date.getUTCDate();
+  date.setUTCMonth(date.getUTCMonth() + months);
+  if (date.getUTCDate() !== day) date.setUTCDate(0);
+  return date.toISOString();
+}
+
+export function normalizeOfferupItem(item) {
+  const kind = ['sell', 'buy', 'give'].includes(item?.kind) ? item.kind : '';
+  return {
+    title: String(item?.title || '').trim(),
+    price: item?.price == null || item?.price === '' ? null : round2(item.price),
+    city: String(item?.city || '').trim(),
+    url: String(item?.url || '').trim(),
+    image: String(item?.image || '').trim(),
+    kind,
+    sourcedAt: String(item?.sourcedAt || '').trim()
+  };
+}
+
+export function offerupFeed(catalog) {
+  const items = Array.isArray(catalog?.items) ? catalog.items : [];
+  return items.map(normalizeOfferupItem).filter((item) => item.title && item.url && item.kind);
+}
+
+export function termSchedule(amount, months, startAt) {
+  const figure = round2(amount);
+  const count = Number(months);
+  if (!TERM_MONTHS.includes(count)) return fail('Choose 3, 4, 5, or 6 months.');
+  if (!Number.isFinite(figure) || figure <= 0) return fail('Enter an amount greater than zero.');
+  const base = Math.floor((figure * 100) / count) / 100;
+  const installments = [];
+  let allocated = 0;
+  for (let i = 0; i < count; i += 1) {
+    const part = i === count - 1 ? round2(figure - allocated) : base;
+    allocated = round2(allocated + part);
+    installments.push({ n: i + 1, amount: part, dueAt: addMonths(startAt, i + 1) });
+  }
+  return { ok: true, installments, total: figure };
+}
+
+export function offerupDraft(offer) {
+  const cash = offer?.cash;
+  const services = offer?.services || [];
+  const lines = [
+    'SIMULATION draft. Nothing was sent.',
+    OFFERUP_CAVEAT,
+    offer?.external?.title || '',
+    offer?.external?.city || '',
+    offer?.external?.url || ''
+  ];
+  if (cash?.mode === 'full') lines.push(`Cash in full: ${cash.amount}`);
+  if (cash?.mode === 'terms') {
+    lines.push(`Term plan: ${cash.amount} over ${cash.months} months`);
+    for (const row of cash.schedule || []) lines.push(`  ${row.n}. ${row.amount} due ${String(row.dueAt).slice(0, 10)}`);
+  }
+  for (const service of services) lines.push(`IprovIT service: ${service.title} (${service.amount} $lgme, simulated)`);
+  lines.push('In-app $lgme balances stay simulated. Paste this on OfferUp yourself.');
+  return lines.filter(Boolean).join('\n');
+}
+
+export function auditAllSerials(peer) {
+  const reports = Object.keys(peer?.serials || {}).map((id) => ({ id, ...auditSerial(peer, id) }));
+  const bad = reports.find((row) => !row.ok);
+  return { ok: !bad, reports, error: bad?.error || '' };
+}
+
+function offerParties(offer) {
+  return [offer.buyerId, offer.sellerId].filter(Boolean);
+}
+
+async function writeOn(store, peerId, type, payload, at) {
+  const peer = await store.get(peerId);
+  if (!peer?.privateKeyJwk && !peer?.signingKey) return null;
+  await appendEntry(peer, type, payload, at);
+  await store.set(peerId, peer);
+  return peer;
+}
+
+async function findOffer(store, offerId) {
+  for (const peer of await loadAll(store)) {
+    const offer = peer.offers?.[offerId];
+    if (offer) return { peer, offer };
+  }
+  return null;
+}
+
+export async function signOffer(store, peerId, spec = {}) {
+  if (spec.offerId) return countersignOffer(store, peerId, spec.offerId, spec);
+  const at = spec.at || nowIso();
+  const peer = await store.get(peerId);
+  if (!peer?.privateKeyJwk && !peer?.signingKey) return fail(peer ? 'Wallet is locked.' : 'Unknown peer.');
+  const gate = assertOnline(spec.navigator);
+  if (!gate.ok) return fail(gate.error);
+  const external = spec.external ? normalizeOfferupItem(spec.external) : null;
+  if (external && (!external.title || !external.url || !external.kind)) return fail('This OfferUp row is not a listing.');
+  let listing = null;
+  if (!external) {
+    const found = await findListing(store, spec.listingId);
+    if (!found) return fail('No listing.');
+    listing = found.listing;
+  }
+  const cashMode = spec.cashMode || '';
+  let schedule = [];
+  let cashAmount = null;
+  if (cashMode === 'full' || cashMode === 'terms') {
+    cashAmount = round2(spec.amount ?? external?.price ?? listing?.amount);
+  }
+  if (cashMode === 'terms') {
+    const built = termSchedule(cashAmount, spec.months, at);
+    if (!built.ok) return built;
+    schedule = built.installments;
+    cashAmount = built.total;
+  } else if (cashMode === 'full' && (!Number.isFinite(cashAmount) || cashAmount <= 0)) {
+    return fail('Enter an amount greater than zero.');
+  } else if (cashMode && cashMode !== 'full') {
+    return fail('Choose cash in full or a term plan.');
+  }
+  const services = [];
+  for (const id of spec.serviceIds || []) {
+    const found = await findListing(store, id);
+    if (!found || found.listing.kind !== 'IprovIT') return fail('Pick an IprovIT service.');
+    services.push({ listingId: id, title: found.listing.title, amount: found.listing.amount, sellerId: found.listing.sellerId });
+  }
+  if (!cashMode && !services.length) return fail('Choose cash, a term plan, or an IprovIT service.');
+  const sellerId = external ? '' : listing.sellerId;
+  const buyerId = !external && listing.sellerId === peerId ? String(spec.toId || '').trim() : peerId;
+  if (!external && (!buyerId || buyerId === sellerId)) return fail('Name the other party.');
+  const kyc = await memberKycHash(peer);
+  if (!kyc.ok) return kyc;
+  const core = {
+    simulated: true,
+    buyerId,
+    sellerId,
+    listingId: listing?.id || '',
+    title: external?.title || listing.title,
+    external: external || null,
+    cash: cashMode ? { mode: cashMode, amount: cashAmount, months: cashMode === 'terms' ? Number(spec.months) : 0, schedule } : null,
+    services,
+    penalty: false,
+    unit: '$lgme'
+  };
+  const offerId = await sha256(canonicalJSON(core));
+  const consentBody = { offerId, peerId, kycHash: kyc.hash, automate: spec.automate === true, passkey: 'fingerprint / face / device PIN (your phone decides)' };
+  const hash = await sha256(canonicalJSON(consentBody));
+  const sig = await signText(peer.privateKeyJwk || peer.signingKey, hash);
+  const offer = {
+    ...core,
+    id: offerId,
+    status: external ? 'draft' : 'awaiting',
+    consents: { [peerId]: { ...consentBody, hash, sig, at } },
+    invoiceIds: [],
+    thanks: ''
+  };
+  peer.offers = peer.offers || {};
+  peer.offers[offerId] = offer;
+  await appendEntry(peer, 'OFFER', { ...core, offerId, sig, status: offer.status }, at);
+  await store.set(peerId, peer);
+  if (buyerId && sellerId) {
+    const otherId = peerId === buyerId ? sellerId : buyerId;
+    const other = await store.get(otherId);
+    if (other) {
+      other.offers = other.offers || {};
+      other.offers[offerId] = offer;
+      await store.set(otherId, other);
+    }
+  }
+  const sealed = await sealMessage(await store.get(peerId), 'offer', offer);
+  const draft = external ? offerupDraft(offer) : '';
+  return { ok: true, offer, draft, encoded: sealed.ok ? encodeMessage(sealed.message) : '', contract: false, sent: false };
+}
+
+export async function countersignOffer(store, peerId, offerId, spec = {}) {
+  const at = spec.at || nowIso();
+  const peer = await store.get(peerId);
+  if (!peer?.privateKeyJwk && !peer?.signingKey) return fail(peer ? 'Wallet is locked.' : 'Unknown peer.');
+  const gate = assertOnline(spec.navigator);
+  if (!gate.ok) return fail(gate.error);
+  const found = await findOffer(store, offerId);
+  if (!found) return fail('No offer.');
+  const offer = structuredClone(found.offer);
+  if (offer.external) return fail('An OfferUp draft is copied by hand. This desk does not send it.');
+  const parties = offerParties(offer);
+  if (!parties.includes(peerId)) return fail('This offer is for someone else.');
+  if (offer.status === 'contract' || offer.status === 'donated') return { ok: true, offer, contract: offer.status === 'contract' };
+  const kyc = await memberKycHash(peer);
+  if (!kyc.ok) return kyc;
+  const consentBody = { offerId, peerId, kycHash: kyc.hash, automate: spec.automate === true, passkey: 'fingerprint / face / device PIN (your phone decides)' };
+  const hash = await sha256(canonicalJSON(consentBody));
+  const sig = await signText(peer.privateKeyJwk || peer.signingKey, hash);
+  offer.consents[peerId] = { ...consentBody, hash, sig, at };
+  const signed = parties.filter((id) => offer.consents[id]);
+  offer.status = signed.length >= 2 ? 'contract' : 'awaiting';
+  peer.offers = peer.offers || {};
+  peer.offers[offerId] = offer;
+  await appendEntry(peer, 'OFFER_CONSENT', { offerId, peerId, hash, sig, status: offer.status, penalty: false }, at);
+  await store.set(peerId, peer);
+  for (const id of parties) {
+    if (id === peerId) continue;
+    const other = await store.get(id);
+    if (!other) continue;
+    other.offers = other.offers || {};
+    other.offers[offerId] = offer;
+    if (other.privateKeyJwk || other.signingKey) await appendEntry(other, 'OFFER_CONSENT', { offerId, peerId, hash, sig, status: offer.status, penalty: false }, at);
+    await store.set(id, other);
+  }
+  if (offer.status !== 'contract') return { ok: true, offer, contract: false, sent: false };
+  const automate = parties.every((id) => offer.consents[id]?.automate === true);
+  const invoiceIds = [];
+  if (automate && offer.cash?.mode === 'terms') {
+    const buyer = await store.get(offer.buyerId);
+    const audit = auditAllSerials(buyer);
+    await writeOn(store, offer.sellerId, 'SERIAL_AUDIT', { offerId, ok: audit.ok, count: audit.reports.length, error: audit.error, penalty: false }, at);
+    await writeOn(store, offer.buyerId, 'SERIAL_AUDIT', { offerId, ok: audit.ok, count: audit.reports.length, error: audit.error, penalty: false }, at);
+    if (!audit.ok) return { ok: false, error: audit.error, offer, contract: true };
+    for (const row of offer.cash.schedule) {
+      const work = await recordIdidIt(store, offer.sellerId, { work: `Installment ${row.n} · ${offer.title}`, scope: offerId, at });
+      if (!work.ok) return { ok: false, error: work.error, offer, contract: true };
+      const invoice = await createInvoice(store, offer.sellerId, {
+        receiptId: work.receiptId,
+        payerId: offer.buyerId,
+        amount: row.amount,
+        dueAt: row.dueAt,
+        at
+      });
+      if (!invoice.ok) return { ok: false, error: invoice.error, offer, contract: true };
+      invoiceIds.push(invoice.invoiceId);
+    }
+  }
+  const fresh = await findOffer(store, offerId);
+  fresh.offer.invoiceIds = invoiceIds;
+  fresh.offer.status = 'contract';
+  for (const id of parties) {
+    const book = await store.get(id);
+    if (!book) continue;
+    book.offers = book.offers || {};
+    book.offers[offerId] = fresh.offer;
+    await store.set(id, book);
+  }
+  return { ok: true, offer: fresh.offer, contract: true, invoiceIds, sent: false };
+}
+
+export async function remindInvoice(store, peerId, invoiceId, at = nowIso()) {
+  const peer = await store.get(peerId);
+  if (!peer?.privateKeyJwk && !peer?.signingKey) return fail(peer ? 'Wallet is locked.' : 'Unknown peer.');
+  const invoice = findInvoice(peer, invoiceId, at);
+  if (!invoice) return fail('That invoice is not on this book.');
+  if (invoice.donated || invoice.refused || invoice.remaining <= 0) return fail('This invoice is closed.');
+  const before = replay(peer).balance;
+  const payload = { simulated: true, invoiceId, peerId, penalty: false, remaining: invoice.remaining };
+  await appendEntry(peer, 'REMINDER', payload, at);
+  await store.set(peerId, peer);
+  const otherId = peerId === invoice.workerId ? invoice.payerId : invoice.workerId;
+  await writeOn(store, otherId, 'REMINDER', payload, at);
+  const after = replay(await store.get(peerId)).balance;
+  return { ok: true, penalty: false, unchanged: after === before };
+}
+
+function donationConsents(peer, invoiceId) {
+  return (peer?.tape || []).filter((entry) => entry.type === 'DONATION_CONSENT' && entry.payload?.invoiceId === invoiceId);
+}
+
+export async function consentFloorDonation(store, peerId, invoiceId, at = nowIso()) {
+  const peer = await store.get(peerId);
+  if (!peer?.privateKeyJwk && !peer?.signingKey) return fail(peer ? 'Wallet is locked.' : 'Unknown peer.');
+  const invoice = findInvoice(peer, invoiceId, at);
+  if (!invoice) return fail('That invoice is not on this book.');
+  if (invoice.donated) return { ok: true, status: 'donated', message: DONATION_THANKS, closed: true, penalty: false };
+  if (peerId !== invoice.workerId && peerId !== invoice.payerId) return fail('Only the two parties can donate this to the floor.');
+  const before = replay(peer).balance;
+  const body = { simulated: true, invoiceId, peerId, kind: 'floor-donation', penalty: false };
+  const hash = await sha256(canonicalJSON(body));
+  const sig = await signText(peer.privateKeyJwk || peer.signingKey, hash);
+  const consent = { ...body, hash, sig };
+  if (!donationConsents(peer, invoiceId).some((entry) => entry.payload?.peerId === peerId)) {
+    await appendEntry(peer, 'DONATION_CONSENT', consent, at);
+    await store.set(peerId, peer);
+  }
+  const otherId = peerId === invoice.workerId ? invoice.payerId : invoice.workerId;
+  const other = await store.get(otherId);
+  if (other && !donationConsents(other, invoiceId).some((entry) => entry.payload?.peerId === peerId)) {
+    await writeOn(store, otherId, 'DONATION_CONSENT', consent, at);
+  }
+  const mine = await store.get(peerId);
+  const seen = new Set(donationConsents(mine, invoiceId).map((entry) => entry.payload?.peerId));
+  if (!(seen.has(invoice.workerId) && seen.has(invoice.payerId))) {
+    return { ok: true, status: 'awaiting', closed: false, penalty: false, unchanged: replay(mine).balance === before };
+  }
+  const close = { simulated: true, invoiceId, message: DONATION_THANKS, penalty: false };
+  if (!(mine.tape || []).some((entry) => entry.type === 'DONATION_CLOSE' && entry.payload?.invoiceId === invoiceId)) {
+    await appendEntry(mine, 'DONATION_CLOSE', close, at);
+    await store.set(peerId, mine);
+  }
+  const otherFresh = await store.get(otherId);
+  if (otherFresh && !(otherFresh.tape || []).some((entry) => entry.type === 'DONATION_CLOSE' && entry.payload?.invoiceId === invoiceId)) {
+    await writeOn(store, otherId, 'DONATION_CLOSE', close, at);
+  }
+  return { ok: true, status: 'donated', message: DONATION_THANKS, closed: true, penalty: false, unchanged: replay(await store.get(peerId)).balance === before };
+}
+
+export async function consentContractDonation(store, peerId, offerId, at = nowIso()) {
+  const found = await findOffer(store, offerId);
+  if (!found) return fail('No offer.');
+  const parties = offerParties(found.offer);
+  if (!parties.includes(peerId)) return fail('Only the two parties can donate this to the floor.');
+  const peer = await store.get(peerId);
+  if (!peer?.privateKeyJwk && !peer?.signingKey) return fail('Wallet is locked.');
+  const mark = { simulated: true, offerId, peerId, kind: 'floor-donation', penalty: false };
+  const hash = await sha256(canonicalJSON(mark));
+  const sig = await signText(peer.privateKeyJwk || peer.signingKey, hash);
+  await appendEntry(peer, 'DONATION_CONSENT', { ...mark, hash, sig, invoiceId: '' }, at);
+  await store.set(peerId, peer);
+  for (const id of parties) {
+    if (id === peerId) continue;
+    await writeOn(store, id, 'DONATION_CONSENT', { ...mark, hash, sig, invoiceId: '' }, at);
+  }
+  const mine = await store.get(peerId);
+  const seen = new Set((mine.tape || []).filter((entry) => entry.type === 'DONATION_CONSENT' && entry.payload?.offerId === offerId).map((entry) => entry.payload?.peerId));
+  if (!(seen.has(found.offer.buyerId) && seen.has(found.offer.sellerId))) {
+    return { ok: true, status: 'awaiting', closed: false, penalty: false };
+  }
+  for (const invoiceId of found.offer.invoiceIds || []) {
+    const book = await store.get(peerId);
+    if (findInvoice(book, invoiceId, at) && !findInvoice(book, invoiceId, at).donated) {
+      await consentFloorDonation(store, found.offer.buyerId, invoiceId, at);
+      await consentFloorDonation(store, found.offer.sellerId, invoiceId, at);
+    }
+  }
+  const close = { simulated: true, offerId, message: DONATION_THANKS, penalty: false };
+  for (const id of parties) {
+    const book = await store.get(id);
+    if (!book) continue;
+    if (book.offers?.[offerId]) {
+      book.offers[offerId].status = 'donated';
+      book.offers[offerId].thanks = DONATION_THANKS;
+    }
+    if (!(book.tape || []).some((entry) => entry.type === 'DONATION_CLOSE' && entry.payload?.offerId === offerId)) {
+      if (book.privateKeyJwk || book.signingKey) await appendEntry(book, 'DONATION_CLOSE', close, at);
+    }
+    await store.set(id, book);
+  }
+  return { ok: true, status: 'donated', message: DONATION_THANKS, closed: true, penalty: false };
 }
