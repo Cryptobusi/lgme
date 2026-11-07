@@ -160,23 +160,31 @@ export function createIndexedDbVault() {
   });
   const run = async (storeName, mode, fn) => {
     const db = await open();
-    const tx = db.transaction(storeName, mode);
-    const result = await fn(tx.objectStore(storeName));
-    await new Promise((resolve, reject) => { tx.oncomplete = resolve; tx.onerror = () => reject(tx.error); });
-    db.close();
-    return result;
+    try {
+      const tx = db.transaction(storeName, mode);
+      const finished = new Promise((resolve, reject) => {
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error || new Error('The vault transaction failed.'));
+        tx.onabort = () => reject(tx.error || new Error('The vault transaction aborted.'));
+      });
+      const result = await fn(tx.objectStore(storeName));
+      await finished;
+      return result;
+    } finally {
+      db.close();
+    }
   };
   return {
-    async put(id, key) { await run('keys', 'readwrite', (store) => store.put(key, id)); },
+    async put(id, key) { await run('keys', 'readwrite', (store) => requestOf(store.put(key, id))); },
     async get(id) { return run('keys', 'readonly', (store) => requestOf(store.get(id))); },
-    async putMeta(id, key) { await run('meta', 'readwrite', (store) => store.put(key, id)); },
+    async putMeta(id, key) { await run('meta', 'readwrite', (store) => requestOf(store.put(key, id))); },
     async getMeta(id) { return run('meta', 'readonly', (store) => requestOf(store.get(id))); }
   };
 }
 
 function requestOf(request) {
   return new Promise((resolve, reject) => {
-    request.onsuccess = () => resolve(request.result || null);
+    request.onsuccess = () => resolve(request.result === undefined ? null : request.result);
     request.onerror = () => reject(request.error);
   });
 }

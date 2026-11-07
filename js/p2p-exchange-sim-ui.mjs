@@ -2721,15 +2721,26 @@ async function bootVault() {
     if (peer.privateKeyJwk && !peer.keyVault) {
       const signing = await importNonExtractable(peer.privateKeyJwk);
       const dek = crypto.getRandomValues(new Uint8Array(32));
-      peer.migrationWrap = await sealJson(dek, { privateKeyJwk: peer.privateKeyJwk });
-      peer.keyVault = true;
-      sessionKeys.set(id, peer.privateKeyJwk);
-      sessionCrypto.set(id, signing);
-      metaKeys.set(id, dek);
-      peer.privateKeyJwk = null;
+      const wrap = await sealJson(dek, { privateKeyJwk: peer.privateKeyJwk });
       await vault.put(id, signing);
       await vault.putMeta(id, dek);
-      await baseStore.set(id, peer);
+      const current = await baseStore.get(id);
+      if (!current?.privateKeyJwk || current.keyVault) {
+        sessionCrypto.set(id, signing);
+        metaKeys.set(id, dek);
+        continue;
+      }
+      const sameKey = JSON.stringify(current.privateKeyJwk) === JSON.stringify(peer.privateKeyJwk);
+      const signingNow = sameKey ? signing : await importNonExtractable(current.privateKeyJwk);
+      const wrapNow = sameKey ? wrap : await sealJson(dek, { privateKeyJwk: current.privateKeyJwk });
+      if (!sameKey) await vault.put(id, signingNow);
+      current.migrationWrap = wrapNow;
+      current.keyVault = true;
+      sessionKeys.set(id, current.privateKeyJwk);
+      sessionCrypto.set(id, signingNow);
+      metaKeys.set(id, dek);
+      current.privateKeyJwk = null;
+      await baseStore.set(id, current);
     } else {
       const signing = await vault.get(id);
       const dek = await vault.getMeta(id);

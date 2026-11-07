@@ -1277,3 +1277,86 @@ test('a handoff QR is a short token and a large transfer needs a co-sign', async
   const allowed = await sim.createTransfer(store, 'alice', { toId: 'bob', amount: 60, thirdSeatSig: 'co-signed', at: '2026-11-07T03:00:00.000Z', navigator: { onLine: true } });
   assert.equal(allowed.ok, true, allowed.error);
 });
+
+function installMockIndexedDb() {
+  const tables = { keys: new Map(), meta: new Map() };
+  function succeed(req, value, after) {
+    queueMicrotask(() => {
+      req.result = value;
+      if (typeof req.onsuccess === 'function') req.onsuccess();
+      if (typeof after === 'function') after();
+    });
+  }
+  function storeFor(tx, name) {
+    return {
+      put(value, id) {
+        tables[name].set(id, value);
+        const req = {};
+        succeed(req, id, () => { if (typeof tx.oncomplete === 'function') tx.oncomplete(); });
+        return req;
+      },
+      get(id) {
+        const req = {};
+        succeed(req, tables[name].has(id) ? tables[name].get(id) : undefined, () => {
+          if (typeof tx.oncomplete === 'function') tx.oncomplete();
+        });
+        return req;
+      }
+    };
+  }
+  const db = {
+    objectStoreNames: { contains: () => true },
+    transaction(name) {
+      const tx = {};
+      tx.objectStore = () => storeFor(tx, name);
+      return tx;
+    },
+    close() {}
+  };
+  globalThis.indexedDB = {
+    open() {
+      const req = {};
+      succeed(req, db);
+      return req;
+    }
+  };
+}
+
+test('the key vault finishes its write and still opens a sealed member salt', async () => {
+  const previous = globalThis.indexedDB;
+  installMockIndexedDb();
+  try {
+    const vault = guard.createIndexedDbVault();
+    const dek = new Uint8Array(32);
+    dek[0] = 9;
+    const saved = await Promise.race([
+      vault.putMeta('alice', dek).then(() => 'saved'),
+      new Promise((resolve) => setTimeout(() => resolve('hung'), 400))
+    ]);
+    assert.equal(saved, 'saved');
+    await vault.put('alice', { kind: 'signing' });
+    const sealed = await guard.sealJson(dek, { phone: '+12025550101', email: '', salt: 'sim-salt-alice' });
+    const again = guard.createIndexedDbVault();
+    const back = await again.getMeta('alice');
+    assert.equal(back[0], 9);
+    assert.equal(back.length, 32);
+    const opened = await guard.openJson(back, sealed);
+    assert.equal(opened.salt, 'sim-salt-alice');
+    assert.equal((await again.get('alice')).kind, 'signing');
+  } finally {
+    if (previous === undefined) delete globalThis.indexedDB;
+    else globalThis.indexedDB = previous;
+  }
+});
+
+test('the QR drawer reads a major-only Android version', () => {
+  const source = readFileSync(join(root, 'js/vendor/qrcode.js'), 'utf8');
+  assert.equal(source.includes('android ([0-9]+(?:\\.[0-9]+)?)'), true);
+  const pattern = /android ([0-9]+(?:\.[0-9]+)?)/i;
+  const pixel = 'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Mobile Safari/537.36';
+  const found = pixel.match(pattern);
+  assert.ok(found, pixel);
+  assert.equal(parseFloat(found[1]) >= 3, true);
+  const old = 'Mozilla/5.0 (Linux; Android 4.4.2; Phone)'.match(pattern);
+  assert.equal(old[1], '4.4');
+});
