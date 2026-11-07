@@ -789,7 +789,7 @@ async function renderBooks(peers, seat) {
     h('h2', {}, [`${peer.name}'s book`]),
     h('p', { class: 'muted' }, [`Every line below is on this peer’s tape. Credits and debits come only from settlements, payments, and mock rewards. The running balance is a replay. Key ${finger}. Limit ${rule.creditLimit}.`]),
     h('div', { class: 'nums' }, [
-      h('div', {}, [h('strong', {}, [String(view.balance)]), 'Balance']),
+      h('div', {}, [coinMark(), h('strong', {}, [String(view.balance)]), 'Balance']),
       h('div', {}, [h('strong', {}, [String(rule.floor)]), `Floor · ${rule.floorNote}`]),
       h('div', {}, [h('strong', {}, [above >= 0 ? String(above) : 'below']), above >= 0 ? 'Above the floor' : 'Below the floor']),
       h('div', {}, [h('strong', {}, [String(sim.rewardTotal(peer))]), 'Rewards']),
@@ -976,13 +976,14 @@ async function renderWallet(peers, seat) {
     h('h2', {}, [`Wallet · ${summary.name} `, h('span', { class: sim.kycStatus(peer) === 'VERIFIED' ? 'badge badge-verified' : 'badge badge-unverified' }, [sim.kycStatus(peer) === 'VERIFIED' ? 'Verified' : 'Unverified'])]),
     h('p', { class: 'muted' }, ['SIMULATION. The balance is mock $lgme. The passphrase and the 6-digit code are simulated 2FA. This page does not send the code and does not move real money.']),
     h('div', { class: 'balance-hero' }, [
+      coinMark(),
       h('div', {}, [h('strong', {}, [String(sim.replay(peer).balance)]), summary.mock ? 'Mock $lgme' : 'Book balance']),
       h('div', {}, [h('strong', {}, [String(sim.terms(peer).floor)]), 'Floor']),
       h('div', {}, [h('strong', {}, [locked ? 'Locked' : 'Open']), 'Key'])
     ])
   ];
   if (secret) blocks.push(codeLine, h('div', { id: 'setup-qr' }));
-  blocks.push(profileCard(sim.peerProfile(peer)), kycCard(peer, peers));
+  blocks.push(profileCard(sim.peerProfile(peer)), soBeItCard(peers, seat), kycCard(peer, peers));
   if (!peer.wallet?.ciphertext) {
     const passphrase = h('input', { type: 'password', minlength: '8', autocomplete: 'new-password', required: true });
     const form = h('form', {}, [
@@ -1424,6 +1425,35 @@ function profileCard(profile) {
     h('p', { class: 'muted' }, [
       `${profile.balance} $lgme · floor ${profile.floor} · ${profile.aboveFloor} above the floor. Credit use versus the floor ${Math.round(profile.utilization * 100)}%. Rewards ${profile.rewards || 0} $lgme.${profile.held ? ` Held ${profile.held} $lgme.` : ''}`
     ])
+  ]);
+}
+
+function coinMark() {
+  const img = h('img', { class: 'coin', src: '/icons/icon-192.png', alt: '', width: '48', height: '48' });
+  return h('picture', {}, [h('source', { srcset: '/icons/lgme-coin-192.webp', type: 'image/webp' }), img]);
+}
+
+function soBeItCard(peers, seat) {
+  const member = h('select', {}, peerOptions(peers.filter((item) => item.id !== seat), ''));
+  const amount = h('input', { type: 'number', min: '0.01', step: '0.01', inputmode: 'decimal', value: '5' });
+  const reason = h('input', { maxlength: '160', placeholder: 'Why this grant' });
+  const form = h('form', { id: 'sobeit-form' }, [
+    field('Member', member),
+    field('Amount in $lgme', amount),
+    field('Reason', reason),
+    h('div', { class: 'actions' }, [h('button', { class: 'primary', type: 'submit' }, ['soBeIT'])])
+  ]);
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const result = await sim.soBeItGrant(store, seat, member.value, { amount: amount.value, reason: reason.value });
+    setStatus(result.ok ? `Simulated grant recorded. Balance ${result.balance}. No real funds moved.` : result.error, result.ok ? 'ok' : 'bad');
+    if (result.ok) await render();
+  });
+  return h('article', { class: 'card', id: 'sobeit' }, [
+    h('h3', {}, ['soBeIT']),
+    h('p', { class: 'muted' }, ['A simulated grant on this tape. The grantor signs it. It is attested on the member book. It is not the Solana token.']),
+    form,
+    h('p', {}, [h('a', { href: '/lgme-coin' }, ['Real $lgme grants and donations go to the address on the coin page.'])])
   ]);
 }
 

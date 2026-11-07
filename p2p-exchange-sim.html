@@ -153,6 +153,10 @@
     .capture video, .capture img.preview { width:100%; flex:1; min-height:0; object-fit:cover; background:#000; }
     .capture .bar { display:flex; flex-wrap:wrap; gap:0.4rem; padding:0.6rem; background:#1c1b19; }
     .capture button, .capture .btn { color:#fff; border-color:#444; }
+    .coin { width:2.5rem; height:2.5rem; border-radius:50%; object-fit:cover; display:block; }
+    .balance-hero .coin { width:3.25rem; height:3.25rem; }
+    .coin-pin { margin:0; padding:0.4rem 1rem; font-size:0.82rem; background:var(--panel); border-bottom:1px solid var(--line); }
+    .coin-pin a { color:var(--accent-text); text-decoration:none; }
     .splash { position:fixed; inset:0; z-index:60; display:grid; place-items:center; background:var(--bg); padding:1.25rem; }
     .splash[hidden] { display:none; }
     .splash-card { display:grid; justify-items:center; gap:0.8rem; text-align:center; }
@@ -176,6 +180,7 @@
     </div>
   </div>
   <p class="sim-banner" role="note">SIMULATION. Practice books only. Nothing on this page writes to a network, sends mail or text, or moves real money. Each peer keeps a separate book. There is no central ledger.</p>
+  <p class="coin-pin"><a href="/lgme-coin">$lgme on pump.fun</a></p>
   <div class="wrap">
     <nav class="deskmenu" aria-label="Desk">
       <a href="/">Desk</a>

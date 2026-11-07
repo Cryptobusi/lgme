@@ -565,7 +565,8 @@ test('pages stay simulation-only', () => {
     'js/p2p-exchange-sim-ui.mjs',
     'js/p2p-resources.mjs',
     'p2p-exchange-sim.html',
-    'manifest.webmanifest'
+    'manifest.webmanifest',
+    'lgme-coin.html'
   ];
   const banned = ['0.0.489104', 'hederica.com', 'lgme.hederica.com', '$Trust', 'XMLHttpRequest', 'WebSocket'];
   for (const file of files) {
@@ -1067,4 +1068,42 @@ test('the floor blocks an invoice payment', async () => {
   assert.deepEqual(await balances(store), before);
   assert.equal((await store.get('alice')).tape.some((entry) => entry.type === 'INVOICE_PAID'), false);
   assert.equal((await store.get('bob')).tape.some((entry) => entry.type === 'REWARD'), false);
+});
+
+test('a soBeIT grant is attested on the member tape and does not touch the real token page', async () => {
+  const store = await books();
+  const before = await balances(store);
+  const granted = await sim.soBeItGrant(store, 'alice', 'bob', { amount: 15, reason: 'Shown soil work', at: '2026-11-07T05:00:00.000Z' });
+  assert.equal(granted.ok, true, granted.error);
+  assert.equal(granted.attested, true);
+  assert.equal(granted.moved, true);
+  assert.equal(granted.grantorUnchanged, true);
+  assert.equal(sim.replay(await store.get('bob')).balance, before.bob + 15);
+  assert.equal(sim.replay(await store.get('alice')).balance, before.alice);
+  const line = (await store.get('bob')).tape.find((entry) => entry.type === 'GRANT');
+  assert.equal(line.payload.reason, 'Shown soil work');
+  assert.equal(line.payload.attested, true);
+  const checked = await sim.verifyGrant(line);
+  assert.equal(checked.ok, true, checked.error);
+  const forged = structuredClone(line);
+  forged.payload.sig = 'aa';
+  const bad = await sim.verifyGrant(forged);
+  assert.equal(bad.ok, false);
+  const engine = readFileSync(join(root, 'js/p2p-exchange-sim.mjs'), 'utf8');
+  assert.equal(engine.includes('pump.fun'), false);
+  assert.equal(engine.includes('7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump'), false);
+});
+
+test('the coin page names the mint and the donate address exactly', () => {
+  const page = readFileSync(join(root, 'lgme-coin.html'), 'utf8');
+  const mint = '7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump';
+  const donate = '6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY';
+  assert.equal(page.includes(mint), true);
+  assert.equal(page.includes(`https://pump.fun/coin/${mint}`), true);
+  assert.equal(page.includes(donate), true);
+  assert.equal(page.includes('https://x.com/EgonomicAnon'), true);
+  assert.equal(page.includes('Real token on Solana. Not financial advice. High risk; you may lose everything. Always verify the mint address. The in-app $lgme balances are a simulation and are not this token.'), true);
+  assert.equal(readFileSync(join(root, 'p2p-exchange-sim.html'), 'utf8').includes('$lgme on pump.fun'), true);
+  assert.equal(readFileSync(join(root, 'index.html'), 'utf8').includes('$lgme on pump.fun'), true);
+  assert.equal(readFileSync(join(root, 'sitemap.xml'), 'utf8').includes('https://lgme.app/lgme-coin'), true);
 });

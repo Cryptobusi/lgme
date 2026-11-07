@@ -1,11 +1,15 @@
 // lgme.app shell. HTML is fetched from the network first so a published change shows.
-const CACHE_NAME = "lgme-v25";
+const CACHE_NAME = "lgme-v26";
 const SHELL = [
   "/",
   "/manifest.json",
   "/manifest.webmanifest",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
+  "/icons/lgme-coin-192.webp",
+  "/icons/lgme-coin-512.webp",
+  "/lgme-coin",
+  "/lgme-coin.html",
   "/icons/apple-touch-icon.png",
   "/p2p-exchange-sim",
   "/p2p-exchange-sim.html",

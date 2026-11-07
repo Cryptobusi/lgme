@@ -264,6 +264,13 @@ export function replay(peer) {
         balance = round2(balance + amount);
         credits = round2(credits + credit);
       }
+    } else if (entry.type === 'GRANT' && entry.payload?.role !== 'grantor' && entry.payload?.memberId === peer.id) {
+      const amount = round2(entry.payload?.amount || 0);
+      if (Number.isFinite(amount) && amount > 0) {
+        credit = amount;
+        balance = round2(balance + amount);
+        credits = round2(credits + credit);
+      }
     }
     rows.push({
       index: entry.index,
@@ -354,6 +361,7 @@ export function entryDetail(entry, names = {}) {
   if (entry.type === 'INVOICE_PAID') return `Invoice paid ${payload.amount} $lgme`.trim();
   if (entry.type === 'INVOICE_REFUSED') return payload.statement || 'INVOICE_REFUSED';
   if (entry.type === 'REWARD') return `Mock reward ${payload.amount} $lgme`.trim();
+  if (entry.type === 'GRANT') return `soBeIT grant ${payload.amount} $lgme ${payload.reason || ''}`.trim();
   if (entry.type === 'MEDIA' || entry.type === 'MEDIA_RECEIVED') return `${entry.type === 'MEDIA_RECEIVED' ? 'Received' : 'Media'} ${payload.mime || ''} ${payload.hash ? String(payload.hash).slice(0, 12) : ''}`.trim();
   if (entry.type === 'countersign') {
     return `${name(payload.by)} countersigned ${payload.exchangeId ? payload.exchangeId.slice(0, 12) : ''}`.trim();
@@ -3219,4 +3227,65 @@ export async function refuseInvoice(store, payerId, invoiceId, statement, at = n
     reward: rewardTotal(freshWorker),
     status: findInvoice(freshPayer, invoiceId, at)?.status
   };
+}
+
+function grantCore(spec) {
+  return {
+    simulated: true,
+    kind: 'grant',
+    mock: true,
+    label: 'mock',
+    unit: '$lgme',
+    memberId: spec.memberId,
+    grantorId: spec.grantorId,
+    amount: round2(spec.amount),
+    reason: String(spec.reason || '').trim(),
+    attested: true
+  };
+}
+
+export async function soBeItGrant(store, grantorId, memberId, spec = {}) {
+  const grantor = await store.get(grantorId);
+  const member = await store.get(memberId);
+  if (!grantor || !member) return fail('Unknown peer.');
+  if (!grantor.privateKeyJwk) return fail('Wallet is locked.');
+  if (!member.privateKeyJwk) return fail('Unlock the member book first.');
+  if (grantorId === memberId) return fail('Name another member.');
+  const reason = String(spec.reason || '').trim();
+  if (!reason) return fail('Name the reason.');
+  const amount = round2(spec.amount);
+  if (!Number.isFinite(amount) || amount <= 0) return fail('Enter an amount greater than zero.');
+  const at = spec.at || nowIso();
+  const core = grantCore({ memberId, grantorId, amount, reason });
+  const hash = await sha256(canonicalJSON(core));
+  const sig = await signText(grantor.privateKeyJwk, hash);
+  const payload = { ...core, hash, sig, publicKeyJwk: grantor.publicKeyJwk };
+  const before = replay(member).balance;
+  const grantorBefore = replay(grantor).balance;
+  await appendEntry(member, 'GRANT', { ...payload, role: 'member' }, at);
+  await store.set(memberId, member);
+  const freshGrantor = await store.get(grantorId);
+  await appendEntry(freshGrantor, 'GRANT', { ...payload, role: 'grantor' }, at);
+  await store.set(grantorId, freshGrantor);
+  const memberAfter = replay(await store.get(memberId)).balance;
+  const grantorAfter = replay(await store.get(grantorId)).balance;
+  return {
+    ok: true,
+    attested: true,
+    balance: memberAfter,
+    grantorBalance: grantorAfter,
+    moved: memberAfter === round2(before + amount),
+    grantorUnchanged: grantorAfter === grantorBefore
+  };
+}
+
+export async function verifyGrant(entry) {
+  const payload = entry?.payload || entry;
+  if (!payload) return fail('No grant.');
+  const core = grantCore(payload);
+  const hash = await sha256(canonicalJSON(core));
+  if (hash !== payload.hash) return fail('Hash does not match.');
+  const valid = await verifyText(payload.publicKeyJwk, hash, payload.sig);
+  if (!valid) return fail('The grantor signature does not verify.');
+  return { ok: true, attested: payload.attested === true };
 }

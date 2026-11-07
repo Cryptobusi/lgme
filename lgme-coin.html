@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>$lgme on Solana · lgme</title>
+  <meta name="description" content="Real $lgme token on Solana. Not financial advice. The practice balances in the app are a simulation and are not this token." />
+  <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500&display=swap" />
+  <style>
+    :root { --bg:#f4f3ef; --fg:#1c1b19; --muted:#4e4c47; --line:#e3dfd6; --panel:#fff; --accent:#F97316; --ink:#1c1b19; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg:#121411; --fg:#f4f1e8; --muted:#c8c3b8; --line:#2c312b; --panel:#1c201c; --ink:#1c1b19; }
+    }
+    body { margin:0 auto; max-width:40rem; padding:0 0 3rem; background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; line-height:1.5; }
+    .notice { margin:0; padding:0.85rem 1.1rem; background:var(--accent); color:var(--ink); font-weight:600; }
+    .wrap { padding:1rem 1.1rem 0; }
+    h1 { font-family:Newsreader,serif; font-weight:500; font-size:clamp(2rem, 6vw, 2.8rem); margin:0.2rem 0 0.4rem; }
+    h2 { font-family:Newsreader,serif; font-weight:500; font-size:1.35rem; margin:1.4rem 0 0.4rem; }
+    a { color:var(--fg); }
+    .muted { color:var(--muted); }
+    .coin { width:min(16rem, 70vw); height:auto; border-radius:50%; display:block; margin:0.6rem 0 0.8rem; }
+    code, .addr { font-family:ui-monospace,monospace; font-size:0.92rem; word-break:break-all; }
+    .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:0.9rem 1rem; margin:0.7rem 0; }
+    button, .btn { font:inherit; min-height:44px; padding:0.45rem 0.85rem; border-radius:10px; border:1px solid var(--line); background:transparent; color:var(--fg); cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; }
+    .btn.primary, button.primary { background:var(--accent); color:var(--ink); border-color:var(--accent); font-weight:600; }
+    .actions { display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.7rem; }
+    ol { margin:0.4rem 0 0; padding-left:1.2rem; }
+    li { margin:0.35rem 0; }
+    .qr { display:inline-block; background:#fff; padding:8px; border-radius:8px; }
+  </style>
+</head>
+<body>
+  <p class="notice">Real token on Solana. Not financial advice. High risk; you may lose everything. Always verify the mint address. The in-app $lgme balances are a simulation and are not this token.</p>
+  <div class="wrap">
+    <p class="muted"><a href="/">Desk</a> · <a href="/p2p-exchange-sim">Practice desk</a></p>
+    <picture>
+      <source srcset="/icons/lgme-coin-512.webp" type="image/webp" />
+      <img class="coin" src="/icons/icon-512.png" width="512" height="512" alt="Egonomic Anonymous coin, #legomiego" />
+    </picture>
+    <h1>$lgme</h1>
+    <p class="muted">The #legomiego coin. Egonomic Anonymous.</p>
+
+    <h2>Mint address</h2>
+    <div class="card">
+      <p class="addr" id="mint">7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump</p>
+      <div class="actions">
+        <button type="button" id="copy-mint">Copy mint</button>
+        <a class="btn primary" href="https://pump.fun/coin/7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump">Buy on pump.fun</a>
+      </div>
+    </div>
+
+    <h2>How to buy</h2>
+    <ol>
+      <li>Get a Solana wallet, for example Phantom or Solflare.</li>
+      <li>Add SOL to that wallet.</li>
+      <li>Open the pump.fun link.</li>
+      <li>Connect the wallet.</li>
+      <li>Buy.</li>
+      <li>Verify that the mint address matches <span class="addr">7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump</span>.</li>
+    </ol>
+    <p class="muted">This page does not connect a wallet and does not move funds.</p>
+
+    <h2>Send or donate</h2>
+    <div class="card">
+      <p>Solana address</p>
+      <p class="addr" id="donate">6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY</p>
+      <div class="actions">
+        <button type="button" id="copy-donate">Copy address</button>
+      </div>
+      <div id="donate-qr" class="qr" aria-label="QR of the donate address"></div>
+    </div>
+
+    <h2>X</h2>
+    <p><a href="https://x.com/EgonomicAnon">@EgonomicAnon</a></p>
+  </div>
+  <script src="/js/vendor/qrcode.js"></script>
+  <script>
+    function copyFrom(id, button) {
+      var value = document.getElementById(id).textContent.trim();
+      var done = function () { button.textContent = 'Copied'; };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(value).then(done).catch(function () { done(); });
+      } else done();
+    }
+    document.getElementById('copy-mint').addEventListener('click', function () { copyFrom('mint', this); });
+    document.getElementById('copy-donate').addEventListener('click', function () { copyFrom('donate', this); });
+    var address = document.getElementById('donate').textContent.trim();
+    if (window.QRCode) {
+      new QRCode(document.getElementById('donate-qr'), { text: address, width: 180, height: 180, correctLevel: QRCode.CorrectLevel.M });
+    }
+  </script>
+</body>
+</html>
