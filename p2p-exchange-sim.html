@@ -3,7 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="manifest" href="/manifest.json" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="lgme" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="theme-color" content="#1f6b45" />
   <script>
     (function () {
@@ -120,9 +123,35 @@
       .sticky-action .primary, .scan-prominent { width:100%; }
       body > .sim-banner:last-of-type { display:none; }
     }
+    .mag { display:grid; gap:0.75rem; }
+    @media (min-width: 800px) { html.desk .mag { grid-template-columns:1fr 1fr; } }
+    .mag-card { width:100%; text-align:left; cursor:pointer; }
+    .mag-card h3 { margin:0.3rem 0; }
+    .mag pre, .exch { white-space:pre-wrap; word-break:break-word; font-family:ui-monospace,monospace; font-size:0.85rem; background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:0.75rem; }
+    .mag table { width:100%; border-collapse:collapse; font-size:0.92rem; }
+    .mag th, .mag td { border-bottom:1px solid var(--line); text-align:left; padding:0.45rem 0.2rem; vertical-align:top; }
+    .splash { position:fixed; inset:0; z-index:60; display:grid; place-items:center; background:var(--bg); padding:1.25rem; }
+    .splash[hidden] { display:none; }
+    .splash-card { display:grid; justify-items:center; gap:0.8rem; text-align:center; }
+    .splash-coin { width:min(70vw, 280px); aspect-ratio:1; border-radius:50%; overflow:hidden; clip-path:circle(50% at 50% 50%); background:#111; }
+    .splash-coin { position:relative; }
+    .splash-coin video, .splash-coin img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center; display:block; }
+    @media (prefers-reduced-motion: reduce) { .splash-coin video { display:none; } }
   </style>
 </head>
 <body>
+  <div id="splash" class="splash" role="dialog" aria-label="lgme" hidden>
+    <div class="splash-card">
+      <div class="splash-coin">
+        <img src="/legomiego-coin.jpg" alt="" />
+        <video id="splash-video" poster="/legomiego-coin.jpg" muted playsinline autoplay aria-label="lgme coin">
+          <source src="/legomiego-coin.mp4" type="video/mp4" />
+        </video>
+      </div>
+      <p class="kicker">SIMULATION</p>
+      <button type="button" id="splash-skip" class="primary">Skip</button>
+    </div>
+  </div>
   <p class="sim-banner" role="note">SIMULATION. Practice books only. Nothing on this page writes to a network, sends mail or text, or moves real money. Each peer keeps a separate book. There is no central ledger.</p>
   <div class="wrap">
     <nav class="deskmenu" aria-label="Desk">
@@ -131,7 +160,7 @@
       <a href="/simulation-explainer">Simulation explainer</a>
       <a href="/the-third-seat">Third seat</a>
     </nav>
-    <p class="kicker">lgme · SIMULATION</p>
+    <p class="kicker">lgme · SIMULATION <button type="button" id="install-app" data-install hidden>Install</button></p>
     <h1>P2P exchange</h1>
     <p class="muted lede">Two people propose a line and both sign it. A third person may refuse it. A cycle clears only when every party has countersigned and nobody’s floor is taken.</p>
     <div id="seatbar" class="seatbar" aria-label="Peers"></div>

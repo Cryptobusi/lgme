@@ -1,4 +1,5 @@
 import * as sim from './p2p-exchange-sim.mjs';
+import { ARTICLES } from './p2p-resources.mjs';
 
 const sessionKeys = new Map();
 const rememberedSecrets = new Map();
@@ -64,6 +65,7 @@ function tabName() {
   const raw = decodeURIComponent(location.hash.replace(/^#/, ''));
   if (raw.includes('lgme1.')) return 'devices';
   const name = raw.split('&')[0];
+  if (name === 'resources' || name.startsWith('resources-')) return 'resources';
   return TABS.includes(name) ? name : 'exchange';
 }
 
@@ -141,6 +143,7 @@ async function render() {
   else if (tab === 'wallet') await renderWallet(peers, seat);
   else if (tab === 'devices') await renderDevices(peers, seat);
   else if (tab === 'help') renderHelp();
+  else if (tab === 'resources') renderResources();
   else await renderExchange(peers, seat);
 }
 
@@ -169,7 +172,7 @@ function renderSeats(peers, seat) {
 
 function renderTabs() {
   const tab = tabName();
-  const phoneTab = tab === 'reconcile' ? 'books' : tab;
+  const phoneTab = tab === 'reconcile' ? 'books' : tab === 'resources' ? 'help' : tab;
   for (const name of TABS) {
     const button = document.getElementById(`tab-${name}`);
     button.setAttribute('aria-selected', name === tab ? 'true' : 'false');
@@ -1177,12 +1180,121 @@ function renderHelp() {
     ['Simulated 2FA', 'A passphrase encrypts the key at rest with AES-GCM and PBKDF2. A 6-digit TOTP, RFC 6238, is checked with WebCrypto HMAC. The setup QR can be scanned by an authenticator app. This page generates the same code while the secret is still on screen. It never sends the code. A wrong code leaves the wallet locked.'],
     ['Another device', 'There is no server. Sign a proposal, countersign, refusal, transfer, or attestation, then carry the lgme1. code by copy, by a link whose data sits in the URL fragment, by a QR, or by a .json file. On the other device, verification runs before anything is appended. To text or email it, the page opens sms: or mailto: so you send it from your own app. The outbox and inbox are a local log of that.']
   ];
+  const install = h('div', { class: 'card' }, [
+    h('h3', {}, ['Install']),
+    h('p', { class: 'muted' }, ['Installed, this simulation opens straight into the desk. The browser does the install. This page does not send anything.']),
+    h('button', { type: 'button', class: 'primary', 'data-install': '1', hidden: true, onClick: promptInstall }, ['Install']),
+    h('p', { id: 'ios-install', class: 'legend', hidden: true }, ['On iPhone or iPad, open Share, then Add to Home Screen. The icon opens this simulation.'])
+  ]);
   panel.replaceChildren(
     h('h2', {}, ['Help']),
     h('p', { class: 'muted' }, ['SIMULATION. No real money, no message is sent by this page, and nothing is written to a network.']),
+    h('button', { type: 'button', class: 'card mag-card', onClick: () => { location.hash = 'resources'; } }, [
+      h('span', { class: 'kicker' }, ['Magazine']),
+      h('h3', {}, ['Resources']),
+      h('p', { class: 'muted' }, ['Alice, Bob, and Charlie. The fifteen exchanges. The refusal. The open line. The third seat and the story.'])
+    ]),
+    install,
     ...sections.map(([title, body]) => h('article', { class: 'card' }, [h('h3', {}, [title]), h('p', { class: 'muted' }, [body])])),
     h('div', { class: 'actions' }, [h('button', { type: 'button', onClick: () => showWalk(0) }, ['Replay the walkthrough'])])
   );
+  syncInstall();
+}
+
+function renderBlock(block) {
+  if (block.type === 'pre') return h('pre', { class: 'exch' }, [block.text]);
+  if (block.type === 'list') return h('ol', {}, block.items.map((item) => h('li', {}, [item])));
+  if (block.type === 'link') return h('p', {}, [h('a', { href: block.href }, [block.text])]);
+  if (block.type === 'table') {
+    return h('table', {}, [
+      h('thead', {}, [h('tr', {}, block.headers.map((cell) => h('th', {}, [cell])))]),
+      h('tbody', {}, block.rows.map((row) => h('tr', {}, row.map((cell) => h('td', {}, [cell])))))
+    ]);
+  }
+  return h('p', {}, [block.text]);
+}
+
+function renderResources() {
+  stopAnyCamera();
+  const panel = document.getElementById('panel');
+  const id = decodeURIComponent(location.hash.replace(/^#/, ''));
+  const article = ARTICLES.find((item) => item.id === id);
+  if (!article) {
+    panel.replaceChildren(
+      h('p', { class: 'kicker' }, ['SIMULATION · Resources']),
+      h('h2', {}, ['The magazine']),
+      h('p', { class: 'muted' }, ['The explainer, the simulator, and the third-seat story, kept in this app so they can be read offline.']),
+      h('div', { class: 'mag' }, ARTICLES.map((item) => h('button', {
+        type: 'button',
+        class: 'card mag-card',
+        onClick: () => { location.hash = item.id; }
+      }, [
+        h('span', { class: 'kicker' }, [item.kicker]),
+        h('h3', {}, [item.title]),
+        h('p', { class: 'muted' }, [item.deck])
+      ]))),
+      h('button', { type: 'button', class: 'quiet', onClick: () => { location.hash = 'help'; } }, ['Back to Help'])
+    );
+    return;
+  }
+  panel.replaceChildren(
+    h('button', { type: 'button', class: 'quiet', onClick: () => { location.hash = 'resources'; } }, ['All articles']),
+    h('p', { class: 'kicker' }, [`SIMULATION · ${article.kicker}`]),
+    h('h2', {}, [article.title]),
+    h('p', { class: 'muted' }, [article.deck]),
+    ...article.blocks.map(renderBlock)
+  );
+}
+
+let deferredInstall = null;
+
+function syncInstall() {
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  document.querySelectorAll('[data-install]').forEach((button) => {
+    button.hidden = standalone || !deferredInstall;
+  });
+  const ios = document.getElementById('ios-install');
+  if (ios) {
+    const apple = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    ios.hidden = !(apple && !standalone);
+  }
+}
+
+async function promptInstall() {
+  if (!deferredInstall) return;
+  deferredInstall.prompt();
+  await deferredInstall.userChoice;
+  deferredInstall = null;
+  syncInstall();
+}
+
+function showSplash() {
+  const splash = document.getElementById('splash');
+  if (!splash || sessionStorage.getItem('lgme-sim:ui:splash')) return Promise.resolve();
+  splash.hidden = false;
+  return new Promise((resolve) => {
+    let closed = false;
+    const done = () => {
+      if (closed) return;
+      closed = true;
+      splash.hidden = true;
+      sessionStorage.setItem('lgme-sim:ui:splash', '1');
+      const video = document.getElementById('splash-video');
+      if (video) video.pause();
+      resolve();
+    };
+    document.getElementById('splash-skip').addEventListener('click', done);
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const video = document.getElementById('splash-video');
+    if (reduce && video) video.remove();
+    if (!reduce && video) {
+      video.play().catch(() => {});
+      video.addEventListener('ended', done);
+      setTimeout(done, 6200);
+    } else {
+      setTimeout(done, 1200);
+    }
+  });
 }
 
 const WALK = [
@@ -1296,7 +1408,17 @@ window.addEventListener('hashchange', () => {
   render();
 });
 
+window.addEventListener('beforeinstallprompt', (event) => {
+  event.preventDefault();
+  deferredInstall = event;
+  syncInstall();
+});
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+
 loadReferences().then(async () => {
+  await showSplash();
   await render();
   if (!sessionStorage.getItem('lgme-sim:ui:seen-walk')) showWalk(0);
 }).catch((error) => {

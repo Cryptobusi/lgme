@@ -1,11 +1,23 @@
 // lgme.app shell. HTML is fetched from the network first so a published change shows.
-const CACHE_NAME = "lgme-v20";
+const CACHE_NAME = "lgme-v21";
 const SHELL = [
   "/",
   "/manifest.json",
+  "/manifest.webmanifest",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
   "/icons/apple-touch-icon.png",
+  "/p2p-exchange-sim",
+  "/p2p-exchange-sim.html",
+  "/js/p2p-exchange-sim.mjs",
+  "/js/p2p-exchange-sim-ui.mjs",
+  "/js/p2p-resources.mjs",
+  "/js/vendor/qrcode.js",
+  "/js/vendor/jsQR.js",
+  "/menu.css",
+  "/legomiego-coin.jpg",
+  "/data/dc-reference-values-v0.json",
+  "/docs/SPP_Overview.pptx",
   "/spp",
   "/soverx",
   "/disclosures",
@@ -20,7 +32,7 @@ const SHELL = [
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then((cache) => Promise.all(SHELL.map((url) => cache.add(url).catch(() => null)))).then(() => self.skipWaiting())
   );
 });
 
@@ -52,7 +64,12 @@ self.addEventListener("fetch", (event) => {
           caches.open(CACHE_NAME).then((cache) => cache.put(url.pathname, copy));
           return response;
         })
-        .catch(() => caches.match(url.pathname).then((hit) => hit || caches.match("/")))
+        .catch(() => {
+          if (url.pathname === "/p2p-exchange-sim" || url.pathname === "/p2p-exchange-sim.html") {
+            return caches.match("/p2p-exchange-sim").then((hit) => hit || caches.match("/p2p-exchange-sim.html")).then((hit) => hit || caches.match("/"));
+          }
+          return caches.match(url.pathname).then((hit) => hit || caches.match("/"));
+        })
     );
     return;
   }

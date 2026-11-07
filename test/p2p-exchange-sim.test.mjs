@@ -455,11 +455,34 @@ test('auto-delivery happens only after a valid TOTP', async () => {
   assert.equal(sim.layoutMode({ width: 1280, coarse: false, uaMobile: true }), 'desk');
 });
 
+test('resources magazine keeps the explainer sections', () => {
+  const text = readFileSync(join(root, 'js/p2p-resources.mjs'), 'utf8');
+  for (const phrase of [
+    'Alice, Bob, and Charlie',
+    'Fifteen exchanges',
+    'Ride share',
+    'Bookkeeping',
+    'How an open item is resolved',
+    'Settled dashboard',
+    'The refusal',
+    'The unresolved line',
+    'Mutual credit simulator',
+    'Deployment manifest',
+    'The third seat',
+    'The broken car',
+    'SPP_Overview.pptx'
+  ]) {
+    assert.equal(text.includes(phrase), true, phrase);
+  }
+});
+
 test('pages stay simulation-only', () => {
   const files = [
     'js/p2p-exchange-sim.mjs',
     'js/p2p-exchange-sim-ui.mjs',
-    'p2p-exchange-sim.html'
+    'js/p2p-resources.mjs',
+    'p2p-exchange-sim.html',
+    'manifest.webmanifest'
   ];
   const banned = ['0.0.489104', 'hederica.com', 'lgme.hederica.com', '$Trust', 'XMLHttpRequest', 'WebSocket'];
   for (const file of files) {
