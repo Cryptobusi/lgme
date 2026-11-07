@@ -99,3 +99,22 @@ The first live pass exposed three desk bugs. They shipped in `0fcf8ef` and the t
 - The deep transaction sequence ran at 390×844. Desktop covered the splash, market, wallet, and Resources.
 - pump.fun and x.com were not loaded. Only the outbound links were checked.
 - The donate QR is drawn by the vendored library. The address string was compared exactly. The QR image was not decoded pixel by pixel.
+
+## Addendum — soBeIT contribution methods
+
+Checked live after the contribution cards shipped, at a 390×844 phone viewport on https://lgme.app. `/lgme-coin` returned HTTP 200. The service worker cache is `lgme-v29`.
+
+| Check | Result |
+| --- | --- |
+| Heading `soBeIT contributions` | Pass on the coin page, the pinned Donation listing, the soBeIT panel, and the in-app coin panel |
+| Pump.fun wallet | Pass. Wallet name `@EgonAnon` is plain text. Solana address `6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY` is exact. Copy button and QR are present. |
+| pump.fun profile | `https://pump.fun/profile/EgonAnon` returned 403, so the name is not a link |
+| X Money | Pass. The card reads `Send via X Money to @Trancesage` and links to `https://x.com/Trancesage` (HTTP 200). It states this is a separate account from the Solana wallet. |
+| Risk notice | Present, unchanged |
+| `X @EgonomicAnon` | Removed from the coin page |
+
+![Coin page contributions](verification/phone-contrib-coin.png)
+
+![Donation listing contributions](verification/phone-contrib-donation.png)
+
+![In-app coin panel](verification/phone-contrib-wallet.png)
