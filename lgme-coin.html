@@ -17,6 +17,7 @@
     .wrap { padding:1rem 1.1rem 0; }
     h1 { font-family:Newsreader,serif; font-weight:500; font-size:clamp(2rem, 6vw, 2.8rem); margin:0.2rem 0 0.4rem; }
     h2 { font-family:Newsreader,serif; font-weight:500; font-size:1.35rem; margin:1.4rem 0 0.4rem; }
+    h3 { font-family:Newsreader,serif; font-weight:500; font-size:1.1rem; margin:0 0 0.35rem; }
     a { color:var(--fg); }
     .muted { color:var(--muted); }
     .coin { width:min(16rem, 70vw); height:auto; border-radius:50%; display:block; margin:0.6rem 0 0.8rem; }
@@ -61,8 +62,10 @@
     </ol>
     <p class="muted">This page does not connect a wallet and does not move funds.</p>
 
-    <h2>Send or donate</h2>
-    <div class="card">
+    <h2>soBeIT contributions</h2>
+    <div class="card" id="pump-wallet">
+      <h3>Pump.fun wallet</h3>
+      <p>Wallet name <span id="wallet-name">@EgonAnon</span></p>
       <p>Solana address</p>
       <p class="addr" id="donate">6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY</p>
       <div class="actions">
@@ -70,9 +73,11 @@
       </div>
       <div id="donate-qr" class="qr" aria-label="QR of the donate address"></div>
     </div>
-
-    <h2>X</h2>
-    <p><a href="https://x.com/EgonomicAnon">@EgonomicAnon</a></p>
+    <div class="card" id="x-money">
+      <h3>X Money</h3>
+      <p>Send via X Money to <a href="https://x.com/Trancesage">@Trancesage</a></p>
+      <p>This is a separate account from the Solana wallet.</p>
+    </div>
   </div>
   <script src="/js/vendor/qrcode.js"></script>
   <script>

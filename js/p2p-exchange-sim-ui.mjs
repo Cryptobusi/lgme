@@ -992,7 +992,7 @@ async function renderWallet(peers, seat) {
     ])
   ];
   if (secret) blocks.push(codeLine, h('div', { id: 'setup-qr' }));
-  blocks.push(profileCard(sim.peerProfile(peer)), soBeItCard(peers, seat), kycCard(peer, peers));
+  blocks.push(profileCard(sim.peerProfile(peer)), coinPanel(), soBeItCard(peers, seat), kycCard(peer, peers));
   if (!peer.wallet?.ciphertext) {
     const passphrase = h('input', { type: 'password', minlength: '8', autocomplete: 'new-password', required: true });
     const form = h('form', {}, [
@@ -1442,6 +1442,45 @@ function coinMark() {
   return h('picture', {}, [h('source', { srcset: '/icons/lgme-coin-192.webp', type: 'image/webp' }), img]);
 }
 
+const DONATE_ADDRESS = '6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY';
+
+function contributionMethods() {
+  const copy = h('button', { type: 'button' }, ['Copy address']);
+  copy.addEventListener('click', async () => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(DONATE_ADDRESS);
+    } catch { /* the address stays on screen */ }
+    copy.textContent = 'Copied';
+  });
+  const qrHost = h('div', {});
+  drawQr(qrHost, DONATE_ADDRESS);
+  return h('section', { class: 'contrib' }, [
+    h('h3', {}, ['soBeIT contributions']),
+    h('p', { class: 'legend' }, ['Real token on Solana. Not financial advice. High risk; you may lose everything. Always verify the mint address. The in-app $lgme balances are a simulation and are not this token.']),
+    h('article', { class: 'card pump-wallet' }, [
+      h('h3', {}, ['Pump.fun wallet']),
+      h('p', {}, ['Wallet name ', h('span', { class: 'wallet-name' }, ['@EgonAnon'])]),
+      h('p', {}, ['Solana address']),
+      h('p', { class: 'addr donate-address' }, [DONATE_ADDRESS]),
+      h('div', { class: 'actions' }, [copy]),
+      qrHost
+    ]),
+    h('article', { class: 'card x-money' }, [
+      h('h3', {}, ['X Money']),
+      h('p', {}, ['Send via X Money to ', h('a', { href: 'https://x.com/Trancesage' }, ['@Trancesage'])]),
+      h('p', {}, ['This is a separate account from the Solana wallet.'])
+    ])
+  ]);
+}
+
+function coinPanel() {
+  return h('article', { class: 'card', id: 'coin-panel' }, [
+    h('div', { class: 'balance-hero' }, [coinMark(), h('div', {}, [h('strong', {}, ['$lgme']), 'Real token, separate from this book'])]),
+    h('p', {}, [h('a', { href: '/lgme-coin' }, ['Mint and buy steps are on the coin page.'])]),
+    contributionMethods()
+  ]);
+}
+
 function soBeItCard(peers, seat) {
   const member = h('select', {}, peerOptions(peers.filter((item) => item.id !== seat), ''));
   const amount = h('input', { type: 'number', min: '0.01', step: '0.01', inputmode: 'decimal', value: '5' });
@@ -1462,7 +1501,7 @@ function soBeItCard(peers, seat) {
     h('h3', {}, ['soBeIT']),
     h('p', { class: 'muted' }, ['A simulated grant on this tape. The grantor signs it. It is attested on the member book. It is not the Solana token.']),
     form,
-    h('p', {}, [h('a', { href: '/lgme-coin' }, ['Real $lgme grants and donations go to the address on the coin page.'])])
+    contributionMethods()
   ]);
 }
 
