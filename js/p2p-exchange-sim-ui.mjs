@@ -1,6 +1,7 @@
 import * as sim from './p2p-exchange-sim.mjs';
 import { ARTICLES } from './p2p-resources.mjs';
 import { PASSKEY_WORDING, createIndexedDbVault, deviceKeyForMigration, importNonExtractable, openJson, passkeyCreationOptions, sealJson } from './p2p-sim-guard.mjs';
+import { REFERENCE_LABEL, optionLabel, referenceLine } from './dc-reference.mjs';
 
 const sessionKeys = new Map();
 const sessionCrypto = new Map();
@@ -68,7 +69,8 @@ let pendingImport = '';
 let carryAddress = '';
 let activeCodeTimer = 0;
 let catalog = [];
-let catalogNotice = 'Reference only, not a price.';
+let catalogMeta = { date: '', notice: '', method: '' };
+let catalogNotice = `${REFERENCE_LABEL}. Reference only, not a price.`;
 let busy = false;
 let nameById = {};
 let marketQuery = { q: '', kind: '', category: '', condition: '', pickup: '', circle: '', min: '', max: '' };
@@ -330,6 +332,28 @@ function activeAvg(item, basis) {
   return item.avg_value_usd;
 }
 
+function referenceDetail(item) {
+  if (!item) return catalogNotice;
+  const line = referenceLine(item, catalogMeta);
+  const note = item.note ? ` ${item.note}` : '';
+  return `${line.text} Reference only, not a price.${note}`;
+}
+
+function referenceCatalogCard() {
+  const rows = catalog.map((item) => {
+    const line = referenceLine(item, catalogMeta);
+    return h('li', {}, [
+      h('strong', {}, [`${line.name}: ${line.value}`]),
+      h('span', { class: 'legend' }, [` As of ${line.asOf}. Sources: ${line.sources}.`])
+    ]);
+  });
+  return h('details', { id: 'dc-reference', open: true, class: 'card' }, [
+    h('summary', {}, [REFERENCE_LABEL]),
+    h('p', { class: 'legend' }, [catalogNotice]),
+    rows.length ? h('ul', {}, rows) : h('p', {}, ['pending'])
+  ]);
+}
+
 async function renderExchange(peers, seat) {
   const panel = document.getElementById('panel');
   const me = peers.find((peer) => peer.id === seat);
@@ -346,6 +370,7 @@ async function renderExchange(peers, seat) {
   panel.replaceChildren(
     h('h2', {}, [`Exchange · ${me.name}`]),
     h('p', { class: 'muted' }, ['You are acting as this peer. Switch seats to countersign or to refuse. A proposal is not a debt until the other parties countersign.']),
+    referenceCatalogCard(),
     h('h3', {}, ['Lines on this book']),
     open.length ? h('div', {}, open.map((ex) => exchangeCard(ex, full, peers))) : h('p', { class: 'muted' }, ['No exchanges on this book yet.']),
     h('h3', {}, ['Propose a line']),
@@ -364,7 +389,7 @@ function renderBilateral(peers, me) {
   const charge = h('input', { type: 'number', min: '0', step: '0.01', value: '0' });
   const refItem = h('select', {}, [option('', 'None', true)]);
   for (const item of catalog) {
-    refItem.append(option(item.id, item.avg_value_usd == null ? `${item.name} — no reference value` : item.name, false));
+    refItem.append(option(item.id, optionLabel(item, catalogMeta), false));
   }
   const refBasis = h('select', {});
   const refQty = h('input', { type: 'number', min: '0.01', step: '0.01', value: '1' });
@@ -389,7 +414,7 @@ function renderBilateral(peers, me) {
       field('Cite IdidIt', receipt)
     ]),
     field('Reference value (optional)', refItem),
-    h('p', { class: 'legend' }, ['Reference only, not a price. The amount on the line is what would settle.']),
+    h('p', { class: 'legend' }, [`${REFERENCE_LABEL}. Reference only, not a price. The amount on the line is what would settle.`]),
     refWrap,
     refDetail,
     preview,
@@ -428,7 +453,7 @@ function renderBilateral(peers, me) {
     refBasis.replaceChildren();
     if (!item || item.avg_value_usd == null) {
       refWrap.hidden = true;
-      refDetail.textContent = item ? `Reference only, not a price. ${item.note || 'No reference value for this item.'}` : catalogNotice;
+      refDetail.textContent = item ? referenceDetail(item) : catalogNotice;
       return;
     }
     refWrap.hidden = false;
@@ -442,7 +467,8 @@ function renderBilateral(peers, me) {
     const suggested = sim.round2(avg * qty);
     amount.value = String(suggested);
     if (!reference.value.trim()) reference.value = item.name;
-    refDetail.textContent = `Reference only, not a price. ${avg} × ${qty} = ${suggested}. The line amount can still be edited.`;
+    const line = referenceLine(item, catalogMeta);
+    refDetail.textContent = `${line.text} Reference only, not a price. ${avg} × ${qty} = ${suggested}. The line amount can still be edited.`;
     refreshPreview();
   }
 
@@ -736,14 +762,14 @@ async function renderBooks(peers, seat) {
   const payer = h('select', {}, peerOptions(peers.filter((item) => item.id !== seat), ''));
   const invoiceAmount = h('input', { type: 'number', min: '0.01', step: '0.01', inputmode: 'decimal', id: 'invoice-amount' });
   const due = h('input', { type: 'date', id: 'invoice-due', value: new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10) });
-  const reference = h('select', {}, [option('', 'No dollar reference', true), ...catalog.map((item) => option(item.id, item.name, false))]);
+  const reference = h('select', {}, [option('', 'No dollar reference', true), ...catalog.map((item) => option(item.id, optionLabel(item, catalogMeta), false))]);
   const mediaHashes = h('input', { placeholder: 'Optional media hashes' });
   const extra = h('div', { id: 'invoice-fields' }, [
     field('Payer', payer),
     field('Amount in $lgme', invoiceAmount),
     field('Due date', due),
     field('Optional $ reference', reference),
-    h('p', { class: 'legend' }, ['Reference only, not a price.']),
+    h('p', { class: 'legend' }, [`${REFERENCE_LABEL}. Reference only, not a price.`]),
     field('Linked media hashes', mediaHashes)
   ]);
   extra.hidden = true;
@@ -1988,6 +2014,7 @@ async function renderMarket(peers, seat) {
     pills,
     filters,
     feed.length ? grid : h('p', { class: 'empty' }, ['No listings match. List one, or clear the filters.']),
+    referenceCatalogCard(),
     standing ? profileCard(standing) : null
   );
 }
@@ -2101,11 +2128,11 @@ async function renderList(seat) {
     return;
   }
   const amount = h('input', { inputmode: 'decimal', required: true, value: listDraft.amount, placeholder: '0.00' });
-  const reference = h('select', {}, [option('', 'No dollar reference', !listDraft.referenceId), ...catalog.map((item) => option(item.id, item.name, listDraft.referenceId === item.id))]);
-  const hint = h('p', { class: 'legend' }, ['Reference only, not a price.']);
+  const reference = h('select', {}, [option('', 'No dollar reference', !listDraft.referenceId), ...catalog.map((item) => option(item.id, optionLabel(item, catalogMeta), listDraft.referenceId === item.id))]);
+  const hint = h('p', { class: 'legend' }, [catalogNotice]);
   function paintHint() {
     const item = catalog.find((row) => row.id === reference.value);
-    hint.textContent = item && item.avg_value_usd != null ? `Reference only, not a price. ${item.name} is about ${item.avg_value_usd} in the DC list.` : 'Reference only, not a price.';
+    hint.textContent = item ? referenceDetail(item) : catalogNotice;
   }
   reference.addEventListener('change', paintHint);
   paintHint();
@@ -2149,7 +2176,7 @@ async function renderList(seat) {
       busy = false;
     }
   });
-  panel.replaceChildren(h('h2', {}, ['List']), steps, h('p', { class: 'muted' }, ['The value is in $lgme. A dollar figure is only a suggestion from the reference list.']), form);
+  panel.replaceChildren(h('h2', {}, ['List']), steps, h('p', { class: 'muted' }, ['The value is in $lgme. A dollar figure is only a suggestion from the reference list.']), referenceCatalogCard(), form);
 }
 
 async function takeChatToken(seat, raw) {
@@ -2605,10 +2632,12 @@ async function loadReferences() {
     if (!response.ok) throw new Error(String(response.status));
     const body = await response.json();
     catalog = Array.isArray(body.items) ? body.items : [];
-    catalogNotice = `Reference only, not a price. ${body.notice || ''}`.trim();
+    catalogMeta = { date: body.date || '', notice: body.notice || '', method: body.method || '' };
+    catalogNotice = `${REFERENCE_LABEL}. Reference only, not a price. As of ${catalogMeta.date || 'pending'}. ${catalogMeta.notice}`.trim();
   } catch {
     catalog = [];
-    catalogNotice = 'Reference list did not load. You can still name the work yourself. Reference only, not a price.';
+    catalogMeta = { date: '', notice: '', method: '' };
+    catalogNotice = `Reference list did not load. You can still name the work yourself. ${REFERENCE_LABEL}. Reference only, not a price.`;
   }
 }
 

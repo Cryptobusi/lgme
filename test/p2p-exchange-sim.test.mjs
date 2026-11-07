@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import * as sim from '../js/p2p-exchange-sim.mjs';
 import { decideInstallAction, isIosSafari, isStandalone } from '../js/install-launch.mjs';
 import * as guard from '../js/p2p-sim-guard.mjs';
+import { REFERENCE_LABEL, averagedReference, referenceLine } from '../js/dc-reference.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -1365,4 +1366,56 @@ test('the QR drawer reads a major-only Android version', () => {
   assert.equal(parseFloat(found[1]) >= 3, true);
   const old = 'Mozilla/5.0 (Linux; Android 4.4.2; Phone)'.match(pattern);
   assert.equal(old[1], '4.4');
+});
+
+test('DC reference values stay pending when a series has no number', () => {
+  const catalog = JSON.parse(readFileSync(join(root, 'data/dc-reference-values-v0.json'), 'utf8'));
+  assert.equal(catalog.label, REFERENCE_LABEL);
+  assert.equal(catalog.date, '2026-11-02');
+  const byName = Object.fromEntries(catalog.items.map((item) => [item.name, item]));
+  for (const name of ['Cooking / meal prep', 'Apples', 'Diesel']) {
+    const item = byName[name];
+    assert.ok(item, name);
+    assert.equal(item.avg_value_usd, null);
+    assert.equal(averagedReference(item), null);
+    const line = referenceLine(item, catalog);
+    assert.equal(line.pending, true);
+    assert.equal(line.value, 'pending');
+    assert.equal(line.label, 'simulation reference values');
+    assert.match(line.text, /^simulation reference values\. /);
+    assert.match(line.sources, /BLS/);
+    assert.equal(/\d+\.\d+ USD/.test(line.text), false);
+  }
+  const lawn = referenceLine(byName['Lawn mowing'], catalog);
+  assert.equal(lawn.pending, false);
+  assert.equal(lawn.value, '109.5 USD per job');
+  assert.match(lawn.asOf, /May 2025/);
+  assert.match(lawn.sources, /SOC 37-3011/);
+  const eggs = referenceLine(byName['Eggs, grade A large'], catalog);
+  assert.equal(eggs.value, '2.368 USD per dozen');
+  assert.match(eggs.asOf, /Sep 2026/);
+  for (const item of catalog.items) {
+    if (item.avg_value_usd == null) assert.equal(referenceLine(item, catalog).value, 'pending', item.name);
+  }
+  const helper = readFileSync(join(root, 'js/dc-reference.mjs'), 'utf8');
+  assert.equal(helper.includes('fetch('), false);
+  const ui = readFileSync(join(root, 'js/p2p-exchange-sim-ui.mjs'), 'utf8');
+  assert.equal(ui.includes("fetch('/data/dc-reference-values-v0.json')"), true);
+  assert.equal((ui.match(/fetch\(/g) || []).length, 1);
+  assert.equal(ui.includes('REFERENCE_LABEL'), true);
+  assert.equal(ui.includes("id: 'dc-reference'"), true);
+  assert.equal(helper.includes("simulation reference values"), true);
+  const mutual = readFileSync(join(root, 'js/pages/mutual-credit-simulator.js'), 'utf8');
+  assert.equal((mutual.match(/fetch\(/g) || []).length, 1);
+  assert.equal(mutual.includes("fetch('/data/dc-reference-values-v0.json')"), true);
+  assert.equal(mutual.includes('simulation reference values') || mutual.includes('REFERENCE_LABEL'), true);
+  assert.equal(mutual.includes('— pending') || mutual.includes('optionLabel'), true);
+  const page = readFileSync(join(root, 'mutual-credit-simulator.html'), 'utf8');
+  assert.equal(page.includes('simulation reference values'), true);
+  assert.equal(page.includes('id="refList"'), true);
+  assert.equal(/<script(?![^>]*\bsrc=)/i.test(page), false);
+  const worker = readFileSync(join(root, 'sw.js'), 'utf8');
+  assert.equal(worker.includes('lgme-v37'), true);
+  assert.equal(worker.includes('/js/dc-reference.mjs'), true);
+  assert.equal(worker.includes('/data/dc-reference-values-v0.json'), true);
 });

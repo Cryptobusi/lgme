@@ -103,11 +103,11 @@
             <p id="thirdSeatNote" class="text-[10px] text-slate-500 mt-1">No third seat. Bilateral exchange only (simulated).</p>
           </div>
           <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80 space-y-2">
-            <label class="block text-xs font-medium text-slate-400" for="refItem">Reference value (DC test run, simulated)</label>
+            <label class="block text-xs font-medium text-slate-400" for="refItem">simulation reference values</label>
             <select id="refItem" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
               <option value="">None</option>
             </select>
-            <p class="text-[10px] text-amber-200/90">Reference only, not a price</p>
+            <p class="text-[10px] text-amber-200/90">simulation reference values. Reference only, not a price.</p>
             <div id="refQtyWrap" hidden class="grid grid-cols-3 gap-3">
               <div class="col-span-2">
                 <label id="refQtyLabel" class="block text-xs font-medium text-slate-400 mb-1" for="refQty">Hours or quantity</label>
@@ -118,7 +118,11 @@
                 <select id="refBasis" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"></select>
               </div>
             </div>
-            <p id="refDetail" class="text-[10px] text-slate-500">Reference list loads from this site (simulated).</p>
+            <p id="refDetail" class="text-[10px] text-slate-500">simulation reference values. Reference list loads from this site.</p>
+            <details id="refCatalog" open class="text-[10px] text-slate-400">
+              <summary>simulation reference values</summary>
+              <ul id="refList" class="space-y-2 mt-2"></ul>
+            </details>
           </div>
           <div class="grid grid-cols-3 gap-3">
             <div class="col-span-2">
@@ -249,6 +253,6 @@
     <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
     <span id="toastMsg">Action complete</span>
   </div>
-  <script src="/js/pages/mutual-credit-simulator.js"></script>
+  <script type="module" src="/js/pages/mutual-credit-simulator.js"></script>
 </body>
 </html>

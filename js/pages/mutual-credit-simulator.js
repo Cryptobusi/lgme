@@ -1,4 +1,6 @@
-    // Client-side simulation only. No network calls. No Hedera or Komunitin writes.
+import { REFERENCE_LABEL, optionLabel, referenceLine } from '/js/dc-reference.mjs';
+
+    // Client-side simulation only. No network writes. No Hedera or Komunitin writes.
     const GENESIS = '0'.repeat(64);
     const FLOOR_BLOCK = 'Blocked: Floor stays senior';
     const OPENING = Object.freeze({
@@ -11,6 +13,7 @@
       tape: [],
       logs: [],
       refs: [],
+      refCatalog: { date: '', notice: '' },
       appliedRef: null
     };
     let busy = false;
@@ -340,8 +343,8 @@
         wrap.hidden = true;
         state.appliedRef = null;
         detail.textContent = item
-          ? `Reference only, not a price. ${item.note || 'No reference value for this item.'} (simulated)`
-          : 'Reference only, not a price.';
+          ? `${referenceLine(item, state.refCatalog).text} Reference only, not a price.`
+          : `${REFERENCE_LABEL}. Reference only, not a price.`;
         return;
       }
       wrap.hidden = false;
@@ -388,7 +391,8 @@
       document.getElementById('tradeAmount').value = String(amount);
       document.getElementById('itemDesc').value = item.name;
       state.appliedRef = { id: item.id, avg };
-      detail.textContent = `Reference only, not a price. ${avg} USD × ${qty} = ${amount} (simulated). You can still edit the amount.`;
+      const line = referenceLine(item, state.refCatalog);
+      detail.textContent = `${line.text} Reference only, not a price. ${avg} USD × ${qty} = ${amount}. You can still edit the amount.`;
     }
     async function loadReferences() {
       const select = document.getElementById('refItem');
@@ -398,18 +402,27 @@
         if (!response.ok) throw new Error(String(response.status));
         const catalog = await response.json();
         state.refs = Array.isArray(catalog.items) ? catalog.items : [];
+        state.refCatalog = { date: catalog.date || '', notice: catalog.notice || '' };
         select.innerHTML = '';
         const none = document.createElement('option');
         none.value = '';
         none.textContent = 'None';
         select.appendChild(none);
+        const list = document.getElementById('refList');
+        list.replaceChildren();
         for (const item of state.refs) {
           const option = document.createElement('option');
           option.value = item.id;
-          option.textContent = item.avg_value_usd == null ? `${item.name} — no reference value` : item.name;
+          option.textContent = optionLabel(item, state.refCatalog);
           select.appendChild(option);
+          const line = referenceLine(item, state.refCatalog);
+          const row = document.createElement('li');
+          const name = document.createElement('strong');
+          name.textContent = `${line.name}: ${line.value}`;
+          row.append(name, document.createTextNode(` As of ${line.asOf}. Sources: ${line.sources}.`));
+          list.append(row);
         }
-        detail.textContent = 'Reference only, not a price. ' + (catalog.notice || 'simulated');
+        detail.textContent = `${REFERENCE_LABEL}. Reference only, not a price. As of ${state.refCatalog.date || 'pending'}. ${state.refCatalog.notice}`;
       } catch (err) {
         detail.textContent = 'Reference list did not load (simulated).';
       }
