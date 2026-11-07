@@ -1752,7 +1752,7 @@ test('DC reference values stay pending when a series has no number', () => {
   assert.equal(page.includes('id="refList"'), true);
   assert.equal(/<script(?![^>]*\bsrc=)/i.test(page), false);
   const worker = readFileSync(join(root, 'sw.js'), 'utf8');
-  assert.equal(worker.includes('lgme-v51'), true);
+  assert.equal(worker.includes('lgme-v52'), true);
   const desk = readFileSync(join(root, 'p2p-exchange-sim.html'), 'utf8');
   assert.equal(desk.includes('splash-skip'), false);
   assert.equal(desk.includes('>Skip<'), false);
@@ -1941,6 +1941,8 @@ test('Zelle and cash stay pending until the payee attests and a proof cannot be 
   assert.equal(receipt.ok, true, receipt.error);
   assert.equal(receipt.proofHash, proof);
   assert.equal(receipt.thanks, 'THANK YOU FOR YOUR SUPPORT.');
+  assert.equal(receipt.statutoryFees, '');
+  assert.equal(sim.FIAT_FEE_NOTE, 'Fiat payments (cash, Zelle) may incur additional statutory fees. Details are reviewed per transaction.');
   assert.ok(receipt.payerSig && receipt.payeeSig);
   const cash = await sim.recordOffchainPayment(store, 'alice', {
     method: 'cash',
@@ -1965,6 +1967,10 @@ test('Zelle and cash stay pending until the payee attests and a proof cannot be 
   assert.equal(coin.includes('Option D. Cash'), true);
   assert.equal(coin.includes('Zelle details: ask the recipient in chat / provided on request'), true);
   assert.equal(coin.includes('Do not mail cash.'), true);
+  assert.equal(coin.includes(sim.FIAT_FEE_NOTE), true);
   assert.equal(grants.includes('Do not mail cash.'), true);
+  assert.equal(grants.includes(sim.FIAT_FEE_NOTE), true);
+  assert.equal(readFileSync(join(root, 'js/p2p-exchange-sim-ui.mjs'), 'utf8').includes('FIAT_FEE_NOTE'), true);
+  assert.equal(readFileSync(join(root, 'js/p2p-exchange-sim-ui.mjs'), 'utf8').includes('Statutory fees / notes'), true);
   assert.equal(coin.includes('$Trust') || grants.includes('$Trust'), false);
 });

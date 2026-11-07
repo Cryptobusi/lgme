@@ -27,6 +27,7 @@ export const LISTING_KINDS = Object.freeze(['ihavIT', 'IwanIT', 'IprovIT']);
 export const TERM_MONTHS = Object.freeze([3, 4, 5, 6]);
 export const OFFERUP_CAVEAT = 'Third-party listing on OfferUp, not verified by lgme. Price and availability may have changed. Deal is between you and the seller.';
 export const DONATION_THANKS = 'THANK YOU FOR YOUR SUPPORT.';
+export const FIAT_FEE_NOTE = 'Fiat payments (cash, Zelle) may incur additional statutory fees. Details are reviewed per transaction.';
 export const STANDING_DONATION = Object.freeze({
   title: 'Donation — soBeIT',
   description: 'help grow n floor, thank you.',
@@ -2402,9 +2403,9 @@ export function tailoredDraft(item, spec = {}) {
   const pay = spec.pay === 'service'
     ? '$lgme services (IprovIT). A payment is real $lgme from your wallet.'
     : spec.pay === 'zelle'
-      ? 'Zelle. Not counted until the payee attests the confirmation. This app does not process it.'
+      ? `Zelle. Not counted until the payee attests the confirmation. This app does not process it. ${FIAT_FEE_NOTE}`
       : spec.pay === 'cash'
-        ? 'Cash in person only. Do not mail cash. Not counted until the payee attests the receipt.'
+        ? `Cash in person only. Do not mail cash. Not counted until the payee attests the receipt. ${FIAT_FEE_NOTE}`
         : spec.pay === 'full' || !spec.pay
           ? 'Pay in full'
           : `Terms over ${spec.pay} months`;
@@ -4154,6 +4155,7 @@ async function offchainClaim(spec, payerId) {
   const note = String(spec.note || '').trim();
   const proofHash = String(spec.proofHash || '').toLowerCase();
   const noteKey = method === 'cash' && note ? `note:${await sha256(canonicalJSON({ method: 'cash', note }))}` : '';
+  const statutoryFees = String(spec.statutoryFees || '').trim();
   const keys = [];
   if (confirmation) keys.push(`zelle:${confirmation}`);
   if (/^[0-9a-f]{64}$/.test(proofHash)) keys.push(`file:${proofHash}`);
@@ -4166,6 +4168,7 @@ async function offchainClaim(spec, payerId) {
     note,
     proofHash: /^[0-9a-f]{64}$/.test(proofHash) ? proofHash : '',
     noteKey,
+    statutoryFees,
     keys,
     invoiceId: String(spec.invoiceId || ''),
     offerId: String(spec.offerId || ''),
@@ -4359,6 +4362,7 @@ export function offchainReceipt(peers, paymentId) {
     payerHash: payer.entry.hash,
     payeeSig: payee.entry.sig,
     payeeHash: payee.entry.hash,
+    statutoryFees: payload.statutoryFees || '',
     thanks: 'THANK YOU FOR YOUR SUPPORT.'
   };
 }

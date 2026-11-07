@@ -361,6 +361,7 @@ function showOffchainPay(spec) {
   const paidAt = h('input', { type: 'date', value: new Date().toISOString().slice(0, 10) });
   const confirmation = h('input', { maxlength: '80', autocomplete: 'off', placeholder: 'Zelle confirmation number' });
   const note = h('input', { maxlength: '240', placeholder: 'Handoff note' });
+  const fees = h('input', { maxlength: '240', placeholder: 'Optional. No fee is calculated.' });
   const file = h('input', { type: 'file', accept: 'image/*,.pdf' });
   const preview = h('p', { class: 'legend' }, [spec.method === 'cash'
     ? 'Cash is in person only. Do not mail cash.'
@@ -368,9 +369,11 @@ function showOffchainPay(spec) {
   const form = h('form', {}, [
     h('h2', {}, [spec.method === 'cash' ? 'Pay with cash' : 'Pay with Zelle']),
     h('p', {}, [paymentMethods.notice || 'Zelle and cash are not reversible-protected. This app does not process them.']),
+    h('p', {}, [sim.FIAT_FEE_NOTE]),
     h('p', {}, ['The file stays on this device. The tape stores only its SHA-256 fingerprint. Nothing is uploaded.']),
     field('Amount', amount),
     field('Date', paidAt),
+    field('Statutory fees / notes', fees),
     spec.method === 'zelle' ? field('Zelle confirmation number', confirmation) : null,
     field(spec.method === 'cash' ? 'Handoff note' : 'Note, optional', note),
     field(spec.method === 'cash' ? 'Receipt photo, optional' : 'Screenshot, optional', file),
@@ -393,6 +396,7 @@ function showOffchainPay(spec) {
       paidAt: paidAt.value,
       confirmation: confirmation.value,
       note: note.value,
+      statutoryFees: fees.value,
       proofHash,
       invoiceId: spec.invoiceId || '',
       offerId: spec.offerId || '',
@@ -426,6 +430,8 @@ function printReceipt(receipt) {
   add('p', receipt.proofHash ? `Proof fingerprint ${receipt.proofHash}` : 'No file fingerprint on this receipt.');
   add('p', `Payer signature ${receipt.payerSig}`);
   add('p', `Payee signature ${receipt.payeeSig}`);
+  add('p', `Statutory fees / notes: ${receipt.statutoryFees || ''}`);
+  add('p', sim.FIAT_FEE_NOTE);
   add('p', 'Zelle and cash are not reversible-protected. This app does not process them.');
   view.focus();
   view.print();
@@ -1290,6 +1296,7 @@ async function renderBooks(peers, seat) {
       h('h3', {}, ['Cash and Zelle']),
       h('p', { class: 'legend' }, [zelleLine()]),
       h('p', { class: 'legend' }, ['Cash is in person only. Do not mail cash. Zelle and cash are not reversible-protected. This app does not process them. A payment is pending-attestation until the payee signs.']),
+      h('p', { class: 'legend' }, [sim.FIAT_FEE_NOTE]),
       ...offchain
     ]),
     h('section', { id: 'invoices' }, [
@@ -2412,7 +2419,7 @@ function offerForm(seat, target, serviceList = []) {
   const services = catalogServices(serviceList);
   function paint() {
     const choice = mode.value;
-    if (choice !== 'full' && choice !== 'service') {
+    if (choice === '3' || choice === '4' || choice === '5' || choice === '6') {
       const built = sim.termSchedule(amount.value, Number(choice), new Date().toISOString());
       preview.textContent = built.ok
         ? built.installments.map((row) => `${row.n}. ${row.amount} due ${row.dueAt.slice(0, 10)}`).join(' · ')
@@ -2422,9 +2429,9 @@ function offerForm(seat, target, serviceList = []) {
     preview.textContent = choice === 'full'
       ? 'Cash in full. No installment is written until both parties sign.'
       : choice === 'zelle'
-        ? 'Zelle is not counted until the payee attests the confirmation. This app does not process it. Zelle details: ask the recipient in chat / provided on request.'
+        ? `Zelle is not counted until the payee attests the confirmation. This app does not process it. Zelle details: ask the recipient in chat / provided on request. ${sim.FIAT_FEE_NOTE}`
         : choice === 'cash'
-          ? 'Cash is in person only. Do not mail cash. It is not counted until the payee attests the receipt. This app does not process it.'
+          ? `Cash is in person only. Do not mail cash. It is not counted until the payee attests the receipt. This app does not process it. ${sim.FIAT_FEE_NOTE}`
           : 'Pick one or more IprovIT services. A $lgme payment is signed by your wallet.';
   }
   mode.addEventListener('change', paint);
