@@ -2332,12 +2332,41 @@ export async function ensureStandingWanted(store, at = nowIso()) {
 export function normalizeWantedMatch(item) {
   const row = normalizeOfferupItem(item);
   const status = WANTED_STATUSES.includes(item?.status) ? item.status : 'Available';
-  return { ...row, status };
+  const type = String(item?.type || '').trim().toLowerCase();
+  return {
+    ...row,
+    kind: row.kind || 'sell',
+    type,
+    note: String(item?.note || '').trim(),
+    inquiry: String(item?.inquiry || '').trim(),
+    sellerSaysWorking: item?.sellerSaysWorking === true,
+    status
+  };
 }
 
 export function wantedFeed(catalog) {
   const items = Array.isArray(catalog?.items) ? catalog.items : [];
-  return items.map(normalizeWantedMatch).filter((item) => item.title && item.url && item.kind);
+  return items.map(normalizeWantedMatch).filter((item) => item.title && item.url && (item.kind || item.type));
+}
+
+export function workingBadge(item) {
+  return item?.sellerSaysWorking === true ? 'Seller says working' : 'Ask if working';
+}
+
+export function wantedInquiry(item) {
+  if (item?.inquiry) return item.inquiry;
+  const title = item?.title || 'item';
+  const price = item?.price || 'your price';
+  return `Hi! Is your ${title} still available and fully working? I'd offer ${price} after a quick demonstration. What pickup or delivery works? We can continue here on OfferUp, or use lgme.app to record our agreed terms (its in-app balances are simulated).`;
+}
+
+export function suggestedWantedPair(items) {
+  const list = Array.isArray(items) ? items : [];
+  const schwinn = list.find((item) => /Schwinn 810/.test(item.title || ''));
+  const elliptical = list.find((item) => /E5500XL/.test(item.title || ''));
+  if (!schwinn || !elliptical) return '';
+  const total = (offerupAmount(schwinn.price) || 0) + (offerupAmount(elliptical.price) || 0);
+  return `Suggested pair: Schwinn 810 + E5500XL = $${total}`;
 }
 
 export function wantedMatchDraft(match) {

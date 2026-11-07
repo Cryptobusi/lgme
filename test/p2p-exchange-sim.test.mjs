@@ -1193,8 +1193,18 @@ test('the standing donation is pinned in both listing kinds and never expires', 
 
 test('the wanted pin stays on IwanIT and a concluded match is an IdidIt', async () => {
   const file = JSON.parse(readFileSync(join(root, 'data/offerup-wanted-v0.json'), 'utf8'));
-  assert.deepEqual(file.items, []);
-  assert.deepEqual(sim.wantedFeed(file), []);
+  const matches = sim.wantedFeed(file);
+  assert.equal(matches.length, 8);
+  assert.equal(matches.every((item) => item.sourcedAt === '2026-11-07' && item.status === 'Available'), true);
+  assert.deepEqual(matches.filter((item) => item.sellerSaysWorking).map((item) => item.title), ['Schwinn 810 Treadmill', 'Fitness Reality E5500XL Elliptical']);
+  assert.equal(matches.filter((item) => !item.sellerSaysWorking).every((item) => sim.workingBadge(item) === 'Ask if working'), true);
+  assert.equal(sim.workingBadge(matches[0]), 'Seller says working');
+  assert.equal(sim.suggestedWantedPair(matches), 'Suggested pair: Schwinn 810 + E5500XL = $400');
+  const greenbelt = matches.find((item) => item.city === 'Greenbelt, MD');
+  assert.match(greenbelt.note, /Description says \$325; confirm price/);
+  assert.match(greenbelt.inquiry, /I'd offer \$250/);
+  assert.match(matches[0].inquiry, /Is your Schwinn 810 Treadmill still available/);
+  assert.match(matches[0].inquiry, /in-app balances are simulated/);
   const store = await books();
   const far = '2099-01-01T00:00:00.000Z';
   const donation = await sim.ensureStandingDonation(store, '2026-11-07T00:00:00.000Z');
@@ -1229,7 +1239,7 @@ test('the wanted pin stays on IwanIT and a concluded match is an IdidIt', async 
   assert.equal(tape.some((entry) => entry.type === 'WANTED_CLOSED' && entry.payload.penalty === false), true);
   assert.equal((await sim.replay(await store.get('alice'))).balance, before);
   const ui = readFileSync(join(root, 'js/p2p-exchange-sim-ui.mjs'), 'utf8');
-  for (const phrase of ['Matches from OfferUp', 'Make an offer', 'Continue on OfferUp', 'Invite seller to lgme.app', 'Available', 'Pending reply', 'Offer made', 'Closed', 'No OfferUp matches in this file yet.', 'Reconcile as donation to the floor']) {
+  for (const phrase of ['Matches from OfferUp', 'Make an offer', 'Copy inquiry', 'Continue on OfferUp', 'Invite seller to lgme.app', 'Available', 'Pending reply', 'Offer made', 'Closed', 'No OfferUp matches in this file yet.', 'Reconcile as donation to the floor', 'wanted-pair']) {
     assert.equal(ui.includes(phrase), true, phrase);
   }
   assert.equal(ui.includes('navigator.share'), true);
@@ -1686,7 +1696,7 @@ test('DC reference values stay pending when a series has no number', () => {
   assert.equal(page.includes('id="refList"'), true);
   assert.equal(/<script(?![^>]*\bsrc=)/i.test(page), false);
   const worker = readFileSync(join(root, 'sw.js'), 'utf8');
-  assert.equal(worker.includes('lgme-v42'), true);
+  assert.equal(worker.includes('lgme-v43'), true);
   assert.equal(worker.includes('/data/offerup-wanted-v0.json'), true);
   assert.equal(worker.includes('/js/dc-reference.mjs'), true);
   assert.equal(worker.includes('/data/dc-reference-values-v0.json'), true);

@@ -2071,7 +2071,10 @@ function wantedMatchSection(seat) {
       offerupImage(item),
       h('h3', {}, [item.title || 'Match']),
       h('p', { class: 'price' }, [item.price || '']),
-      h('p', {}, [`${track.status} · ${item.city || 'DC area'}`]),
+      h('p', {}, [`${item.type ? item.type[0].toUpperCase() + item.type.slice(1) : 'Listing'} · ${track.status} · ${item.city || 'DC area'}`]),
+      h('p', { class: item.sellerSaysWorking ? 'badge badge-verified' : 'badge' }, [sim.workingBadge(item)]),
+      item.note ? h('p', { class: 'legend' }, [item.note]) : null,
+      h('p', { class: 'legend' }, [item.inquiry || sim.wantedInquiry(item)]),
       h('p', { class: 'legend' }, [sim.OFFERUP_CAVEAT]),
       field('Availability', status),
       track.notes.length ? h('ul', {}, track.notes.map((note) => h('li', {}, [`${note.at.slice(0, 16)} ${note.text}`]))) : null,
@@ -2085,7 +2088,12 @@ function wantedMatchSection(seat) {
           render();
         } }, ['Log reply']),
         h('button', { type: 'button', onClick: async () => {
-          const draft = sim.wantedMatchDraft(item);
+          const draft = item.inquiry || sim.wantedInquiry(item);
+          await copyText(draft);
+          setStatus('Inquiry copied. Nothing was sent. SIMULATION.', 'ok');
+        } }, ['Copy inquiry']),
+        h('button', { type: 'button', onClick: async () => {
+          const draft = item.inquiry || sim.wantedInquiry(item);
           await copyText(draft);
           patchWanted(item.url, { status: 'Offer made' });
           setStatus('Draft offer copied. Nothing was sent. Paste it on OfferUp yourself. SIMULATION.', 'ok');
@@ -2115,6 +2123,7 @@ function wantedMatchSection(seat) {
   return h('section', { id: 'wanted-matches' }, [
     h('h3', {}, ['Matches from OfferUp']),
     h('p', { class: 'legend' }, [`For “${sim.STANDING_WANTED.title}”. SIMULATION. Nothing is sent.`]),
+    sim.suggestedWantedPair(wantedMatches) ? h('p', { id: 'wanted-pair' }, [sim.suggestedWantedPair(wantedMatches)]) : null,
     cards.length ? h('div', { class: 'grid' }, cards) : h('p', { class: 'empty', id: 'wanted-matches-empty' }, ['No OfferUp matches in this file yet.'])
   ]);
 }
