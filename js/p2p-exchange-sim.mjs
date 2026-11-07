@@ -4,7 +4,10 @@
  * Signing is local ECDSA. Links are SHA-256. Nothing here opens a network.
  */
 
+import { ACK_MS, CO_SIGN_ABOVE, FORK, OFFLINE_SPEND, REPLAY, STALE_ACK, ackFresh, assertOnline, coSignReason, expiryFrom, fraudPenalty, handoffToken, passphraseReason } from './p2p-sim-guard.mjs';
+
 export const GENESIS = '0'.repeat(64);
+export { ACK_MS, CO_SIGN_ABOVE, OFFLINE_SPEND, handoffToken };
 export const FLOOR_BLOCK = 'Blocked: Floor stays senior';
 export const PEER_PREFIX = 'lgme-sim:peer:';
 
@@ -86,8 +89,8 @@ export async function generateKeyPair() {
   };
 }
 
-export async function signText(privateKeyJwk, text) {
-  const key = await importPrivate(privateKeyJwk);
+export async function signText(material, text) {
+  const key = material instanceof CryptoKey ? material : await importPrivate(material);
   const sig = await crypto.subtle.sign(
     { name: 'ECDSA', hash: 'SHA-256' },
     key,
@@ -195,7 +198,7 @@ export function terms(peer) {
   return {
     name: genesis.payload.name,
     balance: genesis.payload.balance,
-    floor: genesis.payload.floor,
+    floor: round2(genesis.payload.floor + fraudPenalty(peer)),
     creditLimit: genesis.payload.creditLimit,
     floorNote: genesis.payload.floorNote
   };
@@ -392,7 +395,9 @@ async function appendEntry(peer, type, payload, at) {
     payload: structuredClone(payload)
   };
   const hash = await sha256(canonicalJSON(body));
-  const sig = await signText(peer.privateKeyJwk, hash);
+  const material = peer.privateKeyJwk || peer.signingKey;
+  if (!material) throw new Error('Wallet is locked.');
+  const sig = await signText(material, hash);
   const entry = { ...body, hash, sig };
   peer.tape.push(entry);
   return entry;
@@ -775,6 +780,7 @@ export async function settle(store, peerId, exchangeId, at = nowIso()) {
 export async function verifyTape(peer) {
   if (!peer || !peer.tape || !peer.tape.length) return { ok: false, reason: 'Tape is empty' };
   let prev = GENESIS;
+  let signingKey = peer.tape[0]?.payload?.publicKeyJwk || peer.publicKeyJwk;
   for (let i = 0; i < peer.tape.length; i++) {
     const entry = peer.tape[i];
     if (entry.index !== i) return { ok: false, index: i, reason: `break at #${i}: index does not match the tape` };
@@ -786,17 +792,19 @@ export async function verifyTape(peer) {
     delete body.sig;
     const recomputed = await sha256(canonicalJSON(body));
     if (recomputed !== entry.hash) return { ok: false, index: i, reason: `hash mismatch at #${i}` };
-    const valid = await verifyText(peer.publicKeyJwk, entry.hash, entry.sig);
+    const valid = await verifyText(signingKey, entry.hash, entry.sig);
     if (!valid) return { ok: false, index: i, reason: `signature mismatch at #${i}` };
+    if (entry.type === 'KEY_ROTATION' && entry.payload?.newPublic) signingKey = entry.payload.newPublic;
     prev = entry.hash;
   }
   const genesis = peer.tape[0];
   if (genesis.type !== 'genesis') return { ok: false, reason: 'Tape does not open with genesis' };
-  if (canonicalJSON(genesis.payload.publicKeyJwk) !== canonicalJSON(peer.publicKeyJwk)) {
+  if (canonicalJSON(signingKey) !== canonicalJSON(peer.publicKeyJwk)) {
     return { ok: false, reason: 'Genesis key does not match this peer' };
   }
   const rule = terms(peer);
-  if (peer.opening && (peer.opening.balance !== rule.balance || peer.opening.floor !== rule.floor || peer.opening.creditLimit !== rule.creditLimit)) {
+  const floorNow = round2((genesis.payload.floor || 0) + fraudPenalty(peer));
+  if (peer.opening && (peer.opening.balance !== rule.balance || round2(peer.opening.floor + fraudPenalty(peer)) !== floorNow || peer.opening.creditLimit !== rule.creditLimit)) {
     return { ok: false, reason: 'Opening mirror does not match genesis' };
   }
   return { ok: true, entries: peer.tape.length, balance: replay(peer).balance };
@@ -1042,7 +1050,8 @@ export async function registerPeer(store, spec) {
 export async function setupWallet(store, peerId, passphrase, options = {}) {
   const peer = await store.get(peerId);
   if (!peer?.privateKeyJwk) return fail('No key to lock.');
-  if (!passphrase || String(passphrase).length < 8) return fail('Use a passphrase of at least 8 characters.');
+  const weak = passphraseReason(passphrase);
+  if (weak) return fail(weak);
   const secretBytes = options.secretBytes || crypto.getRandomValues(new Uint8Array(20));
   const totpSecretBase32 = base32Encode(secretBytes);
   const iterations = options.iterations || KDF_ITERATIONS;
@@ -1107,10 +1116,10 @@ function b64urlDecode(text) {
 }
 
 export async function sealMessage(peer, kind, body) {
-  if (!peer?.privateKeyJwk) return fail('Wallet is locked.');
+  if (!peer?.privateKeyJwk && !peer?.signingKey) return fail('Wallet is locked.');
   if (!MESSAGE_KINDS.has(kind)) return fail('Unknown message.');
   const hash = await sha256(canonicalJSON(body));
-  const sig = await signText(peer.privateKeyJwk, hash);
+  const sig = await signText(peer.privateKeyJwk || peer.signingKey, hash);
   return {
     ok: true,
     message: {
@@ -1172,10 +1181,165 @@ export function shareText(summary, encoded) {
   return `SIMULATION lgme. ${summary} This page does not send it. Open the link in your own browser.\n${encoded}`;
 }
 
+function unspentSerials(peer) {
+  return Object.values(peer.serials || {}).filter((serial) => serial.ownerId === peer.id && !serial.nextOwnerId);
+}
+
+async function ensureSerialBundle(peer, at) {
+  if (unspentSerials(peer).length) return;
+  const amount = replay(peer).balance;
+  if (!(amount > 0)) return;
+  const id = await sha256(canonicalJSON({ kind: 'serial', ownerId: peer.id, amount, at, parent: '' }));
+  peer.serials = peer.serials || {};
+  peer.serials[id] = { id, amount, ownerId: peer.id, parentId: '', nextOwnerId: '', depth: 0, unit: '$lgme' };
+  await appendEntry(peer, 'SERIAL_MINT', { id, amount, ownerId: peer.id, depth: 0, mock: true, label: 'mock' }, at);
+}
+
+async function commitSerials(peer, amount, toId, at) {
+  await ensureSerialBundle(peer, at);
+  let need = round2(amount);
+  const moved = [];
+  let owned = unspentSerials(peer).sort((a, b) => b.amount - a.amount);
+  const have = round2(owned.reduce((sum, serial) => sum + serial.amount, 0));
+  if (have + 1e-9 < need) {
+    const id = await sha256(canonicalJSON({ kind: 'serial', ownerId: peer.id, amount: round2(need - have), at, label: 'cover' }));
+    peer.serials[id] = { id, amount: round2(need - have), ownerId: peer.id, parentId: '', nextOwnerId: '', depth: 0, unit: '$lgme', label: 'cover' };
+    await appendEntry(peer, 'SERIAL_MINT', { id, amount: round2(need - have), ownerId: peer.id, depth: 0, mock: true, label: 'cover' }, at);
+    owned = unspentSerials(peer).sort((a, b) => b.amount - a.amount);
+  }
+  for (const serial of owned) {
+    if (need <= 1e-9) break;
+    if (serial.nextOwnerId) return fail(FORK);
+    const take = round2(Math.min(serial.amount, need));
+    const depth = serial.depth + 1;
+    const reissue = depth >= 8;
+    const childId = await sha256(canonicalJSON({ parent: serial.id, toId, take, at }));
+    serial.nextOwnerId = 'split';
+    peer.serials[childId] = {
+      id: childId,
+      amount: take,
+      ownerId: toId,
+      parentId: serial.id,
+      nextOwnerId: '',
+      depth: reissue ? 0 : depth,
+      unit: '$lgme',
+      reissued: reissue
+    };
+    if (serial.amount - take > 1e-9) {
+      const changeId = await sha256(canonicalJSON({ parent: serial.id, change: round2(serial.amount - take), at }));
+      peer.serials[changeId] = {
+        id: changeId,
+        amount: round2(serial.amount - take),
+        ownerId: peer.id,
+        parentId: serial.id,
+        nextOwnerId: '',
+        depth: reissue ? 0 : depth,
+        unit: '$lgme',
+        reissued: reissue
+      };
+      moved.push(changeId);
+    }
+    moved.push(childId);
+    need = round2(need - take);
+    await appendEntry(peer, 'SERIAL_MOVE', {
+      serialId: serial.id,
+      childId,
+      amount: take,
+      fromId: peer.id,
+      toId,
+      depth: reissue ? 0 : depth,
+      reissued: reissue,
+      mock: true
+    }, at);
+  }
+  return { ok: true, serials: moved };
+}
+
+export function auditSerial(peer, serialId) {
+  const chain = [];
+  const seen = new Set();
+  let current = peer?.serials?.[serialId];
+  while (current) {
+    if (seen.has(current.id)) return { ok: false, error: FORK, chain };
+    seen.add(current.id);
+    chain.push(current);
+    if (!current.parentId) return { ok: true, chain, root: current };
+    current = peer.serials[current.parentId];
+    if (!current) return { ok: false, error: 'The ownership chain does not reach GENESIS.', chain };
+  }
+  return { ok: false, error: 'Unknown serial.', chain };
+}
+
+export async function attemptDoubleSpend(store, fromId, toId, at = nowIso()) {
+  const from = await store.get(fromId);
+  if (!from?.privateKeyJwk && !from?.signingKey) return fail(from ? 'Wallet is locked.' : 'Unknown peer.');
+  const spent = Object.values(from.serials || {}).find((serial) => serial.nextOwnerId && serial.nextOwnerId !== 'split' && serial.ownerId === from.id);
+  const split = Object.values(from.serials || {}).find((serial) => serial.nextOwnerId === 'split');
+  const target = spent || split;
+  if (!target) return fail('Nothing has been spent yet.');
+  const other = target.nextOwnerId === 'split'
+    ? Object.values(from.serials).find((serial) => serial.parentId === target.id && serial.ownerId !== from.id)
+    : null;
+  const firstOwner = other?.ownerId || target.nextOwnerId;
+  if (!firstOwner || firstOwner === toId) return fail('Name a different second owner.');
+  const proofBody = { serialId: target.id, firstOwner, secondOwner: toId, cheaterId: from.id, mock: true, simulated: true };
+  const proofHash = await sha256(canonicalJSON(proofBody));
+  const proofSig = await signText(from.privateKeyJwk || from.signingKey, proofHash);
+  await appendEntry(from, 'FRAUD_PROOF', { ...proofBody, hash: proofHash, sig: proofSig }, at);
+  await store.set(fromId, from);
+  const otherPeer = await store.get(toId);
+  if (otherPeer?.privateKeyJwk || otherPeer?.signingKey) {
+    await appendEntry(otherPeer, 'FRAUD_PROOF', { ...proofBody, hash: proofHash, sig: proofSig, shown: true }, at);
+    await store.set(toId, otherPeer);
+  }
+  return { ok: false, fraud: true, error: FORK, proof: proofBody, standing: peerStanding(await store.get(fromId)), floor: terms(await store.get(fromId)).floor };
+}
+
+export async function exportBackup(peer, passphrase) {
+  const weak = passphraseReason(passphrase);
+  if (weak) return fail(weak);
+  if (!peer?.privateKeyJwk) return fail('Unlock the wallet before export.');
+  const sealed = await encryptJson(String(passphrase), {
+    id: peer.id,
+    publicKeyJwk: peer.publicKeyJwk,
+    privateKeyJwk: peer.privateKeyJwk
+  }, 2000);
+  return { ok: true, backup: { simulated: true, kind: 'backup', sealed } };
+}
+
+export async function importBackup(store, backup, passphrase) {
+  let plain;
+  try {
+    plain = await decryptJson(String(passphrase || ''), backup?.sealed || {});
+  } catch {
+    return fail('Wrong passphrase.');
+  }
+  const peer = await store.get(plain.id);
+  if (!peer) return fail('Unknown peer.');
+  peer.privateKeyJwk = plain.privateKeyJwk;
+  await store.set(peer.id, peer);
+  return { ok: true, id: peer.id };
+}
+
+export async function rotateKey(store, peerId, at = nowIso()) {
+  const peer = await store.get(peerId);
+  if (!peer?.privateKeyJwk && !peer?.signingKey) return fail(peer ? 'Wallet is locked.' : 'Unknown peer.');
+  const next = await generateKeyPair();
+  const notice = { simulated: true, oldPublic: peer.publicKeyJwk, newPublic: next.publicKeyJwk, mock: true };
+  const sig = await signText(peer.privateKeyJwk || peer.signingKey, await sha256(canonicalJSON(notice)));
+  await appendEntry(peer, 'KEY_ROTATION', { ...notice, sig }, at);
+  peer.publicKeyJwk = next.publicKeyJwk;
+  peer.privateKeyJwk = next.privateKeyJwk;
+  await store.set(peerId, peer);
+  return { ok: true, publicKeyJwk: next.publicKeyJwk };
+}
+
 export async function createTransfer(store, fromId, spec) {
   const from = await store.get(fromId);
   if (!from) return fail('Unknown peer.');
-  if (!from.privateKeyJwk) return fail('Wallet is locked.');
+  if (!from.privateKeyJwk && !from.signingKey) return fail('Wallet is locked.');
+  const gate = assertOnline(spec.navigator);
+  if (!gate.ok) return fail(gate.error);
   const toId = String(spec.toId || '').trim();
   const amount = round2(spec.amount);
   if (!/^[a-z0-9-]{1,32}$/.test(toId) || toId === fromId) return fail('Name a different peer id.');
@@ -1185,16 +1349,35 @@ export async function createTransfer(store, fromId, spec) {
   const next = round2(replay(from).balance - heldBy(from) - amount);
   const blocked = floorBlockReason(from, next);
   if (blocked) return fail(blocked);
+  const cosign = coSignReason(amount, spec.thirdSeatSig);
+  if (cosign) return fail(cosign);
   const at = spec.at || nowIso();
+  const recipient = await store.get(toId);
+  if (!recipient?.privateKeyJwk && !recipient?.signingKey) return fail('The other peer has not acknowledged. Ask them to sign the challenge.');
+  const nonce = await sha256(canonicalJSON({ kind: 'challenge', fromId, toId, amount, at }));
+  const exp = expiryFrom(at, ACK_MS);
+  const challenge = await sha256(canonicalJSON({ nonce, exp, fromId, toId, amount }));
+  const senderAck = await signText(from.privateKeyJwk || from.signingKey, challenge);
+  const recipientAck = await signText(recipient.privateKeyJwk || recipient.signingKey, challenge);
+  const moved = await commitSerials(from, amount, toId, at);
+  if (!moved.ok) return moved;
+  from.spendSeq = (from.spendSeq || 0) + 1;
   const body = {
     simulated: true,
     kind: 'transfer',
+    v: 2,
     fromId,
     toId,
     amount,
     unit: '$lgme',
     note: String(spec.note || '').trim(),
-    mock: true
+    mock: true,
+    nonce,
+    exp,
+    seq: from.spendSeq,
+    prevHash: from.tape.length ? from.tape[from.tape.length - 1].hash : GENESIS,
+    serials: moved.serials,
+    ack: { sender: senderAck, recipient: recipientAck }
   };
   const sealed = await sealMessage(from, 'transfer', body);
   if (!sealed.ok) return sealed;
@@ -1215,6 +1398,8 @@ export async function acceptAutoDelivery(store, peerId, input, at = nowIso()) {
 export async function autoDeliverTransfer(store, fromId, spec) {
   const from = await store.get(fromId);
   if (!from) return fail('Unknown peer.');
+  const gate = assertOnline(spec.navigator);
+  if (!gate.ok) return { ok: false, error: gate.error, sent: false };
   if (!from.wallet?.ciphertext) return { ok: false, error: 'Set up simulated 2FA before auto-send.', sent: false };
   const toId = String(spec.toId || '').trim();
   const amount = round2(spec.amount);
@@ -1233,16 +1418,33 @@ export async function autoDeliverTransfer(store, fromId, spec) {
   }
   const at = spec.at || nowIso();
   const signer = { ...from, privateKeyJwk: unlocked.privateKeyJwk };
+  if (!recipient?.privateKeyJwk && !recipient?.signingKey) return { ok: false, error: 'The other peer has not acknowledged. Ask them to sign the challenge.', sent: false };
+  const nonce = await sha256(canonicalJSON({ kind: 'challenge', fromId, toId, amount, at }));
+  const exp = expiryFrom(at, ACK_MS);
+  const challenge = await sha256(canonicalJSON({ nonce, exp, fromId, toId, amount }));
+  const moved = await commitSerials(signer, amount, toId, at);
+  if (!moved.ok) return { ...moved, sent: false };
+  signer.spendSeq = (signer.spendSeq || 0) + 1;
   const body = {
     simulated: true,
     kind: 'transfer',
+    v: 2,
     fromId,
     toId,
     amount,
     unit: '$lgme',
     note: String(spec.note || '').trim(),
     mock: true,
-    auto: true
+    auto: true,
+    nonce,
+    exp,
+    seq: signer.spendSeq,
+    prevHash: signer.tape.length ? signer.tape[signer.tape.length - 1].hash : GENESIS,
+    serials: moved.serials,
+    ack: {
+      sender: await signText(signer.privateKeyJwk, challenge),
+      recipient: await signText(recipient.privateKeyJwk || recipient.signingKey, challenge)
+    }
   };
   const sealed = await sealMessage(signer, 'transfer', body);
   if (!sealed.ok) return { ...sealed, sent: false };
@@ -1315,9 +1517,21 @@ export async function importMessage(store, peerId, input, at = nowIso()) {
 
 async function applyImportedTransfer(store, peer, message, at) {
   const body = message.body || {};
+  if (body.exp && !ackFresh(body.exp, at)) return fail(STALE_ACK);
+  if (Array.isArray(body.serials)) {
+    for (const serialId of body.serials) {
+      const audited = auditSerial(peer.serials?.[serialId] ? peer : { serials: {} }, serialId);
+      if (peer.serials?.[serialId] && !audited.ok) return fail(audited.error);
+    }
+  }
   if (body.toId !== peer.id) return fail('This transfer is addressed to another peer.');
   if ((peer.tape || []).some((entry) => entry.type === 'transfer' && entry.payload?.hash === message.hash)) {
     return { ok: true, duplicate: true, balance: replay(peer).balance };
+  }
+  if (body.nonce) {
+    peer.nonces = peer.nonces || {};
+    if (peer.nonces[body.nonce]) return fail(REPLAY);
+    peer.nonces[body.nonce] = true;
   }
   await appendEntry(peer, 'transfer', {
     ...body,
@@ -1768,6 +1982,7 @@ export function clearingCount(peer) {
 export function peerStanding(peer) {
   let score = 40;
   if (kycStatus(peer) === 'VERIFIED') score += 30;
+  score -= Math.min(40, fraudPenalty(peer) * 20);
   score += Math.min(20, clearingCount(peer) * 2);
   const balance = replay(peer).balance;
   if (balance > terms(peer).floor + 1e-9) score += 10;
@@ -2335,8 +2550,10 @@ export async function buyerHandoff(store, buyerId, threadId, at = nowIso()) {
   if (buyerId !== thread.buyerId) return fail('The buyer shows the handoff.');
   if (thread.status !== 'pending' || !thread.holdId) return fail('Nothing is waiting for handoff.');
   if (thread.handoffUsed) return fail('This handoff was already used.');
-  if (!buyer.privateKeyJwk) return fail('Wallet is locked.');
-  if (thread.handoffCode && thread.nonce) return { ok: true, encoded: thread.handoffCode, nonce: thread.nonce, thread };
+  const gate = assertOnline();
+  if (!gate.ok) return gate;
+  if (!buyer.privateKeyJwk && !buyer.signingKey) return fail('Wallet is locked.');
+  if (thread.handoffCode && thread.nonce) return { ok: true, encoded: thread.handoffCode, qr: thread.handoffQr || handoffToken(thread.nonce), nonce: thread.nonce, thread };
   const nonce = await sha256(canonicalJSON({ threadId, holdId: thread.holdId, at, singleUse: true }));
   const sealed = await sealMessage(buyer, 'handoff', {
     simulated: true,
@@ -2351,13 +2568,25 @@ export async function buyerHandoff(store, buyerId, threadId, at = nowIso()) {
   if (!sealed.ok) return sealed;
   thread.nonce = nonce;
   thread.handoffCode = encodeMessage(sealed.message);
+  thread.handoffQr = handoffToken(nonce);
   thread.updatedAt = at;
   await saveThread(store, thread);
-  return { ok: true, encoded: thread.handoffCode, nonce, thread };
+  return { ok: true, encoded: thread.handoffCode, qr: thread.handoffQr, nonce, thread };
 }
 
 export async function sellerHandoff(store, sellerId, encoded, at = nowIso()) {
-  const opened = await openMessage(encoded);
+  const gate = assertOnline();
+  if (!gate.ok) return gate;
+  let carried = encoded;
+  if (String(encoded || '').trim().startsWith('lgme1q.')) {
+    const token = String(encoded).trim();
+    const sellerBook = await store.get(sellerId);
+    const threads = Object.values(sellerBook?.threads || {});
+    const match = threads.find((thread) => thread.handoffQr === token || handoffToken(thread.nonce) === token);
+    if (!match?.handoffCode) return fail('Open the handoff link so this book has the body.');
+    carried = match.handoffCode;
+  }
+  const opened = await openMessage(carried);
   if (!opened.ok) return opened;
   if (opened.message.kind !== 'handoff') return fail('This is not a handoff.');
   const body = opened.message.body || {};
@@ -2716,7 +2945,9 @@ async function assertKycBinding(message) {
 export async function composeChat(store, senderId, spec = {}) {
   const sender = await store.get(senderId);
   if (!sender) return fail('Unknown peer.');
-  if (!sender.privateKeyJwk) return fail('Wallet is locked.');
+  const gate = assertOnline(spec.navigator);
+  if (!gate.ok) return gate;
+  if (!sender.privateKeyJwk && !sender.signingKey) return fail('Wallet is locked.');
   const identity = await memberKycHash(sender);
   if (!identity.ok) return identity;
   if (!identity.phone) return fail('Add a phone number on this device.');
@@ -3211,6 +3442,8 @@ export async function payInvoice(store, payerId, invoiceId, spec = {}) {
   if (blocked) return fail(blocked);
   const worker = await store.get(invoice.workerId);
   if (!worker?.privateKeyJwk) return fail('The worker book is not on this device.');
+  const gate = assertOnline(spec.navigator);
+  if (!gate.ok) return fail(gate.error);
   const beforePayer = replay(payer).balance;
   const beforeWorker = replay(worker).balance;
   const paymentId = await sha256(canonicalJSON({ invoiceId, amount: figure, at }));
@@ -3225,6 +3458,8 @@ export async function payInvoice(store, payerId, invoiceId, spec = {}) {
     unit: '$lgme'
   };
   const signer = { ...payer, privateKeyJwk: key };
+  const moved = await commitSerials(signer, figure, invoice.workerId, at);
+  if (!moved.ok) return moved;
   await appendEntry(signer, 'transfer', {
     fromId: payerId,
     toId: invoice.workerId,

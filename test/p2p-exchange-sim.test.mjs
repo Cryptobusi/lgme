@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as sim from '../js/p2p-exchange-sim.mjs';
 import { decideInstallAction, isIosSafari, isStandalone } from '../js/install-launch.mjs';
+import * as guard from '../js/p2p-sim-guard.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -557,6 +558,7 @@ test('resources magazine keeps the explainer sections', () => {
     'The third seat',
     'The broken car',
     'Practice market',
+    'How this desk stays shut',
     'SPP_Overview.pptx'
   ]) {
     assert.equal(text.includes(phrase), true, phrase);
@@ -1189,4 +1191,89 @@ test('Install & launch hides in the app, prompts when it can, and otherwise open
     const top = page.slice(page.indexOf('<body>'), page.indexOf('<body>') + 280);
     assert.equal(top.includes('data-install-launch'), true, file + ' top');
   }
+});
+
+test('offline mode refuses a spend and an online challenge is acknowledged', async () => {
+  const store = await books();
+  const offline = await sim.createTransfer(store, 'alice', { toId: 'bob', amount: 1, navigator: { onLine: false } });
+  assert.equal(offline.ok, false);
+  assert.equal(offline.error, guard.OFFLINE_SPEND);
+  const before = (await balances(store)).alice;
+  assert.equal(before, 120);
+  const sent = await sim.createTransfer(store, 'alice', { toId: 'bob', amount: 1, at: '2026-11-07T00:00:00.000Z', navigator: { onLine: true } });
+  assert.equal(sent.ok, true, sent.error);
+  assert.equal(Boolean(sent.message.body.ack.sender && sent.message.body.ack.recipient), true);
+  assert.equal(guard.ackFresh(sent.message.body.exp, '2026-11-07T00:05:00.000Z'), true);
+  assert.equal(guard.ackFresh(sent.message.body.exp, '2026-11-07T00:11:00.000Z'), false);
+  const stale = await sim.importMessage(store, 'bob', sent.message, '2026-11-07T00:11:00.000Z');
+  assert.equal(stale.ok, false);
+  assert.equal(stale.error, 'This acknowledgement is stale.');
+});
+
+test('a second owner of the same serial is a signed fraud proof', async () => {
+  const store = await books();
+  const sent = await sim.createTransfer(store, 'alice', { toId: 'bob', amount: 5, at: '2026-11-07T01:00:00.000Z', navigator: { onLine: true } });
+  assert.equal(sent.ok, true, sent.error);
+  const alice = await store.get('alice');
+  const child = sent.message.body.serials.find((id) => alice.serials[id].ownerId === 'bob');
+  const audited = sim.auditSerial(alice, child);
+  assert.equal(audited.ok, true, audited.error);
+  const before = (await balances(store)).alice;
+  const fraud = await sim.attemptDoubleSpend(store, 'alice', 'charlie', '2026-11-07T01:05:00.000Z');
+  assert.equal(fraud.fraud, true);
+  assert.equal(fraud.error, 'Fork. The same serial has two next owners.');
+  assert.equal((await balances(store)).alice, before);
+  assert.equal(sim.terms(await store.get('alice')).floor, 41);
+  assert.ok(sim.peerStanding(await store.get('alice')) < sim.peerStanding(await store.get('bob')) || fraud.standing < 80);
+  const shown = (await store.get('charlie')).tape.some((entry) => entry.type === 'FRAUD_PROOF');
+  assert.equal(shown, true);
+});
+
+test('passkey options, recovery codes, and an encrypted backup round trip', async () => {
+  const challenge = new Uint8Array(32);
+  const options = guard.passkeyCreationOptions('alice', 'Alice', challenge);
+  assert.equal(options.publicKey.rp.id, 'lgme.app');
+  assert.equal(options.publicKey.authenticatorSelection.userVerification, 'required');
+  assert.equal(options.publicKey.attestation, 'none');
+  assert.equal(guard.passphraseReason('12345678'), 'Use a passphrase, not a short PIN.');
+  const prf = crypto.getRandomValues(new Uint8Array(32));
+  const wrapped = await guard.wrapDekWithPrf(prf);
+  const opened = await guard.openDekWithPrf(prf, wrapped);
+  assert.equal(Buffer.from(opened).toString('hex'), Buffer.from(wrapped.dek).toString('hex'));
+  const codes = await guard.recoveryCodes();
+  assert.equal(codes.codes.length, 8);
+  const used = await guard.redeemRecovery(codes.hashes, codes.codes[0]);
+  assert.equal(used.ok, true);
+  assert.equal(used.hashes.length, 7);
+  const again = await guard.redeemRecovery(used.hashes, codes.codes[0]);
+  assert.equal(again.ok, false);
+  const store = await books();
+  const alice = await store.get('alice');
+  const backup = await sim.exportBackup(alice, 'correct horse battery');
+  assert.equal(backup.ok, true, backup.error);
+  alice.privateKeyJwk = null;
+  await store.set('alice', alice);
+  const restored = await sim.importBackup(store, backup.backup, 'correct horse battery');
+  assert.equal(restored.ok, true, restored.error);
+  assert.equal(Boolean((await store.get('alice')).privateKeyJwk), true);
+  const rotated = await sim.rotateKey(store, 'alice', '2026-11-07T02:00:00.000Z');
+  assert.equal(rotated.ok, true, rotated.error);
+  const checked = await sim.verifyTape(await store.get('alice'));
+  assert.equal(checked.ok, true, checked.reason);
+});
+
+test('a handoff QR is a short token and a large transfer needs a co-sign', async () => {
+  assert.equal(guard.handoffToken('abcdef0123456789abcdef0123456789').startsWith('lgme1q.'), true);
+  assert.ok(guard.handoffToken('abcdef0123456789abcdef0123456789').length < 40);
+  const store = await books();
+  for (const id of ['alice', 'bob']) {
+    const peer = await store.get(id);
+    peer.kyc = { ...(peer.kyc || {}), status: 'VERIFIED' };
+    await store.set(id, peer);
+  }
+  const blocked = await sim.createTransfer(store, 'alice', { toId: 'bob', amount: 60, at: '2026-11-07T03:00:00.000Z', navigator: { onLine: true } });
+  assert.equal(blocked.ok, false);
+  assert.match(blocked.error, /third-seat co-sign/);
+  const allowed = await sim.createTransfer(store, 'alice', { toId: 'bob', amount: 60, thirdSeatSig: 'co-signed', at: '2026-11-07T03:00:00.000Z', navigator: { onLine: true } });
+  assert.equal(allowed.ok, true, allowed.error);
 });

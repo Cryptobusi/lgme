@@ -1,18 +1,47 @@
 import * as sim from './p2p-exchange-sim.mjs';
 import { ARTICLES } from './p2p-resources.mjs';
+import { PASSKEY_WORDING, createIndexedDbVault, importNonExtractable, openJson, passkeyCreationOptions, sealJson } from './p2p-sim-guard.mjs';
 
 const sessionKeys = new Map();
+const sessionCrypto = new Map();
+const metaKeys = new Map();
 const rememberedSecrets = new Map();
+const freshAuth = new Map();
 const baseStore = sim.createLocalStorageStore();
 const store = {
   async get(id) {
     const peer = await baseStore.get(id);
     if (peer && !peer.privateKeyJwk && sessionKeys.has(id)) peer.privateKeyJwk = structuredClone(sessionKeys.get(id));
+    if (peer && !peer.signingKey && sessionCrypto.has(id)) peer.signingKey = sessionCrypto.get(id);
+    if (peer?.migrationWrap && metaKeys.has(id) && !peer.privateKeyJwk) {
+      try {
+        const opened = await openJson(metaKeys.get(id), peer.migrationWrap);
+        peer.privateKeyJwk = opened.privateKeyJwk;
+      } catch { /* the wrap stays sealed */ }
+    }
+    if (peer?.kyc?.sealed && metaKeys.has(id)) {
+      try {
+        const opened = await openJson(metaKeys.get(id), peer.kyc.sealed);
+        peer.kyc = { ...peer.kyc, ...opened };
+      } catch { /* status stays readable */ }
+    }
     return peer;
   },
   async set(id, value) {
+    const signingKey = value?.signingKey;
+    if (value) delete value.signingKey;
     const copy = structuredClone(value);
-    if (copy?.wallet?.ciphertext) copy.privateKeyJwk = null;
+    if (signingKey) value.signingKey = signingKey;
+    if (copy?.wallet?.ciphertext || copy?.keyVault) copy.privateKeyJwk = null;
+    delete copy?.signingKey;
+    if (copy?.kyc && metaKeys.has(id) && (copy.kyc.phone || copy.kyc.email || copy.kyc.salt)) {
+      const sealed = await sealJson(metaKeys.get(id), {
+        phone: copy.kyc.phone || '',
+        email: copy.kyc.email || '',
+        salt: copy.kyc.salt || ''
+      });
+      copy.kyc = { status: copy.kyc.status, displayName: copy.kyc.displayName, sealed };
+    }
     await baseStore.set(id, copy);
   },
   async remove(id) {
@@ -993,7 +1022,7 @@ async function renderWallet(peers, seat) {
     ])
   ];
   if (secret) blocks.push(codeLine, h('div', { id: 'setup-qr' }));
-  blocks.push(profileCard(sim.peerProfile(peer)), coinPanel(), soBeItCard(peers, seat), kycCard(peer, peers));
+  blocks.push(profileCard(sim.peerProfile(peer)), passkeyCard(), coinPanel(), soBeItCard(peers, seat), kycCard(peer, peers));
   if (!peer.wallet?.ciphertext) {
     const passphrase = h('input', { type: 'password', minlength: '8', autocomplete: 'new-password', required: true });
     const form = h('form', {}, [
@@ -1480,6 +1509,36 @@ function coinPanel() {
     h('p', {}, [h('a', { href: '/lgme-coin' }, ['Mint and buy steps are on the coin page.'])]),
     contributionMethods()
   ]);
+}
+
+function passkeyCard() {
+  const button = h('button', { type: 'button', id: 'passkey-unlock', onClick: () => startPasskey() }, ['Use this device']);
+  return h('article', { class: 'card', id: 'passkey' }, [
+    h('h3', {}, ['Unlock']),
+    h('p', {}, [PASSKEY_WORDING]),
+    h('p', { class: 'muted' }, ['SIMULATION. A passphrase is the fallback, and it is not a short PIN. The 6-digit code stays optional. Recovery codes are shown once.']),
+    button
+  ]);
+}
+
+async function startPasskey() {
+  if (location.hostname !== 'lgme.app') {
+    setStatus('This browser can use a passphrase here. The device unlock is for lgme.app. SIMULATION.', 'ok');
+    return;
+  }
+  if (!globalThis.PublicKeyCredential) {
+    setStatus('This browser has no device unlock. Use a passphrase. SIMULATION.', 'bad');
+    return;
+  }
+  const challenge = crypto.getRandomValues(new Uint8Array(32));
+  const options = passkeyCreationOptions('lgme-sim', 'lgme', challenge);
+  try {
+    await navigator.credentials.create(options);
+    freshAuth.set(sessionStorage.getItem(SEAT_KEY) || '', Date.now());
+    setStatus('This device can unlock the book. SIMULATION. No real money moved.', 'ok');
+  } catch {
+    setStatus('The device did not unlock. Use a passphrase. SIMULATION.', 'bad');
+  }
 }
 
 function soBeItCard(peers, seat) {
@@ -2321,7 +2380,7 @@ async function renderChats(seat) {
         } }, ['Copy']),
         h('button', { type: 'button', onClick: () => download(`handoff-${thread.id.slice(0, 8)}.json`, shown.encoded, 'application/json') }, ['File'])
       ]));
-      queueMicrotask(() => drawQr(qrHost, shown.encoded));
+      queueMicrotask(() => drawQr(qrHost, shown.qr || shown.encoded));
     } else nodes.push(h('p', { class: 'bad' }, [shown.error]));
   }
   if (thread.status === 'pending' && !mine) {
@@ -2638,6 +2697,49 @@ window.addEventListener('beforeinstallprompt', (event) => {
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});
 }
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') sessionKeys.clear();
+});
+let idleTimer = 0;
+function bumpIdle() {
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => sessionKeys.clear(), 5 * 60 * 1000);
+}
+['pointerdown', 'keydown'].forEach((name) => document.addEventListener(name, bumpIdle));
+bumpIdle();
+
+async function bootVault() {
+  try {
+    if (navigator.storage?.persist) await navigator.storage.persist();
+  } catch { /* persistence is optional */ }
+  if (!globalThis.indexedDB) return;
+  const vault = createIndexedDbVault();
+  for (const id of await baseStore.listIds()) {
+    const peer = await baseStore.get(id);
+    if (!peer) continue;
+    if (peer.privateKeyJwk && !peer.keyVault) {
+      const signing = await importNonExtractable(peer.privateKeyJwk);
+      const dek = crypto.getRandomValues(new Uint8Array(32));
+      peer.migrationWrap = await sealJson(dek, { privateKeyJwk: peer.privateKeyJwk });
+      peer.keyVault = true;
+      sessionKeys.set(id, peer.privateKeyJwk);
+      sessionCrypto.set(id, signing);
+      metaKeys.set(id, dek);
+      peer.privateKeyJwk = null;
+      await vault.put(id, signing);
+      await vault.putMeta(id, dek);
+      await baseStore.set(id, peer);
+    } else {
+      const signing = await vault.get(id);
+      const dek = await vault.getMeta(id);
+      if (signing) sessionCrypto.set(id, signing);
+      if (dek) metaKeys.set(id, dek);
+    }
+  }
+}
+
+bootVault().catch(() => {});
 
 loadReferences().then(async () => {
   await showSplash();
