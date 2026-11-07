@@ -138,3 +138,50 @@ The offline suite is 40 pass, 0 fail.
 ![Practice desk](verification/phone-install-sim.png)
 
 ![Coin page](verification/phone-install-coin.png)
+
+## Addendum — full phone regression, two peers
+
+Headless Chromium at 390×844. Two browser contexts kept separate books and carried signed messages between them. Offline suite at the fixes below: 40 pass, 0 fail. Live result: 47 pass, 1 fail, 0 console errors.
+
+| Check | Result |
+| --- | --- |
+| 44 sitemap and shell URLs | Pass, all HTTP 200 |
+| Every sitemap page opened in the browser | Pass, 41 pages |
+| `$Trust` and `EgonomicAnon` | Pass, absent after the name fix |
+| Install & launch on `/`, the desk, and `/lgme-coin` | Pass. Prompt stays when dismissed. Otherwise it opens the desk. Hidden in standalone |
+| Splash video, manifest, service worker | Pass. Video source `/legomiego-coin.mp4`, muted. Worker active at `https://lgme.app/` |
+| Offline reload | Pass. The desk still opened |
+| Sign-up, 100 $lgme GENESIS grant, TOTP, wallet unlock | Pass. A wrong code is rejected |
+| Unverified send limit 20, then vouch plus 2FA to Verified | Pass |
+| Signed file from peer A into peer B, `sms:` and `mailto:` | Pass. Bob imported balance 84 |
+| Tape verify, export, and import on the other peer | Pass |
+| IOU pending, then attested | Pass. Bob 77, Alice 127 after attestation |
+| Floor seniority | Pass. `Floor stays senior` |
+| Third-seat refusal | Pass. No penalty. Balances stayed 120, 84, and 70 |
+| ihavIT and IwanIT listings, offer, accept, hold | Pass |
+| Handoff settlement | Pass. `Settled. Buyer 76 · seller 128. SIMULATION.` |
+| Handoff QR decoded by the headless reader | Fail. The code is drawn at 360×360. jsQR did not recover the long `lgme1.` payload |
+| Pinned donation, `@EgonAnon`, address, X Money `@Trancesage` | Pass |
+| Donate QR on `/lgme-coin` | Pass. Decoded to `6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY` |
+| Mint | Pass. `7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump` |
+| SMS token and KYC-hash match | Pass. `Matched` |
+| `tel:` call log, no audio | Pass |
+| Camera capture verify, and a changed file | Pass. `Verified. The file matches the tape.` then `Not authentic` |
+| Overdue invoice, partial pay, refusal | Pass. Partial: `Paid 4 $lgme. Remaining 6. Reward 0.` Refusal has no reward |
+| soBeIT grant | Pass. Balance 524. No real funds moved |
+| Full payment, 2% reward capped at 5, both tapes | Pass. `Paid 300 $lgme. Remaining 0. Reward 5.` |
+| Resources magazine and orange `#F97316` | Pass |
+| Console errors | Pass. None |
+
+Fixes shipped before the re-check:
+
+- `40cdbb49dc581b972900f43cac838c6e7167b998` — Call opens the note instead of leaving the desk. `EgonomicAnon` is gone from `/pumpup` and `/developer-notes`.
+- `f0518a3eb0ebde46d08689e4ec89f31dd4f4c453` — A long handoff QR is drawn at 360 pixels. The headless reader still could not decode it. Settlement itself passed.
+
+Not driven on a physical device: a second phone scanning the handoff QR, a carrier SMS, a placed call, the iPhone Share tooltip, and the browser's own install prompt. The prompt path was a synthetic `beforeinstallprompt`. The fallback really opened `/p2p-exchange-sim`. `getInstalledRelatedApps` did not report an install in headless Chrome.
+
+![Verified member](verification/phone-reg-kyc.png)
+
+![Donation contributions](verification/phone-reg-donation.png)
+
+![Settled handoff](verification/phone-reg-handoff.png)

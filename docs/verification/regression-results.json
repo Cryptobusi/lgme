@@ -1,0 +1,245 @@
+{
+  "results": [
+    {
+      "name": "sitemap and required URLs return 200",
+      "pass": true,
+      "detail": "44 urls"
+    },
+    {
+      "name": "no $Trust on crawled pages",
+      "pass": true,
+      "detail": "absent"
+    },
+    {
+      "name": "no EgonomicAnon on crawled pages",
+      "pass": true,
+      "detail": "absent"
+    },
+    {
+      "name": "install bar on /",
+      "pass": true,
+      "detail": "{\"text\":\"Install & launch\",\"href\":\"/p2p-exchange-sim\",\"top\":\"launch-bar\",\"bg\":\"rgb(249, 115, 22)\",\"width\":390}"
+    },
+    {
+      "name": "install prompt path stays when dismissed",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "name": "install fallback launches the desk",
+      "pass": true,
+      "detail": "/p2p-exchange-sim"
+    },
+    {
+      "name": "splash video is shown",
+      "pass": true,
+      "detail": "{\"shown\":true,\"src\":\"/legomiego-coin.mp4\",\"muted\":true}"
+    },
+    {
+      "name": "manifest and service worker",
+      "pass": true,
+      "detail": "{\"manifest\":\"https://lgme.app/manifest.webmanifest\",\"active\":true,\"scope\":\"https://lgme.app/\",\"orange\":\"rgb(249, 115, 22)\"}"
+    },
+    {
+      "name": "orange accent on the desk",
+      "pass": true,
+      "detail": "rgb(249, 115, 22)"
+    },
+    {
+      "name": "offline reload still opens the desk",
+      "pass": true,
+      "detail": "Install & launch\n\nSIMULATION. Practice books only. Nothing on this page writes to a network, sends mail or text, or moves real money. Each peer keeps a separate"
+    },
+    {
+      "name": "coin mint, wallet name, and X Money",
+      "pass": true,
+      "detail": "{\"mint\":\"7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump\",\"donate\":\"6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY\",\"name\":\"@EgonAnon\",\"phrase\":true,\"href\":\"https://x.com/Trancesage\",\"separate\":true,\"install\":\"Install & launch\"}"
+    },
+    {
+      "name": "donate QR decodes to the Solana address",
+      "pass": true,
+      "detail": "6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY"
+    },
+    {
+      "name": "install bar hidden when standalone",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "name": "100 $lgme GENESIS grant",
+      "pass": true,
+      "detail": "mock grant of 100"
+    },
+    {
+      "name": "TOTP rejects a wrong code and confirms the right one",
+      "pass": true,
+      "detail": "Code confirmed"
+    },
+    {
+      "name": "unverified send limit is 20",
+      "pass": true,
+      "detail": "limit message"
+    },
+    {
+      "name": "wallet encryption and unlock",
+      "pass": true,
+      "detail": "Wallet unlocked"
+    },
+    {
+      "name": "peer vouch plus 2FA reaches Verified",
+      "pass": true,
+      "detail": "Verified"
+    },
+    {
+      "name": "text and email links carry the signed message",
+      "pass": true,
+      "detail": "sms:%2B12025550102?&body"
+    },
+    {
+      "name": "peer B receives the signed file",
+      "pass": true,
+      "detail": "Imported. Balance 84. SIMULATION."
+    },
+    {
+      "name": "tape hash chain verifies",
+      "pass": true,
+      "detail": "Verify tape: ok"
+    },
+    {
+      "name": "tape export JSON",
+      "pass": true,
+      "detail": "{\n  \"simulated\": true,\n  \"label\": \"personal tape (simulated)\",\n  \"id\": \"alice\",\n"
+    },
+    {
+      "name": "exported tape imports and verifies on the other peer",
+      "pass": true,
+      "detail": "Tape verified"
+    },
+    {
+      "name": "IOU stays pending before attestation",
+      "pass": true,
+      "detail": "pending"
+    },
+    {
+      "name": "$ IOU updates the book only after attestation",
+      "pass": true,
+      "detail": "Attested. The book moved. Bob (Agronomist) 77 · Alice (Providore) 127"
+    },
+    {
+      "name": "floor seniority blocks the spend",
+      "pass": true,
+      "detail": "Floor stays senior"
+    },
+    {
+      "name": "third-seat refusal records no penalty",
+      "pass": true,
+      "detail": "REFUSAL recorded. No balance moves. No penalty. Alice (Providore) 120 · Bob (Agronomist) 84 · Charlie (Logistics) 70"
+    },
+    {
+      "name": "ihavIT listing is signed",
+      "pass": true,
+      "detail": "Listed and signed"
+    },
+    {
+      "name": "IwanIT listing is signed",
+      "pass": true,
+      "detail": "Listed and signed"
+    },
+    {
+      "name": "offer and accept create a hold",
+      "pass": true,
+      "detail": "Pending hold"
+    },
+    {
+      "name": "handoff QR decodes to a signed message",
+      "pass": false,
+      "detail": "image 360x360 tooLong=false"
+    },
+    {
+      "name": "QR handoff settles",
+      "pass": true,
+      "detail": "Settled. Buyer 76 · seller 128. SIMULATION."
+    },
+    {
+      "name": "pinned donation lists both contribution methods",
+      "pass": true,
+      "detail": "{\"name\":true,\"address\":true,\"phrase\":true,\"href\":\"https://x.com/Trancesage\",\"qr\":true}"
+    },
+    {
+      "name": "SMS link carries a signed token",
+      "pass": true,
+      "detail": "sms:%2B12025550102?&body=SIMULATION%20lg"
+    },
+    {
+      "name": "call control is a tel link",
+      "pass": true,
+      "detail": "tel:+12025550102"
+    },
+    {
+      "name": "call log records without audio",
+      "pass": true,
+      "detail": "No audio"
+    },
+    {
+      "name": "KYC hash chat matches",
+      "pass": true,
+      "detail": "Matched"
+    },
+    {
+      "name": "camera capture verifies",
+      "pass": true,
+      "detail": "Verified. The file matches the tape."
+    },
+    {
+      "name": "a changed file fails verification",
+      "pass": true,
+      "detail": "Not authentic"
+    },
+    {
+      "name": "overdue invoice is labeled and aged",
+      "pass": true,
+      "detail": "Receivable and payable\n\nOpen, due, and overdue stay off the balance until a coded payment. Ageing 0 in 0-30, 0 in 31-60, 10 in 60+.\n\nAR · overdue · 10 $lgme\n\nPaid 0. Remaining 10. "
+    },
+    {
+      "name": "partial payment leaves the invoice open",
+      "pass": true,
+      "detail": "Paid 4 $lgme. Remaining 6. Reward 0. SIMULATION."
+    },
+    {
+      "name": "invoice refusal has no penalty and no reward",
+      "pass": true,
+      "detail": "REFUSAL recorded. No balance moves. No penalty. No reward. SIMULATION."
+    },
+    {
+      "name": "soBeIT grant is recorded",
+      "pass": true,
+      "detail": "Simulated grant recorded. Balance 524. No real funds moved."
+    },
+    {
+      "name": "full payment reward is capped at 2 percent and 5",
+      "pass": true,
+      "detail": "Paid 300 $lgme. Remaining 0. Reward 5. SIMULATION."
+    },
+    {
+      "name": "both tapes record the paid invoice",
+      "pass": true,
+      "detail": "both books"
+    },
+    {
+      "name": "Resources magazine opens",
+      "pass": true,
+      "detail": "opened"
+    },
+    {
+      "name": "visited every sitemap page in the browser",
+      "pass": true,
+      "detail": "41"
+    },
+    {
+      "name": "no console errors",
+      "pass": true,
+      "detail": "none"
+    }
+  ],
+  "errors": []
+}
