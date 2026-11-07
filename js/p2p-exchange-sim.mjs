@@ -20,6 +20,15 @@ export const REWARD_RATE = 0.02;
 export const REWARD_CAP = 5;
 export const REWARD_PERIOD_DAYS = 30;
 export const LISTING_DAYS = 14;
+export const LISTING_KINDS = Object.freeze(['ihavIT', 'IwanIT']);
+export const STANDING_DONATION = Object.freeze({
+  title: 'Donation — soBeIT',
+  description: 'help grow n floor, thank you.',
+  href: '/lgme-coin',
+  action: 'Receive / send $lgme',
+  kinds: Object.freeze(['ihavIT', 'IwanIT']),
+  photo: '/icons/icon-512.png'
+});
 export const KDF_ITERATIONS = 100000;
 
 export function layoutMode({ width, coarse = false, uaMobile = false } = {}) {
@@ -1803,6 +1812,8 @@ export function listingCore(spec) {
     referenceId: spec.referenceId || null,
     referenceAvg: spec.referenceAvg == null || spec.referenceAvg === '' ? null : spec.referenceAvg,
     photoHash: String(spec.photoHash || ''),
+    kind: spec.kind === 'IwanIT' ? 'IwanIT' : 'ihavIT',
+    description: String(spec.description || '').trim(),
     unit: '$lgme'
   };
 }
@@ -1813,12 +1824,28 @@ function addDays(iso, days) {
 
 export function listingVisible(listing, at = nowIso()) {
   if (!listing || listing.status === 'removed' || listing.status === 'settled') return false;
+  if (listing.pinned) return true;
   return new Date(listing.expiresAt).getTime() > new Date(at).getTime();
+}
+
+function standingCore(listing) {
+  return {
+    simulated: true,
+    pinned: true,
+    sellerId: listing.sellerId,
+    title: listing.title,
+    description: listing.description,
+    href: listing.href,
+    action: listing.action,
+    kinds: listing.kinds,
+    photoHash: listing.photoHash,
+    unit: '$lgme'
+  };
 }
 
 export async function verifyListing(listing) {
   if (!listing) return { ok: false, error: 'No listing.' };
-  const originHash = await sha256(canonicalJSON(listingCore(listing)));
+  const originHash = await sha256(canonicalJSON(listing.pinned ? standingCore(listing) : listingCore(listing)));
   if (originHash !== listing.originHash || originHash !== listing.id) return { ok: false, error: 'Origin hash does not match.' };
   const valid = await verifyText(listing.publicKeyJwk, originHash, listing.sig);
   if (!valid) return { ok: false, error: 'Listing signature does not verify.' };
@@ -1897,6 +1924,7 @@ export async function refreshListing(store, sellerId, listingId, at = nowIso()) 
   const seller = await store.get(sellerId);
   const listing = seller?.listings?.[listingId];
   if (!seller || !listing || listing.sellerId !== sellerId) return fail('No listing.');
+  if (listing.pinned) return { ok: true, listing };
   if (!seller.privateKeyJwk) return fail('Wallet is locked.');
   const beat = { simulated: true, listingId, originHash: listing.originHash, at };
   const hash = await sha256(canonicalJSON(beat));
@@ -1918,13 +1946,17 @@ export async function marketFeed(store, query = {}, at = nowIso()) {
   for (const peer of await loadAll(store)) {
     for (const listing of Object.values(peer.listings || {})) {
       if (!listingVisible(listing, at)) continue;
+      if (query.kind && query.kind !== 'all') {
+        const kinds = listing.kinds || [listing.kind || 'ihavIT'];
+        if (!kinds.includes(query.kind)) continue;
+      }
       if (query.category && listing.category !== query.category) continue;
       if (query.condition && listing.condition !== query.condition) continue;
       if (query.pickup && listing.pickup !== query.pickup) continue;
       if (query.circle && listing.circle !== query.circle) continue;
       if (q && !`${listing.title} ${listing.circle} ${listing.area}`.toLowerCase().includes(q)) continue;
-      if (min != null && Number.isFinite(min) && listing.amount < min) continue;
-      if (max != null && Number.isFinite(max) && listing.amount > max) continue;
+      if (!listing.pinned && min != null && Number.isFinite(min) && listing.amount < min) continue;
+      if (!listing.pinned && max != null && Number.isFinite(max) && listing.amount > max) continue;
       const checked = await verifyListing(listing);
       cards.push({
         ...listing,
@@ -1936,8 +1968,68 @@ export async function marketFeed(store, query = {}, at = nowIso()) {
       });
     }
   }
-  cards.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+  cards.sort((a, b) => {
+    if (a.pinned && !b.pinned) return -1;
+    if (!a.pinned && b.pinned) return 1;
+    return String(b.createdAt).localeCompare(String(a.createdAt));
+  });
   return cards;
+}
+
+export async function ensureStandingDonation(store, at = nowIso()) {
+  const peers = await loadAll(store);
+  for (const peer of peers) {
+    const found = Object.values(peer.listings || {}).find((listing) => listing.pinned && listing.title === STANDING_DONATION.title);
+    if (found) return { ok: true, listing: found };
+  }
+  const signer = peers.find((peer) => peer.id === 'alice' && peer.privateKeyJwk) || peers.find((peer) => peer.privateKeyJwk);
+  if (!signer) return fail('No book can hold the standing listing.');
+  const photoHash = await sha256(STANDING_DONATION.photo);
+  const draft = {
+    sellerId: signer.id,
+    title: STANDING_DONATION.title,
+    description: STANDING_DONATION.description,
+    href: STANDING_DONATION.href,
+    action: STANDING_DONATION.action,
+    kinds: [...STANDING_DONATION.kinds],
+    photoHash
+  };
+  const originHash = await sha256(canonicalJSON(standingCore(draft)));
+  const sig = await signText(signer.privateKeyJwk, originHash);
+  const listing = {
+    ...standingCore(draft),
+    id: originHash,
+    originHash,
+    sig,
+    publicKeyJwk: signer.publicKeyJwk,
+    photo: STANDING_DONATION.photo,
+    kind: 'ihavIT',
+    category: 'Services',
+    condition: 'Good',
+    pickup: 'Meet',
+    circle: 'soBeIT',
+    area: '',
+    amount: 0,
+    referenceId: null,
+    referenceAvg: null,
+    createdAt: at,
+    heartbeatAt: null,
+    expiresAt: null,
+    status: 'active'
+  };
+  signer.listings = signer.listings || {};
+  signer.listings[listing.id] = listing;
+  await appendEntry(signer, 'listing', {
+    listingId: listing.id,
+    originHash,
+    title: listing.title,
+    pinned: true,
+    href: listing.href,
+    expiresAt: null,
+    sig
+  }, at);
+  await store.set(signer.id, signer);
+  return { ok: true, listing };
 }
 
 export async function circlesOf(store, at = nowIso()) {
@@ -2349,7 +2441,7 @@ export async function seedMarket(store, at = nowIso()) {
   const listings = {};
   for (const sample of samples) {
     const photo = await swatch(sample.label, sample.color);
-    const created = await createListing(store, sample.sellerId, { ...sample, ...photo, at });
+    const created = await createListing(store, sample.sellerId, { ...sample, ...photo, kind: 'ihavIT', at });
     if (!created.ok) return created;
     listings[sample.sellerId] = created.listing;
   }
@@ -2396,6 +2488,8 @@ export async function resetAndSeed(store) {
   if (!proposed.ok) return proposed;
   const market = await seedMarket(store, at);
   if (!market.ok) return market;
+  const standing = await ensureStandingDonation(store, at);
+  if (!standing.ok) return standing;
   return { ok: true, exchangeId: proposed.exchangeId, threadId: market.threadId, pendingThreadId: market.pendingThreadId };
 }
 

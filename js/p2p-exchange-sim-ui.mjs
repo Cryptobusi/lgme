@@ -42,7 +42,7 @@ let catalog = [];
 let catalogNotice = 'Reference only, not a price.';
 let busy = false;
 let nameById = {};
-let marketQuery = { q: '', category: '', condition: '', pickup: '', circle: '', min: '', max: '' };
+let marketQuery = { q: '', kind: '', category: '', condition: '', pickup: '', circle: '', min: '', max: '' };
 let openListingId = '';
 let openThreadId = '';
 let pendingChat = '';
@@ -1786,7 +1786,9 @@ async function renderMarket(peers, seat) {
         card.photo ? h('div', { class: 'slide' }, [h('img', { class: 'shot', alt: '', src: card.photo })]) : null
       ].filter(Boolean));
       const actions = [];
-      if (card.sellerId === seat) {
+      if (card.pinned) {
+        actions.push(h('a', { class: 'btn primary', id: 'donation-link', href: card.href || '/lgme-coin' }, [card.action || 'Receive / send $lgme']));
+      } else if (card.sellerId === seat) {
         actions.push(h('button', { type: 'button', class: 'primary', onClick: async () => {
           const refreshed = await sim.refreshListing(store, seat, card.id);
           setStatus(refreshed.ok ? 'Listing refreshed with a signed heartbeat. SIMULATION.' : refreshed.error, refreshed.ok ? 'ok' : 'bad');
@@ -1805,7 +1807,9 @@ async function renderMarket(peers, seat) {
         h('h2', {}, [card.title]),
         gallery,
         card.sellerId === seat ? h('div', { class: 'actions' }, [h('button', { type: 'button', id: 'listing-camera', onClick: () => showCapture(seat, { listingId: card.id, onSaved: () => render() }) }, ['Camera'])]) : null,
-        h('p', { class: 'price' }, [`${card.amount} $lgme`]),
+        card.pinned ? h('p', { id: 'donation-copy' }, [card.description]) : h('p', { class: 'price' }, [`${card.amount} $lgme`]),
+        card.pinned ? h('p', { class: 'legend' }, ['SIMULATION. A soBeIT grant below stays on this tape. The link above is the real token page.']) : null,
+        card.pinned ? soBeItCard(peers, seat) : null,
         h('p', {}, [
           h('span', { class: card.verified ? 'badge badge-verified' : 'badge badge-unverified' }, [card.verified ? 'Verified' : 'Unverified']),
           ` ${card.sellerName} · ${card.circle} · Peer standing ${card.standing}`
@@ -1819,6 +1823,7 @@ async function renderMarket(peers, seat) {
       return;
     }
   }
+  await sim.ensureStandingDonation(store);
   const feed = await sim.marketFeed(store, marketQuery);
   const search = h('input', { type: 'search', placeholder: 'Search', value: marketQuery.q, autocomplete: 'off' });
   const condition = h('select', {}, [option('', 'Any condition', !marketQuery.condition), ...CONDITIONS.map((item) => option(item, item, marketQuery.condition === item))]);
@@ -1835,7 +1840,7 @@ async function renderMarket(peers, seat) {
     field('Max $lgme', max),
     h('div', { class: 'actions' }, [
       h('button', { class: 'primary', type: 'submit' }, ['Filter']),
-      h('button', { type: 'button', onClick: () => { marketQuery = { q: '', category: '', condition: '', pickup: '', circle: '', min: '', max: '' }; render(); } }, ['Clear'])
+      h('button', { type: 'button', onClick: () => { marketQuery = { q: '', kind: '', category: '', condition: '', pickup: '', circle: '', min: '', max: '' }; render(); } }, ['Clear'])
     ])
   ]);
   form.addEventListener('submit', (event) => {
@@ -1843,18 +1848,25 @@ async function renderMarket(peers, seat) {
     marketQuery = { ...marketQuery, q: search.value, condition: condition.value, pickup: pickup.value, circle: circle.value, min: min.value, max: max.value };
     render();
   });
+  const kinds = h('div', { class: 'chips', id: 'kind-pills' }, [
+    chip('All', !marketQuery.kind, () => { marketQuery.kind = ''; render(); }),
+    chip('ihavIT', marketQuery.kind === 'ihavIT', () => { marketQuery.kind = 'ihavIT'; render(); }),
+    chip('IwanIT', marketQuery.kind === 'IwanIT', () => { marketQuery.kind = 'IwanIT'; render(); })
+  ]);
   const pills = h('div', { class: 'chips' }, [
     chip('All', !marketQuery.category, () => { marketQuery.category = ''; render(); }),
     ...CATEGORIES.map((item) => chip(item, marketQuery.category === item, () => { marketQuery.category = item; render(); }))
   ]);
-  const grid = h('div', { class: 'market-grid' }, feed.map((card) => h('button', {
+  const grid = h('div', { class: 'market-grid', id: 'market-grid' }, feed.map((card) => h('button', {
     type: 'button',
     class: 'card market-card',
+    id: card.pinned ? 'donation-card' : undefined,
     onClick: () => { openListingId = card.id; render(); }
   }, [
     h('img', { alt: '', src: card.photo || '' }),
     h('h3', {}, [card.title]),
-    h('div', { class: 'price' }, [`${card.amount} $lgme`]),
+    card.pinned ? h('p', { class: 'muted' }, [card.description]) : h('div', { class: 'price' }, [`${card.amount} $lgme`]),
+    card.pinned ? h('span', { class: 'badge badge-verified' }, [card.action || 'Receive / send $lgme']) : null,
     h('div', {}, [h('span', { class: card.verified ? 'badge badge-verified' : 'badge badge-unverified' }, [card.verified ? 'Verified' : 'Unverified'])]),
     h('small', { class: 'meta' }, [`${card.circle} · Peer standing ${card.standing}`])
   ])));
@@ -1864,6 +1876,7 @@ async function renderMarket(peers, seat) {
   panel.replaceChildren(
     h('h2', {}, ['Market']),
     h('p', { class: 'muted' }, [`Ad-free. ${me ? me.name : 'You'} · Peer standing ${standing ? standing.standing : ''}. Nothing here is a paid placement. SIMULATION.`]),
+    kinds,
     pills,
     filters,
     feed.length ? grid : h('p', { class: 'empty' }, ['No listings match. List one, or clear the filters.']),
@@ -1950,6 +1963,7 @@ async function renderList(seat) {
   }
   if (listStep === 2) {
     const title = h('input', { required: true, maxlength: '80', value: listDraft.title });
+    const kind = h('select', {}, sim.LISTING_KINDS.map((item) => option(item, item === 'ihavIT' ? 'ihavIT · I have it' : 'IwanIT · I want it', (listDraft.kind || 'ihavIT') === item)));
     const category = h('select', {}, CATEGORIES.map((item) => option(item, item, listDraft.category === item)));
     const condition = h('select', {}, CONDITIONS.map((item) => option(item, item, listDraft.condition === item)));
     const pickup = h('select', {}, PICKUPS.map((item) => option(item, item, listDraft.pickup === item)));
@@ -1957,6 +1971,7 @@ async function renderList(seat) {
     const area = h('input', { maxlength: '80', value: listDraft.area, placeholder: 'Optional area phrase' });
     const form = h('form', {}, [
       field('Title', title),
+      field('Kind', kind),
       field('Category', category),
       field('Condition', condition),
       field('Pickup', pickup),
@@ -1969,7 +1984,7 @@ async function renderList(seat) {
     ]);
     form.addEventListener('submit', (event) => {
       event.preventDefault();
-      listDraft = { ...listDraft, title: title.value.trim(), category: category.value, condition: condition.value, pickup: pickup.value, circle: circle.value.trim(), area: area.value.trim() };
+      listDraft = { ...listDraft, title: title.value.trim(), kind: kind.value, category: category.value, condition: condition.value, pickup: pickup.value, circle: circle.value.trim(), area: area.value.trim() };
       if (!listDraft.title || !listDraft.circle) { setStatus('Add a title and a circle.', 'bad'); return; }
       listStep = 3;
       render();

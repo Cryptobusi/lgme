@@ -486,7 +486,10 @@ test('KYC needs a valid code, a voucher code, and a refusal does not verify', as
   const started = await sim.startKyc(store, 'dana', { displayName: 'Dana', phone: '555', email: 'dana@example.com', at: '2026-11-06T00:01:00.000Z' });
   assert.equal(started.ok, true, started.error);
   assert.equal((await store.get('dana')).tape.some((entry) => entry.type === 'KYC_STARTED'), true);
-  assert.equal(JSON.stringify((await store.get('dana')).tape).includes('555'), false);
+  const startedPayload = (await store.get('dana')).tape.find((entry) => entry.type === 'KYC_STARTED').payload;
+  assert.equal(startedPayload.phone, undefined);
+  assert.equal(JSON.stringify(startedPayload).includes('555'), false);
+  assert.equal(JSON.stringify(startedPayload).includes('dana@example.com'), false);
   const early = await sim.confirmKyc2fa(store, 'dana', { passphrase: 'correct horse', code: '000000', unixSeconds: 59 });
   assert.equal(early.ok, false);
   const setup = await sim.setupWallet(store, 'dana', 'correct horse', { iterations: 2000 });
@@ -1106,4 +1109,32 @@ test('the coin page names the mint and the donate address exactly', () => {
   assert.equal(readFileSync(join(root, 'p2p-exchange-sim.html'), 'utf8').includes('$lgme on pump.fun'), true);
   assert.equal(readFileSync(join(root, 'index.html'), 'utf8').includes('$lgme on pump.fun'), true);
   assert.equal(readFileSync(join(root, 'sitemap.xml'), 'utf8').includes('https://lgme.app/lgme-coin'), true);
+});
+
+test('the standing donation is pinned in both listing kinds and never expires', async () => {
+  const store = await books();
+  const far = '2099-01-01T00:00:00.000Z';
+  const ensured = await sim.ensureStandingDonation(store, '2026-11-07T00:00:00.000Z');
+  assert.equal(ensured.ok, true, ensured.error);
+  assert.equal(ensured.listing.pinned, true);
+  assert.equal(ensured.listing.expiresAt, null);
+  assert.equal(sim.listingVisible(ensured.listing, far), true);
+  const checked = await sim.verifyListing(ensured.listing);
+  assert.equal(checked.ok, true, checked.error);
+  const ordinary = await sampleListing(store, 'bob', { at: '2026-01-01T00:00:00.000Z', title: 'Old saw', kind: 'ihavIT' });
+  assert.equal(sim.listingVisible(ordinary.listing, far), false);
+  for (const kind of ['ihavIT', 'IwanIT']) {
+    const feed = await sim.marketFeed(store, { kind }, far);
+    assert.equal(feed[0].title, 'Donation — soBeIT');
+    assert.equal(feed[0].description, 'help grow n floor, thank you.');
+    assert.equal(feed[0].href, '/lgme-coin');
+    assert.equal(feed[0].action, 'Receive / send $lgme');
+    assert.equal(feed[0].pinned, true);
+    assert.equal(feed.some((card) => card.id === ordinary.listing.id), false);
+  }
+  const page = readFileSync(join(root, 'lgme-coin.html'), 'utf8');
+  assert.equal(page.includes('6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY'), true);
+  assert.equal(page.includes('https://pump.fun/coin/7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump'), true);
+  const again = await sim.ensureStandingDonation(store, far);
+  assert.equal(again.listing.id, ensured.listing.id);
 });
