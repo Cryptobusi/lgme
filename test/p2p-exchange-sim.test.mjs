@@ -1168,12 +1168,17 @@ test('Install & launch hides in the app, prompts when it can, and otherwise open
   assert.equal(isIosSafari({ userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1', platform: 'iPhone', maxTouchPoints: 5 }), true);
   assert.equal(isIosSafari({ userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/120.0.0.0 Mobile/15E148 Safari/604.1', platform: 'iPhone', maxTouchPoints: 5 }), false);
   assert.equal(isIosSafari({ userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36', platform: 'Linux', maxTouchPoints: 0 }), false);
+  const ui = readFileSync(join(root, 'js/p2p-exchange-sim-ui.mjs'), 'utf8');
+  assert.equal(ui.includes('openCall = { phone, hash: identity?.hash || \'\', start: new Date().toISOString(), threadId }; render();'), true);
   const source = readFileSync(join(root, 'js/install-launch.mjs'), 'utf8');
   assert.equal(source.includes('Share > Add to Home Screen'), true);
   assert.equal(source.includes('beforeinstallprompt'), true);
   assert.equal(source.includes('appinstalled'), true);
   assert.equal(source.includes('getInstalledRelatedApps'), true);
   assert.equal(source.includes("location.assign('/p2p-exchange-sim')") || source.includes('location.assign(APP_PATH)'), true);
+  for (const file of ['index.html', 'p2p-exchange-sim.html', 'lgme-coin.html', 'pumpup.html', 'developer-notes.html']) {
+    assert.equal(readFileSync(join(root, file), 'utf8').includes('EgonomicAnon'), false, file);
+  }
   for (const file of ['index.html', 'p2p-exchange-sim.html', 'lgme-coin.html']) {
     const page = readFileSync(join(root, file), 'utf8');
     assert.equal(page.includes('data-install-launch'), true, file);

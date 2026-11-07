@@ -2122,7 +2122,7 @@ async function phoneCard(seat, otherId, threadId) {
     field('Text', text),
     h('div', { class: 'actions' }, [
       h('button', { class: 'primary', type: 'submit' }, ['Sign']),
-      phone ? h('a', { class: 'btn', href: sim.telHref(phone), onClick: () => { openCall = { phone, hash: identity?.hash || '', start: new Date().toISOString(), threadId }; } }, ['Call']) : null
+      phone ? h('a', { class: 'btn', href: sim.telHref(phone), onClick: (event) => { event.preventDefault(); openCall = { phone, hash: identity?.hash || '', start: new Date().toISOString(), threadId }; render(); } }, ['Call']) : null
     ])
   ]);
   form.addEventListener('submit', async (event) => {
