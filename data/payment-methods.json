@@ -5,5 +5,12 @@
   "cash": {
     "inPersonOnly": true
   },
-  "notice": "Zelle and cash are not reversible-protected. This app does not process them."
+  "notice": "Zelle and cash are not reversible-protected. This app does not process them.",
+  "loyalty": {
+    "defaultPercent": 5,
+    "maxPercentPerDeal": 15,
+    "capAmountPerPeriod": 25,
+    "periodDays": 30,
+    "reserve": 100
+  }
 }

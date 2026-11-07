@@ -1752,7 +1752,7 @@ test('DC reference values stay pending when a series has no number', () => {
   assert.equal(page.includes('id="refList"'), true);
   assert.equal(/<script(?![^>]*\bsrc=)/i.test(page), false);
   const worker = readFileSync(join(root, 'sw.js'), 'utf8');
-  assert.equal(worker.includes('lgme-v52'), true);
+  assert.equal(worker.includes('lgme-v53'), true);
   const desk = readFileSync(join(root, 'p2p-exchange-sim.html'), 'utf8');
   assert.equal(desk.includes('splash-skip'), false);
   assert.equal(desk.includes('>Skip<'), false);
@@ -1973,4 +1973,83 @@ test('Zelle and cash stay pending until the payee attests and a proof cannot be 
   assert.equal(readFileSync(join(root, 'js/p2p-exchange-sim-ui.mjs'), 'utf8').includes('FIAT_FEE_NOTE'), true);
   assert.equal(readFileSync(join(root, 'js/p2p-exchange-sim-ui.mjs'), 'utf8').includes('Statutory fees / notes'), true);
   assert.equal(coin.includes('$Trust') || grants.includes('$Trust'), false);
+});
+
+test('an $lgme loyalty discount needs both signatures and the floor rebate follows final payment', async () => {
+  const store = await books();
+  const online = { onLine: true };
+  for (const [id, phone] of [['alice', '+12025550131'], ['bob', '+12025550132']]) {
+    const peer = await store.get(id);
+    peer.kyc = { status: 'VERIFIED', displayName: peer.name, phone, salt: `salt-${id}` };
+    await store.set(id, peer);
+  }
+  const listed = await sim.createListing(store, 'bob', {
+    title: 'Bench hour',
+    category: 'Services',
+    condition: 'Good',
+    pickup: 'Meet',
+    circle: 'soBeIT',
+    amount: 10,
+    photoHash: 'cd'.repeat(32),
+    kind: 'IprovIT',
+    at: '2026-11-07T00:00:00.000Z'
+  });
+  assert.equal(listed.ok, true, listed.error);
+  const proposed = await sim.signOffer(store, 'alice', {
+    listingId: listed.listing.id,
+    cashMode: 'lgme',
+    loyaltyPercent: 5,
+    amount: 10,
+    navigator: online
+  });
+  assert.equal(proposed.ok, true, proposed.error);
+  assert.equal(proposed.offer.loyalty.percent, 5);
+  assert.equal(sim.loyaltyStanding(proposed.offer).agreed, false);
+  const declined = await sim.countersignOffer(store, 'bob', proposed.offer.id, { declineLoyalty: true, navigator: online });
+  assert.equal(declined.ok, true, declined.error);
+  assert.equal(sim.loyaltyStanding(declined.offer).agreed, false);
+  assert.equal(sim.loyaltyStanding(declined.offer).declined, true);
+  const work = await sim.recordIdidIt(store, 'bob', { work: 'Loyalty bench', scope: 'hour', hours: 1, at: '2026-11-07T00:00:00.000Z' });
+  const invoice = await sim.createInvoice(store, 'bob', {
+    receiptId: work.receiptId,
+    payerId: 'alice',
+    amount: 10,
+    dueAt: '2026-12-01T00:00:00.000Z',
+    at: '2026-11-07T00:00:00.000Z'
+  });
+  assert.equal(invoice.ok, true, invoice.error);
+  const rules = { defaultPercent: 5, maxPercentPerDeal: 15, capAmountPerPeriod: 25, periodDays: 30, reserve: 100 };
+  await sim.consentLoyalty(store, 'alice', { invoiceId: invoice.invoiceId, percent: 5, rules, payerWallet: '6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY', navigator: online });
+  const spec = {
+    signature: 'sig-loyalty',
+    reference: 'ref-loyalty',
+    mint: '7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump',
+    amount: 10,
+    recipient: '6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY',
+    invoiceId: invoice.invoiceId,
+    otherId: 'bob',
+    cluster: 'devnet',
+    navigator: online
+  };
+  const pending = await sim.recordSolanaTx(store, 'alice', spec);
+  assert.equal(pending.ok, true, pending.error);
+  const halfway = await sim.attestSolanaTx(store, 'bob', { ...spec, payerId: 'alice', navigator: online });
+  assert.equal(halfway.ok, true, halfway.error);
+  assert.equal((await store.get('alice')).tape.some((entry) => entry.type === 'FLOOR_REBATE_DUE'), false);
+  await sim.consentLoyalty(store, 'bob', { invoiceId: invoice.invoiceId, percent: 5, rules, navigator: online });
+  assert.equal((await store.get('alice')).tape.some((entry) => entry.type === 'FLOOR_REBATE_DUE' && entry.payload.amount === 0.5), true);
+  assert.equal((await store.get('bob')).tape.some((entry) => entry.type === 'FLOOR_REBATE_DUE'), true);
+  assert.equal(sim.readInvoices(await store.get('alice'), '2026-11-07T03:00:00.000Z').find((row) => row.invoiceId === invoice.invoiceId).paid, 10);
+  const low = await sim.reviewFloorRebate(store, 'alice', { invoiceId: invoice.invoiceId, balance: 10, navigator: online });
+  assert.equal(low.ok, true, low.error);
+  assert.equal(low.status, 'deferred');
+  assert.equal(low.penalty, false);
+  const paid = await sim.recordFloorRebate(store, 'alice', { signature: 'rebate-sig', reference: 'rebate-ref', invoiceId: invoice.invoiceId, navigator: online });
+  assert.equal(paid.ok, true, paid.error);
+  assert.equal((await store.get('bob')).tape.some((entry) => entry.type === 'FLOOR_REBATE_PAID' && entry.payload.signature === 'rebate-sig'), true);
+  const reuse = await sim.recordFloorRebate(store, 'alice', { signature: 'rebate-sig', reference: 'rebate-ref', invoiceId: invoice.invoiceId, navigator: online });
+  assert.equal(reuse.ok, false);
+  assert.match(reuse.error, /already used/);
+  const settlementReuse = await sim.recordFloorRebate(store, 'alice', { signature: 'sig-loyalty', invoiceId: invoice.invoiceId, navigator: online });
+  assert.equal(settlementReuse.ok, false);
 });

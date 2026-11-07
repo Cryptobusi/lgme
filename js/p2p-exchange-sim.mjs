@@ -28,6 +28,14 @@ export const TERM_MONTHS = Object.freeze([3, 4, 5, 6]);
 export const OFFERUP_CAVEAT = 'Third-party listing on OfferUp, not verified by lgme. Price and availability may have changed. Deal is between you and the seller.';
 export const DONATION_THANKS = 'THANK YOU FOR YOUR SUPPORT.';
 export const FIAT_FEE_NOTE = 'Fiat payments (cash, Zelle) may incur additional statutory fees. Details are reviewed per transaction.';
+export const FLOOR_REBATE_LABEL = 'The floor funds this rebate because the app supports the floor.';
+export const LOYALTY_DEFAULTS = Object.freeze({
+  defaultPercent: 5,
+  maxPercentPerDeal: 15,
+  capAmountPerPeriod: 25,
+  periodDays: 30,
+  reserve: 100
+});
 export const STANDING_DONATION = Object.freeze({
   title: 'Donation — soBeIT',
   description: 'help grow n floor, thank you.',
@@ -402,6 +410,10 @@ export function entryDetail(entry, names = {}) {
   if (entry.type === 'OFFCHAIN_TX') return `${payload.method || 'Off-chain'} ${payload.status || 'pending-attestation'} ${payload.amount ?? ''}`.trim();
   if (entry.type === 'OFFCHAIN_FINAL') return `${payload.method || 'Off-chain'} settled ${payload.amount ?? ''}`.trim();
   if (entry.type === 'OFFCHAIN_REFUSAL') return 'Off-chain refusal. No penalty.';
+  if (entry.type === 'LOYALTY_CONSENT') return `Loyalty ${payload.loyaltyDecision || ''} ${payload.percent ?? 0}%`.trim();
+  if (entry.type === 'FLOOR_REBATE_DUE') return `Floor rebate due ${payload.amount} $lgme`.trim();
+  if (entry.type === 'FLOOR_REBATE_DEFERRED') return 'Floor rebate deferred. No penalty.';
+  if (entry.type === 'FLOOR_REBATE_PAID') return `Floor rebate paid ${payload.amount} $lgme`.trim();
   if (entry.type === 'GRANT') return `soBeIT grant ${payload.amount} $lgme ${payload.reason || ''}`.trim();
   if (entry.type === 'MEDIA' || entry.type === 'MEDIA_RECEIVED') return `${entry.type === 'MEDIA_RECEIVED' ? 'Received' : 'Media'} ${payload.mime || ''} ${payload.hash ? String(payload.hash).slice(0, 12) : ''}`.trim();
   if (entry.type === 'countersign') {
@@ -3912,6 +3924,8 @@ async function finalizeSolana(store, payload, at) {
         invoiceId: payload.invoiceId,
         mint: payload.mint,
         amount: payload.amount,
+        payerId: payload.payerId,
+        payeeId: payload.payeeId,
         status: 'settled',
         penalty: false
       }, at);
@@ -3933,6 +3947,197 @@ async function finalizeSolana(store, payload, at) {
     }
     await store.set(id, peer);
   }
+  await maybeFloorRebate(store, payload, at);
+}
+
+function loyaltyConsents(peers, invoiceId) {
+  const byParty = new Map();
+  for (const peer of peers || []) {
+    for (const entry of peer?.tape || []) {
+      if (entry.type === 'LOYALTY_CONSENT' && entry.payload?.invoiceId === invoiceId) byParty.set(entry.payload.peerId, entry.payload);
+    }
+  }
+  return [...byParty.values()];
+}
+
+function rebateEntries(peers) {
+  const rows = [];
+  for (const peer of peers || []) {
+    for (const entry of peer?.tape || []) {
+      if (entry.type === 'FLOOR_REBATE_DUE' || entry.type === 'FLOOR_REBATE_PAID' || entry.type === 'FLOOR_REBATE_DEFERRED') rows.push(entry);
+    }
+  }
+  return rows;
+}
+
+async function writeRebate(store, ids, type, payload, at) {
+  for (const id of [...new Set(ids.filter(Boolean))]) {
+    const peer = await store.get(id);
+    if (!peer?.privateKeyJwk && !peer?.signingKey) continue;
+    const same = (peer.tape || []).some((entry) => entry.type === type && entry.payload?.invoiceId === payload.invoiceId && entry.payload?.paymentId === payload.paymentId);
+    if (same) continue;
+    await appendEntry(peer, type, payload, at);
+    await store.set(id, peer);
+  }
+}
+
+async function maybeFloorRebate(store, payload, at) {
+  if (!payload?.invoiceId) return { ok: true, due: false };
+  const peers = await peersIn(store, [payload.payerId, payload.payeeId]);
+  const payerTx = peers.flatMap((peer) => peer.tape || []).find((entry) => entry.type === 'SOLANA_TX' && entry.payload?.invoiceId === payload.invoiceId && entry.payload?.role === 'payer');
+  const payerId = payload.payerId || payerTx?.payload?.payerId;
+  const payeeId = payload.payeeId || payerTx?.payload?.payeeId;
+  const ids = [payerId, payeeId].filter(Boolean);
+  const final = peers.some((peer) => (peer.tape || []).some((entry) => entry.type === 'SOLANA_FINAL' && entry.payload?.invoiceId === payload.invoiceId));
+  if (!final) return { ok: true, due: false };
+  if (rebateEntries(peers).some((entry) => entry.payload?.invoiceId === payload.invoiceId && (entry.type === 'FLOOR_REBATE_DUE' || entry.type === 'FLOOR_REBATE_PAID'))) {
+    return { ok: true, due: true };
+  }
+  const consents = loyaltyConsents(peers, payload.invoiceId);
+  if (consents.length < 2 || consents.some((row) => row.loyaltyDecision === 'declined' || Number(row.percent) === 0)) return { ok: true, due: false };
+  const percent = Number(consents[0].percent);
+  if (!consents.every((row) => Number(row.percent) === percent)) return { ok: true, due: false };
+  const rules = consents[0].rules || loyaltyRules({});
+  const raw = round2(Number(payload.amount) * percent / 100);
+  const start = new Date(at).getTime() - rules.periodDays * 86400000;
+  const counted = new Set();
+  const used = rebateEntries(peers).reduce((sum, entry) => {
+    if (entry.type === 'FLOOR_REBATE_DEFERRED') return sum;
+    const key = `${entry.type}:${entry.payload?.paymentId || entry.payload?.invoiceId}`;
+    if (counted.has(key)) return sum;
+    counted.add(key);
+    if (new Date(entry.at).getTime() < start) return sum;
+    return round2(sum + Number(entry.payload?.amount || 0));
+  }, 0);
+  const room = round2(rules.capAmountPerPeriod - used);
+  const amount = round2(Math.min(raw, Math.max(0, room)));
+  const paymentId = await sha256(canonicalJSON({ kind: 'floor-rebate', invoiceId: payload.invoiceId, signature: payload.signature }));
+  const body = {
+    simulated: false,
+    beta: true,
+    paymentId,
+    invoiceId: payload.invoiceId,
+    settlement: payload.signature,
+    percent,
+    fullAmount: round2(payload.amount),
+    amount,
+    payerId: payload.payerId,
+    payeeId: payload.payeeId,
+    payerWallet: consents.find((row) => row.payerWallet)?.payerWallet || '',
+    reserve: rules.reserve,
+    penalty: false,
+    label: FLOOR_REBATE_LABEL
+  };
+  if (amount <= 0) {
+    await writeRebate(store, ids, 'FLOOR_REBATE_DEFERRED', { ...body, status: 'deferred', reason: 'The period cap is used.' }, at);
+    return { ok: true, due: false, status: 'deferred', penalty: false };
+  }
+  await writeRebate(store, ids, 'FLOOR_REBATE_DUE', { ...body, status: 'due' }, at);
+  return { ok: true, due: true, amount, paymentId };
+}
+
+export async function consentLoyalty(store, peerId, spec = {}) {
+  const peer = await store.get(peerId);
+  if (!peer?.privateKeyJwk && !peer?.signingKey) return fail(peer ? 'Wallet is locked.' : 'Unknown peer.');
+  const gate = assertOnline(spec.navigator);
+  if (!gate.ok) return fail(gate.error);
+  const invoiceId = String(spec.invoiceId || '').trim();
+  if (!invoiceId) return fail('Name the invoice.');
+  const invoice = findInvoice(peer, invoiceId, spec.at || nowIso());
+  if (invoice && peerId !== invoice.payerId && peerId !== invoice.workerId) return fail('Only the two parties can agree a loyalty discount.');
+  if (spec.method === 'zelle' || spec.method === 'cash') return fail('Cash and Zelle do not earn the loyalty discount.');
+  const rules = loyaltyRules(spec.rules || {});
+  const declined = spec.decline === true;
+  const percent = declined ? 0 : clampPercent(spec.percent ?? rules.defaultPercent, rules);
+  const at = spec.at || nowIso();
+  const body = {
+    simulated: false,
+    beta: true,
+    invoiceId,
+    peerId,
+    percent,
+    loyaltyDecision: declined || percent <= 0 ? 'declined' : 'agreed',
+    payerWallet: String(spec.payerWallet || '').trim(),
+    rules,
+    penalty: false,
+    label: FLOOR_REBATE_LABEL
+  };
+  const hash = await sha256(canonicalJSON(body));
+  const sig = await signText(peer.privateKeyJwk || peer.signingKey, hash);
+  await appendEntry(peer, 'LOYALTY_CONSENT', { ...body, hash, sig }, at);
+  await store.set(peerId, peer);
+  const peers = await peersIn(store, [peerId, invoice?.payerId, invoice?.workerId]);
+  const final = peers.flatMap((item) => item.tape || []).find((entry) => entry.type === 'SOLANA_FINAL' && entry.payload?.invoiceId === invoiceId);
+  if (final) await maybeFloorRebate(store, final.payload, at);
+  return { ok: true, percent, declined: body.loyaltyDecision === 'declined', penalty: false };
+}
+
+export async function reviewFloorRebate(store, actorId, spec = {}) {
+  const actor = await store.get(actorId);
+  if (!actor?.privateKeyJwk && !actor?.signingKey) return fail(actor ? 'Wallet is locked.' : 'Unknown peer.');
+  const gate = assertOnline(spec.navigator);
+  if (!gate.ok) return fail(gate.error);
+  const invoiceId = String(spec.invoiceId || '');
+  const peers = await peersIn(store, [actorId]);
+  const due = rebateEntries(peers).find((entry) => entry.type === 'FLOOR_REBATE_DUE' && entry.payload?.invoiceId === invoiceId);
+  if (!due) return fail('No floor rebate is due for this payment.');
+  if (rebateEntries(peers).some((entry) => entry.type === 'FLOOR_REBATE_PAID' && entry.payload?.invoiceId === invoiceId)) {
+    return { ok: true, status: 'paid', penalty: false };
+  }
+  const amount = round2(due.payload.amount);
+  const reserve = Number(due.payload.reserve ?? LOYALTY_DEFAULTS.reserve);
+  const balance = Number(spec.balance);
+  const at = spec.at || nowIso();
+  if (!Number.isFinite(balance) || round2(balance - amount) < reserve) {
+    await writeRebate(store, [due.payload.payerId, due.payload.payeeId], 'FLOOR_REBATE_DEFERRED', {
+      ...due.payload,
+      status: 'deferred',
+      reason: 'The floor reserve stays in place.',
+      penalty: false,
+      label: FLOOR_REBATE_LABEL
+    }, at);
+    return { ok: true, status: 'deferred', penalty: false, amount, reserve, label: FLOOR_REBATE_LABEL };
+  }
+  return {
+    ok: true,
+    status: 'due',
+    amount,
+    payerWallet: spec.payerWallet || due.payload.payerWallet || '',
+    penalty: false,
+    label: FLOOR_REBATE_LABEL
+  };
+}
+
+export async function recordFloorRebate(store, actorId, spec = {}) {
+  const actor = await store.get(actorId);
+  if (!actor?.privateKeyJwk && !actor?.signingKey) return fail(actor ? 'Wallet is locked.' : 'Unknown peer.');
+  const gate = assertOnline(spec.navigator);
+  if (!gate.ok) return fail(gate.error);
+  const signature = String(spec.signature || '').trim();
+  if (!signature) return fail('The transaction signature is missing.');
+  const invoiceId = String(spec.invoiceId || '');
+  const peers = await peersIn(store, [actorId, spec.payerId, spec.payeeId]);
+  for (const peer of peers) {
+    for (const entry of peer.tape || []) {
+      const seen = entry.payload?.signature;
+      if (!seen || seen !== signature) continue;
+      if (entry.type === 'SOLANA_TX' || entry.type === 'SOLANA_FINAL' || entry.type === 'FLOOR_REBATE_PAID') {
+        return fail('This Solana signature was already used. A signature settles one rebate.');
+      }
+    }
+  }
+  const due = rebateEntries(peers).find((entry) => entry.type === 'FLOOR_REBATE_DUE' && entry.payload?.invoiceId === invoiceId);
+  if (!due) return fail('No floor rebate is due for this payment.');
+  const at = spec.at || nowIso();
+  await writeRebate(store, [due.payload.payerId, due.payload.payeeId], 'FLOOR_REBATE_PAID', {
+    ...due.payload,
+    signature,
+    reference: String(spec.reference || ''),
+    status: 'paid',
+    penalty: false,
+    label: FLOOR_REBATE_LABEL
+  }, at);
+  return { ok: true, status: 'paid', penalty: false, amount: due.payload.amount, label: FLOOR_REBATE_LABEL };
 }
 
 export async function recordSolanaTx(store, peerId, spec = {}) {
@@ -4606,6 +4811,47 @@ async function findOffer(store, offerId) {
   return null;
 }
 
+function loyaltyRules(raw = {}) {
+  const num = (value, fallback) => {
+    const figure = Number(value);
+    return Number.isFinite(figure) && figure >= 0 ? figure : fallback;
+  };
+  return {
+    defaultPercent: num(raw.defaultPercent, LOYALTY_DEFAULTS.defaultPercent),
+    maxPercentPerDeal: num(raw.maxPercentPerDeal, LOYALTY_DEFAULTS.maxPercentPerDeal),
+    capAmountPerPeriod: num(raw.capAmountPerPeriod, LOYALTY_DEFAULTS.capAmountPerPeriod),
+    periodDays: num(raw.periodDays, LOYALTY_DEFAULTS.periodDays) || LOYALTY_DEFAULTS.periodDays,
+    reserve: num(raw.reserve, LOYALTY_DEFAULTS.reserve)
+  };
+}
+
+function clampPercent(percent, rules) {
+  const figure = Number(percent);
+  const value = Number.isFinite(figure) ? figure : rules.defaultPercent;
+  return round2(Math.min(Math.max(0, value), rules.maxPercentPerDeal));
+}
+
+function loyaltyProposal(spec, cashMode) {
+  if (cashMode === 'zelle' || cashMode === 'cash') return null;
+  if (!(cashMode === 'lgme' || spec.loyalty === true)) return null;
+  const rules = loyaltyRules(spec.rules || {});
+  const percent = clampPercent(spec.loyaltyPercent ?? rules.defaultPercent, rules);
+  if (percent <= 0) return null;
+  return { percent, rules, agreed: false, declined: false };
+}
+
+export function loyaltyStanding(offer) {
+  const proposed = Number(offer?.loyalty?.proposed ?? offer?.loyalty?.percent ?? 0);
+  const rules = offer?.loyalty?.rules || loyaltyRules({});
+  const consents = Object.values(offer?.consents || {});
+  if (!proposed || consents.length < 2) {
+    return { percent: proposed, proposed, rules, agreed: false, declined: false, pending: true };
+  }
+  const declined = consents.some((row) => row.loyaltyDecision === 'declined');
+  const agreed = !declined && consents.every((row) => Number(row.loyaltyPercent) === proposed);
+  return { percent: agreed ? proposed : 0, proposed, rules, agreed, declined, pending: false };
+}
+
 export async function signOffer(store, peerId, spec = {}) {
   if (spec.offerId) return countersignOffer(store, peerId, spec.offerId, spec);
   const at = spec.at || nowIso();
@@ -4634,7 +4880,7 @@ export async function signOffer(store, peerId, spec = {}) {
     cashAmount = built.total;
   } else if (cashMode === 'full' && (!Number.isFinite(cashAmount) || cashAmount <= 0)) {
     return fail('Enter an amount greater than zero.');
-  } else if (cashMode === 'zelle' || cashMode === 'cash') {
+  } else if (cashMode === 'zelle' || cashMode === 'cash' || cashMode === 'lgme') {
     cashAmount = round2(spec.amount ?? (external ? offerupAmount(external.price) : null) ?? listing?.amount);
     if (!Number.isFinite(cashAmount) || cashAmount <= 0) return fail('Enter an amount greater than zero.');
   } else if (cashMode && cashMode !== 'full') {
@@ -4647,6 +4893,7 @@ export async function signOffer(store, peerId, spec = {}) {
     services.push({ listingId: id, title: found.listing.title, amount: found.listing.amount, sellerId: found.listing.sellerId });
   }
   if (!cashMode && !services.length) return fail('Choose cash, a term plan, or an IprovIT service.');
+  const loyalty = loyaltyProposal(spec, cashMode);
   const sellerId = external ? '' : listing.sellerId;
   const buyerId = !external && listing.sellerId === peerId ? String(spec.toId || '').trim() : peerId;
   if (!external && (!buyerId || buyerId === sellerId)) return fail('Name the other party.');
@@ -4661,11 +4908,20 @@ export async function signOffer(store, peerId, spec = {}) {
     external: external || null,
     cash: cashMode ? { mode: cashMode, amount: cashAmount, months: cashMode === 'terms' ? Number(spec.months) : 0, schedule } : null,
     services,
+    loyalty,
     penalty: false,
     unit: '$lgme'
   };
   const offerId = await sha256(canonicalJSON(core));
-  const consentBody = { offerId, peerId, kycHash: kyc.hash, automate: spec.automate === true, passkey: 'fingerprint / face / device PIN (your phone decides)' };
+  const consentBody = {
+    offerId,
+    peerId,
+    kycHash: kyc.hash,
+    automate: spec.automate === true,
+    passkey: 'fingerprint / face / device PIN (your phone decides)',
+    loyaltyPercent: loyalty ? loyalty.percent : 0,
+    loyaltyDecision: loyalty ? 'proposed' : 'none'
+  };
   const hash = await sha256(canonicalJSON(consentBody));
   const sig = await signText(peer.privateKeyJwk || peer.signingKey, hash);
   const offer = {
@@ -4709,10 +4965,21 @@ export async function countersignOffer(store, peerId, offerId, spec = {}) {
   if (offer.status === 'contract' || offer.status === 'donated') return { ok: true, offer, contract: offer.status === 'contract' };
   const kyc = await memberKycHash(peer);
   if (!kyc.ok) return kyc;
-  const consentBody = { offerId, peerId, kycHash: kyc.hash, automate: spec.automate === true, passkey: 'fingerprint / face / device PIN (your phone decides)' };
+  const proposed = Number(offer.loyalty?.percent || 0);
+  const declined = spec.declineLoyalty === true || !proposed;
+  const consentBody = {
+    offerId,
+    peerId,
+    kycHash: kyc.hash,
+    automate: spec.automate === true,
+    passkey: 'fingerprint / face / device PIN (your phone decides)',
+    loyaltyPercent: declined ? 0 : proposed,
+    loyaltyDecision: !proposed ? 'none' : declined ? 'declined' : 'agreed'
+  };
   const hash = await sha256(canonicalJSON(consentBody));
   const sig = await signText(peer.privateKeyJwk || peer.signingKey, hash);
   offer.consents[peerId] = { ...consentBody, hash, sig, at };
+  offer.loyalty = loyaltyStanding(offer);
   const signed = parties.filter((id) => offer.consents[id]);
   offer.status = signed.length >= 2 ? 'contract' : 'awaiting';
   peer.offers = peer.offers || {};

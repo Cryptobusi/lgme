@@ -73,7 +73,12 @@ let catalog = [];
 let offerupItems = [];
 let wantedMatches = [];
 let thumbtackItems = [];
-let paymentMethods = { zelle: { recipient: '' }, cash: { inPersonOnly: true }, notice: 'Zelle and cash are not reversible-protected. This app does not process them.' };
+let paymentMethods = {
+  zelle: { recipient: '' },
+  cash: { inPersonOnly: true },
+  notice: 'Zelle and cash are not reversible-protected. This app does not process them.',
+  loyalty: { ...sim.LOYALTY_DEFAULTS }
+};
 let openTailored = '';
 let offerupIndex = -1;
 let openOfferFor = '';
@@ -435,6 +440,83 @@ function printReceipt(receipt) {
   add('p', 'Zelle and cash are not reversible-protected. This app does not process them.');
   view.focus();
   view.print();
+}
+
+async function floorRebateSection(seat) {
+  const ids = await store.listIds();
+  const full = [];
+  for (const id of ids) {
+    const peer = await store.get(id);
+    if (peer) full.push(peer);
+  }
+  const paid = new Set();
+  const dues = [];
+  for (const peer of full) {
+    for (const entry of peer.tape || []) {
+      if (entry.type === 'FLOOR_REBATE_PAID') paid.add(entry.payload?.invoiceId);
+      if (entry.type === 'FLOOR_REBATE_DUE') dues.push(entry.payload);
+    }
+  }
+  const seen = new Set();
+  const cards = [];
+  for (const row of dues) {
+    if (!row?.invoiceId || seen.has(row.invoiceId) || paid.has(row.invoiceId)) continue;
+    seen.add(row.invoiceId);
+    const wallet = h('input', { value: row.payerWallet || '', maxlength: '64', placeholder: 'Payer Solana address' });
+    const preview = h('p', { class: 'legend' }, [sim.FLOOR_REBATE_LABEL]);
+    const link = h('a', { href: '#', target: '_blank', rel: 'noopener noreferrer' }, ['Open floor rebate in your wallet']);
+    link.hidden = true;
+    let reference = '';
+    cards.push(h('article', { class: 'card', id: 'floor-rebate-due' }, [
+      h('h3', {}, [`Rebate due ${row.amount} $lgme`]),
+      h('p', {}, [sim.FLOOR_REBATE_LABEL]),
+      h('p', { class: 'legend' }, ['From @EgonAnon 6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY. This desk holds no floor key.']),
+      field('Payer address', wallet),
+      preview,
+      h('div', { class: 'actions' }, [
+        h('button', { type: 'button', onClick: async () => {
+          const balance = await readTokenBalance(solanaCluster(), DONATION_ADDRESS);
+          if (!balance.ok) { preview.textContent = balance.error; return; }
+          const review = await sim.reviewFloorRebate(store, seat, { invoiceId: row.invoiceId, balance: balance.amount, payerWallet: wallet.value.trim(), navigator });
+          if (!review.ok) { preview.textContent = review.error; return; }
+          if (review.status === 'deferred') {
+            preview.textContent = 'Deferred. The floor reserve stays in place. No penalty.';
+            render();
+            return;
+          }
+          if (!isValidPublicKey(wallet.value.trim())) { preview.textContent = 'Enter the payer Solana address.'; return; }
+          reference = createReference();
+          const built = buildTransferRequest({
+            recipient: wallet.value.trim(),
+            amount: review.amount,
+            reference,
+            mint: MINT,
+            label: 'floor rebate',
+            message: sim.FLOOR_REBATE_LABEL
+          });
+          if (!built.ok) { preview.textContent = built.error; return; }
+          link.href = built.url;
+          link.hidden = false;
+          preview.textContent = `Floor balance ${balance.amount}. Rebate ${review.amount}. Sign from the floor wallet.`;
+        } }, ['Read floor balance']),
+        h('button', { type: 'button', onClick: async () => {
+          if (!reference) { preview.textContent = 'Read the floor balance first.'; return; }
+          const found = await findReferencePayment(solanaCluster(), reference, { mint: MINT, recipient: wallet.value.trim(), amount: row.amount });
+          if (!found.ok) { preview.textContent = found.error; return; }
+          const recorded = await sim.recordFloorRebate(store, seat, { signature: found.signature, reference, invoiceId: row.invoiceId, navigator });
+          setStatus(recorded.ok ? 'Floor rebate is on both tapes. Beta.' : recorded.error, recorded.ok ? 'ok' : 'bad');
+          if (recorded.ok) render();
+        } }, ['Check rebate']),
+        link
+      ])
+    ]));
+  }
+  return [
+    h('h3', {}, ['Floor rebates due']),
+    h('p', { class: 'legend' }, [sim.FLOOR_REBATE_LABEL]),
+    ...cards,
+    cards.length ? null : h('p', { class: 'empty' }, ['No floor rebate is waiting.'])
+  ];
 }
 
 async function offchainCards(seat) {
@@ -1230,6 +1312,8 @@ async function renderBooks(peers, seat) {
         event.currentTarget.href = href;
         window.location.href = href;
       } }, ['Remind by SMS']));
+      actions.push(h('button', { type: 'button', id: 'loyalty-agree', onClick: () => consentInvoiceLoyalty(seat, row, false) }, ['Agree loyalty discount']));
+      actions.push(h('button', { type: 'button', id: 'loyalty-decline', onClick: () => consentInvoiceLoyalty(seat, row, true) }, ['Decline discount']));
     }
     if (row.role === 'AP' && row.remaining > 0 && row.status !== 'refused') {
       actions.push(h('button', { type: 'button', class: 'primary', id: 'pay-solana', onClick: () => showSolanaPay({
@@ -1240,6 +1324,8 @@ async function renderBooks(peers, seat) {
         recipient: '',
         donation: false
       }) }, ['Settle in $lgme']));
+      actions.push(h('button', { type: 'button', id: 'loyalty-agree', onClick: () => consentInvoiceLoyalty(seat, row, false) }, ['Agree loyalty discount']));
+      actions.push(h('button', { type: 'button', id: 'loyalty-decline', onClick: () => consentInvoiceLoyalty(seat, row, true) }, ['Decline discount']));
       actions.push(h('button', { type: 'button', onClick: () => showSolanaPay({
         seat,
         amount: payAmount.value || row.remaining,
@@ -1269,7 +1355,7 @@ async function renderBooks(peers, seat) {
       h('h3', {}, [`${row.role} · ${row.status} · ${row.amount} $lgme`]),
       h('p', { class: 'muted' }, [`Paid ${row.paid}. Remaining ${row.remaining}. Bucket ${row.bucket}. Due ${String(row.dueAt).slice(0, 10)}. Phone ${row.payerPhone}. Hash ${String(row.payerKycHash || '').slice(0, 12)}.`]),
       row.thanks ? h('p', { class: 'legend' }, [row.thanks]) : null,
-      row.role === 'AP' && row.remaining > 0 ? h('div', {}, [field('Amount', payAmount), field('Passphrase', pass), field('6-digit code', code), field('Refusal note', note)]) : null,
+      row.role === 'AP' && row.remaining > 0 ? h('div', {}, [field('Amount', payAmount), field('Passphrase', pass), field('6-digit code', code), field('Refusal note', note), field('Solana address for a floor rebate', h('input', { id: `rebate-wallet-${row.invoiceId}`, maxlength: '64', placeholder: 'Your address, not a seed phrase' }))]) : null,
       h('div', { class: 'actions' }, actions)
     ]);
   });
@@ -1299,6 +1385,7 @@ async function renderBooks(peers, seat) {
       h('p', { class: 'legend' }, [sim.FIAT_FEE_NOTE]),
       ...offchain
     ]),
+    h('section', { id: 'floor-rebates' }, await floorRebateSection(seat)),
     h('section', { id: 'invoices' }, [
       h('h3', {}, ['Receivable and payable']),
       h('p', { class: 'muted' }, [`Open, due, and overdue stay off the balance until a coded payment. Ageing ${buckets['0-30']} in 0-30, ${buckets['31-60']} in 31-60, ${buckets['60+']} in 60+.`]),
@@ -2375,6 +2462,31 @@ function chip(label, on, click) {
   return h('button', { type: 'button', class: 'chip', 'aria-pressed': on ? 'true' : 'false', onClick: click }, [label]);
 }
 
+async function consentInvoiceLoyalty(seat, row, decline) {
+  const wallet = document.getElementById(`rebate-wallet-${row.invoiceId}`);
+  const rules = paymentMethods.loyalty || sim.LOYALTY_DEFAULTS;
+  const result = await sim.consentLoyalty(store, seat, {
+    invoiceId: row.invoiceId,
+    decline,
+    percent: rules.defaultPercent,
+    rules,
+    payerWallet: wallet ? wallet.value : '',
+    navigator
+  });
+  setStatus(result.ok
+    ? (result.declined ? 'Discount declined. The full price stays. No penalty. Beta.' : `Loyalty ${result.percent}% is signed. The other party still has to sign. Beta.`)
+    : result.error, result.ok ? 'ok' : 'bad');
+  if (result.ok) await render();
+}
+
+async function signOfferConsent(seat, offer, declineLoyalty) {
+  const result = await sim.countersignOffer(store, seat, offer.id, { automate: true, declineLoyalty });
+  const loyalty = result.offer ? sim.loyaltyStanding(result.offer) : null;
+  const note = loyalty?.agreed ? ` Loyalty discount ${loyalty.percent}% is agreed.` : declineLoyalty ? ' No loyalty discount.' : '';
+  setStatus(result.ok ? (result.contract ? `Both signed. The contract is on both tapes. Nothing was sent.${note} Beta.` : result.error || 'Signed.') : result.error, result.ok ? 'ok' : 'bad');
+  if (result.ok) await render();
+}
+
 function offerCards(peer, seat) {
   const rows = Object.values(peer.offers || {});
   if (!rows.length) return [];
@@ -2386,11 +2498,10 @@ function offerCards(peer, seat) {
       offer.thanks ? h('p', {}, [offer.thanks]) : null,
       offer.external ? h('p', { class: 'legend' }, [sim.offerupDraft(offer)]) : null,
       offer.status === 'awaiting' && !offer.consents?.[seat]
-        ? h('button', { type: 'button', class: 'primary', onClick: async () => {
-          const result = await sim.countersignOffer(store, seat, offer.id, { automate: true });
-          setStatus(result.ok ? (result.contract ? 'Both signed. The contract is on both tapes. Nothing was sent. Beta.' : result.error || 'Signed.') : result.error, result.ok ? 'ok' : 'bad');
-          if (result.ok) await render();
-        } }, ['Sign consent'])
+        ? h('div', { class: 'actions' }, [
+          h('button', { type: 'button', class: 'primary', onClick: () => signOfferConsent(seat, offer, false) }, [offer.loyalty ? 'Agree discount and sign' : 'Sign consent']),
+          offer.loyalty ? h('button', { type: 'button', onClick: () => signOfferConsent(seat, offer, true) }, ['Decline discount and sign']) : null
+        ])
         : null,
       offer.status === 'contract'
         ? h('button', { type: 'button', onClick: async () => {
@@ -2413,9 +2524,13 @@ function offerForm(seat, target, serviceList = []) {
     option('6', 'Term payments, 6 months', false),
     option('service', 'IprovIT service only', false),
     option('zelle', 'Zelle', false),
-    option('cash', 'Cash in person', false)
+    option('cash', 'Cash in person', false),
+    option('lgme', 'Pay in $lgme', false)
   ]);
   const preview = h('p', { class: 'legend' }, ['']);
+  const rules = paymentMethods.loyalty || sim.LOYALTY_DEFAULTS;
+  const percent = h('input', { type: 'number', min: '0', max: String(rules.maxPercentPerDeal || 15), step: '0.1', value: String(rules.defaultPercent ?? 5) });
+  const loyaltyBox = h('input', { type: 'checkbox' });
   const services = catalogServices(serviceList);
   function paint() {
     const choice = mode.value;
@@ -2431,8 +2546,10 @@ function offerForm(seat, target, serviceList = []) {
       : choice === 'zelle'
         ? `Zelle is not counted until the payee attests the confirmation. This app does not process it. Zelle details: ask the recipient in chat / provided on request. ${sim.FIAT_FEE_NOTE}`
         : choice === 'cash'
-          ? `Cash is in person only. Do not mail cash. It is not counted until the payee attests the receipt. This app does not process it. ${sim.FIAT_FEE_NOTE}`
-          : 'Pick one or more IprovIT services. A $lgme payment is signed by your wallet.';
+          ? `Cash is in person only. Do not mail cash. It is not counted until the payee attests the receipt. This app does not process it. ${sim.FIAT_FEE_NOTE} Cash and Zelle get no loyalty discount.`
+          : choice === 'lgme'
+            ? `Pay the full price in $lgme. Suggested loyalty discount ${percent.value || rules.defaultPercent}%. Both parties sign it, or either can decline. ${sim.FLOOR_REBATE_LABEL}`
+            : `Pick one or more IprovIT services. A $lgme payment is signed by your wallet. ${loyaltyBox.checked ? `Suggested loyalty discount ${percent.value || rules.defaultPercent}%. ${sim.FLOOR_REBATE_LABEL}` : 'Cash and Zelle get no loyalty discount.'}`;
   }
   mode.addEventListener('change', paint);
   amount.addEventListener('input', paint);
@@ -2442,6 +2559,8 @@ function offerForm(seat, target, serviceList = []) {
     h('p', { class: 'legend' }, ['Beta. Both parties sign before a contract exists. An OfferUp draft is copied by hand. Nothing is sent.']),
     field('Amount', amount),
     field('How to pay', mode),
+    field('Loyalty discount percent', percent),
+    h('label', { class: 'row' }, [loyaltyBox, ' Suggest the $lgme loyalty discount on this IprovIT deal']),
     services.box,
     preview,
     h('div', { class: 'actions' }, [h('button', { class: 'primary', type: 'submit' }, [target.external ? 'Copy draft offer' : 'Sign consent'])])
@@ -2456,7 +2575,10 @@ function offerForm(seat, target, serviceList = []) {
         listingId: target.listingId || '',
         external: target.external || null,
         toId: target.toId || '',
-        cashMode: choice === 'service' ? '' : choice === 'full' ? 'full' : choice === 'zelle' ? 'zelle' : choice === 'cash' ? 'cash' : 'terms',
+        cashMode: choice === 'service' ? '' : choice === 'full' ? 'full' : choice === 'zelle' ? 'zelle' : choice === 'cash' ? 'cash' : choice === 'lgme' ? 'lgme' : 'terms',
+        loyalty: choice === 'lgme' || (choice === 'service' && loyaltyBox.checked),
+        loyaltyPercent: percent.value,
+        rules,
         months: ['3', '4', '5', '6'].includes(choice) ? Number(choice) : 0,
         amount: amount.value,
         serviceIds: services.selected(),
@@ -3607,7 +3729,14 @@ async function loadReferences() {
     paymentMethods = {
       zelle: { recipient: String(body?.zelle?.recipient || '').trim() },
       cash: { inPersonOnly: body?.cash?.inPersonOnly !== false },
-      notice: String(body?.notice || paymentMethods.notice)
+      notice: String(body?.notice || paymentMethods.notice),
+      loyalty: {
+        defaultPercent: Number(body?.loyalty?.defaultPercent ?? sim.LOYALTY_DEFAULTS.defaultPercent),
+        maxPercentPerDeal: Number(body?.loyalty?.maxPercentPerDeal ?? sim.LOYALTY_DEFAULTS.maxPercentPerDeal),
+        capAmountPerPeriod: Number(body?.loyalty?.capAmountPerPeriod ?? sim.LOYALTY_DEFAULTS.capAmountPerPeriod),
+        periodDays: Number(body?.loyalty?.periodDays ?? sim.LOYALTY_DEFAULTS.periodDays),
+        reserve: Number(body?.loyalty?.reserve ?? sim.LOYALTY_DEFAULTS.reserve)
+      }
     };
   } catch {
     paymentMethods = { zelle: { recipient: '' }, cash: { inPersonOnly: true }, notice: 'Zelle and cash are not reversible-protected. This app does not process them.' };
