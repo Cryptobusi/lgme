@@ -340,6 +340,7 @@ export function entryDetail(entry, names = {}) {
   if (entry.type === 'CHAT') return `Chat ${payload.seq} ${payload.senderKycHash ? String(payload.senderKycHash).slice(0, 12) : ''}`.trim();
   if (entry.type === 'CHAT_MATCHED') return `Chat matched ${payload.root ? String(payload.root).slice(0, 12) : ''}`.trim();
   if (entry.type === 'CALL') return `Call ${payload.start || ''} → ${payload.end || ''}`.trim();
+  if (entry.type === 'MEDIA' || entry.type === 'MEDIA_RECEIVED') return `${entry.type === 'MEDIA_RECEIVED' ? 'Received' : 'Media'} ${payload.mime || ''} ${payload.hash ? String(payload.hash).slice(0, 12) : ''}`.trim();
   if (entry.type === 'countersign') {
     return `${name(payload.by)} countersigned ${payload.exchangeId ? payload.exchangeId.slice(0, 12) : ''}`.trim();
   }
@@ -2436,7 +2437,7 @@ function bindCore(senderId, kycHash, keyThumb) {
 }
 
 function chatCore(message) {
-  return {
+  const core = {
     simulated: true,
     kind: 'chat',
     threadId: message.threadId,
@@ -2449,6 +2450,19 @@ function chatCore(message) {
     text: message.text,
     negotiation: message.negotiation || null
   };
+  if (message.media) {
+    core.media = {
+      hash: message.media.hash,
+      mime: message.media.mime,
+      size: message.media.size,
+      duration: message.media.duration || 0,
+      sig: message.media.sig,
+      listingId: message.media.listingId || null,
+      threadId: message.media.threadId || null,
+      ownerId: message.media.ownerId || null
+    };
+  }
+  return core;
 }
 
 async function chatAes(privateKeyJwk) {
@@ -2607,7 +2621,8 @@ export async function composeChat(store, senderId, spec = {}) {
     keyThumb: identity.keyThumb,
     at,
     text,
-    negotiation: spec.negotiation || null
+    negotiation: spec.negotiation || null,
+    media: spec.media || null
   });
   const messageHash = await sha256(canonicalJSON(core));
   const bindSig = await signText(sender.privateKeyJwk, await sha256(canonicalJSON(bindCore(senderId, identity.hash, identity.keyThumb))));
@@ -2774,4 +2789,109 @@ export async function recordCall(store, peerId, spec = {}) {
   const entry = (await store.get(peerId)).tape.find((row) => row.type === 'CALL' && row.payload?.start === start);
   const packed = JSON.stringify(entry || {});
   return { ok: true, tel: telHref(spec.phone || ''), audio: false, leaked: /audio|recording|wav|mp3/i.test(packed) };
+}
+
+export function mediaCore(spec) {
+  return {
+    simulated: true,
+    kind: 'media',
+    hash: String(spec.hash || ''),
+    mime: String(spec.mime || ''),
+    size: Number(spec.size || 0),
+    duration: spec.duration == null ? 0 : Number(spec.duration),
+    listingId: spec.listingId || null,
+    threadId: spec.threadId || null,
+    ownerId: spec.ownerId
+  };
+}
+
+export async function hashBytes(bytes) {
+  const digest = await crypto.subtle.digest('SHA-256', bytes instanceof ArrayBuffer ? bytes : bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength));
+  return bytesToHex(new Uint8Array(digest));
+}
+
+async function mediaKey(privateKeyJwk) {
+  const raw = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`lgme-media|${privateKeyJwk.d}`));
+  return crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']);
+}
+
+export async function sealMediaBytes(privateKeyJwk, bytes) {
+  const key = await mediaKey(privateKeyJwk);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const cipher = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, bytes);
+  return { iv, ciphertext: cipher };
+}
+
+export async function openMediaBytes(privateKeyJwk, sealed) {
+  const key = await mediaKey(privateKeyJwk);
+  const clear = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: sealed.iv }, key, sealed.ciphertext);
+  return new Uint8Array(clear);
+}
+
+export async function recordMedia(store, ownerId, spec = {}) {
+  const owner = await store.get(ownerId);
+  if (!owner?.privateKeyJwk) return fail('Wallet is locked.');
+  const bytes = spec.bytes ? new Uint8Array(spec.bytes) : null;
+  const hash = bytes ? await hashBytes(bytes) : String(spec.hash || '');
+  if (!/^[0-9a-f]{64}$/i.test(hash)) return fail('The file hash is not ready.');
+  const core = mediaCore({ ...spec, hash, size: bytes ? bytes.byteLength : spec.size, ownerId });
+  const coreHash = await sha256(canonicalJSON(core));
+  const sig = await signText(owner.privateKeyJwk, coreHash);
+  const at = spec.at || nowIso();
+  await appendEntry(owner, 'MEDIA', { ...core, sig, coreHash }, at);
+  await store.set(ownerId, owner);
+  const marker = bytes ? new TextDecoder().decode(bytes) : '';
+  const tape = JSON.stringify((await store.get(ownerId)).tape.filter((entry) => entry.type === 'MEDIA').slice(-1));
+  return {
+    ok: true,
+    hash,
+    sig,
+    coreHash,
+    core,
+    publicKeyJwk: owner.publicKeyJwk,
+    ownerId,
+    leaked: marker.length > 8 && tape.includes(marker)
+  };
+}
+
+export function listMedia(peer, filter = {}) {
+  return (peer?.tape || [])
+    .filter((entry) => entry.type === 'MEDIA' || entry.type === 'MEDIA_RECEIVED')
+    .map((entry) => entry.payload)
+    .filter((payload) => !filter.listingId || payload.listingId === filter.listingId)
+    .filter((payload) => !filter.threadId || payload.threadId === filter.threadId);
+}
+
+export async function verifyMedia(owner, record, bytes) {
+  const hash = await hashBytes(bytes);
+  if (hash !== record.hash) return { ok: false, authentic: false, error: 'Not authentic' };
+  const core = mediaCore({ ...record, hash });
+  const coreHash = await sha256(canonicalJSON(core));
+  const key = record.publicKeyJwk || owner?.publicKeyJwk;
+  if (owner?.publicKeyJwk && record.ownerId === owner.id && canonicalJSON(key) !== canonicalJSON(owner.publicKeyJwk)) {
+    return { ok: false, authentic: false, error: 'The signature is not the owner’s.' };
+  }
+  const valid = key ? await verifyText(key, coreHash, record.sig) : false;
+  if (!valid) return { ok: false, authentic: false, error: 'The signature is not the owner’s.' };
+  return { ok: true, authentic: true, hash };
+}
+
+export async function receiveMedia(store, recipientId, spec = {}) {
+  const recipient = await store.get(recipientId);
+  if (!recipient?.privateKeyJwk) return fail('Wallet is locked.');
+  const bytes = new Uint8Array(spec.bytes || []);
+  const hash = await hashBytes(bytes);
+  if (hash !== spec.hash) return { ok: false, authentic: false, error: 'Not authentic' };
+  const known = spec.ownerId ? await store.get(spec.ownerId) : null;
+  if (known && spec.publicKeyJwk && canonicalJSON(known.publicKeyJwk) !== canonicalJSON(spec.publicKeyJwk)) {
+    return { ok: false, authentic: false, error: 'The signature is not the owner’s.' };
+  }
+  const core = mediaCore({ ...spec, hash, size: bytes.byteLength, ownerId: spec.ownerId });
+  const coreHash = await sha256(canonicalJSON(core));
+  const valid = await verifyText(spec.publicKeyJwk, coreHash, spec.sig);
+  if (!valid) return { ok: false, authentic: false, error: 'The signature is not the owner’s.' };
+  const at = spec.at || nowIso();
+  await appendEntry(recipient, 'MEDIA_RECEIVED', { ...core, sig: spec.sig, coreHash }, at);
+  await store.set(recipientId, recipient);
+  return { ok: true, authentic: true, hash };
 }

@@ -1343,6 +1343,289 @@ function deskLinks() {
   ]);
 }
 
+function openMediaDb() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('lgme-sim-media', 1);
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains('files')) request.result.createObjectStore('files');
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function idbRequest(request) {
+  return new Promise((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function saveMediaFile(ownerId, privateKeyJwk, hash, bytes, mime) {
+  const sealed = await sim.sealMediaBytes(privateKeyJwk, bytes);
+  const db = await openMediaDb();
+  const tx = db.transaction('files', 'readwrite');
+  tx.objectStore('files').put({ iv: sealed.iv, ciphertext: sealed.ciphertext, mime, ownerId }, `${ownerId}:${hash}`);
+  await new Promise((resolve, reject) => { tx.oncomplete = resolve; tx.onerror = () => reject(tx.error); });
+  db.close();
+}
+
+async function loadMediaFile(ownerId, privateKeyJwk, hash) {
+  if (!privateKeyJwk) return null;
+  const db = await openMediaDb();
+  const tx = db.transaction('files', 'readonly');
+  const row = await idbRequest(tx.objectStore('files').get(`${ownerId}:${hash}`));
+  db.close();
+  if (!row) return null;
+  return sim.openMediaBytes(privateKeyJwk, row);
+}
+
+function jpegFromCanvas(canvas) {
+  return new Promise((resolve) => {
+    canvas.toBlob(async (blob) => {
+      const bytes = new Uint8Array(await blob.arrayBuffer());
+      resolve({ bytes, dataUrl: canvas.toDataURL('image/jpeg', 0.7), mime: 'image/jpeg', duration: 0 });
+    }, 'image/jpeg', 0.7);
+  });
+}
+
+function drawFrame(source, max) {
+  const width = source.videoWidth || source.naturalWidth || source.width || 640;
+  const height = source.videoHeight || source.naturalHeight || source.height || 480;
+  const scale = Math.min(1, max / Math.max(width, height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(width * scale));
+  canvas.height = Math.max(1, Math.round(height * scale));
+  canvas.getContext('2d').drawImage(source, 0, 0, canvas.width, canvas.height);
+  return jpegFromCanvas(canvas);
+}
+
+function recorderMime() {
+  if (typeof MediaRecorder === 'undefined') return '';
+  return ['video/webm;codecs=vp8', 'video/webm', 'video/mp4'].find((type) => MediaRecorder.isTypeSupported(type)) || '';
+}
+
+function showCapture(seat, link = {}) {
+  stopAnyCamera();
+  document.getElementById('capture')?.remove();
+  const live = h('video', { class: 'cam', playsinline: true, muted: true, autoplay: true });
+  const still = h('img', { class: 'preview', alt: 'Preview' });
+  still.hidden = true;
+  const clip = h('video', { class: 'preview', playsinline: true, controls: true });
+  clip.hidden = true;
+  const clock = h('p', { class: 'legend' }, ['']);
+  const file = h('input', { type: 'file', accept: 'image/*,video/*', capture: 'environment' });
+  let stream = null;
+  let recorder = null;
+  let facing = 'environment';
+  let held = null;
+  let urls = [];
+  const overlay = h('div', { id: 'capture', class: 'capture', role: 'dialog', 'aria-label': 'Camera' });
+  const shutter = h('button', { type: 'button', class: 'primary', id: 'shutter' }, ['Shutter']);
+  const retake = h('button', { type: 'button', id: 'retake' }, ['Retake']);
+  const save = h('button', { type: 'button', class: 'primary', id: 'save-media' }, ['Save']);
+  retake.hidden = true;
+  save.hidden = true;
+  function stopStream() {
+    stream?.getTracks().forEach((track) => track.stop());
+    stream = null;
+    if (recorder && recorder.state === 'recording') recorder.stop();
+  }
+  async function openLens() {
+    stopStream();
+    held = null;
+    still.hidden = true;
+    clip.hidden = true;
+    live.hidden = false;
+    retake.hidden = true;
+    save.hidden = true;
+    shutter.hidden = false;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: false });
+      live.srcObject = stream;
+      await live.play();
+      stopCamera = stopStream;
+      clock.textContent = 'Nothing is uploaded. Photos are compressed. Video stays under 30 seconds.';
+    } catch {
+      clock.textContent = 'The camera did not open. Pick a file instead. Nothing was uploaded.';
+    }
+  }
+  function hold(next) {
+    held = next;
+    live.hidden = true;
+    shutter.hidden = true;
+    retake.hidden = false;
+    save.hidden = false;
+    stopStream();
+    if (next.mime.startsWith('video')) {
+      const url = URL.createObjectURL(new Blob([next.bytes], { type: next.mime }));
+      urls.push(url);
+      clip.src = url;
+      clip.hidden = false;
+      still.hidden = true;
+    } else {
+      still.src = next.dataUrl;
+      still.hidden = false;
+      clip.hidden = true;
+    }
+  }
+  shutter.addEventListener('click', async () => {
+    if (shutter.textContent === 'Stop') {
+      if (recorder && recorder.state === 'recording') recorder.stop();
+      return;
+    }
+    if (shutter.dataset.mode === 'video') {
+      const mime = recorderMime();
+      if (!stream || !mime) { setStatus('This browser cannot record video. Take a photo instead.', 'bad'); return; }
+      const chunks = [];
+      const started = Date.now();
+      recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 500000 });
+      recorder.ondataavailable = (event) => { if (event.data && event.data.size) chunks.push(event.data); };
+      recorder.onstop = async () => {
+        const duration = Math.min(30, Math.round((Date.now() - started) / 100) / 10);
+        const bytes = new Uint8Array(await new Blob(chunks, { type: mime }).arrayBuffer());
+        shutter.textContent = 'Record';
+        hold({ bytes, mime, duration, dataUrl: '' });
+      };
+      recorder.start();
+      shutter.textContent = 'Stop';
+      const tick = setInterval(() => {
+        const left = Math.max(0, 30 - Math.floor((Date.now() - started) / 1000));
+        clock.textContent = `${left}s left. Nothing is uploaded.`;
+        if (left <= 0 && recorder && recorder.state === 'recording') recorder.stop();
+        if (!recorder || recorder.state !== 'recording') clearInterval(tick);
+      }, 250);
+      return;
+    }
+    if (live.readyState < 2) { setStatus('The camera is not ready.', 'bad'); return; }
+    hold(await drawFrame(live, 960));
+  });
+  file.addEventListener('change', async () => {
+    const chosen = file.files && file.files[0];
+    if (!chosen) return;
+    if (chosen.type.startsWith('video')) {
+      if (chosen.size > 8 * 1024 * 1024) { setStatus('That video is too large to keep on this phone.', 'bad'); return; }
+      const url = URL.createObjectURL(chosen);
+      const probe = document.createElement('video');
+      probe.preload = 'metadata';
+      probe.src = url;
+      const duration = await new Promise((resolve) => { probe.onloadedmetadata = () => resolve(probe.duration); probe.onerror = () => resolve(0); });
+      URL.revokeObjectURL(url);
+      if (duration > 30.5) { setStatus('Keep the video under 30 seconds.', 'bad'); return; }
+      hold({ bytes: new Uint8Array(await chosen.arrayBuffer()), mime: chosen.type || 'video/webm', duration: Math.round(duration * 10) / 10, dataUrl: '' });
+      return;
+    }
+    const bitmap = await createImageBitmap(chosen);
+    hold(await drawFrame(bitmap, 960));
+    bitmap.close?.();
+  });
+  retake.addEventListener('click', () => openLens());
+  save.addEventListener('click', async () => {
+    if (!held) return;
+    const peer = await store.get(seat);
+    if (!peer?.privateKeyJwk) { setStatus('Unlock the wallet before saving.', 'bad'); return; }
+    const made = link.defer ? null : await sim.recordMedia(store, seat, {
+      bytes: held.bytes,
+      mime: held.mime,
+      size: held.bytes.byteLength,
+      duration: held.duration,
+      listingId: link.listingId || null,
+      threadId: link.threadId || null
+    });
+    if (made && !made.ok) { setStatus(made.error, 'bad'); return; }
+    if (made?.ok) await saveMediaFile(seat, peer.privateKeyJwk, made.hash, held.bytes, held.mime);
+    if (link.threadId && made?.ok && link.toId) {
+      const sent = await sim.composeChat(store, seat, {
+        toId: link.toId,
+        toPhone: link.toPhone || '',
+        threadId: link.threadId,
+        text: held.mime.startsWith('video') ? 'Video' : 'Photo',
+        media: { ...made.core, sig: made.sig, ownerId: seat }
+      });
+      if (!sent.ok) setStatus(sent.error, 'bad');
+    }
+    if (link.onDraft) link.onDraft({ ...held, hash: made?.hash || await sim.hashBytes(held.bytes) });
+    urls.forEach((url) => URL.revokeObjectURL(url));
+    stopStream();
+    overlay.remove();
+    setStatus('Saved on this phone, encrypted. Only the hash is on the tape. Nothing was uploaded. SIMULATION.', 'ok');
+    if (link.onSaved) await link.onSaved();
+  });
+  overlay.append(
+    live, still, clip, clock,
+    h('div', { class: 'bar' }, [
+      h('button', { type: 'button', onClick: () => { shutter.dataset.mode = 'photo'; shutter.textContent = 'Shutter'; } }, ['Photo']),
+      h('button', { type: 'button', onClick: () => { shutter.dataset.mode = 'video'; shutter.textContent = 'Record'; } }, ['Video']),
+      h('button', { type: 'button', onClick: () => { facing = facing === 'environment' ? 'user' : 'environment'; openLens(); } }, ['Switch']),
+      shutter, retake, save,
+      file,
+      h('button', { type: 'button', onClick: () => { urls.forEach((url) => URL.revokeObjectURL(url)); stopStream(); overlay.remove(); } }, ['Close'])
+    ])
+  );
+  document.body.append(overlay);
+  openLens();
+}
+
+async function mediaSlides(ownerId, records) {
+  const owner = await store.get(ownerId);
+  const slides = [];
+  for (const record of records) {
+    if (!owner?.privateKeyJwk || record.ownerId && record.ownerId !== ownerId) continue;
+    const bytes = await loadMediaFile(ownerId, owner.privateKeyJwk, record.hash);
+    if (!bytes) continue;
+    const url = URL.createObjectURL(new Blob([bytes], { type: record.mime || 'image/jpeg' }));
+    const view = String(record.mime || '').startsWith('video')
+      ? h('video', { controls: true, playsinline: true, src: url })
+      : h('img', { alt: '', src: url });
+    slides.push(h('div', { class: 'slide' }, [
+      view,
+      h('button', { type: 'button', onClick: async () => {
+        const checked = await sim.verifyMedia(owner, { ...record, publicKeyJwk: owner.publicKeyJwk }, bytes);
+        setStatus(checked.authentic ? 'Verified. The file matches the tape.' : 'Not authentic', checked.authentic ? 'ok' : 'bad');
+      } }, ['Verify'])
+    ]));
+  }
+  return slides;
+}
+
+async function chatMediaBubble(seat, line) {
+  const who = line.senderId === seat ? 'You' : (nameById[line.senderId] || 'Member');
+  const nodes = [h('div', {}, [`${who}: ${line.text}`])];
+  if (line.media?.hash) {
+    const owner = await store.get(line.senderId);
+    const bytes = owner?.privateKeyJwk ? await loadMediaFile(line.senderId, owner.privateKeyJwk, line.media.hash) : null;
+    if (bytes) {
+      const url = URL.createObjectURL(new Blob([bytes], { type: line.media.mime || 'image/jpeg' }));
+      nodes.push(String(line.media.mime).startsWith('video')
+        ? h('video', { controls: true, playsinline: true, src: url })
+        : h('img', { alt: '', src: url }));
+    }
+    nodes.push(h('div', { class: 'actions' }, [
+      h('button', { type: 'button', onClick: async () => {
+        if (!bytes || !owner) { setStatus('Not authentic', 'bad'); return; }
+        const checked = await sim.verifyMedia(owner, { ...line.media, publicKeyJwk: owner.publicKeyJwk }, bytes);
+        setStatus(checked.authentic ? 'Verified. The file matches the tape.' : 'Not authentic', checked.authentic ? 'ok' : 'bad');
+      } }, ['Verify']),
+      bytes ? h('button', { type: 'button', onClick: () => shareMediaFile(bytes, line.media.mime, `SIMULATION lgme. Media ${line.media.hash.slice(0, 12)}. This page does not upload it.`) }, ['Share']) : null
+    ]));
+  }
+  return h('div', { class: 'bubble media-bubble', id: line.media?.hash ? 'chat-media' : undefined }, nodes.filter(Boolean));
+}
+
+async function shareMediaFile(bytes, mime, text) {
+  const file = new File([bytes], mime.startsWith('video') ? 'lgme-video.webm' : 'lgme-photo.jpg', { type: mime || 'image/jpeg' });
+  if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+    try {
+      await navigator.share({ files: [file], text, title: 'SIMULATION lgme' });
+      setStatus('Handed to your phone’s share sheet. This page did not upload it. SIMULATION.', 'ok');
+      return;
+    } catch (error) {
+      if (error && error.name === 'AbortError') return;
+    }
+  }
+  setStatus('This browser will not hand the file to another app. Send the signed text, then save the file on the other phone. Nothing was uploaded.', 'ok');
+}
+
 async function compressPhoto(file) {
   const bitmap = await createImageBitmap(file);
   const max = 480;
@@ -1371,7 +1654,11 @@ async function renderMarket(peers, seat) {
     } else {
       const seller = await store.get(card.sellerId);
       const profile = sim.peerProfile(seller);
-      const photo = h('img', { class: 'shot', alt: '', src: card.photo || '' });
+      const slides = await mediaSlides(card.sellerId, sim.listMedia(seller, { listingId: card.id }).filter((record) => !record.ownerId || record.ownerId === card.sellerId));
+      const gallery = h('div', { class: 'carousel', id: 'listing-gallery' }, [
+        ...slides,
+        card.photo ? h('div', { class: 'slide' }, [h('img', { class: 'shot', alt: '', src: card.photo })]) : null
+      ].filter(Boolean));
       const actions = [];
       if (card.sellerId === seat) {
         actions.push(h('button', { type: 'button', class: 'primary', onClick: async () => {
@@ -1387,10 +1674,11 @@ async function renderMarket(peers, seat) {
           location.hash = 'chats';
         } }, ['Chat']));
       }
-      panel.replaceChildren(
+      panel.replaceChildren(...[
         h('button', { type: 'button', class: 'quiet', onClick: () => { openListingId = ''; render(); } }, ['Back to the market']),
         h('h2', {}, [card.title]),
-        photo,
+        gallery,
+        card.sellerId === seat ? h('div', { class: 'actions' }, [h('button', { type: 'button', id: 'listing-camera', onClick: () => showCapture(seat, { listingId: card.id, onSaved: () => render() }) }, ['Camera'])]) : null,
         h('p', { class: 'price' }, [`${card.amount} $lgme`]),
         h('p', {}, [
           h('span', { class: card.verified ? 'badge badge-verified' : 'badge badge-unverified' }, [card.verified ? 'Verified' : 'Unverified']),
@@ -1401,7 +1689,7 @@ async function renderMarket(peers, seat) {
         h('p', { class: 'legend' }, [card.signatureOk ? `Origin ${shortHash(card.originHash)} verifies.` : 'Origin hash does not verify.']),
         profileCard(profile),
         h('div', { class: 'actions' }, actions)
-      );
+      ].filter(Boolean));
       return;
     }
   }
@@ -1486,7 +1774,7 @@ async function renderList(seat) {
   }
   const steps = h('p', { class: 'kicker' }, [`Step ${listStep} of 3`]);
   if (listStep === 1) {
-    const file = h('input', { type: 'file', accept: 'image/*' });
+    const file = h('input', { type: 'file', accept: 'image/*,video/*', capture: 'environment' });
     const video = h('video', { class: 'cam', playsinline: true, muted: true });
     video.hidden = true;
     file.addEventListener('change', async () => {
@@ -1509,18 +1797,11 @@ async function renderList(seat) {
       field('Photo', file),
       video,
       h('div', { class: 'actions' }, [
-        h('button', { type: 'button', onClick: async () => {
-          stopAnyCamera();
-          try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-            video.hidden = false;
-            video.srcObject = stream;
-            await video.play();
-            stopCamera = () => { stream.getTracks().forEach((track) => track.stop()); video.hidden = true; };
-          } catch {
-            setStatus('The camera did not open. Choose a photo instead. SIMULATION.', 'bad');
-          }
-        } }, ['Camera']),
+        h('button', { type: 'button', id: 'list-camera', onClick: () => showCapture(seat, {
+          defer: true,
+          onDraft: (held) => { listDraft = { ...listDraft, photo: held.dataUrl || listDraft.photo, photoHash: held.hash, mediaBytes: held.bytes, mediaMime: held.mime, mediaDuration: held.duration }; },
+          onSaved: () => render()
+        }) }, ['Camera']),
         h('button', { type: 'button', class: 'primary', onClick: async () => {
           if (video.readyState >= 2) {
             const canvas = document.createElement('canvas');
@@ -1605,6 +1886,11 @@ async function renderList(seat) {
         referenceAvg: item ? item.avg_value_usd : null
       });
       if (!created.ok) { setStatus(created.error, 'bad'); return; }
+      if (listDraft.mediaBytes) {
+        const made = await sim.recordMedia(store, seat, { bytes: listDraft.mediaBytes, mime: listDraft.mediaMime, duration: listDraft.mediaDuration || 0, listingId: created.listing.id });
+        const peer = await store.get(seat);
+        if (made.ok && peer?.privateKeyJwk) await saveMediaFile(seat, peer.privateKeyJwk, made.hash, listDraft.mediaBytes, listDraft.mediaMime);
+      }
       listDraft = { photo: '', photoHash: '', title: '', category: 'Goods', condition: 'Good', pickup: 'Pickup', circle: '', area: '', amount: '', referenceId: '' };
       listStep = 1;
       openListingId = created.listing.id;
@@ -1704,7 +1990,31 @@ async function phoneCard(seat, otherId, threadId) {
     });
     kids.push(h('p', { class: 'legend' }, ['The dialer opened if your phone allowed it. Record the start and end here. No audio is kept.']), endForm);
   }
-  kids.push(...messages.map((line) => h('div', { class: 'bubble' }, [`${line.senderId === seat ? 'You' : (nameById[line.senderId] || 'Member')}: ${line.text}`])));
+  kids.push(h('div', { class: 'actions' }, [h('button', { type: 'button', id: 'chat-camera', onClick: () => showCapture(seat, { threadId, toId: otherId, toPhone: phone, onSaved: () => render() }) }, ['Camera'])]));
+  const seen = new Set();
+  for (const line of messages) {
+    if (line.media?.hash) seen.add(line.media.hash);
+    kids.push(await chatMediaBubble(seat, line));
+  }
+  const localMedia = sim.listMedia(await store.get(seat), { threadId }).filter((record) => record.ownerId === seat && !seen.has(record.hash));
+  for (const record of localMedia) kids.push(await chatMediaBubble(seat, { senderId: seat, text: String(record.mime).startsWith('video') ? 'Video' : 'Photo', threadId, media: record }));
+  const received = h('input', { type: 'file', accept: 'image/*,video/*', capture: 'environment' });
+  received.addEventListener('change', async () => {
+    const chosen = received.files && received.files[0];
+    if (!chosen) return;
+    const bytes = new Uint8Array(await chosen.arrayBuffer());
+    const hash = await sim.hashBytes(bytes);
+    const claim = messages.find((line) => line.media?.hash === hash) || messages.find((line) => line.media);
+    if (!claim?.media) { setStatus('Not authentic', 'bad'); return; }
+    const owner = await store.get(claim.senderId);
+    const saved = await sim.receiveMedia(store, seat, { bytes, ...claim.media, ownerId: claim.senderId, publicKeyJwk: owner?.publicKeyJwk || claim.publicKeyJwk });
+    if (!saved.ok) { setStatus(saved.error || 'Not authentic', 'bad'); return; }
+    const peer = await store.get(seat);
+    if (peer?.privateKeyJwk) await saveMediaFile(seat, peer.privateKeyJwk, hash, bytes, claim.media.mime);
+    setStatus('Verified and saved on this phone. SIMULATION.', 'ok');
+    await render();
+  });
+  kids.push(field('Save a received file', received));
   const pasteForm = h('form', {}, [
     field('Paste a token', paste),
     h('div', { class: 'actions' }, [h('button', { type: 'submit' }, ['Record token'])])
@@ -1877,6 +2187,7 @@ function renderHelp() {
     ['Simulated 2FA', 'A passphrase encrypts the key at rest with AES-GCM and PBKDF2. A 6-digit TOTP, RFC 6238, is checked with WebCrypto HMAC. The setup QR can be scanned by an authenticator app. This page generates the same code while the secret is still on screen. It never sends the code. A wrong code leaves the wallet locked.'],
     ['Another device', 'There is no server. Sign a proposal, countersign, refusal, transfer, attestation, or handoff, then carry the lgme1. code by copy, by a link whose data sits in the URL fragment, by a QR, or by a .json file. On the other device, verification runs before anything is appended. A QR is for an in-person handoff. To text or email a draft, the page opens sms: or mailto: so you send it from your own app. The outbox and inbox are a local log of that.'],
     ['Phone chat', 'A text is signed here, then Open SMS hands it to your phone’s own messages app. The link or the pasted token is checked for the sender’s signature and the member hash. A call button opens tel: on your phone. The tape records the start, the end, the other member’s hash, and a note you type. No audio is stored. Match sends the chat root by SMS and says Matched, or names the first message that differs. This page does not send the text and does not place the call. The other person’s signup details stay on their phone. You keep the phone number and the hash.'],
+    ['Photos and video', 'The camera and the gallery stay on this phone. Photos are compressed and video is kept short. The file is encrypted in this browser. The tape stores only the signed hash, the type, the size, and the length. Share hands the file to your own apps. The signed text carries the hash. A file that does not match says Not authentic. Nothing is uploaded.'],
     ['Market', 'Listings are signed with the peer key. The origin hash names the listing. A photo stays on this device. Offer, counter, and Accept & Sign create a pending hold. Final balances move only when the seller countersigns the buyer’s single-use handoff. A refusal is recorded and carries no penalty. Peer standing is read from the local book.']
   ];
   const install = h('div', { class: 'card' }, [

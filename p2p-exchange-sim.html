@@ -144,6 +144,13 @@
     .mag pre, .exch { white-space:pre-wrap; word-break:break-word; font-family:ui-monospace,monospace; font-size:0.85rem; background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:0.75rem; }
     .mag table { width:100%; border-collapse:collapse; font-size:0.92rem; }
     .mag th, .mag td { border-bottom:1px solid var(--line); text-align:left; padding:0.45rem 0.2rem; vertical-align:top; }
+    .carousel { display:flex; gap:0.5rem; overflow-x:auto; scroll-snap-type:x mandatory; }
+    .carousel .slide { flex:0 0 100%; scroll-snap-align:start; }
+    .carousel img, .carousel video, .media-bubble img, .media-bubble video { width:100%; max-height:18rem; object-fit:cover; border-radius:10px; background:#111; }
+    .capture { position:fixed; inset:0; z-index:55; background:#111; color:#fff; display:flex; flex-direction:column; }
+    .capture video, .capture img.preview { width:100%; flex:1; min-height:0; object-fit:cover; background:#000; }
+    .capture .bar { display:flex; flex-wrap:wrap; gap:0.4rem; padding:0.6rem; background:#1c1b19; }
+    .capture button, .capture .btn { color:#fff; border-color:#444; }
     .splash { position:fixed; inset:0; z-index:60; display:grid; place-items:center; background:var(--bg); padding:1.25rem; }
     .splash[hidden] { display:none; }
     .splash-card { display:grid; justify-items:center; gap:0.8rem; text-align:center; }

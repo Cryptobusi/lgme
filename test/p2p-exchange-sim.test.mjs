@@ -871,3 +871,85 @@ test('the SMS root hash matches, and a divergent text names the first message', 
   assert.equal(again.index, 0);
   assert.equal(again.divergent[0].text, 'Not the same line');
 });
+
+test('a media hash on the tape verifies, and a changed file does not', async () => {
+  const store = await books();
+  const bytes = new TextEncoder().encode('SIMULATION-PHOTO-MARKER');
+  const made = await sim.recordMedia(store, 'alice', { bytes, mime: 'image/jpeg', listingId: 'walkway', threadId: null, duration: 0, at: '2026-11-07T01:00:00.000Z' });
+  assert.equal(made.ok, true, made.error);
+  assert.equal(made.leaked, false);
+  const alice = await store.get('alice');
+  const line = alice.tape.find((entry) => entry.type === 'MEDIA');
+  assert.equal(line.payload.hash, made.hash);
+  assert.equal(line.payload.mime, 'image/jpeg');
+  assert.equal(line.payload.size, bytes.byteLength);
+  assert.equal(line.payload.listingId, 'walkway');
+  assert.equal(JSON.stringify(line).includes('SIMULATION-PHOTO-MARKER'), false);
+  const sealed = await sim.sealMediaBytes(alice.privateKeyJwk, bytes);
+  const opened = await sim.openMediaBytes(alice.privateKeyJwk, sealed);
+  assert.equal(await sim.hashBytes(opened), made.hash);
+  const checked = await sim.verifyMedia(alice, { ...made.core, sig: made.sig, publicKeyJwk: made.publicKeyJwk }, bytes);
+  assert.equal(checked.authentic, true);
+  const flipped = new Uint8Array(bytes);
+  flipped[0] ^= 0xff;
+  const broken = await sim.verifyMedia(alice, { ...made.core, sig: made.sig, publicKeyJwk: made.publicKeyJwk }, flipped);
+  assert.equal(broken.authentic, false);
+  assert.equal(broken.error, 'Not authentic');
+});
+
+test('a signature from the wrong owner is rejected, and a matching file is received', async () => {
+  const store = await books();
+  const bytes = new TextEncoder().encode('SIMULATION-PHOTO-MARKER-2');
+  const made = await sim.recordMedia(store, 'alice', { bytes, mime: 'image/jpeg', threadId: 'desk-chat', duration: 0 });
+  const charlie = await store.get('charlie');
+  const alice = await store.get('alice');
+  const forgedSig = await sim.signText(charlie.privateKeyJwk, made.coreHash);
+  const wrong = await sim.verifyMedia(alice, { ...made.core, sig: forgedSig, publicKeyJwk: charlie.publicKeyJwk }, bytes);
+  assert.equal(wrong.ok, false);
+  assert.match(wrong.error, /owner/);
+  const rejected = await sim.receiveMedia(store, 'bob', {
+    bytes,
+    hash: made.hash,
+    mime: 'image/jpeg',
+    size: bytes.byteLength,
+    duration: 0,
+    threadId: 'desk-chat',
+    ownerId: 'alice',
+    publicKeyJwk: charlie.publicKeyJwk,
+    sig: forgedSig
+  });
+  assert.equal(rejected.authentic, false);
+  assert.equal((await store.get('bob')).tape.some((entry) => entry.type === 'MEDIA_RECEIVED'), false);
+  const got = await sim.receiveMedia(store, 'bob', {
+    bytes,
+    hash: made.hash,
+    mime: 'image/jpeg',
+    size: bytes.byteLength,
+    duration: 0,
+    threadId: 'desk-chat',
+    listingId: null,
+    ownerId: 'alice',
+    publicKeyJwk: made.publicKeyJwk,
+    sig: made.sig
+  });
+  assert.equal(got.ok, true, got.error);
+  assert.equal(got.authentic, true);
+  const received = (await store.get('bob')).tape.find((entry) => entry.type === 'MEDIA_RECEIVED');
+  assert.equal(received.payload.hash, made.hash);
+  assert.equal(received.payload.ownerId, 'alice');
+  const flipped = new Uint8Array(bytes);
+  flipped[3] ^= 0xff;
+  const mismatch = await sim.receiveMedia(store, 'bob', {
+    bytes: flipped,
+    hash: made.hash,
+    mime: 'image/jpeg',
+    size: flipped.byteLength,
+    duration: 0,
+    threadId: 'desk-chat',
+    ownerId: 'alice',
+    publicKeyJwk: made.publicKeyJwk,
+    sig: made.sig
+  });
+  assert.equal(mismatch.error, 'Not authentic');
+  assert.equal((await store.get('bob')).tape.filter((entry) => entry.type === 'MEDIA_RECEIVED').length, 1);
+});
