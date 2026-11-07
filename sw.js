@@ -1,5 +1,5 @@
 // lgme.app shell. HTML is fetched from the network first so a published change shows.
-const CACHE_NAME = "lgme-v43";
+const CACHE_NAME = "lgme-v44";
 const SHELL = [
   "/",
   "/manifest.json",
@@ -26,6 +26,7 @@ const SHELL = [
   "/data/dc-reference-values-v0.json",
   "/data/offerup-dc-v0.json",
   "/data/offerup-wanted-v0.json",
+  "/data/thumbtack-wanted-v0.json",
   "/docs/SPP_Overview.pptx",
   "/spp",
   "/soverx",

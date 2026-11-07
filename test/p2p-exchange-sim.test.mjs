@@ -590,7 +590,8 @@ test('pages stay simulation-only', () => {
   assert.equal(ui.includes("fetch('/data/dc-reference-values-v0.json')"), true);
   assert.equal(ui.includes("fetch('/data/offerup-dc-v0.json')"), true);
   assert.equal(ui.includes("fetch('/data/offerup-wanted-v0.json')"), true);
-  assert.equal((ui.match(/fetch\(/g) || []).length, 3);
+  assert.equal(ui.includes("fetch('/data/thumbtack-wanted-v0.json')"), true);
+  assert.equal((ui.match(/fetch\(/g) || []).length, 4);
   const design = readFileSync(join(root, 'docs/marketplace-design.md'), 'utf8');
   for (const word of banned) assert.equal(design.includes(word), false, `docs/marketplace-design.md contains ${word}`);
   assert.equal(design.includes('Trust Score'), false);
@@ -1244,6 +1245,30 @@ test('the wanted pin stays on IwanIT and a concluded match is an IdidIt', async 
   }
   assert.equal(ui.includes('navigator.share'), true);
   assert.equal(ui.includes("fetch('/data/offerup-wanted-v0.json')"), true);
+  const repair = await sim.ensureStandingRepair(store, '2026-11-07T00:00:00.000Z');
+  assert.equal(repair.ok, true, repair.error);
+  assert.equal(repair.listing.title, 'Wanted: exercise equipment repair/service (treadmill, elliptical), Washington DC area');
+  assert.equal(repair.listing.kind, 'IwanIT');
+  assert.equal(repair.listing.pinned, true);
+  assert.equal((await sim.verifyListing(repair.listing)).ok, true);
+  const again = await sim.marketFeed(store, { kind: 'IwanIT' }, far);
+  assert.equal(again[0].title, 'Donation — soBeIT');
+  assert.equal(again.some((card) => card.id === repair.listing.id), true);
+  const thumb = JSON.parse(readFileSync(join(root, 'data/thumbtack-wanted-v0.json'), 'utf8'));
+  assert.deepEqual(thumb.items, []);
+  assert.deepEqual(sim.thumbtackFeed(thumb), []);
+  assert.deepEqual(sim.thumbtackIprov({ items: [{ title: 'Tune-up', url: 'https://thumbtack.com/x', isIprovIT: true }, { title: 'Other', url: 'https://thumbtack.com/y', isIprovIT: false }] }).map((item) => item.title), ['Tune-up']);
+  const tailored = sim.tailoredDraft({ title: 'Schwinn 810 Treadmill', price: '$300', url: 'https://offerup.com/item' }, { amount: '280', pay: '4', handoff: 'pickup', askWorking: true, note: 'Saturday', channel: 'offerup' });
+  assert.match(tailored, /Nothing was sent/);
+  assert.match(tailored, /Terms over 4 months/);
+  assert.match(tailored, /Is it fully working/);
+  assert.equal(sim.tailoredOpenEnabled(sim.TAILORED_AWAITING), false);
+  assert.equal(sim.tailoredOpenEnabled('Approved'), true);
+  assert.equal(sim.TAILORED_AWAITING, 'Draft, awaiting approval');
+  assert.equal(sim.THUMBTACK_CAVEAT, 'Third-party pro on Thumbtack, not verified by lgme');
+  for (const phrase of ['Continue with tailored options', 'Continue on Thumbtack', 'Listed from Thumbtack (not affiliated)', 'TAILORED_AWAITING', 'Approve']) {
+    assert.equal(ui.includes(phrase), true, phrase);
+  }
 });
 
 test('Install & launch hides in the app, prompts when it can, and otherwise opens the desk', () => {
@@ -1682,7 +1707,8 @@ test('DC reference values stay pending when a series has no number', () => {
   assert.equal(ui.includes("fetch('/data/dc-reference-values-v0.json')"), true);
   assert.equal(ui.includes("fetch('/data/offerup-dc-v0.json')"), true);
   assert.equal(ui.includes("fetch('/data/offerup-wanted-v0.json')"), true);
-  assert.equal((ui.match(/fetch\(/g) || []).length, 3);
+  assert.equal(ui.includes("fetch('/data/thumbtack-wanted-v0.json')"), true);
+  assert.equal((ui.match(/fetch\(/g) || []).length, 4);
   assert.equal(ui.includes('REFERENCE_LABEL'), true);
   assert.equal(ui.includes("id: 'dc-reference'"), true);
   assert.equal(helper.includes("simulation reference values"), true);
@@ -1696,7 +1722,8 @@ test('DC reference values stay pending when a series has no number', () => {
   assert.equal(page.includes('id="refList"'), true);
   assert.equal(/<script(?![^>]*\bsrc=)/i.test(page), false);
   const worker = readFileSync(join(root, 'sw.js'), 'utf8');
-  assert.equal(worker.includes('lgme-v43'), true);
+  assert.equal(worker.includes('lgme-v44'), true);
+  assert.equal(worker.includes('/data/thumbtack-wanted-v0.json'), true);
   assert.equal(worker.includes('/data/offerup-wanted-v0.json'), true);
   assert.equal(worker.includes('/js/dc-reference.mjs'), true);
   assert.equal(worker.includes('/data/dc-reference-values-v0.json'), true);

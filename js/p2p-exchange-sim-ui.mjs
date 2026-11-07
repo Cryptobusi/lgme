@@ -71,6 +71,8 @@ let activeCodeTimer = 0;
 let catalog = [];
 let offerupItems = [];
 let wantedMatches = [];
+let thumbtackItems = [];
+let openTailored = '';
 let offerupIndex = -1;
 let openOfferFor = '';
 let catalogMeta = { date: '', notice: '', method: '' };
@@ -2061,6 +2063,110 @@ async function copyText(text) {
   try { await navigator.clipboard.writeText(text); return true; } catch { return false; }
 }
 
+const TAILORED_KEY = 'lgme-sim:tailored-drafts';
+
+function readTailored() {
+  try { return JSON.parse(localStorage.getItem(TAILORED_KEY) || '{}'); } catch { return {}; }
+}
+
+function tailoredOf(url) {
+  return readTailored()[url] || null;
+}
+
+function saveTailored(url, row) {
+  const all = readTailored();
+  all[url] = row;
+  localStorage.setItem(TAILORED_KEY, JSON.stringify(all));
+}
+
+function tailoredActions(item, channel, openLabel) {
+  const saved = tailoredOf(item.url);
+  const approved = sim.tailoredOpenEnabled(saved?.status);
+  const shown = openTailored === item.url;
+  const amount = h('input', { value: saved?.amount || item.price || '' });
+  const pay = h('select', {}, [
+    option('full', 'Pay in full', (saved?.pay || 'full') === 'full'),
+    option('3', '3 month terms', saved?.pay === '3'),
+    option('4', '4 month terms', saved?.pay === '4'),
+    option('5', '5 month terms', saved?.pay === '5'),
+    option('6', '6 month terms', saved?.pay === '6'),
+    option('service', '$lgme services (IprovIT)', saved?.pay === 'service')
+  ]);
+  const handoff = h('select', {}, [
+    option('pickup', 'Pickup', (saved?.handoff || 'pickup') === 'pickup'),
+    option('delivery', 'Delivery', saved?.handoff === 'delivery')
+  ]);
+  const ask = h('input', { type: 'checkbox' });
+  ask.checked = saved ? saved.askWorking !== false : true;
+  const note = h('input', { maxlength: '240', value: saved?.note || '', placeholder: 'Custom note' });
+  const statusLine = h('p', { class: 'legend' }, [saved?.status || sim.TAILORED_AWAITING]);
+  const preview = h('p', { class: 'legend' }, [saved?.draft || '']);
+  const copy = h('button', { type: 'button', disabled: !approved }, ['Copy']);
+  const open = h('a', {
+    class: 'btn primary',
+    href: approved ? item.url : '#',
+    target: '_blank',
+    rel: 'noopener noreferrer',
+    'aria-disabled': approved ? 'false' : 'true'
+  }, [openLabel]);
+  open.addEventListener('click', (event) => {
+    if (open.getAttribute('aria-disabled') === 'true') event.preventDefault();
+  });
+  function spec() {
+    return { amount: amount.value, pay: pay.value, handoff: handoff.value, askWorking: ask.checked, note: note.value, channel };
+  }
+  function lock() {
+    const body = spec();
+    const draft = sim.tailoredDraft(item, body);
+    saveTailored(item.url, { ...body, status: sim.TAILORED_AWAITING, draft });
+    statusLine.textContent = sim.TAILORED_AWAITING;
+    preview.textContent = draft;
+    copy.disabled = true;
+    open.setAttribute('aria-disabled', 'true');
+    open.href = '#';
+  }
+  [pay, handoff, ask].forEach((el) => el.addEventListener('change', lock));
+  amount.addEventListener('input', lock);
+  note.addEventListener('input', lock);
+  copy.addEventListener('click', async () => {
+    const row = tailoredOf(item.url);
+    if (!sim.tailoredOpenEnabled(row?.status)) return;
+    await copyText(row.draft);
+    setStatus('Draft copied. Nothing was sent. SIMULATION.', 'ok');
+  });
+  const form = h('div', {}, [
+    field('Offer amount', amount),
+    field('How to pay', pay),
+    field('Pickup or delivery', handoff),
+    h('label', { class: 'row' }, [ask, ' Ask if it is fully working']),
+    field('Custom note', note),
+    statusLine,
+    preview,
+    h('button', { type: 'button', onClick: () => {
+      const body = spec();
+      const draft = sim.tailoredDraft(item, body);
+      saveTailored(item.url, { ...body, status: 'Approved', draft });
+      statusLine.textContent = 'Approved';
+      preview.textContent = draft;
+      copy.disabled = false;
+      open.setAttribute('aria-disabled', 'false');
+      open.href = item.url;
+    } }, ['Approve'])
+  ]);
+  return h('div', { class: 'tailored' }, [
+    h('button', { type: 'button', onClick: () => {
+      if (!tailoredOf(item.url)) {
+        const body = { amount: item.price || '', pay: 'full', handoff: 'pickup', askWorking: true, note: '', channel };
+        saveTailored(item.url, { ...body, status: sim.TAILORED_AWAITING, draft: sim.tailoredDraft(item, body) });
+      }
+      openTailored = openTailored === item.url ? '' : item.url;
+      render();
+    } }, ['Continue with tailored options']),
+    shown ? form : null,
+    h('div', { class: 'actions' }, [copy, open])
+  ]);
+}
+
 function wantedMatchSection(seat) {
   const cards = wantedMatches.map((item, index) => {
     const track = wantedTrack(item.url);
@@ -2088,18 +2194,14 @@ function wantedMatchSection(seat) {
           render();
         } }, ['Log reply']),
         h('button', { type: 'button', onClick: async () => {
-          const draft = item.inquiry || sim.wantedInquiry(item);
-          await copyText(draft);
-          setStatus('Inquiry copied. Nothing was sent. SIMULATION.', 'ok');
-        } }, ['Copy inquiry']),
-        h('button', { type: 'button', onClick: async () => {
-          const draft = item.inquiry || sim.wantedInquiry(item);
-          await copyText(draft);
+          const row = tailoredOf(item.url);
+          if (!sim.tailoredOpenEnabled(row?.status)) { setStatus('Approve the draft first. Nothing was sent. SIMULATION.', 'bad'); return; }
+          await copyText(row.draft);
           patchWanted(item.url, { status: 'Offer made' });
           setStatus('Draft offer copied. Nothing was sent. Paste it on OfferUp yourself. SIMULATION.', 'ok');
           render();
         } }, ['Make an offer']),
-        h('a', { class: 'btn', href: item.url, target: '_blank', rel: 'noopener noreferrer' }, ['Continue on OfferUp']),
+        tailoredActions(item, 'offerup', 'Continue on OfferUp'),
         h('button', { type: 'button', onClick: async () => {
           const text = sim.inviteSellerText(item);
           await copyText(text);
@@ -2128,6 +2230,70 @@ function wantedMatchSection(seat) {
   ]);
 }
 
+function thumbtackCard(item, seat) {
+  const track = wantedTrack(item.url);
+  const status = h('select', {}, sim.WANTED_STATUSES.map((name) => option(name, name, track.status === name)));
+  status.addEventListener('change', () => { patchWanted(item.url, { status: status.value }); render(); });
+  const reply = h('input', { maxlength: '240', placeholder: 'Seller reply' });
+  return h('article', { class: 'card' }, [
+    offerupImage(item),
+    h('h3', {}, [item.title || 'Pro']),
+    item.isIprovIT ? h('p', { class: 'badge' }, ['Listed from Thumbtack (not affiliated)']) : null,
+    h('p', { class: 'price' }, [item.price || '']),
+    h('p', {}, [`${track.status} · ${item.city || 'DC area'}`]),
+    h('p', { class: 'legend' }, [sim.THUMBTACK_CAVEAT]),
+    item.note ? h('p', { class: 'legend' }, [item.note]) : null,
+    field('Availability', status),
+    track.notes.length ? h('ul', {}, track.notes.map((note) => h('li', {}, [`${note.at.slice(0, 16)} ${note.text}`]))) : null,
+    field('Log a reply', reply),
+    h('div', { class: 'actions' }, [
+      h('button', { type: 'button', onClick: () => {
+        const text = reply.value.trim();
+        if (!text) return;
+        const notes = wantedTrack(item.url).notes.concat([{ at: new Date().toISOString(), text }]);
+        patchWanted(item.url, { notes });
+        render();
+      } }, ['Log reply']),
+      h('button', { type: 'button', onClick: async () => {
+        const row = tailoredOf(item.url);
+        if (!sim.tailoredOpenEnabled(row?.status)) { setStatus('Approve the draft first. Nothing was sent. SIMULATION.', 'bad'); return; }
+        await copyText(item.inquiry || sim.wantedInquiry(item));
+        setStatus('Inquiry copied. Nothing was sent. SIMULATION.', 'ok');
+      } }, ['Copy inquiry']),
+      h('button', { type: 'button', onClick: async () => {
+        const row = tailoredOf(item.url);
+        if (!sim.tailoredOpenEnabled(row?.status)) { setStatus('Approve the draft first. Nothing was sent. SIMULATION.', 'bad'); return; }
+        await copyText(row.draft);
+        patchWanted(item.url, { status: 'Offer made' });
+        setStatus('Draft offer copied. Nothing was sent. Paste it on Thumbtack yourself. SIMULATION.', 'ok');
+        render();
+      } }, ['Make an offer']),
+      h('button', { type: 'button', onClick: async () => {
+        const text = sim.inviteSellerText(item);
+        await copyText(text);
+        if (navigator.share) {
+          try { await navigator.share({ title: 'lgme.app', text, url: sim.INVITE_URL }); } catch (error) { if (error && error.name === 'AbortError') return; }
+        }
+        setStatus('Invite copied. Nothing was sent. SIMULATION.', 'ok');
+      } }, ['Invite seller to lgme.app'])
+    ]),
+    tailoredActions(item, 'thumbtack', 'Continue on Thumbtack'),
+    seat ? null : null
+  ]);
+}
+
+function thumbtackSection(seat) {
+  const pros = thumbtackItems.filter((item) => item.isIprovIT);
+  const rest = thumbtackItems.filter((item) => !item.isIprovIT);
+  return h('section', { id: 'thumbtack-matches' }, [
+    h('h3', {}, ['Matches from Thumbtack']),
+    h('p', { class: 'legend' }, [`For “${sim.STANDING_REPAIR.title}”. ${sim.THUMBTACK_CAVEAT} SIMULATION. Nothing is sent.`]),
+    rest.length ? h('div', { class: 'grid' }, rest.map((item) => thumbtackCard(item, seat))) : h('p', { class: 'empty', id: 'thumbtack-empty' }, ['No Thumbtack pros in this file yet.']),
+    h('h3', {}, ['Listed from Thumbtack (not affiliated)']),
+    pros.length ? h('div', { class: 'grid', id: 'thumbtack-iprov' }, pros.map((item) => thumbtackCard(item, seat))) : h('p', { class: 'empty', id: 'thumbtack-iprov-empty' }, ['No external IprovIT listings in this file yet.'])
+  ]);
+}
+
 function offerupImage(item) {
   const img = h('img', { alt: '', src: item.image || '/icons/icon-192.png' });
   img.addEventListener('error', () => {
@@ -2148,10 +2314,14 @@ function offerupSection(seat, serviceList) {
     h('p', { class: 'muted' }, [`As of ${item.sourcedAt || 'pending'}`]),
     h('div', { class: 'actions' }, [
       h('span', {}, ['Buy']),
-      h('button', { type: 'button', onClick: () => { offerupIndex = index; openOfferFor = ''; render(); } }, ['Make an offer']),
-      h('a', { class: 'btn primary', href: item.url, target: '_blank', rel: 'noopener noreferrer' }, ['Continue on OfferUp'])
+      h('button', { type: 'button', onClick: async () => {
+        const row = tailoredOf(item.url);
+        if (!sim.tailoredOpenEnabled(row?.status)) { setStatus('Approve the draft first. Nothing was sent. SIMULATION.', 'bad'); return; }
+        await copyText(row.draft);
+        setStatus('Draft offer copied. Nothing was sent. Paste it on OfferUp yourself. SIMULATION.', 'ok');
+      } }, ['Make an offer'])
     ]),
-    offerupIndex === index ? offerForm(seat, { external: item, amount: sim.offerupAmount(item.price), title: item.title }, serviceList) : null
+    tailoredActions(item, 'offerup', 'Continue on OfferUp')
   ]));
   return h('section', { id: 'offerup-dc' }, [
     h('h3', {}, ['Found on OfferUp (DC area)']),
@@ -2179,15 +2349,16 @@ async function renderMarket(peers, seat) {
       ].filter(Boolean));
       const actions = [];
       const wantedPin = card.title === sim.STANDING_WANTED.title;
-      if (card.pinned && !wantedPin) {
+      const repairPin = card.title === sim.STANDING_REPAIR.title;
+      if (card.pinned && !wantedPin && !repairPin) {
         actions.push(h('a', { class: 'btn primary', id: 'donation-link', href: card.href || '/lgme-coin' }, [card.action || 'Receive / send $lgme']));
-      } else if (card.sellerId === seat && !wantedPin) {
+      } else if (card.sellerId === seat && !wantedPin && !repairPin) {
         actions.push(h('button', { type: 'button', class: 'primary', onClick: async () => {
           const refreshed = await sim.refreshListing(store, seat, card.id);
           setStatus(refreshed.ok ? 'Listing refreshed with a signed heartbeat. SIMULATION.' : refreshed.error, refreshed.ok ? 'ok' : 'bad');
           if (refreshed.ok) await render();
         } }, ['Refresh']));
-      } else if (!wantedPin) {
+      } else if (!wantedPin && !repairPin) {
         actions.push(h('button', { type: 'button', class: 'primary', onClick: async () => {
           const chat = await sim.openChat(store, seat, card.id);
           if (!chat.ok) { setStatus(chat.error, 'bad'); return; }
@@ -2202,13 +2373,14 @@ async function renderMarket(peers, seat) {
         gallery,
         card.sellerId === seat ? h('div', { class: 'actions' }, [h('button', { type: 'button', id: 'listing-camera', onClick: () => showCapture(seat, { listingId: card.id, onSaved: () => render() }) }, ['Camera'])]) : null,
         card.pinned && !wantedPin ? h('p', { id: 'donation-copy' }, [card.description]) : null,
-        wantedPin ? h('p', { id: 'wanted-copy' }, [card.description]) : null,
-        wantedPin ? h('ul', { id: 'wanted-payments' }, sim.STANDING_WANTED.payments.map((item) => h('li', {}, [item]))) : null,
+        wantedPin || repairPin ? h('p', { id: wantedPin ? 'wanted-copy' : 'repair-copy' }, [card.description]) : null,
+        wantedPin || repairPin ? h('ul', { id: wantedPin ? 'wanted-payments' : 'repair-payments' }, (wantedPin ? sim.STANDING_WANTED : sim.STANDING_REPAIR).payments.map((item) => h('li', {}, [item]))) : null,
         !card.pinned ? h('p', { class: 'price' }, [`${card.amount} $lgme`]) : null,
         card.pinned && !wantedPin ? h('p', { class: 'legend' }, ['SIMULATION. A soBeIT grant below stays on this tape. The link above is the real token page.']) : null,
-        wantedPin ? h('p', { class: 'legend' }, ['SIMULATION. In-app $lgme stays simulated. A concluded match is an IdidIt on this book. Reconcile as donation to the floor needs both consents.']) : null,
-        card.pinned && !wantedPin ? soBeItCard(peers, seat) : null,
+        wantedPin || repairPin ? h('p', { class: 'legend' }, ['SIMULATION. In-app $lgme stays simulated. A concluded match is an IdidIt on this book. Reconcile as donation to the floor needs both consents.']) : null,
+        card.pinned && !wantedPin && !repairPin ? soBeItCard(peers, seat) : null,
         wantedPin ? wantedMatchSection(seat) : null,
+        repairPin ? thumbtackSection(seat) : null,
         h('p', {}, [
           h('span', { class: card.verified ? 'badge badge-verified' : 'badge badge-unverified' }, [card.verified ? 'Verified' : 'Unverified']),
           ` ${card.sellerName} · ${card.circle} · Peer standing ${card.standing}`
@@ -2225,6 +2397,7 @@ async function renderMarket(peers, seat) {
   }
   await sim.ensureStandingDonation(store);
   await sim.ensureStandingWanted(store);
+  await sim.ensureStandingRepair(store);
   const feed = await sim.marketFeed(store, marketQuery);
   const serviceList = await sim.marketFeed(store, { kind: 'IprovIT' });
   const search = h('input', { type: 'search', placeholder: 'Search', value: marketQuery.q, autocomplete: 'off' });
@@ -2263,13 +2436,13 @@ async function renderMarket(peers, seat) {
   const grid = h('div', { class: 'market-grid', id: 'market-grid' }, feed.map((card) => h('button', {
     type: 'button',
     class: 'card market-card',
-    id: card.title === sim.STANDING_DONATION.title ? 'donation-card' : card.title === sim.STANDING_WANTED.title ? 'wanted-card' : undefined,
+    id: card.title === sim.STANDING_DONATION.title ? 'donation-card' : card.title === sim.STANDING_WANTED.title ? 'wanted-card' : card.title === sim.STANDING_REPAIR.title ? 'repair-card' : undefined,
     onClick: () => { openListingId = card.id; render(); }
   }, [
     h('img', { alt: '', src: card.photo || '' }),
     h('h3', {}, [card.title]),
     card.pinned ? h('p', { class: 'muted' }, [card.description]) : h('div', { class: 'price' }, [`${card.amount} $lgme`]),
-    card.title === sim.STANDING_WANTED.title ? h('p', { class: 'legend' }, [sim.STANDING_WANTED.payments.join(' · ')]) : null,
+    card.title === sim.STANDING_WANTED.title || card.title === sim.STANDING_REPAIR.title ? h('p', { class: 'legend' }, [(card.title === sim.STANDING_REPAIR.title ? sim.STANDING_REPAIR : sim.STANDING_WANTED).payments.join(' · ')]) : null,
     card.pinned ? h('span', { class: 'badge badge-verified' }, [card.action || 'Receive / send $lgme']) : null,
     h('div', {}, [h('span', { class: card.verified ? 'badge badge-verified' : 'badge badge-unverified' }, [card.verified ? 'Verified' : 'Unverified'])]),
     h('small', { class: 'meta' }, [`${card.circle} · Peer standing ${card.standing}`])
@@ -2285,6 +2458,7 @@ async function renderMarket(peers, seat) {
     filters,
     feed.length ? grid : h('p', { class: 'empty' }, ['No listings match. List one, or clear the filters.']),
     !marketQuery.kind || marketQuery.kind === 'IwanIT' ? wantedMatchSection(seat) : null,
+    !marketQuery.kind || marketQuery.kind === 'IwanIT' ? thumbtackSection(seat) : null,
     offerupSection(seat, serviceList),
     referenceCatalogCard(),
     standing ? profileCard(standing) : null
@@ -2926,6 +3100,14 @@ async function loadReferences() {
     wantedMatches = sim.wantedFeed(body);
   } catch {
     wantedMatches = [];
+  }
+  try {
+    const response = await fetch('/data/thumbtack-wanted-v0.json');
+    if (!response.ok) throw new Error(String(response.status));
+    const body = await response.json();
+    thumbtackItems = sim.thumbtackFeed(body);
+  } catch {
+    thumbtackItems = [];
   }
 }
 

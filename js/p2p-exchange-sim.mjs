@@ -44,7 +44,18 @@ export const STANDING_WANTED = Object.freeze({
   photo: '/icons/icon-512.png',
   payments: Object.freeze(['Cash', 'Terms over 3 to 6 months', '$lgme services (IprovIT)'])
 });
+export const STANDING_REPAIR = Object.freeze({
+  title: 'Wanted: exercise equipment repair/service (treadmill, elliptical), Washington DC area',
+  description: 'SIMULATION. In-app $lgme stays simulated. A Thumbtack pro is not affiliated with this desk.',
+  href: '',
+  action: 'Wanted',
+  kinds: Object.freeze(['IwanIT']),
+  photo: '/icons/icon-512.png',
+  payments: Object.freeze(['Cash', 'Terms over 3 to 6 months', '$lgme services (IprovIT)'])
+});
 export const WANTED_STATUSES = Object.freeze(['Available', 'Pending reply', 'Offer made', 'Closed']);
+export const TAILORED_AWAITING = 'Draft, awaiting approval';
+export const THUMBTACK_CAVEAT = 'Third-party pro on Thumbtack, not verified by lgme';
 export const INVITE_URL = 'https://lgme.app/p2p-exchange-sim';
 export const KDF_ITERATIONS = 100000;
 
@@ -2329,6 +2340,10 @@ export async function ensureStandingWanted(store, at = nowIso()) {
   return ensurePinned(store, STANDING_WANTED, at);
 }
 
+export async function ensureStandingRepair(store, at = nowIso()) {
+  return ensurePinned(store, STANDING_REPAIR, at);
+}
+
 export function normalizeWantedMatch(item) {
   const row = normalizeOfferupItem(item);
   const status = WANTED_STATUSES.includes(item?.status) ? item.status : 'Available';
@@ -2358,6 +2373,44 @@ export function wantedInquiry(item) {
   const title = item?.title || 'item';
   const price = item?.price || 'your price';
   return `Hi! Is your ${title} still available and fully working? I'd offer ${price} after a quick demonstration. What pickup or delivery works? We can continue here on OfferUp, or use lgme.app to record our agreed terms (its in-app balances are simulated).`;
+}
+
+export function tailoredDraft(item, spec = {}) {
+  const pay = spec.pay === 'service'
+    ? '$lgme services (IprovIT). In-app $lgme stays simulated.'
+    : spec.pay === 'full' || !spec.pay
+      ? 'Pay in full'
+      : `Terms over ${spec.pay} months`;
+  return [
+    'SIMULATION draft. Nothing was sent.',
+    spec.channel === 'thumbtack' ? THUMBTACK_CAVEAT : OFFERUP_CAVEAT,
+    item?.title || '',
+    item?.price ? `Listed price: ${item.price}` : '',
+    `Offer amount: ${spec.amount || ''}`,
+    pay,
+    spec.handoff === 'delivery' ? 'Delivery' : 'Pickup',
+    spec.askWorking ? 'Is it fully working?' : '',
+    spec.note || '',
+    item?.url || ''
+  ].filter(Boolean).join('\n');
+}
+
+export function tailoredOpenEnabled(status) {
+  return status === 'Approved';
+}
+
+export function normalizeThumbtack(item) {
+  const row = normalizeWantedMatch(item);
+  return { ...row, isIprovIT: item?.isIprovIT === true };
+}
+
+export function thumbtackFeed(catalog) {
+  const items = Array.isArray(catalog?.items) ? catalog.items : [];
+  return items.map(normalizeThumbtack).filter((item) => item.title && item.url);
+}
+
+export function thumbtackIprov(catalog) {
+  return thumbtackFeed(catalog).filter((item) => item.isIprovIT);
 }
 
 export function suggestedWantedPair(items) {
@@ -2884,6 +2937,8 @@ export async function resetAndSeed(store) {
   if (!standing.ok) return standing;
   const wanted = await ensureStandingWanted(store, at);
   if (!wanted.ok) return wanted;
+  const repair = await ensureStandingRepair(store, at);
+  if (!repair.ok) return repair;
   return { ok: true, exchangeId: proposed.exchangeId, threadId: market.threadId, pendingThreadId: market.pendingThreadId };
 }
 
