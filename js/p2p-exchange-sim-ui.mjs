@@ -940,14 +940,15 @@ function drawQr(host, text) {
   host.replaceChildren();
   if (!text) return;
   const QR = globalThis.QRCode;
-  if (!QR || text.length > 2200) {
+  if (!QR || text.length > 2800) {
     host.append(h('p', { class: 'legend' }, ['This message is too long for a QR code. Use copy or a .json file.']));
     return;
   }
   const holder = h('div', { class: 'qr' });
   host.append(holder);
+  const long = text.length > 700;
   try {
-    new QR(holder, { text, width: 220, height: 220, correctLevel: QR.CorrectLevel.M });
+    new QR(holder, { text, width: long ? 360 : 220, height: long ? 360 : 220, correctLevel: long ? QR.CorrectLevel.L : QR.CorrectLevel.M });
   } catch {
     host.replaceChildren(h('p', { class: 'legend' }, ['This message is too long for a QR code. Use copy or a .json file.']));
   }

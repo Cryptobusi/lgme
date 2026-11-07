@@ -1170,6 +1170,7 @@ test('Install & launch hides in the app, prompts when it can, and otherwise open
   assert.equal(isIosSafari({ userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36', platform: 'Linux', maxTouchPoints: 0 }), false);
   const ui = readFileSync(join(root, 'js/p2p-exchange-sim-ui.mjs'), 'utf8');
   assert.equal(ui.includes('openCall = { phone, hash: identity?.hash || \'\', start: new Date().toISOString(), threadId }; render();'), true);
+  assert.equal(ui.includes('long ? QR.CorrectLevel.L : QR.CorrectLevel.M'), true);
   const source = readFileSync(join(root, 'js/install-launch.mjs'), 'utf8');
   assert.equal(source.includes('Share > Add to Home Screen'), true);
   assert.equal(source.includes('beforeinstallprompt'), true);
