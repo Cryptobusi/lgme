@@ -2401,7 +2401,13 @@ export function tailoredOpenEnabled(status) {
 
 export function normalizeThumbtack(item) {
   const row = normalizeWantedMatch(item);
-  return { ...row, isIprovIT: item?.isIprovIT === true };
+  return {
+    ...row,
+    isIprovIT: item?.isIprovIT === true,
+    role: String(item?.role || '').trim(),
+    rating: String(item?.rating || '').trim(),
+    service: String(item?.service || '').trim()
+  };
 }
 
 export function thumbtackFeed(catalog) {

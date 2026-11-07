@@ -2238,9 +2238,14 @@ function thumbtackCard(item, seat) {
   return h('article', { class: 'card' }, [
     offerupImage(item),
     h('h3', {}, [item.title || 'Pro']),
+    item.role ? h('p', {}, [item.role]) : null,
     item.isIprovIT ? h('p', { class: 'badge' }, ['Listed from Thumbtack (not affiliated)']) : null,
-    h('p', { class: 'price' }, [item.price || '']),
+    item.rating ? h('p', { class: 'rating' }, [item.rating]) : null,
+    item.service ? h('p', {}, [item.service]) : null,
+    item.price ? h('p', { class: 'price' }, [item.price]) : null,
     h('p', {}, [`${track.status} · ${item.city || 'DC area'}`]),
+    h('p', { class: 'legend' }, [tailoredOf(item.url)?.status || sim.TAILORED_AWAITING]),
+    item.inquiry ? h('p', { class: 'legend' }, [item.inquiry]) : null,
     h('p', { class: 'legend' }, [sim.THUMBTACK_CAVEAT]),
     item.note ? h('p', { class: 'legend' }, [item.note]) : null,
     field('Availability', status),
@@ -2288,6 +2293,7 @@ function thumbtackSection(seat) {
   return h('section', { id: 'thumbtack-matches' }, [
     h('h3', {}, ['Matches from Thumbtack']),
     h('p', { class: 'legend' }, [`For “${sim.STANDING_REPAIR.title}”. ${sim.THUMBTACK_CAVEAT} SIMULATION. Nothing is sent.`]),
+    h('p', { class: 'legend' }, ['Ratings are shown as listed on Thumbtack. Not an endorsement by lgme.']),
     rest.length ? h('div', { class: 'grid' }, rest.map((item) => thumbtackCard(item, seat))) : h('p', { class: 'empty', id: 'thumbtack-empty' }, ['No Thumbtack pros in this file yet.']),
     h('h3', {}, ['Listed from Thumbtack (not affiliated)']),
     pros.length ? h('div', { class: 'grid', id: 'thumbtack-iprov' }, pros.map((item) => thumbtackCard(item, seat))) : h('p', { class: 'empty', id: 'thumbtack-iprov-empty' }, ['No external IprovIT listings in this file yet.'])
