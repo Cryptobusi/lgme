@@ -185,3 +185,23 @@ Not driven on a physical device: a second phone scanning the handoff QR, a carri
 ![Donation contributions](verification/phone-reg-donation.png)
 
 ![Settled handoff](verification/phone-reg-handoff.png)
+
+## Addendum — online spends, keys, and serials
+
+Still simulation only. No network write, no blockchain, and no central ledger. Offline suite: 44 pass, 0 fail.
+
+| Check | Result |
+| --- | --- |
+| Spend while `navigator.onLine` is false | Pass. `Offline is read-only. Open the books, but do not spend, until this browser is online.` |
+| Forced second owner of the same serial | Pass. Fraud proof. Floor became 41. Standing 62. The balance did not move again |
+| Both peers sign the challenge | Pass, covered by the offline suite. The acknowledgement expires after 10 minutes |
+| Device unlock wording | Pass. `fingerprint / face / device PIN (your phone decides)` |
+| Handoff QR | Pass. The book stores `lgme1q.` and the rendered code decoded to that token |
+| Passkey ceremony on a real phone | Not tested. Headless Chrome did not create a platform authenticator |
+| IndexedDB key after a reload, and a real backup file on another phone | Not tested on a device. The backup round trip and non-extractable import passed in the suite |
+
+`main` includes `b5fb500444be47ee078ddc84a7aa85486b7b128d`.
+
+![Device unlock](verification/phone-hard-wallet.png)
+
+![Short handoff QR](verification/phone-hard-handoff.png)
