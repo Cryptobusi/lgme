@@ -84,6 +84,7 @@ function tokenAmount(row) {
 }
 
 export function parseSplTransfer(tx, expected = {}) {
+  if (tx?.meta?.err) return { ok: false, error: 'The transaction failed on Solana.' };
   const keys = tx?.transaction?.message?.accountKeys || [];
   const listed = keys.map((key) => (typeof key === 'string' ? key : key?.pubkey)).filter(Boolean);
   if (expected.reference && !listed.includes(expected.reference)) {
@@ -92,10 +93,22 @@ export function parseSplTransfer(tx, expected = {}) {
   const post = (tx?.meta?.postTokenBalances || []).find((row) => row.mint === expected.mint && row.owner === expected.recipient);
   if (!post) return { ok: false, error: 'The recipient did not receive this mint.' };
   const before = (tx?.meta?.preTokenBalances || []).find((row) => row.accountIndex === post.accountIndex);
-  const delta = Math.round((tokenAmount(post) - tokenAmount(before)) * 1e6) / 1e6;
+  const decimals = Number(post?.uiTokenAmount?.decimals ?? before?.uiTokenAmount?.decimals ?? 6);
   const wanted = Number(expected.amount);
-  if (!Number.isFinite(wanted) || Math.abs(delta - wanted) > 1e-6) {
+  if (!Number.isFinite(wanted) || !Number.isInteger(decimals) || decimals < 0) {
     return { ok: false, error: 'The amount does not match.' };
+  }
+  let delta;
+  if (post?.uiTokenAmount?.amount != null) {
+    const scale = 10 ** decimals;
+    const preRaw = before?.uiTokenAmount?.amount != null ? BigInt(before.uiTokenAmount.amount) : 0n;
+    const deltaRaw = BigInt(post.uiTokenAmount.amount) - preRaw;
+    const wantedRaw = BigInt(Math.round(wanted * scale));
+    if (deltaRaw !== wantedRaw) return { ok: false, error: 'The amount does not match.' };
+    delta = Number(deltaRaw) / scale;
+  } else {
+    delta = Math.round((tokenAmount(post) - tokenAmount(before)) * 1e6) / 1e6;
+    if (Math.round(delta * 1e6) !== Math.round(wanted * 1e6)) return { ok: false, error: 'The amount does not match.' };
   }
   return { ok: true, delta, signature: tx?.transaction?.signatures?.[0] || '' };
 }
@@ -131,16 +144,33 @@ export async function rpc(cluster, method, params) {
 }
 
 export async function findReferencePayment(cluster, reference, expected) {
-  const signatures = await rpc(cluster, 'getSignaturesForAddress', [reference, { limit: 5 }]);
+  const signatures = await rpc(cluster, 'getSignaturesForAddress', [reference, { limit: 5, commitment: 'finalized' }]);
   if (!signatures.ok) return signatures;
   const list = signatures.result || [];
   if (!list.length) return { ok: false, error: 'No payment is on chain for this reference yet.' };
+  let sawUnfinalized = false;
+  let sawFailed = false;
   for (const row of list) {
-    const tx = await rpc(cluster, 'getTransaction', [row.signature, { encoding: 'jsonParsed', maxSupportedTransactionVersion: 0 }]);
-    if (!tx.ok || !tx.result) continue;
+    if (row?.confirmationStatus && row.confirmationStatus !== 'finalized') {
+      sawUnfinalized = true;
+      continue;
+    }
+    if (row?.err) {
+      sawFailed = true;
+      continue;
+    }
+    const tx = await rpc(cluster, 'getTransaction', [row.signature, { encoding: 'jsonParsed', maxSupportedTransactionVersion: 0, commitment: 'finalized' }]);
+    if (!tx.ok) return tx;
+    if (!tx.result) {
+      sawUnfinalized = true;
+      continue;
+    }
     const parsed = parseSplTransfer(tx.result, { ...expected, reference });
-    if (parsed.ok) return { ok: true, signature: row.signature, delta: parsed.delta };
+    if (parsed.ok) return { ok: true, signature: row.signature, delta: parsed.delta, commitment: 'finalized' };
+    if (parsed.error === 'The transaction failed on Solana.') sawFailed = true;
   }
+  if (sawFailed) return { ok: false, error: 'The transaction failed on Solana.' };
+  if (sawUnfinalized) return { ok: false, error: 'The payment is not finalized yet.' };
   return { ok: false, error: 'A transaction was found, but the mint, amount, or recipient did not match.' };
 }
 

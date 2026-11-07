@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { DONATION_ADDRESS, MINT, buildTransferRequest, createReference, isValidPublicKey, parseSplTransfer } from '../js/solana-pay.mjs';
+import { DONATION_ADDRESS, MINT, buildTransferRequest, createReference, findReferencePayment, isValidPublicKey, parseSplTransfer } from '../js/solana-pay.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -51,4 +51,69 @@ test('verification accepts only the matching mint, amount, and recipient', () =>
   assert.equal(wrongAmount.ok, false);
   const missingRef = parseSplTransfer(tx, { mint: MINT, recipient: DONATION_ADDRESS, amount: 1.5, reference: createReference() });
   assert.equal(missingRef.ok, false);
+  const failed = parseSplTransfer({ ...tx, meta: { ...tx.meta, err: { InstructionError: [0, 'Custom'] } } }, { mint: MINT, recipient: DONATION_ADDRESS, amount: 1.5, reference });
+  assert.equal(failed.ok, false);
+  assert.match(failed.error, /failed on Solana/);
+  const exact = parseSplTransfer({
+    transaction: tx.transaction,
+    meta: {
+      preTokenBalances: [{ accountIndex: 1, mint: MINT, owner: DONATION_ADDRESS, uiTokenAmount: { amount: '1000000', decimals: 6, uiAmountString: '1' } }],
+      postTokenBalances: [{ accountIndex: 1, mint: MINT, owner: DONATION_ADDRESS, uiTokenAmount: { amount: '2500000', decimals: 6, uiAmountString: '2.5' } }]
+    }
+  }, { mint: MINT, recipient: DONATION_ADDRESS, amount: 1.5, reference });
+  assert.equal(exact.ok, true, exact.error);
+  const offByOne = parseSplTransfer({
+    transaction: tx.transaction,
+    meta: {
+      preTokenBalances: [{ accountIndex: 1, mint: MINT, owner: DONATION_ADDRESS, uiTokenAmount: { amount: '1000000', decimals: 6 } }],
+      postTokenBalances: [{ accountIndex: 1, mint: MINT, owner: DONATION_ADDRESS, uiTokenAmount: { amount: '2500001', decimals: 6 } }]
+    }
+  }, { mint: MINT, recipient: DONATION_ADDRESS, amount: 1.5, reference });
+  assert.equal(offByOne.ok, false);
+});
+
+test('finality ignores a signature that is not finalized and rejects a failed transaction', async () => {
+  const reference = createReference();
+  const original = globalThis.fetch;
+  const rpcBodies = [];
+  function respond(body) {
+    rpcBodies.push(body);
+    if (body.method === 'getSignaturesForAddress') {
+      return { result: [{ signature: 'soon', confirmationStatus: 'confirmed', err: null }] };
+    }
+    return { result: null };
+  }
+  globalThis.fetch = async (_url, options) => ({
+    ok: true,
+    json: async () => respond(JSON.parse(options.body))
+  });
+  try {
+    const waiting = await findReferencePayment('devnet', reference, { mint: MINT, recipient: DONATION_ADDRESS, amount: 1.5 });
+    assert.equal(waiting.ok, false);
+    assert.match(waiting.error, /not finalized/);
+    assert.equal(rpcBodies[0].params[1].commitment, 'finalized');
+    rpcBodies.length = 0;
+    globalThis.fetch = async (_url, options) => ({
+      ok: true,
+      json: async () => {
+        const body = JSON.parse(options.body);
+        rpcBodies.push(body);
+        if (body.method === 'getSignaturesForAddress') {
+          return { result: [{ signature: 'bad', confirmationStatus: 'finalized', err: null }] };
+        }
+        return {
+          result: {
+            meta: { err: { InstructionError: [0, 'Custom'] }, preTokenBalances: [], postTokenBalances: [] },
+            transaction: { signatures: ['bad'], message: { accountKeys: [reference] } }
+          }
+        };
+      }
+    });
+    const failed = await findReferencePayment('devnet', reference, { mint: MINT, recipient: DONATION_ADDRESS, amount: 1.5 });
+    assert.equal(failed.ok, false);
+    assert.match(failed.error, /failed on Solana/);
+    assert.equal(rpcBodies.some((body) => body.method === 'getTransaction' && body.params[1].commitment === 'finalized'), true);
+  } finally {
+    globalThis.fetch = original;
+  }
 });

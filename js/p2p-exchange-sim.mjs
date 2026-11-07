@@ -66,7 +66,7 @@ export function layoutMode({ width, coarse = false, uaMobile = false } = {}) {
   if (uaMobile && coarse && w <= 1023) return 'phone';
   return 'desk';
 }
-const MESSAGE_KINDS = new Set(['proposal', 'countersign', 'refusal', 'transfer', 'attestation', 'iou', 'tape', 'handoff', 'chat', 'chat-match', 'invoice', 'offer']);
+const MESSAGE_KINDS = new Set(['proposal', 'countersign', 'refusal', 'transfer', 'attestation', 'iou', 'tape', 'handoff', 'chat', 'chat-match', 'invoice', 'offer', 'solana']);
 
 export function canonicalJSON(value) {
   if (value === null || typeof value !== 'object') return JSON.stringify(value);
@@ -395,7 +395,9 @@ export function entryDetail(entry, names = {}) {
   if (entry.type === 'INVOICE_PAID') return `Invoice paid ${payload.amount} $lgme`.trim();
   if (entry.type === 'INVOICE_REFUSED') return payload.statement || 'INVOICE_REFUSED';
   if (entry.type === 'REWARD') return `In-app points ${payload.amount}, not $lgme tokens`.trim();
-  if (entry.type === 'SOLANA_TX') return `Solana ${payload.cluster || ''} ${payload.signature ? String(payload.signature).slice(0, 12) : ''}`.trim();
+  if (entry.type === 'SOLANA_TX') return `Solana ${payload.status || 'pending-attestation'} ${payload.cluster || ''} ${payload.signature ? String(payload.signature).slice(0, 12) : ''}`.trim();
+  if (entry.type === 'SOLANA_FINAL') return `Solana settled ${payload.signature ? String(payload.signature).slice(0, 12) : ''}`.trim();
+  if (entry.type === 'SOLANA_REFUSAL') return 'Solana refusal. No penalty.';
   if (entry.type === 'GRANT') return `soBeIT grant ${payload.amount} $lgme ${payload.reason || ''}`.trim();
   if (entry.type === 'MEDIA' || entry.type === 'MEDIA_RECEIVED') return `${entry.type === 'MEDIA_RECEIVED' ? 'Received' : 'Media'} ${payload.mime || ''} ${payload.hash ? String(payload.hash).slice(0, 12) : ''}`.trim();
   if (entry.type === 'countersign') {
@@ -1529,10 +1531,18 @@ export async function importMessage(store, peerId, input, at = nowIso()) {
   const opened = await openMessage(input);
   if (!opened.ok) return opened;
   const message = opened.message;
-  if (message.kind === 'tape') return { ok: true, kind: 'tape', peer: message.body, appended: false };
+  if (message.kind === 'tape') {
+    const holder = await store.get(peerId);
+    if (holder) {
+      const clash = solanaDoubleSpend(holder, message.body);
+      if (!clash.ok) return clash;
+    }
+    return { ok: true, kind: 'tape', peer: message.body, appended: false };
+  }
   const peer = await store.get(peerId);
   if (!peer) return fail('Unknown peer.');
   if (!peer.privateKeyJwk) return fail('Wallet is locked.');
+  if (message.kind === 'solana') return importSolanaHandoff(store, peer, message, at);
   const known = message.fromId ? await store.get(message.fromId) : null;
   if (known && canonicalJSON(known.publicKeyJwk) !== canonicalJSON(message.publicKeyJwk)) {
     return fail('The signing key does not match the book already stored for that peer.');
@@ -3773,7 +3783,219 @@ export async function payInvoice(store, payerId, invoiceId, spec = {}) {
   };
 }
 
+const SOLANA_REUSE = 'This Solana signature was already used. A signature settles one invoice.';
+const SOLANA_REFERENCE = 'This reference was already settled.';
+const SOLANA_DOUBLE = 'Flagged double-spend. This Solana signature is on two invoices. Nothing was applied.';
+
+function solanaPayloads(peer) {
+  const rows = [];
+  for (const entry of peer?.tape || []) {
+    if (entry.type === 'SOLANA_TX' || entry.type === 'SOLANA_REFUSAL' || entry.type === 'SOLANA_FINAL') rows.push(entry);
+  }
+  return rows;
+}
+
+export function solanaDoubleSpend(localPeer, incoming) {
+  const local = new Map();
+  for (const entry of solanaPayloads(localPeer)) {
+    const signature = entry.payload?.signature;
+    if (!signature) continue;
+    const invoiceId = String(entry.payload?.invoiceId || '');
+    if (local.has(signature) && local.get(signature) !== invoiceId) {
+      return { ok: false, flagged: true, error: SOLANA_DOUBLE, signature };
+    }
+    local.set(signature, invoiceId);
+  }
+  const seen = new Map();
+  for (const entry of incoming?.tape || []) {
+    if (entry.type !== 'SOLANA_TX' && entry.type !== 'SOLANA_REFUSAL' && entry.type !== 'SOLANA_FINAL') continue;
+    const signature = entry.payload?.signature;
+    if (!signature) continue;
+    const invoiceId = String(entry.payload?.invoiceId || '');
+    if ((local.has(signature) && local.get(signature) !== invoiceId) || (seen.has(signature) && seen.get(signature) !== invoiceId)) {
+      return { ok: false, flagged: true, error: SOLANA_DOUBLE, signature };
+    }
+    seen.set(signature, invoiceId);
+  }
+  return { ok: true };
+}
+
+export function solanaStatus(peers, signature) {
+  const rows = [];
+  for (const peer of peers || []) {
+    for (const entry of solanaPayloads(peer)) {
+      if (entry.payload?.signature === signature) rows.push({ peerId: peer.id, entry });
+    }
+  }
+  if (!rows.length) return 'absent';
+  if (rows.some((row) => row.entry.type === 'SOLANA_REFUSAL' || row.entry.payload?.status === 'refused')) return 'refused';
+  if (rows.some((row) => row.entry.type === 'SOLANA_FINAL' || row.entry.payload?.status === 'settled')) return 'settled';
+  const payerId = rows.map((row) => row.entry.payload?.payerId).find(Boolean);
+  const payeeId = rows.map((row) => row.entry.payload?.payeeId).find(Boolean);
+  const payerSigned = rows.some((row) => row.entry.type === 'SOLANA_TX' && row.entry.payload?.role === 'payer' && row.peerId === payerId);
+  const payeeSigned = rows.some((row) => row.entry.type === 'SOLANA_TX' && row.entry.payload?.role === 'payee' && row.peerId === payeeId);
+  if (payerSigned && payeeSigned) return 'settled';
+  return 'pending-attestation';
+}
+
+async function peersIn(store, ids) {
+  const listed = typeof store.listIds === 'function' ? await store.listIds() : [];
+  const out = [];
+  for (const id of new Set([...(listed || []), ...(ids || [])].filter(Boolean))) {
+    const peer = await store.get(id);
+    if (peer) out.push(peer);
+  }
+  return out;
+}
+
+function solanaClaim(spec, peerId) {
+  return {
+    simulated: false,
+    beta: true,
+    signature: String(spec.signature || '').trim(),
+    reference: String(spec.reference || ''),
+    mint: String(spec.mint || ''),
+    amount: round2(spec.amount),
+    recipient: String(spec.recipient || ''),
+    invoiceId: String(spec.invoiceId || ''),
+    cluster: spec.cluster === 'devnet' ? 'devnet' : 'mainnet-beta',
+    payerId: String(spec.payerId || peerId),
+    payeeId: String(spec.payeeId || spec.otherId || ''),
+    penalty: false
+  };
+}
+
+function rejectKnownSignature(peers, claim) {
+  for (const peer of peers) {
+    for (const entry of solanaPayloads(peer)) {
+      const payload = entry.payload || {};
+      if (payload.signature && payload.signature === claim.signature) {
+        if (claim.invoiceId && payload.invoiceId && payload.invoiceId !== claim.invoiceId) return fail(SOLANA_DOUBLE);
+        if (entry.type === 'SOLANA_REFUSAL' || payload.status === 'refused') return fail('This payment was refused. No penalty. Nothing was applied.');
+        if (entry.type === 'SOLANA_FINAL' || payload.status === 'settled' || solanaStatus(peers, claim.signature) === 'settled') return fail(SOLANA_REFERENCE);
+        return fail(SOLANA_REUSE);
+      }
+      if (claim.reference && payload.reference === claim.reference && payload.signature !== claim.signature) {
+        const status = solanaStatus(peers, payload.signature);
+        if (status === 'settled' || entry.type === 'SOLANA_FINAL') return fail(SOLANA_REFERENCE);
+        if (status === 'pending-attestation') return fail('This reference is already waiting for attestation.');
+      }
+    }
+  }
+  return { ok: true };
+}
+
+async function finalizeSolana(store, payload, at) {
+  const ids = [...new Set([payload.payerId, payload.payeeId].filter(Boolean))];
+  for (const id of ids) {
+    const peer = await store.get(id);
+    if (!peer?.privateKeyJwk && !peer?.signingKey) continue;
+    const signed = (peer.tape || []).some((entry) => entry.type === 'SOLANA_TX' && entry.payload?.signature === payload.signature);
+    if (!signed) continue;
+    if (!(peer.tape || []).some((entry) => entry.type === 'SOLANA_FINAL' && entry.payload?.signature === payload.signature)) {
+      await appendEntry(peer, 'SOLANA_FINAL', {
+        simulated: false,
+        beta: true,
+        signature: payload.signature,
+        reference: payload.reference,
+        invoiceId: payload.invoiceId,
+        mint: payload.mint,
+        amount: payload.amount,
+        status: 'settled',
+        penalty: false
+      }, at);
+    }
+    if (payload.invoiceId) {
+      const invoice = readInvoices(peer, at).find((row) => row.invoiceId === payload.invoiceId);
+      if (invoice && invoice.status !== 'paid' && invoice.status !== 'refused' && invoice.status !== 'donated') {
+        await appendEntry(peer, 'INVOICE_PAID', {
+          simulated: false,
+          solana: true,
+          invoiceId: payload.invoiceId,
+          amount: round2(payload.amount),
+          payerId: payload.payerId,
+          workerId: payload.payeeId,
+          signature: payload.signature,
+          penalty: false
+        }, at);
+      }
+    }
+    await store.set(id, peer);
+  }
+}
+
 export async function recordSolanaTx(store, peerId, spec = {}) {
+  const peer = await store.get(peerId);
+  if (!peer?.privateKeyJwk && !peer?.signingKey) return fail(peer ? 'Wallet is locked.' : 'Unknown peer.');
+  const gate = assertOnline(spec.navigator);
+  if (!gate.ok) return fail(gate.error);
+  const claim = solanaClaim({ ...spec, payerId: peerId, payeeId: spec.otherId || spec.payeeId || '' }, peerId);
+  if (!claim.signature) return fail('The transaction signature is missing.');
+  const at = spec.at || nowIso();
+  const peers = await peersIn(store, [peerId, claim.payeeId]);
+  const known = rejectKnownSignature(peers, claim);
+  if (!known.ok) return known;
+  const before = replay(peer).balance;
+  const payload = { ...claim, status: 'pending-attestation', role: 'payer' };
+  await appendEntry(peer, 'SOLANA_TX', payload, at);
+  await store.set(peerId, peer);
+  return { ok: true, status: 'pending-attestation', payload, unchanged: replay(await store.get(peerId)).balance === before };
+}
+
+export async function attestSolanaTx(store, payeeId, spec = {}) {
+  const payee = await store.get(payeeId);
+  if (!payee?.privateKeyJwk && !payee?.signingKey) return fail(payee ? 'Wallet is locked.' : 'Unknown peer.');
+  const gate = assertOnline(spec.navigator);
+  if (!gate.ok) return fail(gate.error);
+  const signature = String(spec.signature || '').trim();
+  if (!signature) return fail('The transaction signature is missing.');
+  const at = spec.at || nowIso();
+  const peers = await peersIn(store, [payeeId, spec.payerId]);
+  if (solanaStatus(peers, signature) === 'settled') return fail(SOLANA_REFERENCE);
+  if ((payee.tape || []).some((entry) => entry.type === 'SOLANA_REFUSAL' && entry.payload?.signature === signature)) {
+    return fail('This payment was refused. No penalty. Nothing was applied.');
+  }
+  if ((payee.tape || []).some((entry) => entry.type === 'SOLANA_TX' && entry.payload?.signature === signature)) return fail(SOLANA_REUSE);
+  const prior = peers.flatMap((peer) => (peer.tape || []).filter((entry) => entry.type === 'SOLANA_TX' && entry.payload?.signature === signature).map((entry) => entry.payload));
+  const staged = payee.solanaPending?.[signature];
+  const source = prior[0] || staged;
+  if (!source) return fail('The payer attestation is not on this device.');
+  if (source.payeeId && source.payeeId !== payeeId) return fail('This payment is for a different payee.');
+  if (source.invoiceId && spec.invoiceId && source.invoiceId !== spec.invoiceId) return fail(SOLANA_DOUBLE);
+  if (source.reference && spec.reference && source.reference !== spec.reference) return fail('The reference does not match this payment.');
+  if (source.recipient && spec.recipient && source.recipient !== spec.recipient) return fail('The recipient does not match this payment.');
+  if (source.mint && spec.mint && source.mint !== spec.mint) return fail('The mint does not match this payment.');
+  if (Number.isFinite(Number(source.amount)) && Number.isFinite(Number(spec.amount)) && round2(source.amount) !== round2(spec.amount)) {
+    return fail('The amount does not match.');
+  }
+  const before = replay(payee).balance;
+  const payload = {
+    ...solanaClaim(source, source.payerId),
+    signature,
+    status: 'pending-attestation',
+    role: 'payee',
+    payerId: source.payerId,
+    payeeId
+  };
+  await appendEntry(payee, 'SOLANA_TX', payload, at);
+  if (payee.solanaPending) delete payee.solanaPending[signature];
+  await store.set(payeeId, payee);
+  const after = await peersIn(store, [payeeId, payload.payerId]);
+  const status = solanaStatus(after, signature);
+  if (status === 'settled') await finalizeSolana(store, payload, at);
+  const fresh = await store.get(payeeId);
+  const sealed = await sealMessage(fresh, 'solana', { ...payload, status });
+  return {
+    ok: true,
+    status,
+    payload,
+    encoded: sealed.ok ? encodeMessage(sealed.message) : '',
+    penalty: false,
+    unchanged: replay(fresh).balance === before
+  };
+}
+
+export async function refuseSolanaTx(store, peerId, spec = {}, statement = 'REFUSAL') {
   const peer = await store.get(peerId);
   if (!peer?.privateKeyJwk && !peer?.signingKey) return fail(peer ? 'Wallet is locked.' : 'Unknown peer.');
   const gate = assertOnline(spec.navigator);
@@ -3781,29 +4003,62 @@ export async function recordSolanaTx(store, peerId, spec = {}) {
   const signature = String(spec.signature || '').trim();
   if (!signature) return fail('The transaction signature is missing.');
   const at = spec.at || nowIso();
-  const before = replay(peer).balance;
-  const payload = {
-    simulated: false,
-    beta: true,
-    signature,
-    reference: String(spec.reference || ''),
-    mint: String(spec.mint || ''),
-    amount: round2(spec.amount),
-    recipient: String(spec.recipient || ''),
-    invoiceId: String(spec.invoiceId || ''),
-    cluster: spec.cluster === 'devnet' ? 'devnet' : 'mainnet-beta'
-  };
-  await appendEntry(peer, 'SOLANA_TX', payload, at);
-  await store.set(peerId, peer);
-  const otherId = spec.otherId || '';
-  if (otherId) {
-    const other = await store.get(otherId);
-    if (other?.privateKeyJwk || other?.signingKey) {
-      await appendEntry(other, 'SOLANA_TX', payload, at);
-      await store.set(otherId, other);
-    }
+  const peers = await peersIn(store, [peerId, spec.payerId]);
+  if (solanaStatus(peers, signature) === 'settled') return fail('A settled line stays settled.');
+  if ((peer.tape || []).some((entry) => entry.type === 'SOLANA_REFUSAL' && entry.payload?.signature === signature)) {
+    return { ok: true, status: 'refused', penalty: false, duplicate: true };
   }
-  return { ok: true, payload, unchanged: replay(await store.get(peerId)).balance === before };
+  const before = replay(peer).balance;
+  await appendEntry(peer, 'SOLANA_REFUSAL', {
+    ...solanaClaim(spec, spec.payerId || ''),
+    signature,
+    status: 'refused',
+    role: 'payee',
+    payeeId: peerId,
+    penalty: false,
+    statement: String(statement || 'REFUSAL').trim() || 'REFUSAL'
+  }, at);
+  if (peer.solanaPending) delete peer.solanaPending[signature];
+  await store.set(peerId, peer);
+  return { ok: true, status: 'refused', penalty: false, unchanged: replay(await store.get(peerId)).balance === before };
+}
+
+export async function sealSolanaHandoff(store, peerId, signature) {
+  const peer = await store.get(peerId);
+  if (!peer?.privateKeyJwk && !peer?.signingKey) return fail(peer ? 'Wallet is locked.' : 'Unknown peer.');
+  const entry = (peer.tape || []).find((row) => row.type === 'SOLANA_TX' && row.payload?.signature === signature);
+  if (!entry) return fail('That payment is not on this book.');
+  const sealed = await sealMessage(peer, 'solana', entry.payload);
+  if (!sealed.ok) return sealed;
+  return { ok: true, encoded: encodeMessage(sealed.message), message: sealed.message };
+}
+
+async function importSolanaHandoff(store, peer, message, at) {
+  const body = message.body || {};
+  const signature = String(body.signature || '').trim();
+  if (!signature) return fail('The transaction signature is missing.');
+  const clash = solanaDoubleSpend(peer, { tape: [{ type: 'SOLANA_TX', payload: body }] });
+  if (!clash.ok) return clash;
+  if (body.role === 'payee') {
+    if (body.payerId && body.payerId !== peer.id) return fail('This attestation is for the payer.');
+    const mine = (peer.tape || []).find((entry) => entry.type === 'SOLANA_TX' && entry.payload?.signature === signature);
+    if (!mine) return fail('The payer attestation is not on this book.');
+    if (mine.payload?.invoiceId && body.invoiceId && mine.payload.invoiceId !== body.invoiceId) return fail(SOLANA_DOUBLE);
+    if ((peer.tape || []).some((entry) => entry.type === 'SOLANA_FINAL' && entry.payload?.signature === signature)) {
+      return { ok: true, status: 'settled', duplicate: true, applied: false };
+    }
+    await finalizeSolana(store, { ...mine.payload, ...body, payerId: peer.id }, at);
+    return { ok: true, status: 'settled', applied: true, penalty: false };
+  }
+  if (body.payeeId && body.payeeId !== peer.id) return fail('This payment is for a different payee.');
+  if ((peer.tape || []).some((entry) => (entry.type === 'SOLANA_TX' || entry.type === 'SOLANA_REFUSAL') && entry.payload?.signature === signature)) {
+    return fail(SOLANA_REUSE);
+  }
+  peer.solanaPending = peer.solanaPending || {};
+  peer.solanaPending[signature] = { ...body, signature, status: 'pending-attestation' };
+  await rememberInbox(peer, { at, kind: 'solana', fromId: message.fromId, hash: message.hash });
+  await store.set(peer.id, peer);
+  return { ok: true, status: 'pending-attestation', applied: false, signature };
 }
 
 export async function refuseInvoice(store, payerId, invoiceId, statement, at = nowIso()) {

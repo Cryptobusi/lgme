@@ -165,6 +165,8 @@ function showSolanaPay(spec) {
   const preview = h('p', { class: 'legend', id: 'solana-request' }, ['Confirm the amount and the recipient before a wallet link is created.']);
   const link = h('a', { id: 'solana-link', href: '#', target: '_blank', rel: 'noopener noreferrer' }, ['Open in your wallet']);
   link.hidden = true;
+  const chain = h('a', { id: 'solana-chain', href: '#', target: '_blank', rel: 'noopener noreferrer' }, ['View on Solscan']);
+  chain.hidden = true;
   const qrHost = h('div', { id: 'solana-qr' });
   let reference = '';
   overlay.append(h('article', { class: 'card' }, [
@@ -175,6 +177,7 @@ function showSolanaPay(spec) {
     field(spec.donation ? 'Floor wallet @EgonAnon' : 'Payee Solana address', recipient),
     field('Network', cluster),
     preview,
+    chain,
     qrHost,
     h('div', { class: 'actions' }, [
       h('button', { type: 'button', onClick: async () => {
@@ -226,12 +229,19 @@ function showSolanaPay(spec) {
           recipient: recipient.value.trim(),
           invoiceId: spec.invoiceId,
           otherId: spec.otherId,
-          cluster: cluster.value
+          cluster: cluster.value,
+          navigator
         });
         if (!recorded.ok) { preview.textContent = recorded.error; return; }
-        if (spec.donation) await sim.consentFloorDonation(store, spec.seat, spec.invoiceId);
-        setStatus(`Payment ${found.signature.slice(0, 12)} is on ${cluster.value}. The tape recorded the signature. Beta.`, 'ok');
-        overlay.remove();
+        chain.href = solscanHref(found.signature, cluster.value);
+        chain.hidden = false;
+        preview.textContent = 'Pending attestation. The payee still has to sign on their own seat. No invoice is paid yet.';
+        setStatus(`Pending attestation. ${found.signature.slice(0, 12)} is finalized on ${cluster.value}. The payee still has to sign. Beta.`, 'ok');
+        const carried = await sim.sealSolanaHandoff(store, spec.seat, found.signature);
+        if (carried.ok) {
+          carryCode = carried.encoded;
+          carryAddress = '';
+        }
         render();
       } }, ['Check payment']),
       link,
@@ -244,6 +254,98 @@ function showSolanaPay(spec) {
     ])
   ]));
   document.body.append(overlay);
+}
+
+function solscanHref(signature, cluster) {
+  const base = `https://solscan.io/tx/${encodeURIComponent(signature)}`;
+  return cluster === 'devnet' ? `${base}?cluster=devnet` : base;
+}
+
+async function attestPayment(seat, sample) {
+  const found = await findReferencePayment(sample.cluster || solanaCluster(), sample.reference, {
+    mint: MINT,
+    recipient: sample.recipient,
+    amount: sample.amount
+  });
+  if (!found.ok) { setStatus(found.error, 'bad'); return; }
+  if (found.signature !== sample.signature) { setStatus('The finalized signature does not match this payment.', 'bad'); return; }
+  const result = await sim.attestSolanaTx(store, seat, {
+    ...sample,
+    signature: found.signature,
+    mint: MINT,
+    navigator
+  });
+  if (!result.ok) { setStatus(result.error, 'bad'); return; }
+  if (result.encoded) carryCode = result.encoded;
+  setStatus(result.status === 'settled'
+    ? 'Both parties signed. The invoice is paid. The Solana signature is final. Beta.'
+    : 'Your attestation is signed. The other tape is final when that seat imports it. Beta.', result.status === 'settled' ? 'ok' : 'ok');
+  await render();
+}
+
+async function refusePayment(seat, sample) {
+  const result = await sim.refuseSolanaTx(store, seat, sample, 'REFUSAL');
+  setStatus(result.ok ? 'Refusal recorded. No penalty. The invoice is not paid. Beta.' : result.error, result.ok ? 'ok' : 'bad');
+  if (result.ok) await render();
+}
+
+async function solanaCards(seat) {
+  const ids = await store.listIds();
+  const full = [];
+  for (const id of ids) {
+    const peer = await store.get(id);
+    if (peer) full.push(peer);
+  }
+  const grouped = new Map();
+  for (const peer of full) {
+    for (const entry of peer.tape || []) {
+      if (entry.type !== 'SOLANA_TX' && entry.type !== 'SOLANA_REFUSAL' && entry.type !== 'SOLANA_FINAL') continue;
+      const signature = entry.payload?.signature;
+      if (!signature) continue;
+      const rows = grouped.get(signature) || [];
+      rows.push(entry.payload);
+      grouped.set(signature, rows);
+    }
+    if (peer.id !== seat) continue;
+    for (const body of Object.values(peer.solanaPending || {})) {
+      if (!body?.signature) continue;
+      const rows = grouped.get(body.signature) || [];
+      rows.push(body);
+      grouped.set(body.signature, rows);
+    }
+  }
+  const mine = full.find((peer) => peer.id === seat);
+  const cards = [];
+  for (const [signature, rows] of grouped) {
+    const sample = rows.find((row) => row.role === 'payer') || rows[0];
+    if (sample.payerId !== seat && sample.payeeId !== seat) continue;
+    const status = sim.solanaStatus(full, signature);
+    const signedHere = (mine?.tape || []).some((entry) => entry.type === 'SOLANA_TX' && entry.payload?.signature === signature);
+    const actions = [h('a', { href: solscanHref(signature, sample.cluster), target: '_blank', rel: 'noopener noreferrer' }, ['View on Solscan'])];
+    if (sample.payeeId === seat && !signedHere && status === 'pending-attestation') {
+      actions.push(h('button', { type: 'button', class: 'primary', id: 'solana-attest', onClick: () => attestPayment(seat, sample) }, ['Attest']));
+      actions.push(h('button', { type: 'button', id: 'solana-refuse', onClick: () => refusePayment(seat, sample) }, ['Refuse']));
+    }
+    if (sample.payerId === seat && status === 'pending-attestation') {
+      actions.push(h('button', { type: 'button', onClick: async () => {
+        const carried = await sim.sealSolanaHandoff(store, seat, signature);
+        if (!carried.ok) { setStatus(carried.error, 'bad'); return; }
+        carryCode = carried.encoded;
+        location.hash = 'devices';
+      } }, ['Carry attestation']));
+    }
+    const sentence = status === 'settled'
+      ? 'Both parties signed. The invoice is paid.'
+      : status === 'refused'
+        ? 'Refusal recorded. No penalty. The invoice is not paid.'
+        : 'Pending attestation. Each party signs on their own seat.';
+    cards.push(h('article', { class: 'card', id: 'solana-payment' }, [
+      h('h3', {}, [`$lgme ${status}`]),
+      h('p', {}, [`${sample.amount} $lgme to ${sample.recipient}. ${sentence}`]),
+      h('div', { class: 'actions' }, actions)
+    ]));
+  }
+  return cards;
 }
 
 function field(label, control) {
@@ -1005,6 +1107,7 @@ async function renderBooks(peers, seat) {
       h('div', { class: 'actions' }, actions)
     ]);
   });
+  const solana = await solanaCards(seat);
   panel.replaceChildren(
     h('h2', {}, [`${peer.name}'s book`]),
     h('p', { class: 'muted' }, [`Every line below is on this peer’s tape. Credits and debits come only from settlements, payments, and mock rewards. The running balance is a replay. Key ${finger}. Limit ${rule.creditLimit}.`]),
@@ -1017,6 +1120,11 @@ async function renderBooks(peers, seat) {
       h('div', {}, [h('strong', {}, [String(view.debits)]), 'Debits'])
     ]),
     h('section', { id: 'offers' }, offerCards(peer, seat)),
+    h('section', { id: 'solana-payments' }, [
+      h('h3', {}, ['Solana attestation']),
+      ...solana,
+      solana.length ? null : h('p', { class: 'empty' }, ['No Solana payment is waiting on this seat.'])
+    ]),
     h('section', { id: 'invoices' }, [
       h('h3', {}, ['Receivable and payable']),
       h('p', { class: 'muted' }, [`Open, due, and overdue stay off the balance until a coded payment. Ageing ${buckets['0-30']} in 0-30, ${buckets['31-60']} in 31-60, ${buckets['60+']} in 60+.`]),
@@ -1563,6 +1671,8 @@ async function previewIncoming(seat, raw, host) {
   if (trimmed.startsWith('{') && trimmed.includes('"tape"')) {
     const opened = await sim.openTape(trimmed);
     if (!opened.ok) { setStatus(opened.error, 'bad'); host.replaceChildren(h('p', { class: 'bad' }, [opened.error])); return; }
+    const clash = sim.solanaDoubleSpend(await store.get(seat), opened.peer);
+    if (!clash.ok) { setStatus(clash.error, 'bad'); host.replaceChildren(h('p', { class: 'bad' }, [clash.error])); return; }
     host.replaceChildren(
       h('p', { class: 'ok' }, [`Tape verified for ${opened.peer.name}. Hash links and signatures match.`]),
       h('div', { class: 'actions' }, [h('button', { type: 'button', class: 'primary', onClick: () => { pendingImport = trimmed; location.hash = 'reconcile'; } }, ['Compare in reconcile'])])
@@ -1587,7 +1697,11 @@ async function acceptIncoming(seat, raw) {
   const result = await sim.importMessage(store, seat, raw);
   if (!result.ok) { setStatus(result.error, 'bad'); return; }
   pendingImport = '';
-  setStatus(result.balance == null ? 'Imported. Beta.' : `Imported. Balance ${result.balance}. Beta.`, 'ok');
+  setStatus(result.status === 'pending-attestation'
+    ? 'Pending attestation. Verify the signature on Solana, then tap Attest. Nothing is settled yet. Beta.'
+    : result.status === 'settled'
+      ? 'Both parties signed. The invoice is paid. Beta.'
+      : result.balance == null ? 'Imported. Beta.' : `Imported. Balance ${result.balance}. Beta.`, 'ok');
   await render();
 }
 

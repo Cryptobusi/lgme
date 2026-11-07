@@ -1741,7 +1741,7 @@ test('DC reference values stay pending when a series has no number', () => {
   assert.equal(page.includes('id="refList"'), true);
   assert.equal(/<script(?![^>]*\bsrc=)/i.test(page), false);
   const worker = readFileSync(join(root, 'sw.js'), 'utf8');
-  assert.equal(worker.includes('lgme-v48'), true);
+  assert.equal(worker.includes('lgme-v49'), true);
   const desk = readFileSync(join(root, 'p2p-exchange-sim.html'), 'utf8');
   assert.equal(desk.includes('splash-skip'), false);
   assert.equal(desk.includes('>Skip<'), false);
@@ -1758,4 +1758,98 @@ test('DC reference values stay pending when a series has no number', () => {
   assert.equal(worker.includes('/data/offerup-wanted-v0.json'), true);
   assert.equal(worker.includes('/js/dc-reference.mjs'), true);
   assert.equal(worker.includes('/data/dc-reference-values-v0.json'), true);
+});
+
+test('a Solana signature settles one invoice and only after both parties attest', async () => {
+  const store = await books();
+  const online = { onLine: true };
+  for (const [id, phone] of [['alice', '+12025550111'], ['bob', '+12025550112']]) {
+    const peer = await store.get(id);
+    peer.kyc = { status: 'VERIFIED', displayName: peer.name, phone, salt: `salt-${id}` };
+    await store.set(id, peer);
+  }
+  const work = await sim.recordIdidIt(store, 'bob', { work: 'Bench', scope: 'hour', hours: 1, at: '2026-11-07T00:00:00.000Z' });
+  assert.equal(work.ok, true, work.error);
+  const invoice = await sim.createInvoice(store, 'bob', {
+    receiptId: work.receiptId,
+    payerId: 'alice',
+    amount: 1.5,
+    dueAt: '2026-12-01T00:00:00.000Z',
+    at: '2026-11-07T00:00:00.000Z'
+  });
+  assert.equal(invoice.ok, true, invoice.error);
+  const before = await balances(store);
+  const spec = {
+    signature: 'sig-one',
+    reference: 'ref-one',
+    mint: '7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump',
+    amount: 1.5,
+    recipient: '6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY',
+    invoiceId: invoice.invoiceId,
+    otherId: 'bob',
+    cluster: 'devnet',
+    navigator: online,
+    at: '2026-11-07T01:00:00.000Z'
+  };
+  const recorded = await sim.recordSolanaTx(store, 'alice', spec);
+  assert.equal(recorded.ok, true, recorded.error);
+  assert.equal(recorded.status, 'pending-attestation');
+  assert.equal(recorded.unchanged, true);
+  const aliceTape = (await store.get('alice')).tape.filter((entry) => entry.type === 'SOLANA_TX');
+  const bobTape = (await store.get('bob')).tape.filter((entry) => entry.type === 'SOLANA_TX');
+  assert.equal(aliceTape.length, 1);
+  assert.equal(bobTape.length, 0);
+  assert.equal(sim.readInvoices(await store.get('bob'), '2026-11-07T01:00:00.000Z').find((row) => row.invoiceId === invoice.invoiceId).status === 'paid', false);
+  const reuse = await sim.recordSolanaTx(store, 'alice', spec);
+  assert.equal(reuse.ok, false);
+  assert.match(reuse.error, /already used/);
+  const otherInvoice = await sim.recordSolanaTx(store, 'alice', { ...spec, invoiceId: 'invoice-two' });
+  assert.equal(otherInvoice.ok, false);
+  assert.match(otherInvoice.error, /Flagged double-spend/);
+  const pendingHandoff = await sim.sealSolanaHandoff(store, 'alice', 'sig-one');
+  assert.equal(pendingHandoff.ok, true, pendingHandoff.error);
+  const staged = await sim.importMessage(store, 'bob', pendingHandoff.message);
+  assert.equal(staged.ok, true, staged.error);
+  assert.equal(staged.status, 'pending-attestation');
+  assert.equal(staged.applied, false);
+  assert.equal((await store.get('bob')).tape.filter((entry) => entry.type === 'SOLANA_TX').length, 0);
+  const attested = await sim.attestSolanaTx(store, 'bob', { ...spec, payerId: 'alice', navigator: online, at: '2026-11-07T02:00:00.000Z' });
+  assert.equal(attested.ok, true, attested.error);
+  assert.equal(attested.status, 'settled');
+  assert.equal(attested.penalty, false);
+  assert.equal(attested.unchanged, true);
+  assert.equal(sim.solanaStatus([await store.get('alice'), await store.get('bob')], 'sig-one'), 'settled');
+  assert.equal((await store.get('alice')).tape.some((entry) => entry.type === 'SOLANA_FINAL' && entry.payload.signature === 'sig-one'), true);
+  assert.equal((await store.get('bob')).tape.some((entry) => entry.type === 'SOLANA_FINAL' && entry.payload.signature === 'sig-one'), true);
+  assert.equal((await store.get('bob')).tape.filter((entry) => entry.type === 'SOLANA_TX').length, 1);
+  assert.equal(sim.readInvoices(await store.get('bob'), '2026-11-07T02:00:00.000Z').find((row) => row.invoiceId === invoice.invoiceId).status, 'paid');
+  const after = await balances(store);
+  assert.deepEqual(after, before);
+  const again = await sim.recordSolanaTx(store, 'alice', { ...spec, signature: 'sig-two' });
+  assert.equal(again.ok, false);
+  assert.match(again.error, /already settled/);
+  const handoff = await sim.sealSolanaHandoff(store, 'alice', 'sig-one');
+  assert.equal(handoff.ok, true, handoff.error);
+  const clash = sim.solanaDoubleSpend(await store.get('bob'), { tape: [{ type: 'SOLANA_TX', payload: { signature: 'sig-one', invoiceId: 'invoice-two' } }] });
+  assert.equal(clash.ok, false);
+  assert.equal(clash.flagged, true);
+  const forged = await sim.sealMessage(await store.get('alice'), 'solana', { ...handoff.message.body, invoiceId: 'invoice-two' });
+  const imported = await sim.importMessage(store, 'bob', forged.message);
+  assert.equal(imported.ok, false);
+  assert.match(imported.error, /Nothing was applied/);
+  assert.equal((await store.get('bob')).tape.some((entry) => entry.payload?.invoiceId === 'invoice-two'), false);
+  const refused = await sim.recordSolanaTx(store, 'alice', { ...spec, signature: 'sig-refuse', reference: 'ref-refuse', invoiceId: '', otherId: 'bob', at: '2026-11-07T03:00:00.000Z' });
+  assert.equal(refused.ok, true, refused.error);
+  const refusal = await sim.refuseSolanaTx(store, 'bob', { ...spec, signature: 'sig-refuse', reference: 'ref-refuse', payerId: 'alice', navigator: online }, 'REFUSAL');
+  assert.equal(refusal.ok, true, refusal.error);
+  assert.equal(refusal.status, 'refused');
+  assert.equal(refusal.penalty, false);
+  assert.equal(sim.solanaStatus([await store.get('alice'), await store.get('bob')], 'sig-refuse'), 'refused');
+  assert.deepEqual(await balances(store), before);
+  const ui = readFileSync(join(root, 'js/p2p-exchange-sim-ui.mjs'), 'utf8');
+  const attestAt = ui.indexOf('async function attestPayment');
+  assert.ok(attestAt > 0);
+  assert.ok(ui.indexOf('findReferencePayment', attestAt) < ui.indexOf('attestSolanaTx', attestAt));
+  assert.equal(ui.includes('https://solscan.io/tx/'), true);
+  assert.equal(ui.includes('refuseSolanaTx'), true);
 });
