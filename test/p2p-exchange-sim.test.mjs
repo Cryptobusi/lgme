@@ -455,6 +455,88 @@ test('auto-delivery happens only after a valid TOTP', async () => {
   assert.equal(sim.layoutMode({ width: 1280, coarse: false, uaMobile: true }), 'desk');
 });
 
+test('unverified members can send only up to 20 and can still receive', async () => {
+  const store = sim.createMemoryStore();
+  await sim.registerPeer(store, { id: 'dana', name: 'Dana', floor: 0, at: '2026-11-06T00:00:00.000Z' });
+  await sim.registerPeer(store, { id: 'alice', name: 'Alice', floor: 0, at: '2026-11-06T00:00:00.000Z' });
+  const alice = await store.get('alice');
+  alice.kyc = { status: 'VERIFIED', simulated: true };
+  await store.set('alice', alice);
+  assert.equal(sim.kycStatus(await store.get('dana')), 'UNVERIFIED');
+  const over = await sim.createTransfer(store, 'dana', { toId: 'alice', amount: 21, at: '2026-11-06T00:01:00.000Z' });
+  assert.equal(over.ok, false);
+  assert.match(over.error, /20 \$lgme/);
+  assert.equal(sim.replay(await store.get('dana')).balance, 100);
+  const small = await sim.createTransfer(store, 'dana', { toId: 'alice', amount: 20, at: '2026-11-06T00:02:00.000Z' });
+  assert.equal(small.ok, true, small.error);
+  assert.equal(sim.replay(await store.get('dana')).balance, 80);
+  const more = await sim.createTransfer(store, 'dana', { toId: 'alice', amount: 1, at: '2026-11-06T00:03:00.000Z' });
+  assert.equal(more.ok, false);
+  const gift = await sim.createTransfer(store, 'alice', { toId: 'dana', amount: 50, at: '2026-11-06T00:04:00.000Z' });
+  assert.equal(gift.ok, true, gift.error);
+  await sim.importMessage(store, 'dana', small.message, '2026-11-06T00:05:00.000Z');
+  await sim.importMessage(store, 'dana', gift.message, '2026-11-06T00:06:00.000Z');
+  assert.equal(sim.replay(await store.get('dana')).balance, 130);
+});
+
+test('KYC needs a valid code, a voucher code, and a refusal does not verify', async () => {
+  const store = sim.createMemoryStore();
+  await sim.registerPeer(store, { id: 'dana', name: 'Dana', floor: 0, at: '2026-11-06T00:00:00.000Z' });
+  await sim.registerPeer(store, { id: 'alice', name: 'Alice', floor: 0, at: '2026-11-06T00:00:00.000Z' });
+  const started = await sim.startKyc(store, 'dana', { displayName: 'Dana', phone: '555', email: 'dana@example.com', at: '2026-11-06T00:01:00.000Z' });
+  assert.equal(started.ok, true, started.error);
+  assert.equal((await store.get('dana')).tape.some((entry) => entry.type === 'KYC_STARTED'), true);
+  assert.equal(JSON.stringify((await store.get('dana')).tape).includes('555'), false);
+  const early = await sim.confirmKyc2fa(store, 'dana', { passphrase: 'correct horse', code: '000000', unixSeconds: 59 });
+  assert.equal(early.ok, false);
+  const setup = await sim.setupWallet(store, 'dana', 'correct horse', { iterations: 2000 });
+  const now = 1_111_111_111;
+  const code = await sim.totp(sim.base32Decode(setup.secretBase32), now, { digits: 6, period: 30, algorithm: 'SHA-1' });
+  const wrong = await sim.confirmKyc2fa(store, 'dana', { passphrase: 'correct horse', code: code === '000000' ? '111111' : '000000', unixSeconds: now });
+  assert.equal(wrong.ok, false);
+  assert.equal((await store.get('dana')).tape.some((entry) => entry.type === 'KYC_2FA_OK'), false);
+  assert.equal(sim.kycStatus(await store.get('dana')), 'UNVERIFIED');
+  const confirmed = await sim.confirmKyc2fa(store, 'dana', { passphrase: 'correct horse', code, unixSeconds: now, at: '2026-11-06T00:02:00.000Z' });
+  assert.equal(confirmed.ok, true, confirmed.error);
+  assert.equal(confirmed.verified, false);
+  assert.equal(sim.kycStatus(await store.get('dana')), 'UNVERIFIED');
+  const alice = await store.get('alice');
+  alice.kyc = { status: 'VERIFIED', simulated: true };
+  await store.set('alice', alice);
+  const aliceSetup = await sim.setupWallet(store, 'alice', 'voucher pass', { iterations: 2000 });
+  const aliceCode = await sim.totp(sim.base32Decode(aliceSetup.secretBase32), now, { digits: 6, period: 30, algorithm: 'SHA-1' });
+  const danaKey = await sim.unlockWallet(await store.get('dana'), 'correct horse', code, now);
+  const dana = await store.get('dana');
+  dana.privateKeyJwk = danaKey.privateKeyJwk;
+  await store.set('dana', dana);
+  const badVouch = await sim.vouchMember(store, 'alice', 'dana', { passphrase: 'voucher pass', code: '999999', unixSeconds: now });
+  assert.equal(badVouch.ok, false);
+  assert.equal(sim.kycStatus(await store.get('dana')), 'UNVERIFIED');
+  const refused = await sim.refuseVouch(store, 'alice', 'dana', 'REFUSAL', '2026-11-06T00:03:00.000Z');
+  assert.equal(refused.ok, false);
+  const aliceOpen = await sim.unlockWallet(await store.get('alice'), 'voucher pass', aliceCode, now);
+  const aliceBook = await store.get('alice');
+  aliceBook.privateKeyJwk = aliceOpen.privateKeyJwk;
+  await store.set('alice', aliceBook);
+  const before = sim.replay(await store.get('dana')).balance;
+  const no = await sim.refuseVouch(store, 'alice', 'dana', 'REFUSAL', '2026-11-06T00:04:00.000Z');
+  assert.equal(no.ok, true, no.error);
+  assert.equal(no.status, 'UNVERIFIED');
+  assert.equal(sim.replay(await store.get('dana')).balance, before);
+  const line = (await store.get('alice')).tape.find((entry) => entry.type === 'refusal');
+  assert.equal(line.payload.statement, 'REFUSAL');
+  assert.equal('penalty' in line.payload, false);
+  const yes = await sim.vouchMember(store, 'alice', 'dana', { passphrase: 'voucher pass', code: aliceCode, unixSeconds: now, at: '2026-11-06T00:05:00.000Z' });
+  assert.equal(yes.ok, true, yes.error);
+  assert.equal(yes.status, 'VERIFIED');
+  assert.equal((await store.get('dana')).tape.some((entry) => entry.type === 'KYC_VOUCHED'), true);
+  const preview = new TextEncoder().encode('simulated-preview');
+  const hash = await sim.hashCameraPreview(preview);
+  const kept = await sim.keepSelfieHash(store, 'dana', hash);
+  assert.equal(kept.ok, true, kept.error);
+  assert.equal(JSON.stringify(await store.get('dana')).includes('simulated-preview'), false);
+});
+
 test('resources magazine keeps the explainer sections', () => {
   const text = readFileSync(join(root, 'js/p2p-resources.mjs'), 'utf8');
   for (const phrase of [

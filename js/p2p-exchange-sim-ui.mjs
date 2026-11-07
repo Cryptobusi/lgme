@@ -157,7 +157,8 @@ function renderSeats(peers, seat) {
       'aria-pressed': peer.id === seat ? 'true' : 'false'
     }, [
       peer.name,
-      h('small', {}, [`${peer.mock ? peer.balance + ' mock $lgme' : peer.balance} · floor ${peer.floor}${peer.locked ? ' · locked' : ''}`])
+      h('small', {}, [`${peer.mock ? peer.balance + ' mock $lgme' : peer.balance} · floor ${peer.floor}${peer.locked ? ' · locked' : ''}`]),
+      h('span', { class: peer.kyc === 'VERIFIED' ? 'badge badge-verified' : 'badge badge-unverified' }, [peer.kyc === 'VERIFIED' ? 'Verified' : 'Unverified'])
     ]);
     button.addEventListener('click', () => {
       rememberSeat(peer.id);
@@ -632,7 +633,7 @@ async function renderBooks(peers, seat) {
   const rows = view.rows.slice().reverse();
   for (const row of rows) {
     const detail = sim.entryDetail(row, names);
-    const status = row.type === 'iou' ? 'pending' : row.type === 'attested' ? 'attested' : row.type === 'refusal' ? 'refused' : row.type === 'block' ? 'blocked' : (row.type === 'transfer' || row.type === 'settlement') ? 'done' : row.type;
+    const status = row.type === 'iou' || row.type === 'KYC_STARTED' ? 'pending' : row.type === 'attested' || row.type === 'KYC_VOUCHED' || row.type === 'VERIFIED' || row.type === 'KYC_2FA_OK' ? 'done' : row.type === 'refusal' ? 'refused' : row.type === 'block' ? 'blocked' : (row.type === 'transfer' || row.type === 'settlement') ? 'done' : row.type;
     const item = h('article', { class: 'tx' }, [
       h('span', { class: `mark mark-${status}`, 'aria-hidden': 'true' }, [status.slice(0, 1).toUpperCase()]),
       h('div', {}, [
@@ -857,7 +858,7 @@ async function renderWallet(peers, seat) {
     activeCodeTimer = window.setInterval(paintCode, 1000);
   }
   const blocks = [
-    h('h2', {}, [`Wallet · ${summary.name}`]),
+    h('h2', {}, [`Wallet · ${summary.name} `, h('span', { class: sim.kycStatus(peer) === 'VERIFIED' ? 'badge badge-verified' : 'badge badge-unverified' }, [sim.kycStatus(peer) === 'VERIFIED' ? 'Verified' : 'Unverified'])]),
     h('p', { class: 'muted' }, ['SIMULATION. The balance is mock $lgme. The passphrase and the 6-digit code are simulated 2FA. This page does not send the code and does not move real money.']),
     h('div', { class: 'balance-hero' }, [
       h('div', {}, [h('strong', {}, [String(sim.replay(peer).balance)]), summary.mock ? 'Mock $lgme' : 'Book balance']),
@@ -866,6 +867,7 @@ async function renderWallet(peers, seat) {
     ])
   ];
   if (secret) blocks.push(codeLine, h('div', { id: 'setup-qr' }));
+  blocks.push(kycCard(peer, peers));
   if (!peer.wallet?.ciphertext) {
     const passphrase = h('input', { type: 'password', minlength: '8', autocomplete: 'new-password', required: true });
     const form = h('form', {}, [
@@ -912,6 +914,133 @@ async function renderWallet(peers, seat) {
     const label = encodeURIComponent(`lgme-sim:${peer.name}`);
     drawQr(qrHost, `otpauth://totp/${label}?secret=${secret}&issuer=lgme-sim&algorithm=SHA1&digits=6&period=30`);
   }
+}
+
+function kycCard(peer, peers) {
+  const status = sim.kycStatus(peer);
+  const started = (peer.tape || []).some((entry) => entry.type === 'KYC_STARTED');
+  const twoFa = (peer.tape || []).some((entry) => entry.type === 'KYC_2FA_OK');
+  const steps = h('ol', { class: 'legend' }, [
+    h('li', {}, ['Your name. Phone and email stay on this device.']),
+    h('li', {}, ['Confirm your 6-digit code.']),
+    h('li', {}, ['A verified member vouches, with their own code.'])
+  ]);
+  if (status === 'VERIFIED') {
+    return h('article', { class: 'card', id: 'kyc' }, [
+      h('h3', {}, ['You are verified']),
+      h('p', { class: 'muted' }, ['A member vouched for this book. You can send. SIMULATION.']),
+      steps
+    ]);
+  }
+  const body = [
+    h('h3', {}, ['Become verified']),
+    h('p', { class: 'muted' }, ['Unverified members can receive, and can send up to 20 $lgme. This check stays on this device.']),
+    steps
+  ];
+  if (!started) {
+    const displayName = h('input', { value: peer.kyc?.displayName || peer.name, maxlength: '48', autocomplete: 'name' });
+    const phone = h('input', { value: '', placeholder: 'optional', inputmode: 'tel', autocomplete: 'tel' });
+    const email = h('input', { value: '', placeholder: 'optional', inputmode: 'email', autocomplete: 'email' });
+    const form = h('form', {}, [
+      field('Display name', displayName),
+      field('Phone, optional', phone),
+      field('Email, optional', email),
+      h('div', { class: 'actions' }, [h('button', { class: 'primary', type: 'submit' }, ['Save details'])])
+    ]);
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const result = await sim.startKyc(store, peer.id, { displayName: displayName.value, phone: phone.value, email: email.value });
+      if (!result.ok) { setStatus(result.error, 'bad'); return; }
+      setStatus('Details saved on this device. Next, confirm your code. SIMULATION.', 'ok');
+      await render();
+    });
+    body.push(form);
+  } else if (!twoFa) {
+    const pass = h('input', { type: 'password', minlength: '8', autocomplete: 'new-password', required: true });
+    const code = h('input', { inputmode: 'numeric', autocomplete: 'one-time-code', maxlength: '8' });
+    const form = h('form', {}, [
+      field(peer.wallet?.ciphertext ? 'Passphrase' : 'Choose a passphrase', pass),
+      peer.wallet?.ciphertext ? field('6-digit code', code) : null,
+      h('div', { class: 'actions' }, [h('button', { class: 'primary', type: 'submit' }, [peer.wallet?.ciphertext ? 'Confirm code' : 'Set up the code'])])
+    ]);
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!peer.wallet?.ciphertext) {
+        const setup = await sim.setupWallet(store, peer.id, pass.value);
+        if (!setup.ok) { setStatus(setup.error, 'bad'); return; }
+        rememberedSecrets.set(peer.id, setup.secretBase32);
+        setStatus('Code is ready. Enter it to finish this step. SIMULATION.', 'ok');
+        await render();
+        return;
+      }
+      const result = await sim.confirmKyc2fa(store, peer.id, { passphrase: pass.value, code: code.value, unixSeconds: Math.floor(Date.now() / 1000) });
+      if (!result.ok) { setStatus(result.error, 'bad'); return; }
+      setStatus('Code confirmed. A verified member still has to vouch. SIMULATION.', 'ok');
+      await render();
+    });
+    body.push(form);
+  } else {
+    const verified = peers.filter((item) => item.kyc === 'VERIFIED' && item.id !== peer.id);
+    const voucher = h('select', {}, verified.map((item) => option(item.id, item.name, false)));
+    const pass = h('input', { type: 'password', autocomplete: 'current-password', required: true });
+    const code = h('input', { inputmode: 'numeric', autocomplete: 'one-time-code', maxlength: '8', required: true });
+    const form = h('form', {}, [
+      verified.length ? field('Verified member', voucher) : h('p', { class: 'legend' }, ['No other verified member is on this device yet.']),
+      field('Their passphrase', pass),
+      field('Their 6-digit code', code),
+      h('div', { class: 'actions' }, [
+        h('button', { class: 'primary', type: 'submit' }, ['Vouch']),
+        h('button', { type: 'button', onClick: async () => {
+          const result = await sim.refuseVouch(store, voucher.value || peer.id, peer.id, 'REFUSAL');
+          if (!result.ok) { setStatus(result.error, 'bad'); return; }
+          setStatus('REFUSAL recorded. No balance moves. No penalty. Still unverified.', 'ok');
+          await render();
+        } }, ['Refuse'])
+      ])
+    ]);
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const result = await sim.vouchMember(store, voucher.value, peer.id, { passphrase: pass.value, code: code.value, unixSeconds: Math.floor(Date.now() / 1000) });
+      if (!result.ok) { setStatus(result.error, 'bad'); return; }
+      setStatus('Verified. A member vouched. SIMULATION.', 'ok');
+      await render();
+    });
+    body.push(form, selfieStep(peer));
+  }
+  return h('article', { class: 'card', id: 'kyc' }, body);
+}
+
+function selfieStep(peer) {
+  const video = h('video', { class: 'cam', playsinline: true, muted: true });
+  video.hidden = true;
+  const note = h('p', { class: 'legend' }, ['Optional. The preview stays on this screen. Only a hash is kept. The picture is not stored and not sent.']);
+  const start = h('button', { type: 'button', onClick: async () => {
+    stopAnyCamera();
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      video.hidden = false;
+      video.srcObject = stream;
+      await video.play();
+      stopCamera = () => { stream.getTracks().forEach((track) => track.stop()); video.hidden = true; };
+    } catch {
+      setStatus('The camera preview did not open. Nothing was stored. SIMULATION.', 'bad');
+    }
+  } }, ['Preview a simulated selfie']);
+  const hashBtn = h('button', { type: 'button', class: 'primary', onClick: async () => {
+    if (video.readyState < 2) { setStatus('Open the preview first. SIMULATION.', 'bad'); return; }
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 320;
+    canvas.height = video.videoHeight || 240;
+    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.7));
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    const hash = await sim.hashCameraPreview(bytes);
+    const kept = await sim.keepSelfieHash(store, peer.id, hash);
+    stopAnyCamera();
+    if (!kept.ok) { setStatus(kept.error, 'bad'); return; }
+    note.textContent = `Simulated. Picture discarded. Hash ${hash.slice(0, 12)} stays on this device.`;
+  } }, ['Keep only the hash']);
+  return h('div', {}, [h('h3', {}, ['Simulated selfie']), note, video, h('div', { class: 'actions' }, [start, hashBtn])]);
 }
 
 function iouSection(peer) {
@@ -982,7 +1111,8 @@ async function renderDevices(peers, seat) {
     field('Their phone or email, if you want a draft', address),
     h('p', { class: 'legend' }, [peer.wallet?.ciphertext
       ? 'Auto-send stays on this device. A valid code delivers the signed transfer into the other book and posts a simulated notice. A wrong code sends nothing.'
-      : 'This demo book has no authenticator yet. Signing prepares a code you can carry. Set up 2FA on the wallet to auto-deliver on this device.'])
+      : 'This demo book has no authenticator yet. Signing prepares a code you can carry. Set up 2FA on the wallet to auto-deliver on this device.']),
+    sim.kycStatus(peer) === 'VERIFIED' ? null : h('p', { class: 'legend' }, ['Unverified members can send up to 20 $lgme. Receiving is open.'])
   ]);
   form.addEventListener('submit', async (event) => {
     event.preventDefault();

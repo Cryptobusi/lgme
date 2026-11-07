@@ -15,6 +15,7 @@ export const DEMO_OPENING = Object.freeze({
 });
 
 export const MOCK_GRANT = 100;
+export const UNVERIFIED_SEND_LIMIT = 20;
 export const KDF_ITERATIONS = 100000;
 
 export function layoutMode({ width, coarse = false, uaMobile = false } = {}) {
@@ -327,6 +328,9 @@ export function entryDetail(entry, names = {}) {
   }
   if (entry.type === 'refusal') return payload.statement || 'REFUSAL';
   if (entry.type === 'block') return payload.message || FLOOR_BLOCK;
+  if (entry.type === 'KYC_STARTED') return 'KYC started. Details stay on this device.';
+  if (entry.type === 'KYC_2FA_OK') return 'KYC code confirmed.';
+  if (entry.type === 'KYC_VOUCHED' || entry.type === 'VERIFIED') return 'Verified. A member vouched.';
   if (entry.type === 'countersign') {
     return `${name(payload.by)} countersigned ${payload.exchangeId ? payload.exchangeId.slice(0, 12) : ''}`.trim();
   }
@@ -433,6 +437,7 @@ export async function listPeers(store) {
       balance: view.balance,
       mock: Boolean(genesis?.payload?.mock),
       locked: Boolean(peer.wallet?.ciphertext) && !peer.privateKeyJwk,
+      kyc: kycStatus(peer),
       credits: view.credits,
       debits: view.debits,
       tapeLength: peer.tape.length
@@ -1134,6 +1139,8 @@ export async function createTransfer(store, fromId, spec) {
   const amount = round2(spec.amount);
   if (!/^[a-z0-9-]{1,32}$/.test(toId) || toId === fromId) return fail('Name a different peer id.');
   if (!Number.isFinite(amount) || amount <= 0) return fail('Enter an amount greater than zero.');
+  const limited = sendLimitReason(from, amount);
+  if (limited) return fail(limited);
   const next = round2(replay(from).balance - amount);
   const blocked = floorBlockReason(from, next);
   if (blocked) return fail(blocked);
@@ -1172,6 +1179,8 @@ export async function autoDeliverTransfer(store, fromId, spec) {
   const amount = round2(spec.amount);
   if (!/^[a-z0-9-]{1,32}$/.test(toId) || toId === fromId) return { ok: false, error: 'Name a different peer id.', sent: false };
   if (!Number.isFinite(amount) || amount <= 0) return { ok: false, error: 'Enter an amount greater than zero.', sent: false };
+  const limited = sendLimitReason(from, amount);
+  if (limited) return { ok: false, error: limited, sent: false };
   const unlocked = await unlockWallet(from, spec.passphrase, spec.code, spec.unixSeconds ?? Math.floor(Date.now() / 1000));
   if (!unlocked.ok) return { ok: false, error: unlocked.error, sent: false };
   const next = round2(replay(from).balance - amount);
@@ -1522,12 +1531,175 @@ export async function logDispatch(store, peerId, item) {
   return { ok: true };
 }
 
+export function kycStatus(peer) {
+  if (!peer) return 'UNVERIFIED';
+  if (peer.kyc?.status === 'VERIFIED') return 'VERIFIED';
+  if ((peer.tape || []).some((entry) => entry.type === 'KYC_VOUCHED' || entry.type === 'VERIFIED')) return 'VERIFIED';
+  return 'UNVERIFIED';
+}
+
+function outboundSent(peer) {
+  let sum = 0;
+  for (const entry of peer.tape || []) {
+    if (entry.type === 'transfer' && entry.payload?.fromId === peer.id && entry.payload?.direction !== 'in') {
+      sum = round2(sum + Number(entry.payload.amount || 0));
+    }
+  }
+  return sum;
+}
+
+export function sendLimitReason(peer, amount) {
+  if (kycStatus(peer) === 'VERIFIED') return '';
+  const figure = round2(amount);
+  if (!Number.isFinite(figure)) return 'Enter an amount greater than zero.';
+  if (figure > UNVERIFIED_SEND_LIMIT + 1e-9 || round2(outboundSent(peer) + figure) > UNVERIFIED_SEND_LIMIT + 1e-9) {
+    return `Unverified members can send up to ${UNVERIFIED_SEND_LIMIT} $lgme.`;
+  }
+  return '';
+}
+
+async function requireCode(peer, spec) {
+  if (!peer.wallet?.ciphertext) return fail('Set up the 6-digit code first.');
+  return unlockWallet(peer, spec.passphrase, spec.code, spec.unixSeconds ?? Math.floor(Date.now() / 1000));
+}
+
+export async function startKyc(store, peerId, spec = {}) {
+  const peer = await store.get(peerId);
+  if (!peer) return fail('Unknown peer.');
+  if (kycStatus(peer) === 'VERIFIED') return { ok: true, status: 'VERIFIED' };
+  const displayName = String(spec.displayName || peer.name || '').trim();
+  if (!displayName) return fail('Add a display name.');
+  const phone = String(spec.phone || '').trim();
+  const email = String(spec.email || '').trim();
+  peer.kyc = {
+    ...(peer.kyc || {}),
+    status: 'UNVERIFIED',
+    displayName,
+    phone,
+    email,
+    simulated: true
+  };
+  if (displayName !== peer.name) peer.name = displayName;
+  if (!(peer.tape || []).some((entry) => entry.type === 'KYC_STARTED')) {
+    await appendEntry(peer, 'KYC_STARTED', { simulated: true, mock: true, displayName }, spec.at || nowIso());
+  }
+  await store.set(peerId, peer);
+  return { ok: true, status: 'UNVERIFIED' };
+}
+
+export async function confirmKyc2fa(store, peerId, spec = {}) {
+  const peer = await store.get(peerId);
+  if (!peer) return fail('Unknown peer.');
+  if (kycStatus(peer) === 'VERIFIED') return { ok: true, status: 'VERIFIED' };
+  if (!(peer.tape || []).some((entry) => entry.type === 'KYC_STARTED')) return fail('Start with your name first.');
+  const unlocked = await requireCode(peer, spec);
+  if (!unlocked.ok) return { ok: false, error: unlocked.error, status: kycStatus(peer) };
+  if (!(peer.tape || []).some((entry) => entry.type === 'KYC_2FA_OK')) {
+    const signer = { ...peer, privateKeyJwk: unlocked.privateKeyJwk || peer.privateKeyJwk };
+    await appendEntry(signer, 'KYC_2FA_OK', { simulated: true, mock: true }, spec.at || nowIso());
+    signer.privateKeyJwk = peer.wallet?.ciphertext ? null : signer.privateKeyJwk;
+    signer.kyc = { ...(signer.kyc || {}), status: 'UNVERIFIED', twoFaOk: true };
+    await store.set(peerId, signer);
+  }
+  const fresh = await store.get(peerId);
+  return { ok: true, status: kycStatus(fresh), verified: false };
+}
+
+export async function hashCameraPreview(bytes) {
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return bytesToHex(new Uint8Array(digest));
+}
+
+export async function keepSelfieHash(store, peerId, hash) {
+  if (!/^[0-9a-f]{64}$/i.test(String(hash || ''))) return fail('The preview hash is not ready.');
+  const peer = await store.get(peerId);
+  if (!peer) return fail('Unknown peer.');
+  peer.kyc = { ...(peer.kyc || {}), status: peer.kyc?.status || 'UNVERIFIED', selfieHash: String(hash).toLowerCase(), simulated: true };
+  await store.set(peerId, peer);
+  return { ok: true, selfieHash: peer.kyc.selfieHash };
+}
+
+export async function vouchMember(store, voucherId, memberId, spec = {}) {
+  const voucher = await store.get(voucherId);
+  const member = await store.get(memberId);
+  if (!voucher || !member) return fail('Unknown peer.');
+  if (voucherId === memberId) return fail('Ask a different verified member.');
+  if (kycStatus(voucher) !== 'VERIFIED') return fail('Only a verified member can vouch.');
+  if (kycStatus(member) === 'VERIFIED') return { ok: true, status: 'VERIFIED' };
+  if (!(member.tape || []).some((entry) => entry.type === 'KYC_2FA_OK')) return fail('The new member still needs to confirm their code.');
+  if (!member.privateKeyJwk) return fail('Unlock the new member book first.');
+  const unlocked = await requireCode(voucher, spec);
+  if (!unlocked.ok) return { ok: false, error: unlocked.error, status: kycStatus(member) };
+  const at = spec.at || nowIso();
+  const signer = { ...voucher, privateKeyJwk: unlocked.privateKeyJwk || voucher.privateKeyJwk };
+  const sealed = await sealMessage(signer, 'attestation', {
+    simulated: true,
+    kind: 'kyc-vouch',
+    memberId,
+    voucherId,
+    mock: true
+  });
+  if (!sealed.ok) return sealed;
+  const payload = { simulated: true, mock: true, status: 'VERIFIED', voucherId, memberId, hash: sealed.message.hash, sig: sealed.message.sig };
+  if (signer.privateKeyJwk) {
+    await appendEntry(signer, 'KYC_VOUCHED', payload, at);
+    signer.privateKeyJwk = voucher.wallet?.ciphertext ? null : signer.privateKeyJwk;
+    await store.set(voucherId, signer);
+  }
+  const freshMember = await store.get(memberId);
+  const memberKey = freshMember.privateKeyJwk;
+  if (!memberKey) return fail('The new member book is locked.');
+  freshMember.kyc = { ...(freshMember.kyc || {}), status: 'VERIFIED', simulated: true };
+  await appendEntry(freshMember, 'KYC_VOUCHED', payload, at);
+  await store.set(memberId, freshMember);
+  return { ok: true, status: 'VERIFIED' };
+}
+
+export async function refuseVouch(store, actorId, memberId, statement, at = nowIso()) {
+  const actor = await store.get(actorId);
+  const member = await store.get(memberId);
+  if (!actor || !member) return fail('Unknown peer.');
+  if (!actor.privateKeyJwk) return fail('Wallet is locked.');
+  const before = replay(member).balance;
+  const text = String(statement || 'REFUSAL').trim() || 'REFUSAL';
+  await appendEntry(actor, 'refusal', { simulated: true, mock: true, role: 'third-seat', statement: text, memberId, kind: 'kyc-vouch' }, at);
+  await store.set(actorId, actor);
+  const fresh = await store.get(memberId);
+  if (fresh.privateKeyJwk && actorId !== memberId) {
+    await appendEntry(fresh, 'refusal', { simulated: true, mock: true, role: 'third-seat', statement: text, memberId, by: actorId, kind: 'kyc-vouch' }, at);
+    fresh.kyc = { ...(fresh.kyc || {}), status: 'UNVERIFIED', simulated: true };
+    await store.set(memberId, fresh);
+  } else if (actorId === memberId) {
+    const self = await store.get(memberId);
+    self.kyc = { ...(self.kyc || {}), status: 'UNVERIFIED', simulated: true };
+    await store.set(memberId, self);
+  }
+  const after = await store.get(memberId);
+  return {
+    ok: true,
+    status: kycStatus(after),
+    balance: replay(after).balance,
+    unchanged: replay(after).balance === before
+  };
+}
+
+async function markDemoVerified(store, peerId, at) {
+  const peer = await store.get(peerId);
+  if (!peer) return fail('Unknown peer.');
+  peer.kyc = { status: 'VERIFIED', displayName: peer.name, simulated: true, seeded: true };
+  await appendEntry(peer, 'VERIFIED', { simulated: true, mock: true, status: 'VERIFIED', seeded: true }, at);
+  await store.set(peerId, peer);
+  return { ok: true, status: 'VERIFIED' };
+}
+
 export async function resetAndSeed(store) {
   await store.clear();
   const at = nowIso();
   for (const [id, spec] of Object.entries(DEMO_OPENING)) {
     const created = await createPeer(store, { id, ...spec, at });
     if (!created.ok) return created;
+    const verified = await markDemoVerified(store, id, at);
+    if (!verified.ok) return verified;
   }
   const soil = await recordIdidIt(store, 'bob', { work: 'Soil credits', scope: 'biomass on the bench', hours: 3, at });
   await recordIdidIt(store, 'alice', { work: 'Walkway clearing', scope: 'path and tools', hours: 2, at });
