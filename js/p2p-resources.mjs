@@ -115,6 +115,19 @@ export const ARTICLES = [
     ]
   },
   {
+    id: 'resources-market',
+    kicker: 'The market',
+    title: 'Practice market',
+    deck: 'List, chat, hold, and hand off. The books stay on this device.',
+    blocks: [
+      { type: 'p', text: 'SIMULATION. The market is a practice desk. A listing is signed with the peer key. The origin hash is the listing id. Photos are compressed in the browser and stay there. The tape stores the hash, not the picture. Nothing is written to a network.' },
+      { type: 'p', text: 'An offer, a counter, and Accept & Sign put a pending hold on both tapes. The buyer’s debit is held and the seller’s credit is pending. Final balances do not move until both people sign the handoff. Cancel or expiry releases the hold.' },
+      { type: 'p', text: 'A refusal at any step is a third-seat refusal. It is recorded. It moves no balance and carries no penalty. It does not unwind a line that already settled.' },
+      { type: 'p', text: 'Circles are mutual-credit rings, not a map. Peer standing is read from the local book: verification, clearing history, and whether the balance sits above the floor. A line that would take the floor is blocked: Floor stays senior. An unverified member cannot send or hold more than 20 $lgme. A dollar figure from the reference list is a suggestion, not a price.' },
+      { type: 'link', href: '/p2p-exchange-sim#market', text: 'Open the practice market' }
+    ]
+  },
+  {
     id: 'resources-story',
     kicker: 'A repair',
     title: 'The broken car',

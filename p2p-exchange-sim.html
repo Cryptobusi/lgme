@@ -126,6 +126,16 @@
       .sticky-action .primary, .scan-prominent { width:100%; }
       body > .sim-banner:last-of-type { display:none; }
     }
+    .market-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.55rem; }
+    .market-card { padding:0.45rem; text-align:left; width:100%; cursor:pointer; }
+    .market-card img, .shot { width:100%; aspect-ratio:1; object-fit:cover; border-radius:10px; background:var(--bg); display:block; }
+    .market-card h3 { font-family:Figtree,sans-serif; font-size:0.95rem; font-weight:600; letter-spacing:0; margin:0.4rem 0 0.1rem; }
+    .price { font-weight:600; }
+    .chips { display:flex; gap:0.35rem; overflow-x:auto; padding-bottom:0.15rem; }
+    .chips button { flex:0 0 auto; min-height:40px; }
+    .tabbar .plus { display:block; font-size:1.2rem; line-height:1; font-weight:600; }
+    .quiet-link { margin-left:0.6rem; letter-spacing:0.08em; color:var(--accent-text); text-decoration:none; }
+    .bubble { padding:0.55rem 0.7rem; border:1px solid var(--line); border-radius:12px; margin:0.35rem 0; background:var(--bg); }
     .mag { display:grid; gap:0.75rem; }
     @media (min-width: 800px) { html.desk .mag { grid-template-columns:1fr 1fr; } }
     .mag-card { width:100%; text-align:left; cursor:pointer; }
@@ -163,16 +173,16 @@
       <a href="/simulation-explainer">Simulation explainer</a>
       <a href="/the-third-seat">Third seat</a>
     </nav>
-    <p class="kicker">lgme · SIMULATION <button type="button" id="install-app" data-install hidden>Install</button></p>
+    <p class="kicker">lgme · SIMULATION <button type="button" id="install-app" data-install hidden>Install</button> <a class="quiet-link" href="#help">Help</a></p>
     <h1>P2P exchange</h1>
-    <p class="muted lede">Two people propose a line and both sign it. A third person may refuse it. A cycle clears only when every party has countersigned and nobody’s floor is taken.</p>
+    <p class="muted lede">A practice market and a peer desk. List an item, sign an offer, and hand it off. Each person keeps their own book. A floor stays senior, and a refusal moves nothing.</p>
     <div id="seatbar" class="seatbar" aria-label="Peers"></div>
     <div class="tabs" role="tablist" aria-label="Desk sections">
+      <button type="button" id="tab-market" role="tab">Market</button>
+      <button type="button" id="tab-circles" role="tab">Circles</button>
+      <button type="button" id="tab-list" role="tab">List</button>
+      <button type="button" id="tab-chats" role="tab">Chats</button>
       <button type="button" id="tab-wallet" role="tab">Wallet</button>
-      <button type="button" id="tab-devices" role="tab">Send</button>
-      <button type="button" id="tab-books" role="tab">Ledger</button>
-      <button type="button" id="tab-exchange" role="tab">Exchange</button>
-      <button type="button" id="tab-reconcile" role="tab">Reconcile</button>
       <button type="button" id="tab-help" role="tab">Help</button>
     </div>
     <p id="status" role="status" aria-live="polite"></p>
@@ -198,11 +208,11 @@
     <noscript><p>This simulation needs JavaScript in the browser. It still does not use a network.</p></noscript>
   </div>
   <nav class="tabbar" aria-label="Phone">
+    <button type="button" data-tab="market">Market</button>
+    <button type="button" data-tab="circles">Circles</button>
+    <button type="button" data-tab="list" aria-label="List an item"><span class="plus">+</span>List</button>
+    <button type="button" data-tab="chats">Chats</button>
     <button type="button" data-tab="wallet">Wallet</button>
-    <button type="button" data-tab="devices">Send</button>
-    <button type="button" data-tab="books">Ledger</button>
-    <button type="button" data-tab="exchange">Exchange</button>
-    <button type="button" data-tab="help">Help</button>
   </nav>
   <div id="toast" role="status" aria-live="polite" hidden></div>
   <p class="sim-banner" role="note">SIMULATION. Floor stays senior. A refusal is recorded, moves no balance, and carries no penalty. The 2FA, the $lgme, and the messages are simulated. This page never sends them.</p>

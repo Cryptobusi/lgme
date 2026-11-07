@@ -552,6 +552,7 @@ test('resources magazine keeps the explainer sections', () => {
     'Deployment manifest',
     'The third seat',
     'The broken car',
+    'Practice market',
     'SPP_Overview.pptx'
   ]) {
     assert.equal(text.includes(phrase), true, phrase);
@@ -576,4 +577,173 @@ test('pages stay simulation-only', () => {
   const ui = readFileSync(join(root, 'js/p2p-exchange-sim-ui.mjs'), 'utf8');
   assert.equal(ui.includes("fetch('/data/dc-reference-values-v0.json')"), true);
   assert.equal((ui.match(/fetch\(/g) || []).length, 1);
+  const design = readFileSync(join(root, 'docs/marketplace-design.md'), 'utf8');
+  for (const word of banned) assert.equal(design.includes(word), false, `docs/marketplace-design.md contains ${word}`);
+  assert.equal(design.includes('Trust Score'), false);
+  assert.equal(design.includes('Peer standing'), true);
+});
+
+async function sampleListing(store, sellerId, spec = {}) {
+  const photo = spec.photo || 'data:image/svg+xml,listing';
+  return sim.createListing(store, sellerId, {
+    title: spec.title || 'Hand saw',
+    category: spec.category || 'Tools',
+    condition: spec.condition || 'Good',
+    pickup: spec.pickup || 'Pickup',
+    circle: spec.circle || 'Walkway',
+    area: spec.area || 'Near the path',
+    amount: spec.amount ?? 12,
+    photo,
+    photoHash: await sim.sha256(photo),
+    at: spec.at || '2026-11-06T00:00:00.000Z'
+  });
+}
+
+test('a listing signature and origin hash verify', async () => {
+  const store = await books();
+  const created = await sampleListing(store, 'alice', { title: 'Walkway tools', amount: 18 });
+  assert.equal(created.ok, true, created.error);
+  const checked = await sim.verifyListing(created.listing);
+  assert.equal(checked.ok, true, checked.error);
+  assert.equal(created.listing.id, created.listing.originHash);
+  const tampered = { ...created.listing, title: 'Different tools' };
+  const broken = await sim.verifyListing(tampered);
+  assert.equal(broken.ok, false);
+  assert.match(broken.error, /Origin hash/);
+  const resigned = { ...created.listing, sig: 'aa' };
+  const badSig = await sim.verifyListing(resigned);
+  assert.equal(badSig.ok, false);
+  assert.match(badSig.error, /signature/i);
+});
+
+test('an expired listing is hidden until a signed heartbeat', async () => {
+  const store = await books();
+  const created = await sampleListing(store, 'bob', { at: '2026-01-01T00:00:00.000Z', title: 'Tomato starts' });
+  assert.equal(created.ok, true, created.error);
+  const later = '2026-02-01T00:00:00.000Z';
+  assert.equal(sim.listingVisible(created.listing, later), false);
+  const hidden = await sim.marketFeed(store, {}, later);
+  assert.equal(hidden.some((card) => card.id === created.listing.id), false);
+  const refreshed = await sim.refreshListing(store, 'bob', created.listing.id, later);
+  assert.equal(refreshed.ok, true, refreshed.error);
+  const beat = (await store.get('bob')).tape.find((entry) => entry.type === 'heartbeat');
+  assert.equal(await sim.verifyText(created.listing.publicKeyJwk, beat.payload.hash, beat.payload.sig), true);
+  assert.equal(sim.listingVisible(refreshed.listing, later), true);
+  const shown = await sim.marketFeed(store, {}, later);
+  assert.equal(shown.some((card) => card.id === created.listing.id), true);
+});
+
+test('offer, counter, and accept hold the line without moving final balances', async () => {
+  const store = await books();
+  const created = await sampleListing(store, 'bob', { amount: 12, title: 'Tomato starts' });
+  const chat = await sim.openChat(store, 'alice', created.listing.id, '2026-11-06T00:00:00.000Z');
+  assert.equal(chat.ok, true, chat.error);
+  const before = await balances(store);
+  const offer = await sim.makeOffer(store, 'alice', chat.thread.id, 10, '2026-11-06T00:00:00.000Z');
+  assert.equal(offer.ok, true, offer.error);
+  const counter = await sim.counterOffer(store, 'bob', chat.thread.id, 11, '2026-11-06T00:00:00.000Z');
+  assert.equal(counter.ok, true, counter.error);
+  const accepted = await sim.acceptAndSign(store, 'alice', chat.thread.id, '2026-11-06T00:00:00.000Z');
+  assert.equal(accepted.ok, true, accepted.error);
+  assert.equal(accepted.thread.status, 'pending');
+  const after = await balances(store);
+  assert.deepEqual(after, before);
+  assert.equal(sim.heldBy(await store.get('alice')), 11);
+  assert.equal(sim.replay(await store.get('alice')).balance, before.alice);
+  assert.equal((await store.get('bob')).tape.some((entry) => entry.type === 'HOLD' && entry.payload.role === 'seller'), true);
+  assert.equal((await store.get('alice')).tape.some((entry) => entry.type === 'transfer'), false);
+});
+
+test('the dual-sign handoff settles both books once', async () => {
+  const store = await books();
+  const created = await sampleListing(store, 'charlie', { amount: 22, title: 'Bike tune' });
+  const chat = await sim.openChat(store, 'bob', created.listing.id);
+  await sim.makeOffer(store, 'bob', chat.thread.id, 20);
+  const accepted = await sim.acceptAndSign(store, 'charlie', chat.thread.id);
+  assert.equal(accepted.thread.status, 'pending');
+  const before = await balances(store);
+  const shown = await sim.buyerHandoff(store, 'bob', chat.thread.id);
+  assert.equal(shown.ok, true, shown.error);
+  assert.match(shown.encoded, /^lgme1\./);
+  const settled = await sim.sellerHandoff(store, 'charlie', shown.encoded);
+  assert.equal(settled.ok, true, settled.error);
+  assert.equal(settled.moved, true);
+  const after = await balances(store);
+  assert.equal(after.bob, sim.round2(before.bob - 20));
+  assert.equal(after.charlie, sim.round2(before.charlie + 20));
+  assert.equal(sim.heldBy(await store.get('bob')), 0);
+  const again = await sim.sellerHandoff(store, 'charlie', shown.encoded);
+  assert.equal(again.ok, false);
+  assert.match(again.error, /already used/);
+  assert.equal((await balances(store)).bob, after.bob);
+});
+
+test('cancel releases a pending hold and leaves balances', async () => {
+  const store = await books();
+  const created = await sampleListing(store, 'alice');
+  const chat = await sim.openChat(store, 'bob', created.listing.id);
+  await sim.makeOffer(store, 'bob', chat.thread.id, 12);
+  await sim.acceptAndSign(store, 'alice', chat.thread.id);
+  const before = await balances(store);
+  assert.equal(sim.heldBy(await store.get('bob')), 12);
+  const cancelled = await sim.cancelDeal(store, 'bob', chat.thread.id);
+  assert.equal(cancelled.ok, true, cancelled.error);
+  assert.equal(cancelled.unchanged, true);
+  assert.equal(cancelled.held, 0);
+  assert.deepEqual(await balances(store), before);
+  const expiredStore = await books();
+  const listing = await sampleListing(expiredStore, 'alice');
+  const second = await sim.openChat(expiredStore, 'charlie', listing.listing.id, '2026-11-06T00:00:00.000Z');
+  await sim.makeOffer(expiredStore, 'charlie', second.thread.id, 10, '2026-11-06T00:00:00.000Z');
+  await sim.acceptAndSign(expiredStore, 'alice', second.thread.id, '2026-11-06T00:00:00.000Z');
+  const expired = await sim.expireDeal(expiredStore, second.thread.id, '2026-12-01T00:00:00.000Z');
+  assert.equal(expired.expired, true);
+  assert.equal(expired.unchanged, true);
+  assert.equal(expired.held, 0);
+});
+
+test('a floor-violating offer is blocked and a refusal moves nothing', async () => {
+  const store = await books();
+  const alice = await store.get('alice');
+  alice.kyc = { status: 'VERIFIED', simulated: true };
+  await store.set('alice', alice);
+  const created = await sampleListing(store, 'bob', { amount: 90 });
+  const chat = await sim.openChat(store, 'alice', created.listing.id);
+  const before = await balances(store);
+  const blocked = await sim.makeOffer(store, 'alice', chat.thread.id, 81);
+  assert.equal(blocked.ok, false);
+  assert.equal(blocked.error, 'Blocked: Floor stays senior');
+  assert.equal(sim.heldBy(await store.get('alice')), 0);
+  assert.deepEqual(await balances(store), before);
+  const allowed = await sim.makeOffer(store, 'alice', chat.thread.id, 10);
+  assert.equal(allowed.ok, true, allowed.error);
+  const refused = await sim.refuseDeal(store, 'bob', chat.thread.id, 'REFUSAL');
+  assert.equal(refused.ok, true, refused.error);
+  assert.equal(refused.unchanged, true);
+  assert.equal(refused.held, 0);
+  const line = (await store.get('bob')).tape.find((entry) => entry.type === 'refusal' && entry.payload.threadId === chat.thread.id);
+  assert.equal(line.payload.role, 'third-seat');
+  assert.equal(line.payload.penalty, false);
+  assert.deepEqual(await balances(store), before);
+});
+
+test('an unverified member cannot hold more than 20 $lgme', async () => {
+  const store = await books();
+  const dana = await sim.createPeer(store, { id: 'dana', name: 'Dana', balance: 100, floor: 0, creditLimit: -50, at: '2026-11-06T00:00:00.000Z' });
+  assert.equal(dana.ok, true, dana.error);
+  const created = await sampleListing(store, 'alice', { amount: 30 });
+  const chat = await sim.openChat(store, 'dana', created.listing.id);
+  const over = await sim.makeOffer(store, 'dana', chat.thread.id, 21);
+  assert.equal(over.ok, false);
+  assert.match(over.error, /20 \$lgme/);
+  const first = await sim.makeOffer(store, 'dana', chat.thread.id, 15);
+  assert.equal(first.ok, true, first.error);
+  const accepted = await sim.acceptAndSign(store, 'alice', chat.thread.id);
+  assert.equal(accepted.thread.status, 'pending');
+  assert.equal(sim.replay(await store.get('dana')).balance, 100);
+  const again = await sim.openChat(store, 'dana', (await sampleListing(store, 'bob', { title: 'Seedlings', amount: 10 })).listing.id);
+  const second = await sim.makeOffer(store, 'dana', again.thread.id, 6);
+  assert.equal(second.ok, false);
+  assert.match(second.error, /20 \$lgme/);
+  assert.equal(sim.heldBy(await store.get('dana')), 15);
 });

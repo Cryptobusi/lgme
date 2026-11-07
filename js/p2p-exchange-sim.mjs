@@ -16,6 +16,7 @@ export const DEMO_OPENING = Object.freeze({
 
 export const MOCK_GRANT = 100;
 export const UNVERIFIED_SEND_LIMIT = 20;
+export const LISTING_DAYS = 14;
 export const KDF_ITERATIONS = 100000;
 
 export function layoutMode({ width, coarse = false, uaMobile = false } = {}) {
@@ -25,7 +26,7 @@ export function layoutMode({ width, coarse = false, uaMobile = false } = {}) {
   if (uaMobile && coarse && w <= 1023) return 'phone';
   return 'desk';
 }
-const MESSAGE_KINDS = new Set(['proposal', 'countersign', 'refusal', 'transfer', 'attestation', 'iou', 'tape']);
+const MESSAGE_KINDS = new Set(['proposal', 'countersign', 'refusal', 'transfer', 'attestation', 'iou', 'tape', 'handoff']);
 
 export function canonicalJSON(value) {
   if (value === null || typeof value !== 'object') return JSON.stringify(value);
@@ -331,6 +332,11 @@ export function entryDetail(entry, names = {}) {
   if (entry.type === 'KYC_STARTED') return 'KYC started. Details stay on this device.';
   if (entry.type === 'KYC_2FA_OK') return 'KYC code confirmed.';
   if (entry.type === 'KYC_VOUCHED' || entry.type === 'VERIFIED') return 'Verified. A member vouched.';
+  if (entry.type === 'listing') return `Listing ${payload.title || ''} ${payload.amount ?? ''} $lgme`.trim();
+  if (entry.type === 'heartbeat') return `Listing refreshed ${payload.listingId ? String(payload.listingId).slice(0, 12) : ''}`.trim();
+  if (entry.type === 'HOLD') return `Hold pending ${payload.amount} $lgme ${name(payload.buyerId)} → ${name(payload.sellerId)}`.trim();
+  if (entry.type === 'HOLD_RELEASE') return 'Hold released. Nothing settled.';
+  if (entry.type === 'HANDOFF') return `Handoff settled ${payload.amount} $lgme`.trim();
   if (entry.type === 'countersign') {
     return `${name(payload.by)} countersigned ${payload.exchangeId ? payload.exchangeId.slice(0, 12) : ''}`.trim();
   }
@@ -1141,7 +1147,7 @@ export async function createTransfer(store, fromId, spec) {
   if (!Number.isFinite(amount) || amount <= 0) return fail('Enter an amount greater than zero.');
   const limited = sendLimitReason(from, amount);
   if (limited) return fail(limited);
-  const next = round2(replay(from).balance - amount);
+  const next = round2(replay(from).balance - heldBy(from) - amount);
   const blocked = floorBlockReason(from, next);
   if (blocked) return fail(blocked);
   const at = spec.at || nowIso();
@@ -1183,7 +1189,7 @@ export async function autoDeliverTransfer(store, fromId, spec) {
   if (limited) return { ok: false, error: limited, sent: false };
   const unlocked = await unlockWallet(from, spec.passphrase, spec.code, spec.unixSeconds ?? Math.floor(Date.now() / 1000));
   if (!unlocked.ok) return { ok: false, error: unlocked.error, sent: false };
-  const next = round2(replay(from).balance - amount);
+  const next = round2(replay(from).balance - heldBy(from) - amount);
   const blocked = floorBlockReason(from, next);
   if (blocked) return { ok: false, error: blocked, sent: false };
   const recipient = await store.get(toId);
@@ -1552,7 +1558,7 @@ export function sendLimitReason(peer, amount) {
   if (kycStatus(peer) === 'VERIFIED') return '';
   const figure = round2(amount);
   if (!Number.isFinite(figure)) return 'Enter an amount greater than zero.';
-  if (figure > UNVERIFIED_SEND_LIMIT + 1e-9 || round2(outboundSent(peer) + figure) > UNVERIFIED_SEND_LIMIT + 1e-9) {
+  if (figure > UNVERIFIED_SEND_LIMIT + 1e-9 || round2(outboundSent(peer) + heldBy(peer) + figure) > UNVERIFIED_SEND_LIMIT + 1e-9) {
     return `Unverified members can send up to ${UNVERIFIED_SEND_LIMIT} $lgme.`;
   }
   return '';
@@ -1692,6 +1698,633 @@ async function markDemoVerified(store, peerId, at) {
   return { ok: true, status: 'VERIFIED' };
 }
 
+export function heldBy(peer) {
+  const closed = new Set();
+  for (const entry of peer?.tape || []) {
+    const id = entry.payload?.holdId;
+    if (id && (entry.type === 'HOLD_RELEASE' || entry.type === 'HANDOFF')) closed.add(id);
+  }
+  let sum = 0;
+  for (const entry of peer?.tape || []) {
+    if (entry.type !== 'HOLD' || entry.payload?.role !== 'buyer') continue;
+    if (closed.has(entry.payload.holdId)) continue;
+    sum = round2(sum + Number(entry.payload.amount || 0));
+  }
+  return sum;
+}
+
+export function clearingCount(peer) {
+  return (peer?.tape || []).filter((entry) => entry.type === 'transfer' || entry.type === 'settlement' || entry.type === 'HANDOFF').length;
+}
+
+export function peerStanding(peer) {
+  let score = 40;
+  if (kycStatus(peer) === 'VERIFIED') score += 30;
+  score += Math.min(20, clearingCount(peer) * 2);
+  const balance = replay(peer).balance;
+  if (balance > terms(peer).floor + 1e-9) score += 10;
+  return Math.min(100, score);
+}
+
+export function peerProfile(peer, at = nowIso()) {
+  const balance = replay(peer).balance;
+  const { floor } = terms(peer);
+  const aboveFloor = round2(balance - floor);
+  const span = Math.max(Math.abs(balance), Math.abs(floor), 1);
+  const utilization = balance <= floor + 1e-9 ? 1 : round2(Math.max(0, Math.min(1, 1 - aboveFloor / span)));
+  const genesis = (peer.tape || []).find((entry) => entry.type === 'genesis');
+  const started = genesis?.at || at;
+  const ageDays = Math.max(0, Math.floor((new Date(at).getTime() - new Date(started).getTime()) / 86400000));
+  return {
+    peerId: peer.id,
+    name: peer.name,
+    clearingCount: clearingCount(peer),
+    balance,
+    floor,
+    aboveFloor,
+    utilization,
+    ageDays,
+    status: kycStatus(peer),
+    standing: peerStanding(peer),
+    held: heldBy(peer)
+  };
+}
+
+export function listingCore(spec) {
+  return {
+    simulated: true,
+    sellerId: spec.sellerId,
+    title: String(spec.title || '').trim(),
+    category: String(spec.category || '').trim(),
+    condition: String(spec.condition || '').trim(),
+    pickup: String(spec.pickup || '').trim(),
+    circle: String(spec.circle || '').trim(),
+    area: String(spec.area || '').trim(),
+    amount: round2(spec.amount),
+    referenceId: spec.referenceId || null,
+    referenceAvg: spec.referenceAvg == null || spec.referenceAvg === '' ? null : spec.referenceAvg,
+    photoHash: String(spec.photoHash || ''),
+    unit: '$lgme'
+  };
+}
+
+function addDays(iso, days) {
+  return new Date(new Date(iso).getTime() + days * 86400000).toISOString();
+}
+
+export function listingVisible(listing, at = nowIso()) {
+  if (!listing || listing.status === 'removed' || listing.status === 'settled') return false;
+  return new Date(listing.expiresAt).getTime() > new Date(at).getTime();
+}
+
+export async function verifyListing(listing) {
+  if (!listing) return { ok: false, error: 'No listing.' };
+  const originHash = await sha256(canonicalJSON(listingCore(listing)));
+  if (originHash !== listing.originHash || originHash !== listing.id) return { ok: false, error: 'Origin hash does not match.' };
+  const valid = await verifyText(listing.publicKeyJwk, originHash, listing.sig);
+  if (!valid) return { ok: false, error: 'Listing signature does not verify.' };
+  return { ok: true, originHash };
+}
+
+async function loadAll(store) {
+  const ids = await store.listIds();
+  const peers = [];
+  for (const id of ids) {
+    const peer = await store.get(id);
+    if (peer) peers.push(peer);
+  }
+  return peers;
+}
+
+async function findListing(store, listingId) {
+  for (const peer of await loadAll(store)) {
+    const listing = peer.listings?.[listingId];
+    if (listing) return { peer, listing };
+  }
+  return null;
+}
+
+function spendBlock(buyer, amount) {
+  const figure = round2(amount);
+  if (!Number.isFinite(figure) || figure <= 0) return 'Enter an amount greater than zero.';
+  const limited = sendLimitReason(buyer, figure);
+  if (limited) return limited;
+  const next = round2(replay(buyer).balance - heldBy(buyer) - figure);
+  return floorBlockReason(buyer, next);
+}
+
+export async function createListing(store, sellerId, spec = {}) {
+  const seller = await store.get(sellerId);
+  if (!seller) return fail('Unknown peer.');
+  if (!seller.privateKeyJwk) return fail('Wallet is locked.');
+  const photo = String(spec.photo || '');
+  const photoHash = spec.photoHash || (photo ? await sha256(photo) : '');
+  const core = listingCore({ ...spec, sellerId, photoHash });
+  if (!core.title) return fail('Name the item.');
+  if (!core.category || !core.condition || !core.pickup || !core.circle) return fail('Add category, condition, pickup, and a circle.');
+  if (!Number.isFinite(core.amount) || core.amount <= 0) return fail('Enter an amount greater than zero.');
+  if (!/^[0-9a-f]{64}$/i.test(core.photoHash)) return fail('Add a photo first.');
+  const originHash = await sha256(canonicalJSON(core));
+  const sig = await signText(seller.privateKeyJwk, originHash);
+  const at = spec.at || nowIso();
+  const listing = {
+    ...core,
+    id: originHash,
+    originHash,
+    sig,
+    publicKeyJwk: seller.publicKeyJwk,
+    photo,
+    createdAt: at,
+    heartbeatAt: at,
+    expiresAt: addDays(at, LISTING_DAYS),
+    status: 'active'
+  };
+  seller.listings = seller.listings || {};
+  seller.listings[listing.id] = listing;
+  await appendEntry(seller, 'listing', {
+    listingId: listing.id,
+    originHash,
+    title: listing.title,
+    amount: listing.amount,
+    circle: listing.circle,
+    expiresAt: listing.expiresAt,
+    sig
+  }, at);
+  await store.set(sellerId, seller);
+  return { ok: true, listing };
+}
+
+export async function refreshListing(store, sellerId, listingId, at = nowIso()) {
+  const seller = await store.get(sellerId);
+  const listing = seller?.listings?.[listingId];
+  if (!seller || !listing || listing.sellerId !== sellerId) return fail('No listing.');
+  if (!seller.privateKeyJwk) return fail('Wallet is locked.');
+  const beat = { simulated: true, listingId, originHash: listing.originHash, at };
+  const hash = await sha256(canonicalJSON(beat));
+  const sig = await signText(seller.privateKeyJwk, hash);
+  listing.heartbeatAt = at;
+  listing.expiresAt = addDays(at, LISTING_DAYS);
+  listing.heartbeat = { hash, sig, at };
+  listing.status = 'active';
+  await appendEntry(seller, 'heartbeat', { listingId, expiresAt: listing.expiresAt, hash, sig }, at);
+  await store.set(sellerId, seller);
+  return { ok: true, listing };
+}
+
+export async function marketFeed(store, query = {}, at = nowIso()) {
+  const cards = [];
+  const q = String(query.q || '').trim().toLowerCase();
+  const min = query.min === '' || query.min == null ? null : round2(query.min);
+  const max = query.max === '' || query.max == null ? null : round2(query.max);
+  for (const peer of await loadAll(store)) {
+    for (const listing of Object.values(peer.listings || {})) {
+      if (!listingVisible(listing, at)) continue;
+      if (query.category && listing.category !== query.category) continue;
+      if (query.condition && listing.condition !== query.condition) continue;
+      if (query.pickup && listing.pickup !== query.pickup) continue;
+      if (query.circle && listing.circle !== query.circle) continue;
+      if (q && !`${listing.title} ${listing.circle} ${listing.area}`.toLowerCase().includes(q)) continue;
+      if (min != null && Number.isFinite(min) && listing.amount < min) continue;
+      if (max != null && Number.isFinite(max) && listing.amount > max) continue;
+      const checked = await verifyListing(listing);
+      cards.push({
+        ...listing,
+        photo: listing.photo,
+        sellerName: peer.name,
+        verified: kycStatus(peer) === 'VERIFIED',
+        standing: peerStanding(peer),
+        signatureOk: checked.ok
+      });
+    }
+  }
+  cards.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+  return cards;
+}
+
+export async function circlesOf(store, at = nowIso()) {
+  const feed = await marketFeed(store, {}, at);
+  const map = new Map();
+  for (const card of feed) {
+    if (!map.has(card.circle)) map.set(card.circle, { name: card.circle, area: card.area || '', listings: 0, members: new Set() });
+    const row = map.get(card.circle);
+    row.listings += 1;
+    row.members.add(card.sellerId);
+    if (card.area && !row.area) row.area = card.area;
+  }
+  return [...map.values()].map((row) => ({ name: row.name, area: row.area, listings: row.listings, members: [...row.members] }));
+}
+
+function dealTerms(thread, amount) {
+  return {
+    simulated: true,
+    kind: 'market-deal',
+    threadId: thread.id,
+    listingId: thread.listingId,
+    buyerId: thread.buyerId,
+    sellerId: thread.sellerId,
+    amount: round2(amount),
+    unit: '$lgme'
+  };
+}
+
+async function saveThread(store, thread) {
+  for (const id of [thread.buyerId, thread.sellerId]) {
+    const peer = await store.get(id);
+    if (!peer) continue;
+    peer.threads = peer.threads || {};
+    peer.threads[thread.id] = structuredClone(thread);
+    await store.set(id, peer);
+  }
+}
+
+async function loadThread(store, threadId) {
+  for (const peer of await loadAll(store)) {
+    if (peer.threads?.[threadId]) return peer.threads[threadId];
+  }
+  return null;
+}
+
+export async function listThreads(store, peerId) {
+  const peer = await store.get(peerId);
+  return Object.values(peer?.threads || {}).sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
+}
+
+export async function openChat(store, buyerId, listingId, at = nowIso()) {
+  const found = await findListing(store, listingId);
+  if (!found) return fail('That listing is not on this desk.');
+  if (!listingVisible(found.listing, at)) return fail('That listing has expired.');
+  const buyer = await store.get(buyerId);
+  if (!buyer) return fail('Unknown peer.');
+  if (buyerId === found.listing.sellerId) return fail('This is your listing.');
+  const existing = Object.values(buyer.threads || {}).find((thread) => thread.listingId === listingId && thread.buyerId === buyerId && !['settled', 'refused', 'cancelled'].includes(thread.status));
+  if (existing) return { ok: true, thread: existing };
+  const id = await sha256(canonicalJSON({ simulated: true, listingId, buyerId, sellerId: found.listing.sellerId, at }));
+  const thread = {
+    id,
+    simulated: true,
+    listingId,
+    title: found.listing.title,
+    buyerId,
+    sellerId: found.listing.sellerId,
+    amount: found.listing.amount,
+    status: 'open',
+    messages: [],
+    buyerSig: '',
+    sellerSig: '',
+    termsHash: '',
+    holdId: '',
+    nonce: '',
+    handoffCode: '',
+    handoffUsed: false,
+    createdAt: at,
+    updatedAt: at
+  };
+  await saveThread(store, thread);
+  return { ok: true, thread };
+}
+
+async function postLine(store, thread, fromId, text, at) {
+  thread.messages.push({ fromId, text, at });
+  thread.updatedAt = at;
+  await saveThread(store, thread);
+  return { ok: true, thread };
+}
+
+export async function postChat(store, actorId, threadId, text, at = nowIso()) {
+  const thread = await loadThread(store, threadId);
+  if (!thread) return fail('No chat.');
+  if (actorId !== thread.buyerId && actorId !== thread.sellerId) return fail('You are not in this chat.');
+  const line = String(text || '').trim();
+  if (!line) return fail('Write a note.');
+  return postLine(store, thread, actorId, line, at);
+}
+
+async function signTerms(peer, thread, amount) {
+  const terms = dealTerms(thread, amount);
+  const termsHash = await sha256(canonicalJSON(terms));
+  const sig = await signText(peer.privateKeyJwk, termsHash);
+  return { terms, termsHash, sig };
+}
+
+export async function makeOffer(store, buyerId, threadId, amount, at = nowIso()) {
+  const thread = await loadThread(store, threadId);
+  const buyer = await store.get(buyerId);
+  if (!thread || !buyer) return fail('No chat.');
+  if (buyerId !== thread.buyerId) return fail('Only the buyer makes the offer.');
+  if (!buyer.privateKeyJwk) return fail('Wallet is locked.');
+  if (['pending', 'settled'].includes(thread.status)) return fail('This chat already has a signed hold.');
+  const blocked = spendBlock(buyer, amount);
+  if (blocked) return fail(blocked);
+  const signed = await signTerms(buyer, thread, amount);
+  thread.amount = signed.terms.amount;
+  thread.termsHash = signed.termsHash;
+  thread.buyerSig = signed.sig;
+  thread.sellerSig = '';
+  thread.status = 'offered';
+  thread.messages.push({ fromId: buyerId, text: `Offer ${signed.terms.amount} $lgme`, at, kind: 'offer' });
+  thread.updatedAt = at;
+  await saveThread(store, thread);
+  return { ok: true, thread, held: heldBy(buyer) };
+}
+
+export async function counterOffer(store, sellerId, threadId, amount, at = nowIso()) {
+  const thread = await loadThread(store, threadId);
+  const seller = await store.get(sellerId);
+  const buyer = thread ? await store.get(thread.buyerId) : null;
+  if (!thread || !seller || !buyer) return fail('No chat.');
+  if (sellerId !== thread.sellerId) return fail('Only the seller counters.');
+  if (!seller.privateKeyJwk) return fail('Wallet is locked.');
+  if (['pending', 'settled'].includes(thread.status)) return fail('This chat already has a signed hold.');
+  const blocked = spendBlock(buyer, amount);
+  if (blocked) return fail(blocked);
+  const signed = await signTerms(seller, thread, amount);
+  thread.amount = signed.terms.amount;
+  thread.termsHash = signed.termsHash;
+  thread.sellerSig = signed.sig;
+  thread.buyerSig = '';
+  thread.status = 'countered';
+  thread.messages.push({ fromId: sellerId, text: `Counter ${signed.terms.amount} $lgme`, at, kind: 'counter' });
+  thread.updatedAt = at;
+  await saveThread(store, thread);
+  return { ok: true, thread };
+}
+
+async function writeHold(store, thread, at) {
+  const buyer = await store.get(thread.buyerId);
+  const seller = await store.get(thread.sellerId);
+  if (!buyer?.privateKeyJwk || !seller?.privateKeyJwk) return fail('Both books need to be unlocked to hold the line.');
+  const blocked = spendBlock(buyer, thread.amount);
+  if (blocked) return fail(blocked);
+  const holdId = await sha256(canonicalJSON({ threadId: thread.id, termsHash: thread.termsHash, amount: thread.amount }));
+  const payload = {
+    simulated: true,
+    holdId,
+    threadId: thread.id,
+    listingId: thread.listingId,
+    buyerId: thread.buyerId,
+    sellerId: thread.sellerId,
+    amount: thread.amount,
+    termsHash: thread.termsHash,
+    buyerSig: thread.buyerSig,
+    sellerSig: thread.sellerSig
+  };
+  await appendEntry(buyer, 'HOLD', { ...payload, role: 'buyer' }, at);
+  await store.set(thread.buyerId, buyer);
+  const freshSeller = await store.get(thread.sellerId);
+  await appendEntry(freshSeller, 'HOLD', { ...payload, role: 'seller' }, at);
+  await store.set(thread.sellerId, freshSeller);
+  thread.holdId = holdId;
+  thread.status = 'pending';
+  thread.expiresAt = addDays(at, LISTING_DAYS);
+  thread.updatedAt = at;
+  thread.messages.push({ fromId: 'desk', text: `Pending hold ${thread.amount} $lgme. Final balances have not moved.`, at, kind: 'hold' });
+  await saveThread(store, thread);
+  return { ok: true, thread, holdId };
+}
+
+export async function acceptAndSign(store, actorId, threadId, at = nowIso()) {
+  const thread = await loadThread(store, threadId);
+  const actor = await store.get(actorId);
+  if (!thread || !actor) return fail('No chat.');
+  if (actorId !== thread.buyerId && actorId !== thread.sellerId) return fail('You are not in this chat.');
+  if (!actor.privateKeyJwk) return fail('Wallet is locked.');
+  if (thread.status === 'settled') return fail('This chat already settled.');
+  if (thread.status === 'pending') return fail('Both signatures are already on the hold.');
+  if (!thread.termsHash || !thread.amount) return fail('Name an amount first.');
+  const mine = actorId === thread.buyerId ? thread.buyerSig : thread.sellerSig;
+  const theirs = actorId === thread.buyerId ? thread.sellerSig : thread.buyerSig;
+  if (mine && theirs) return fail('Both signatures are already on the hold.');
+  if (!theirs && mine) return fail('Waiting for the other signature.');
+  if (!theirs && !mine) return fail('Name an amount first.');
+  const signed = await signTerms(actor, thread, thread.amount);
+  if (signed.termsHash !== thread.termsHash) return fail('The amount changed. Sign the current terms.');
+  if (actorId === thread.buyerId) thread.buyerSig = signed.sig;
+  else thread.sellerSig = signed.sig;
+  thread.messages.push({ fromId: actorId, text: 'Accept & Sign', at, kind: 'accept' });
+  thread.updatedAt = at;
+  if (thread.buyerSig && thread.sellerSig) return writeHold(store, thread, at);
+  await saveThread(store, thread);
+  return { ok: true, thread, pending: false };
+}
+
+async function releaseHold(store, thread, type, at) {
+  if (!thread.holdId || thread.status !== 'pending') return;
+  const payload = { simulated: true, holdId: thread.holdId, threadId: thread.id, amount: thread.amount, listingId: thread.listingId };
+  for (const id of [thread.buyerId, thread.sellerId]) {
+    const peer = await store.get(id);
+    if (!peer?.privateKeyJwk) continue;
+    await appendEntry(peer, type, payload, at);
+    await store.set(id, peer);
+  }
+}
+
+export async function refuseDeal(store, actorId, threadId, statement, at = nowIso()) {
+  const thread = await loadThread(store, threadId);
+  const actor = await store.get(actorId);
+  if (!thread || !actor) return fail('No chat.');
+  if (actorId !== thread.buyerId && actorId !== thread.sellerId) return fail('You are not in this chat.');
+  if (thread.status === 'settled') return fail('A settled line stays settled.');
+  if (!actor.privateKeyJwk) return fail('Wallet is locked.');
+  const buyerBefore = replay(await store.get(thread.buyerId)).balance;
+  const sellerBefore = replay(await store.get(thread.sellerId)).balance;
+  const text = String(statement || 'REFUSAL').trim() || 'REFUSAL';
+  if (thread.status === 'pending') await releaseHold(store, thread, 'HOLD_RELEASE', at);
+  const fresh = await store.get(actorId);
+  await appendEntry(fresh, 'refusal', {
+    simulated: true,
+    role: 'third-seat',
+    statement: text,
+    threadId,
+    listingId: thread.listingId,
+    penalty: false
+  }, at);
+  await store.set(actorId, fresh);
+  thread.status = 'refused';
+  thread.buyerSig = '';
+  thread.sellerSig = '';
+  thread.holdId = '';
+  thread.messages.push({ fromId: actorId, text, at, kind: 'refusal' });
+  thread.updatedAt = at;
+  await saveThread(store, thread);
+  const buyer = await store.get(thread.buyerId);
+  const seller = await store.get(thread.sellerId);
+  return {
+    ok: true,
+    thread,
+    unchanged: replay(buyer).balance === buyerBefore && replay(seller).balance === sellerBefore,
+    held: heldBy(buyer)
+  };
+}
+
+export async function cancelDeal(store, actorId, threadId, at = nowIso()) {
+  const thread = await loadThread(store, threadId);
+  const actor = await store.get(actorId);
+  if (!thread || !actor) return fail('No chat.');
+  if (actorId !== thread.buyerId && actorId !== thread.sellerId) return fail('You are not in this chat.');
+  if (thread.status === 'settled') return fail('A settled line stays settled.');
+  if (!actor.privateKeyJwk) return fail('Wallet is locked.');
+  const before = replay(await store.get(thread.buyerId)).balance;
+  if (thread.status === 'pending') await releaseHold(store, thread, 'HOLD_RELEASE', at);
+  thread.status = 'cancelled';
+  thread.holdId = '';
+  thread.messages.push({ fromId: actorId, text: 'Cancelled. The hold is released.', at, kind: 'cancel' });
+  thread.updatedAt = at;
+  await saveThread(store, thread);
+  const buyer = await store.get(thread.buyerId);
+  return { ok: true, thread, unchanged: replay(buyer).balance === before, held: heldBy(buyer) };
+}
+
+export async function expireDeal(store, threadId, at = nowIso()) {
+  const thread = await loadThread(store, threadId);
+  if (!thread) return fail('No chat.');
+  if (thread.status !== 'pending') return { ok: true, thread, expired: false };
+  if (new Date(thread.expiresAt).getTime() > new Date(at).getTime()) return { ok: true, thread, expired: false };
+  const before = replay(await store.get(thread.buyerId)).balance;
+  await releaseHold(store, thread, 'HOLD_RELEASE', at);
+  thread.status = 'cancelled';
+  thread.holdId = '';
+  thread.messages.push({ fromId: 'desk', text: 'The hold expired. Nothing settled.', at, kind: 'expire' });
+  thread.updatedAt = at;
+  await saveThread(store, thread);
+  const buyer = await store.get(thread.buyerId);
+  return { ok: true, thread, expired: true, unchanged: replay(buyer).balance === before, held: heldBy(buyer) };
+}
+
+export async function buyerHandoff(store, buyerId, threadId, at = nowIso()) {
+  const thread = await loadThread(store, threadId);
+  const buyer = await store.get(buyerId);
+  if (!thread || !buyer) return fail('No chat.');
+  if (buyerId !== thread.buyerId) return fail('The buyer shows the handoff.');
+  if (thread.status !== 'pending' || !thread.holdId) return fail('Nothing is waiting for handoff.');
+  if (thread.handoffUsed) return fail('This handoff was already used.');
+  if (!buyer.privateKeyJwk) return fail('Wallet is locked.');
+  if (thread.handoffCode && thread.nonce) return { ok: true, encoded: thread.handoffCode, nonce: thread.nonce, thread };
+  const nonce = await sha256(canonicalJSON({ threadId, holdId: thread.holdId, at, singleUse: true }));
+  const sealed = await sealMessage(buyer, 'handoff', {
+    simulated: true,
+    threadId,
+    holdId: thread.holdId,
+    nonce,
+    amount: thread.amount,
+    buyerId: thread.buyerId,
+    sellerId: thread.sellerId,
+    listingId: thread.listingId
+  });
+  if (!sealed.ok) return sealed;
+  thread.nonce = nonce;
+  thread.handoffCode = encodeMessage(sealed.message);
+  thread.updatedAt = at;
+  await saveThread(store, thread);
+  return { ok: true, encoded: thread.handoffCode, nonce, thread };
+}
+
+export async function sellerHandoff(store, sellerId, encoded, at = nowIso()) {
+  const opened = await openMessage(encoded);
+  if (!opened.ok) return opened;
+  if (opened.message.kind !== 'handoff') return fail('This is not a handoff.');
+  const body = opened.message.body || {};
+  if (body.sellerId !== sellerId) return fail('This handoff is for a different peer.');
+  const seller = await store.get(sellerId);
+  if (!seller?.privateKeyJwk) return fail('Wallet is locked.');
+  const thread = await loadThread(store, body.threadId);
+  if (!thread || thread.holdId !== body.holdId) return fail('Nothing is waiting for handoff.');
+  if (thread.handoffUsed || thread.status === 'settled' || (thread.nonce && thread.nonce !== body.nonce)) return fail('This handoff was already used.');
+  if (thread.status !== 'pending') return fail('Nothing is waiting for handoff.');
+  const buyer = await store.get(thread.buyerId);
+  if (!buyer?.privateKeyJwk) return fail('Unlock the buyer book on this device, or carry the settlement back.');
+  const beforeBuyer = replay(buyer).balance;
+  const beforeSeller = replay(seller).balance;
+  const sellerSig = await signText(seller.privateKeyJwk, body.nonce);
+  const payload = {
+    simulated: true,
+    holdId: thread.holdId,
+    threadId: thread.id,
+    listingId: thread.listingId,
+    amount: thread.amount,
+    fromId: thread.buyerId,
+    toId: thread.sellerId,
+    nonce: body.nonce,
+    buyerSig: opened.message.sig,
+    sellerSig
+  };
+  await appendEntry(buyer, 'HANDOFF', payload, at);
+  await appendEntry(buyer, 'transfer', {
+    fromId: thread.buyerId,
+    toId: thread.sellerId,
+    amount: thread.amount,
+    unit: '$lgme',
+    note: thread.title || 'Market handoff',
+    direction: 'out',
+    mock: true,
+    holdId: thread.holdId
+  }, at);
+  await store.set(thread.buyerId, buyer);
+  const freshSeller = await store.get(sellerId);
+  await appendEntry(freshSeller, 'HANDOFF', payload, at);
+  await appendEntry(freshSeller, 'transfer', {
+    fromId: thread.buyerId,
+    toId: thread.sellerId,
+    amount: thread.amount,
+    unit: '$lgme',
+    note: thread.title || 'Market handoff',
+    direction: 'in',
+    mock: true,
+    holdId: thread.holdId
+  }, at);
+  await store.set(sellerId, freshSeller);
+  thread.status = 'settled';
+  thread.handoffUsed = true;
+  thread.sellerHandoffSig = sellerSig;
+  thread.messages.push({ fromId: sellerId, text: `Settled ${thread.amount} $lgme.`, at, kind: 'settled' });
+  thread.updatedAt = at;
+  await saveThread(store, thread);
+  const buyerAfter = await store.get(thread.buyerId);
+  const sellerAfter = await store.get(sellerId);
+  return {
+    ok: true,
+    thread,
+    buyerBalance: replay(buyerAfter).balance,
+    sellerBalance: replay(sellerAfter).balance,
+    moved: replay(buyerAfter).balance === round2(beforeBuyer - thread.amount) && replay(sellerAfter).balance === round2(beforeSeller + thread.amount),
+    held: heldBy(buyerAfter)
+  };
+}
+
+async function swatch(label, color) {
+  const photo = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="80" height="80" fill="${color}"/><text x="8" y="44" fill="#1c1b19" font-size="12">${label}</text></svg>`)}`;
+  return { photo, photoHash: await sha256(photo) };
+}
+
+export async function seedMarket(store, at = nowIso()) {
+  const samples = [
+    { sellerId: 'alice', title: 'Walkway tools', category: 'Tools', condition: 'Good', pickup: 'Pickup', circle: 'Walkway', area: 'Near the path', amount: 18, color: '#F97316', label: 'Tools' },
+    { sellerId: 'bob', title: 'Tomato starts', category: 'Food', condition: 'Good', pickup: 'Porch', circle: 'Soil', area: 'Garden bench', amount: 12, color: '#86efac', label: 'Food' },
+    { sellerId: 'charlie', title: 'Bike tune', category: 'Services', condition: 'Fair', pickup: 'Meet', circle: 'Logistics', area: 'By the shop', amount: 22, color: '#93c5fd', label: 'Tune' }
+  ];
+  const listings = {};
+  for (const sample of samples) {
+    const photo = await swatch(sample.label, sample.color);
+    const created = await createListing(store, sample.sellerId, { ...sample, ...photo, at });
+    if (!created.ok) return created;
+    listings[sample.sellerId] = created.listing;
+  }
+  const chat = await openChat(store, 'charlie', listings.alice.id, at);
+  if (!chat.ok) return chat;
+  const offer = await makeOffer(store, 'charlie', chat.thread.id, 16, at);
+  if (!offer.ok) return offer;
+  const counter = await counterOffer(store, 'alice', chat.thread.id, 17, at);
+  if (!counter.ok) return counter;
+  const pendingChat = await openChat(store, 'bob', listings.charlie.id, at);
+  if (!pendingChat.ok) return pendingChat;
+  const pendingOffer = await makeOffer(store, 'bob', pendingChat.thread.id, 20, at);
+  if (!pendingOffer.ok) return pendingOffer;
+  const accepted = await acceptAndSign(store, 'charlie', pendingChat.thread.id, at);
+  if (!accepted.ok) return accepted;
+  const handoff = await buyerHandoff(store, 'bob', pendingChat.thread.id, at);
+  if (!handoff.ok) return handoff;
+  return { ok: true, listings, threadId: chat.thread.id, pendingThreadId: pendingChat.thread.id };
+}
+
 export async function resetAndSeed(store) {
   await store.clear();
   const at = nowIso();
@@ -1716,5 +2349,7 @@ export async function resetAndSeed(store) {
     at
   });
   if (!proposed.ok) return proposed;
-  return { ok: true, exchangeId: proposed.exchangeId };
+  const market = await seedMarket(store, at);
+  if (!market.ok) return market;
+  return { ok: true, exchangeId: proposed.exchangeId, threadId: market.threadId, pendingThreadId: market.pendingThreadId };
 }

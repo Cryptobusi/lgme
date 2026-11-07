@@ -30,7 +30,11 @@ const store = {
   }
 };
 const SEAT_KEY = 'lgme-sim:ui:seat';
-const TABS = ['exchange', 'books', 'reconcile', 'wallet', 'devices', 'help'];
+const TABS = ['market', 'circles', 'list', 'chats', 'wallet', 'help'];
+const KNOWN = new Set([...TABS, 'books', 'exchange', 'devices', 'reconcile']);
+const CATEGORIES = ['Goods', 'Services', 'Household', 'Food', 'Tools'];
+const CONDITIONS = ['New', 'Good', 'Fair', 'For parts'];
+const PICKUPS = ['Pickup', 'Porch', 'Meet'];
 let pendingImport = '';
 let carryAddress = '';
 let activeCodeTimer = 0;
@@ -38,6 +42,11 @@ let catalog = [];
 let catalogNotice = 'Reference only, not a price.';
 let busy = false;
 let nameById = {};
+let marketQuery = { q: '', category: '', condition: '', pickup: '', circle: '', min: '', max: '' };
+let openListingId = '';
+let openThreadId = '';
+let listStep = 1;
+let listDraft = { photo: '', photoHash: '', title: '', category: 'Goods', condition: 'Good', pickup: 'Pickup', circle: '', area: '', amount: '', referenceId: '' };
 
 function h(tag, attrs = {}, children = []) {
   const node = document.createElement(tag);
@@ -66,7 +75,7 @@ function tabName() {
   if (raw.includes('lgme1.')) return 'devices';
   const name = raw.split('&')[0];
   if (name === 'resources' || name.startsWith('resources-')) return 'resources';
-  return TABS.includes(name) ? name : 'exchange';
+  return KNOWN.has(name) ? name : 'market';
 }
 
 function rememberSeat(id) {
@@ -138,7 +147,11 @@ async function render() {
   renderSeats(peers, seat);
   renderTabs();
   const tab = tabName();
-  if (tab === 'books') await renderBooks(peers, seat);
+  if (tab === 'market') await renderMarket(peers, seat);
+  else if (tab === 'circles') await renderCircles();
+  else if (tab === 'list') await renderList(seat);
+  else if (tab === 'chats') await renderChats(seat);
+  else if (tab === 'books') await renderBooks(peers, seat);
   else if (tab === 'reconcile') await renderReconcile(peers, seat);
   else if (tab === 'wallet') await renderWallet(peers, seat);
   else if (tab === 'devices') await renderDevices(peers, seat);
@@ -173,7 +186,7 @@ function renderSeats(peers, seat) {
 
 function renderTabs() {
   const tab = tabName();
-  const phoneTab = tab === 'reconcile' ? 'books' : tab === 'resources' ? 'help' : tab;
+  const phoneTab = ['reconcile', 'books', 'devices', 'exchange'].includes(tab) ? 'wallet' : tab === 'resources' ? 'help' : tab;
   for (const name of TABS) {
     const button = document.getElementById(`tab-${name}`);
     button.setAttribute('aria-selected', name === tab ? 'true' : 'false');
@@ -247,8 +260,10 @@ async function resetDemo() {
   try {
     await sim.resetAndSeed(store);
     rememberSeat('alice');
-    setStatus('Demo books restored. Alice has an open 10-unit proposal. Bob can countersign. Charlie can refuse. Nothing has settled.', 'ok');
-    if (location.hash && location.hash !== '#exchange') location.hash = 'exchange';
+    setStatus('Demo books restored. The market has a few listings, one open counter, and one pending handoff. Nothing in the market has settled.', 'ok');
+    openListingId = '';
+    openThreadId = '';
+    if (location.hash && location.hash !== '#market') location.hash = 'market';
     else await render();
   } finally {
     busy = false;
@@ -867,7 +882,7 @@ async function renderWallet(peers, seat) {
     ])
   ];
   if (secret) blocks.push(codeLine, h('div', { id: 'setup-qr' }));
-  blocks.push(kycCard(peer, peers));
+  blocks.push(profileCard(sim.peerProfile(peer)), kycCard(peer, peers));
   if (!peer.wallet?.ciphertext) {
     const passphrase = h('input', { type: 'password', minlength: '8', autocomplete: 'new-password', required: true });
     const form = h('form', {}, [
@@ -908,6 +923,7 @@ async function renderWallet(peers, seat) {
     blocks.push(h('div', { class: 'actions' }, [h('button', { type: 'button', onClick: () => { sessionKeys.delete(seat); setStatus('Wallet locked. SIMULATION.', 'ok'); render(); } }, ['Lock'])]));
     blocks.push(iouSection(peer));
   }
+  blocks.push(deskLinks());
   panel.replaceChildren(...blocks);
   const qrHost = document.getElementById('setup-qr');
   if (qrHost && secret) {
@@ -1252,7 +1268,7 @@ async function acceptIncoming(seat, raw) {
   await render();
 }
 
-async function startScan(video, incoming, preview) {
+async function startScan(video, incoming, preview, onFound) {
   stopAnyCamera();
   if (!navigator.mediaDevices?.getUserMedia || !globalThis.jsQR) {
     setStatus('This browser has no camera reader. Paste the code instead. SIMULATION.', 'bad');
@@ -1282,7 +1298,8 @@ async function startScan(video, incoming, preview) {
         if (found?.data) {
           incoming.value = found.data;
           stopAnyCamera();
-          previewIncoming(currentSeatId(), incoming.value, preview);
+          if (onFound) onFound(found.data);
+          else previewIncoming(currentSeatId(), incoming.value, preview);
           return;
         }
       }
@@ -1298,6 +1315,423 @@ function currentSeatId() {
   return sessionStorage.getItem(SEAT_KEY) || '';
 }
 
+function profileCard(profile) {
+  return h('article', { class: 'card' }, [
+    h('h3', {}, [`${profile.name} · Peer standing ${profile.standing}`]),
+    h('p', { class: 'muted' }, [
+      `${profile.status === 'VERIFIED' ? 'Verified' : 'Unverified'}. Account age ${profile.ageDays} day${profile.ageDays === 1 ? '' : 's'}. Clearing history ${profile.clearingCount}.`
+    ]),
+    h('p', { class: 'muted' }, [
+      `${profile.balance} $lgme · floor ${profile.floor} · ${profile.aboveFloor} above the floor. Credit use versus the floor ${Math.round(profile.utilization * 100)}%.${profile.held ? ` Held ${profile.held} $lgme.` : ''}`
+    ])
+  ]);
+}
+
+function deskLinks() {
+  const go = (name, label) => h('button', { type: 'button', onClick: () => { location.hash = name; } }, [label]);
+  return h('div', { class: 'actions' }, [
+    go('books', 'Ledger'),
+    go('devices', 'Send'),
+    go('exchange', 'Exchange'),
+    go('reconcile', 'Reconcile'),
+    go('help', 'Help'),
+    go('resources', 'Resources')
+  ]);
+}
+
+async function compressPhoto(file) {
+  const bitmap = await createImageBitmap(file);
+  const max = 480;
+  const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+  canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  const photo = canvas.toDataURL('image/jpeg', 0.72);
+  return { photo, photoHash: await sim.sha256(photo) };
+}
+
+function chip(label, on, click) {
+  return h('button', { type: 'button', class: 'chip', 'aria-pressed': on ? 'true' : 'false', onClick: click }, [label]);
+}
+
+async function renderMarket(peers, seat) {
+  stopAnyCamera();
+  const panel = document.getElementById('panel');
+  const me = peers.find((peer) => peer.id === seat);
+  if (openListingId) {
+    const cards = await sim.marketFeed(store, {}, new Date().toISOString());
+    const card = cards.find((item) => item.id === openListingId);
+    if (!card) {
+      openListingId = '';
+    } else {
+      const seller = await store.get(card.sellerId);
+      const profile = sim.peerProfile(seller);
+      const photo = h('img', { class: 'shot', alt: '', src: card.photo || '' });
+      const actions = [];
+      if (card.sellerId === seat) {
+        actions.push(h('button', { type: 'button', class: 'primary', onClick: async () => {
+          const refreshed = await sim.refreshListing(store, seat, card.id);
+          setStatus(refreshed.ok ? 'Listing refreshed with a signed heartbeat. SIMULATION.' : refreshed.error, refreshed.ok ? 'ok' : 'bad');
+          if (refreshed.ok) await render();
+        } }, ['Refresh']));
+      } else {
+        actions.push(h('button', { type: 'button', class: 'primary', onClick: async () => {
+          const chat = await sim.openChat(store, seat, card.id);
+          if (!chat.ok) { setStatus(chat.error, 'bad'); return; }
+          openThreadId = chat.thread.id;
+          location.hash = 'chats';
+        } }, ['Chat']));
+      }
+      panel.replaceChildren(
+        h('button', { type: 'button', class: 'quiet', onClick: () => { openListingId = ''; render(); } }, ['Back to the market']),
+        h('h2', {}, [card.title]),
+        photo,
+        h('p', { class: 'price' }, [`${card.amount} $lgme`]),
+        h('p', {}, [
+          h('span', { class: card.verified ? 'badge badge-verified' : 'badge badge-unverified' }, [card.verified ? 'Verified' : 'Unverified']),
+          ` ${card.sellerName} · ${card.circle} · Peer standing ${card.standing}`
+        ]),
+        h('p', { class: 'muted' }, [`${card.condition} · ${card.pickup}${card.area ? ' · ' + card.area : ''}`]),
+        card.referenceAvg == null ? null : h('p', { class: 'legend' }, [`Reference only, not a price. About ${card.referenceAvg}.`]),
+        h('p', { class: 'legend' }, [card.signatureOk ? `Origin ${shortHash(card.originHash)} verifies.` : 'Origin hash does not verify.']),
+        profileCard(profile),
+        h('div', { class: 'actions' }, actions)
+      );
+      return;
+    }
+  }
+  const feed = await sim.marketFeed(store, marketQuery);
+  const search = h('input', { type: 'search', placeholder: 'Search', value: marketQuery.q, autocomplete: 'off' });
+  const condition = h('select', {}, [option('', 'Any condition', !marketQuery.condition), ...CONDITIONS.map((item) => option(item, item, marketQuery.condition === item))]);
+  const pickup = h('select', {}, [option('', 'Any pickup', !marketQuery.pickup), ...PICKUPS.map((item) => option(item, item, marketQuery.pickup === item))]);
+  const circle = h('select', {}, [option('', 'Any circle', !marketQuery.circle), ...['Walkway', 'Soil', 'Logistics'].map((item) => option(item, item, marketQuery.circle === item))]);
+  const min = h('input', { inputmode: 'decimal', placeholder: 'Min', value: marketQuery.min });
+  const max = h('input', { inputmode: 'decimal', placeholder: 'Max', value: marketQuery.max });
+  const form = h('form', { class: 'grid two' }, [
+    field('Search', search),
+    field('Condition', condition),
+    field('Pickup', pickup),
+    field('Circle', circle),
+    field('Min $lgme', min),
+    field('Max $lgme', max),
+    h('div', { class: 'actions' }, [
+      h('button', { class: 'primary', type: 'submit' }, ['Filter']),
+      h('button', { type: 'button', onClick: () => { marketQuery = { q: '', category: '', condition: '', pickup: '', circle: '', min: '', max: '' }; render(); } }, ['Clear'])
+    ])
+  ]);
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    marketQuery = { ...marketQuery, q: search.value, condition: condition.value, pickup: pickup.value, circle: circle.value, min: min.value, max: max.value };
+    render();
+  });
+  const pills = h('div', { class: 'chips' }, [
+    chip('All', !marketQuery.category, () => { marketQuery.category = ''; render(); }),
+    ...CATEGORIES.map((item) => chip(item, marketQuery.category === item, () => { marketQuery.category = item; render(); }))
+  ]);
+  const grid = h('div', { class: 'market-grid' }, feed.map((card) => h('button', {
+    type: 'button',
+    class: 'card market-card',
+    onClick: () => { openListingId = card.id; render(); }
+  }, [
+    h('img', { alt: '', src: card.photo || '' }),
+    h('h3', {}, [card.title]),
+    h('div', { class: 'price' }, [`${card.amount} $lgme`]),
+    h('div', {}, [h('span', { class: card.verified ? 'badge badge-verified' : 'badge badge-unverified' }, [card.verified ? 'Verified' : 'Unverified'])]),
+    h('small', { class: 'meta' }, [`${card.circle} · Peer standing ${card.standing}`])
+  ])));
+  const mine = await store.get(seat);
+  const standing = mine ? sim.peerProfile(mine) : null;
+  const filters = h('details', {}, [h('summary', {}, ['Filters']), form]);
+  panel.replaceChildren(
+    h('h2', {}, ['Market']),
+    h('p', { class: 'muted' }, [`Ad-free. ${me ? me.name : 'You'} · Peer standing ${standing ? standing.standing : ''}. Nothing here is a paid placement. SIMULATION.`]),
+    pills,
+    filters,
+    feed.length ? grid : h('p', { class: 'empty' }, ['No listings match. List one, or clear the filters.']),
+    standing ? profileCard(standing) : null
+  );
+}
+
+async function renderCircles() {
+  stopAnyCamera();
+  const panel = document.getElementById('panel');
+  const circles = await sim.circlesOf(store);
+  panel.replaceChildren(
+    h('h2', {}, ['Circles']),
+    h('p', { class: 'muted' }, ['A circle is a mutual-credit ring or a peer group. It is not a map. An area phrase is only text.']),
+    circles.length ? h('div', { class: 'grid' }, circles.map((circle) => h('button', {
+      type: 'button',
+      class: 'card',
+      onClick: () => { marketQuery = { ...marketQuery, circle: circle.name, category: '' }; openListingId = ''; location.hash = 'market'; }
+    }, [
+      h('h3', {}, [circle.name]),
+      h('p', { class: 'muted' }, [`${circle.listings} listing${circle.listings === 1 ? '' : 's'} · ${circle.members.length} member${circle.members.length === 1 ? '' : 's'}`]),
+      circle.area ? h('p', { class: 'legend' }, [circle.area]) : null
+    ]))) : h('p', { class: 'empty' }, ['No circles yet. A listing names one.'])
+  );
+}
+
+async function renderList(seat) {
+  stopAnyCamera();
+  const panel = document.getElementById('panel');
+  const peer = await store.get(seat);
+  if (!peer?.privateKeyJwk) {
+    panel.replaceChildren(h('h2', {}, ['List']), h('p', { class: 'muted' }, ['Unlock the wallet before signing a listing.']));
+    return;
+  }
+  const steps = h('p', { class: 'kicker' }, [`Step ${listStep} of 3`]);
+  if (listStep === 1) {
+    const file = h('input', { type: 'file', accept: 'image/*' });
+    const video = h('video', { class: 'cam', playsinline: true, muted: true });
+    video.hidden = true;
+    file.addEventListener('change', async () => {
+      const chosen = file.files && file.files[0];
+      if (!chosen) return;
+      try {
+        const packed = await compressPhoto(chosen);
+        listDraft = { ...listDraft, ...packed };
+        setStatus('Photo compressed on this device. It is not uploaded. SIMULATION.', 'ok');
+        await render();
+      } catch {
+        setStatus('That photo could not be read. Nothing was stored.', 'bad');
+      }
+    });
+    panel.replaceChildren(
+      h('h2', {}, ['List']),
+      steps,
+      h('p', { class: 'muted' }, ['Take a photo or choose one. It is scaled down in this browser and kept on the listing locally.']),
+      listDraft.photo ? h('img', { class: 'shot', alt: '', src: listDraft.photo }) : null,
+      field('Photo', file),
+      video,
+      h('div', { class: 'actions' }, [
+        h('button', { type: 'button', onClick: async () => {
+          stopAnyCamera();
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            video.hidden = false;
+            video.srcObject = stream;
+            await video.play();
+            stopCamera = () => { stream.getTracks().forEach((track) => track.stop()); video.hidden = true; };
+          } catch {
+            setStatus('The camera did not open. Choose a photo instead. SIMULATION.', 'bad');
+          }
+        } }, ['Camera']),
+        h('button', { type: 'button', class: 'primary', onClick: async () => {
+          if (video.readyState >= 2) {
+            const canvas = document.createElement('canvas');
+            const max = 480;
+            const scale = Math.min(1, max / Math.max(video.videoWidth || 320, video.videoHeight || 240));
+            canvas.width = Math.max(1, Math.round((video.videoWidth || 320) * scale));
+            canvas.height = Math.max(1, Math.round((video.videoHeight || 240) * scale));
+            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+            const photo = canvas.toDataURL('image/jpeg', 0.72);
+            listDraft = { ...listDraft, photo, photoHash: await sim.sha256(photo) };
+            stopAnyCamera();
+          }
+          if (!listDraft.photoHash) { setStatus('Add a photo first.', 'bad'); return; }
+          listStep = 2;
+          await render();
+        } }, ['Next'])
+      ])
+    );
+    return;
+  }
+  if (listStep === 2) {
+    const title = h('input', { required: true, maxlength: '80', value: listDraft.title });
+    const category = h('select', {}, CATEGORIES.map((item) => option(item, item, listDraft.category === item)));
+    const condition = h('select', {}, CONDITIONS.map((item) => option(item, item, listDraft.condition === item)));
+    const pickup = h('select', {}, PICKUPS.map((item) => option(item, item, listDraft.pickup === item)));
+    const circle = h('input', { required: true, maxlength: '40', value: listDraft.circle, placeholder: 'Walkway, Soil, Logistics…' });
+    const area = h('input', { maxlength: '80', value: listDraft.area, placeholder: 'Optional area phrase' });
+    const form = h('form', {}, [
+      field('Title', title),
+      field('Category', category),
+      field('Condition', condition),
+      field('Pickup', pickup),
+      field('Circle', circle),
+      field('Area, optional', area),
+      h('div', { class: 'actions' }, [
+        h('button', { type: 'button', onClick: () => { listStep = 1; render(); } }, ['Back']),
+        h('button', { class: 'primary', type: 'submit' }, ['Next'])
+      ])
+    ]);
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      listDraft = { ...listDraft, title: title.value.trim(), category: category.value, condition: condition.value, pickup: pickup.value, circle: circle.value.trim(), area: area.value.trim() };
+      if (!listDraft.title || !listDraft.circle) { setStatus('Add a title and a circle.', 'bad'); return; }
+      listStep = 3;
+      render();
+    });
+    panel.replaceChildren(h('h2', {}, ['List']), steps, h('p', { class: 'muted' }, ['Name the item, its condition, how it changes hands, and which circle it belongs to.']), form);
+    return;
+  }
+  const amount = h('input', { inputmode: 'decimal', required: true, value: listDraft.amount, placeholder: '0.00' });
+  const reference = h('select', {}, [option('', 'No dollar reference', !listDraft.referenceId), ...catalog.map((item) => option(item.id, item.name, listDraft.referenceId === item.id))]);
+  const hint = h('p', { class: 'legend' }, ['Reference only, not a price.']);
+  function paintHint() {
+    const item = catalog.find((row) => row.id === reference.value);
+    hint.textContent = item && item.avg_value_usd != null ? `Reference only, not a price. ${item.name} is about ${item.avg_value_usd} in the DC list.` : 'Reference only, not a price.';
+  }
+  reference.addEventListener('change', paintHint);
+  paintHint();
+  const form = h('form', {}, [
+    field('Value in $lgme', amount),
+    field('Optional $ reference', reference),
+    hint,
+    h('div', { class: 'actions' }, [
+      h('button', { type: 'button', onClick: () => {
+        const item = catalog.find((row) => row.id === reference.value);
+        if (item && item.avg_value_usd != null) amount.value = String(item.avg_value_usd);
+      } }, ['Use the reference number']),
+      h('button', { type: 'button', onClick: () => { listStep = 2; render(); } }, ['Back']),
+      h('button', { class: 'primary', type: 'submit' }, ['Sign and list'])
+    ])
+  ]);
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (busy) return;
+    busy = true;
+    try {
+      const item = catalog.find((row) => row.id === reference.value);
+      const created = await sim.createListing(store, seat, {
+        ...listDraft,
+        amount: amount.value,
+        referenceId: item ? item.id : null,
+        referenceAvg: item ? item.avg_value_usd : null
+      });
+      if (!created.ok) { setStatus(created.error, 'bad'); return; }
+      listDraft = { photo: '', photoHash: '', title: '', category: 'Goods', condition: 'Good', pickup: 'Pickup', circle: '', area: '', amount: '', referenceId: '' };
+      listStep = 1;
+      openListingId = created.listing.id;
+      setStatus('Listed and signed. The photo stayed on this device. SIMULATION.', 'ok');
+      location.hash = 'market';
+    } finally {
+      busy = false;
+    }
+  });
+  panel.replaceChildren(h('h2', {}, ['List']), steps, h('p', { class: 'muted' }, ['The value is in $lgme. A dollar figure is only a suggestion from the reference list.']), form);
+}
+
+async function renderChats(seat) {
+  stopAnyCamera();
+  const panel = document.getElementById('panel');
+  const threads = await sim.listThreads(store, seat);
+  if (!openThreadId || !threads.some((thread) => thread.id === openThreadId)) {
+    panel.replaceChildren(
+      h('h2', {}, ['Chats']),
+      h('p', { class: 'muted' }, ['Offers stay in the chat until both people sign. A pending hold is not a final balance.']),
+      threads.length ? h('div', { class: 'grid' }, threads.map((thread) => h('button', {
+        type: 'button',
+        class: 'card',
+        onClick: () => { openThreadId = thread.id; render(); }
+      }, [
+        h('h3', {}, [thread.title || 'Listing']),
+        h('p', { class: 'muted' }, [`${thread.amount} $lgme · ${thread.status}`])
+      ]))) : h('p', { class: 'empty' }, ['No chats yet. Open a listing and start one.'])
+    );
+    return;
+  }
+  const thread = threads.find((item) => item.id === openThreadId);
+  const mine = thread.buyerId === seat;
+  const offer = h('input', { inputmode: 'decimal', value: String(thread.amount || ''), 'aria-label': 'Amount in $lgme' });
+  const note = h('input', { maxlength: '160', placeholder: 'Note' });
+  const paste = h('textarea', { class: 'codebox', placeholder: 'Paste a handoff code' });
+  const video = h('video', { class: 'cam', playsinline: true, muted: true });
+  video.hidden = true;
+  const qrHost = h('div', {});
+  const nodes = [
+    h('button', { type: 'button', class: 'quiet', onClick: () => { openThreadId = ''; render(); } }, ['All chats']),
+    h('h2', {}, [thread.title || 'Chat']),
+    h('p', { class: 'muted' }, [`${thread.amount} $lgme · ${thread.status}. SIMULATION.`]),
+    ...thread.messages.map((line) => h('div', { class: 'bubble' }, [`${nameById[line.fromId] || line.fromId}: ${line.text}`]))
+  ];
+  if (!['settled', 'refused', 'cancelled', 'pending'].includes(thread.status)) {
+    nodes.push(h('div', { class: 'chips' }, [
+      chip('Is this available?', false, async () => {
+        const posted = await sim.postChat(store, seat, thread.id, 'Is this available?');
+        setStatus(posted.ok ? 'Asked. Nothing was sent off this device. SIMULATION.' : posted.error, posted.ok ? 'ok' : 'bad');
+        if (posted.ok) await render();
+      }),
+      chip('Make an offer', false, () => { offer.focus(); })
+    ]));
+    const form = h('form', {}, [
+      field(mine ? 'Offer in $lgme' : 'Counter in $lgme', offer),
+      field('Note', note),
+      h('div', { class: 'actions' }, [
+        h('button', { class: 'primary', type: 'submit' }, [mine ? 'Offer' : 'Counter']),
+        h('button', { type: 'button', onClick: () => signDeal(seat, thread.id) }, ['Accept & Sign']),
+        h('button', { type: 'button', onClick: () => refuseDeal(seat, thread.id, note.value) }, ['Refuse']),
+        h('button', { type: 'button', onClick: () => cancelDeal(seat, thread.id) }, ['Cancel'])
+      ])
+    ]);
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const result = mine
+        ? await sim.makeOffer(store, seat, thread.id, offer.value)
+        : await sim.counterOffer(store, seat, thread.id, offer.value);
+      setStatus(result.ok ? 'Signed the amount. Final balances have not moved. SIMULATION.' : result.error, result.ok ? 'ok' : 'bad');
+      if (result.ok) await render();
+    });
+    nodes.push(form);
+  }
+  if (thread.status === 'pending' && mine) {
+    const shown = await sim.buyerHandoff(store, seat, thread.id);
+    if (shown.ok) {
+      nodes.push(h('h3', {}, ['Handoff QR']), h('p', { class: 'legend' }, ['Single use. The seller scans or pastes this, then countersigns. Settlement posts to both tapes.']));
+      nodes.push(qrHost);
+      nodes.push(h('div', { class: 'actions' }, [
+        h('button', { type: 'button', class: 'primary', onClick: () => settleHandoff(thread.sellerId, shown.encoded) }, ['Settle on this device']),
+        h('button', { type: 'button', onClick: async () => {
+          try { await navigator.clipboard.writeText(shown.encoded); setStatus('Copied. This page did not send it. SIMULATION.', 'ok'); }
+          catch { setStatus('Copy did not run. The code is on screen. SIMULATION.', 'bad'); }
+        } }, ['Copy']),
+        h('button', { type: 'button', onClick: () => download(`handoff-${thread.id.slice(0, 8)}.json`, shown.encoded, 'application/json') }, ['File'])
+      ]));
+      queueMicrotask(() => drawQr(qrHost, shown.encoded));
+    } else nodes.push(h('p', { class: 'bad' }, [shown.error]));
+  }
+  if (thread.status === 'pending' && !mine) {
+    nodes.push(
+      h('h3', {}, ['Countersign the handoff']),
+      h('p', { class: 'legend' }, ['Scan the buyer’s QR, or paste the code. One use settles both books.']),
+      video,
+      field('Handoff code', paste),
+      h('div', { class: 'actions' }, [
+        h('button', { type: 'button', class: 'primary scan-prominent', onClick: () => startScan(video, paste, null, (raw) => settleHandoff(seat, raw)) }, ['Scan QR']),
+        h('button', { type: 'button', class: 'primary', onClick: () => settleHandoff(seat, paste.value) }, ['Countersign'])
+      ])
+    );
+  }
+  panel.replaceChildren(...nodes.filter(Boolean));
+}
+
+async function signDeal(seat, threadId) {
+  const result = await sim.acceptAndSign(store, seat, threadId);
+  setStatus(result.ok ? (result.thread.status === 'pending' ? 'Pending hold. Final balances have not moved. SIMULATION.' : 'Signed. Waiting for the other signature. SIMULATION.') : result.error, result.ok ? 'ok' : 'bad');
+  if (result.ok) await render();
+}
+
+async function refuseDeal(seat, threadId, statement) {
+  const result = await sim.refuseDeal(store, seat, threadId, statement || 'REFUSAL');
+  setStatus(result.ok ? 'REFUSAL recorded. No balance moves. No penalty. SIMULATION.' : result.error, result.ok ? 'ok' : 'bad');
+  if (result.ok) await render();
+}
+
+async function cancelDeal(seat, threadId) {
+  const result = await sim.cancelDeal(store, seat, threadId);
+  setStatus(result.ok ? 'Hold released. Final balances stay put. SIMULATION.' : result.error, result.ok ? 'ok' : 'bad');
+  if (result.ok) await render();
+}
+
+async function settleHandoff(sellerId, encoded) {
+  const result = await sim.sellerHandoff(store, sellerId, String(encoded || '').trim());
+  if (!result.ok) { setStatus(result.error, 'bad'); return; }
+  setStatus(`Settled. Buyer ${result.buyerBalance} · seller ${result.sellerBalance}. SIMULATION.`, 'ok');
+  toast('Handoff settled on both books. SIMULATION.');
+  await render();
+}
+
 function renderHelp() {
   stopAnyCamera();
   const panel = document.getElementById('panel');
@@ -1308,7 +1742,8 @@ function renderHelp() {
     ['IOU and attestation', 'A dollar IOU is recorded as pending. Pending lines do not change the balance. The balance moves only when the named counterparty signs an ATTESTED entry. If they refuse, the tape records REFUSAL and the balance stays put.'],
     ['Mock $lgme', 'Registration writes a GENESIS entry for a simulated grant of 100 $lgme, labeled mock. It is not money. The wallet holds that balance and the signing key.'],
     ['Simulated 2FA', 'A passphrase encrypts the key at rest with AES-GCM and PBKDF2. A 6-digit TOTP, RFC 6238, is checked with WebCrypto HMAC. The setup QR can be scanned by an authenticator app. This page generates the same code while the secret is still on screen. It never sends the code. A wrong code leaves the wallet locked.'],
-    ['Another device', 'There is no server. Sign a proposal, countersign, refusal, transfer, or attestation, then carry the lgme1. code by copy, by a link whose data sits in the URL fragment, by a QR, or by a .json file. On the other device, verification runs before anything is appended. To text or email it, the page opens sms: or mailto: so you send it from your own app. The outbox and inbox are a local log of that.']
+    ['Another device', 'There is no server. Sign a proposal, countersign, refusal, transfer, attestation, or handoff, then carry the lgme1. code by copy, by a link whose data sits in the URL fragment, by a QR, or by a .json file. On the other device, verification runs before anything is appended. To text or email it, the page opens sms: or mailto: so you send it from your own app. The outbox and inbox are a local log of that.'],
+    ['Market', 'Listings are signed with the peer key. The origin hash names the listing. A photo stays on this device. Offer, counter, and Accept & Sign create a pending hold. Final balances move only when the seller countersigns the buyer’s single-use handoff. A refusal is recorded and carries no penalty. Peer standing is read from the local book.']
   ];
   const install = h('div', { class: 'card' }, [
     h('h3', {}, ['Install']),
@@ -1322,7 +1757,7 @@ function renderHelp() {
     h('button', { type: 'button', class: 'card mag-card', onClick: () => { location.hash = 'resources'; } }, [
       h('span', { class: 'kicker' }, ['Magazine']),
       h('h3', {}, ['Resources']),
-      h('p', { class: 'muted' }, ['Alice, Bob, and Charlie. The fifteen exchanges. The refusal. The open line. The third seat and the story.'])
+      h('p', { class: 'muted' }, ['Alice, Bob, and Charlie. The practice market. The fifteen exchanges. The refusal. The third seat and the story.'])
     ]),
     install,
     ...sections.map(([title, body]) => h('article', { class: 'card' }, [h('h3', {}, [title]), h('p', { class: 'muted' }, [body])])),
@@ -1517,7 +1952,15 @@ deliveryChannel?.addEventListener('message', async (event) => {
   const encoded = event.data?.encoded;
   if (!encoded) return;
   const opened = await sim.openMessage(encoded);
-  if (!opened.ok || opened.message.kind !== 'transfer') return;
+  if (!opened.ok) return;
+  if (opened.message.kind === 'handoff') {
+    const settled = await sim.sellerHandoff(store, opened.message.body.sellerId, encoded);
+    if (!settled.ok || settled.thread?.status !== 'settled') return;
+    toast('Handoff settled on both books. SIMULATION.');
+    await render();
+    return;
+  }
+  if (opened.message.kind !== 'transfer') return;
   const result = await sim.acceptAutoDelivery(store, opened.message.body.toId, encoded);
   if (!result.ok || result.duplicate) return;
   toast(`Received ${opened.message.body.amount} mock $lgme. SIMULATION.`);
