@@ -189,16 +189,21 @@ function renderSeats(peers, seat) {
   bar.append(h('button', { type: 'button', class: 'seat', onClick: resetDemo }, ['Reset demo', h('small', {}, ['Clears every local book'])]));
 }
 
+function selectTab(name) {
+  if (location.hash.includes('lgme1.')) pendingImport = location.hash.slice(location.hash.indexOf('lgme1.'));
+  if (name === 'market') openListingId = '';
+  if (name === 'chats') openThreadId = '';
+  if (location.hash.replace(/^#/, '') === name) render();
+  else location.hash = name;
+}
+
 function renderTabs() {
   const tab = tabName();
   const phoneTab = ['reconcile', 'books', 'devices', 'exchange'].includes(tab) ? 'wallet' : tab === 'resources' ? 'help' : tab;
   for (const name of TABS) {
     const button = document.getElementById(`tab-${name}`);
     button.setAttribute('aria-selected', name === tab ? 'true' : 'false');
-    button.onclick = () => {
-      if (location.hash.includes('lgme1.')) pendingImport = location.hash.slice(location.hash.indexOf('lgme1.'));
-      location.hash = name;
-    };
+    button.onclick = () => selectTab(name);
   }
   document.querySelectorAll('.tabbar button').forEach((button) => {
     button.setAttribute('aria-selected', button.dataset.tab === phoneTab ? 'true' : 'false');
@@ -243,6 +248,10 @@ function renderAddPeer(peers) {
         return;
       }
       rememberedSecrets.set(id, setup.secretBase32);
+      const code = await liveCode(setup.secretBase32);
+      const stored = await baseStore.get(id);
+      const opened = await sim.unlockWallet(stored, passphrase.value, code, Math.floor(Date.now() / 1000));
+      if (opened.ok) sessionKeys.set(id, opened.privateKeyJwk);
       rememberSeat(id);
       setStatus(`${name.value.trim()} has a mock grant of 100 $lgme on a GENESIS line. The key is locked. Scan the wallet code, then unlock with the passphrase and the 6-digit code.`, 'ok');
       location.hash = 'wallet';
@@ -1000,7 +1009,7 @@ async function renderWallet(peers, seat) {
       setStatus('Key encrypted. Scan the code before you reload. SIMULATION.', 'ok');
       await render();
     });
-    blocks.push(form);
+    blocks.push(form, iouSection(peer));
   } else if (locked) {
     const passphrase = h('input', { type: 'password', autocomplete: 'current-password', required: true });
     const code = h('input', { inputmode: 'numeric', autocomplete: 'one-time-code', maxlength: '8', required: true });
@@ -2571,10 +2580,10 @@ captureFragment();
 applyLayout();
 window.addEventListener('resize', applyLayout);
 for (const name of TABS) {
-  document.getElementById(`tab-${name}`).addEventListener('click', () => { location.hash = name; });
+  document.getElementById(`tab-${name}`).addEventListener('click', () => selectTab(name));
 }
 document.querySelectorAll('.tabbar button').forEach((button) => {
-  button.addEventListener('click', () => { location.hash = button.dataset.tab; });
+  button.addEventListener('click', () => selectTab(button.dataset.tab));
 });
 window.addEventListener('hashchange', () => {
   captureFragment();

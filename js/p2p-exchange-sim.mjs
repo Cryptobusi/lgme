@@ -1612,6 +1612,7 @@ export async function startKyc(store, peerId, spec = {}) {
   if (kycStatus(peer) === 'VERIFIED') return { ok: true, status: 'VERIFIED' };
   const displayName = String(spec.displayName || peer.name || '').trim();
   if (!displayName) return fail('Add a display name.');
+  if (!peer.privateKeyJwk) return fail('Unlock the wallet before signing.');
   const phone = String(spec.phone || '').trim();
   const email = String(spec.email || '').trim();
   peer.kyc = {
