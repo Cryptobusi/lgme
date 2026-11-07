@@ -23,10 +23,18 @@
     ul { margin:0.6rem 0 1rem; padding-left:1.2rem; }
     li { margin:0.35rem 0; }
     li::marker { color:var(--gold); }
+    .launch-bar { position: relative; display: flex; margin: -1.5rem -1.25rem 0; padding: 0.55rem 1.25rem; }
+    .launch-bar[hidden] { display: none; }
+    .install-launch { font: inherit; font-size: 0.82rem; font-weight: 600; min-height: 44px; padding: 0.35rem 0.85rem; border: 0; border-radius: 999px; background: #F97316; color: #1c1b19; text-decoration: none; display: inline-flex; align-items: center; }
+    .install-tip { position: absolute; left: 1.25rem; top: 100%; z-index: 8; background: #1c1b19; color: #fff; border: 1px solid #F97316; border-radius: 8px; padding: 0.4rem 0.65rem; font-size: 0.82rem; }
+    .give-banner { display: flex; flex-wrap: wrap; align-items: center; gap: 0.55rem 0.75rem; margin: 0 -1.25rem 0.85rem; padding: 0.75rem 1.25rem; background: #F97316; color: #1c1b19; font-weight: 700; }
+    .give-banner a { display: inline-flex; align-items: center; min-height: 44px; padding: 0.35rem 0.9rem; border-radius: 999px; background: #1c1b19; color: #fff; text-decoration: none; font-weight: 700; }
   </style>
 <link rel="stylesheet" href="/menu.css" />
 </head>
 <body>
+  <p class="launch-bar"><a class="install-launch" data-install-launch href="/p2p-exchange-sim">Install &amp; launch</a></p>
+  <p class="give-banner" role="note"><span>Real donations &amp; grants accepted</span> <a href="/lgme-coin#give">How to give</a> <a href="/grants">Grants</a></p>
 <nav class="deskmenu" aria-label="Desk">
   <a href="/nswo">NSWO</a>
   <a href="/dominion">Dominion</a>
@@ -72,5 +80,6 @@
 
   <p class="muted"><a href="/mutual-credit-simulator">Mutual Credit Simulator</a> · <a href="/simulation-explainer">Simulation Explainer</a> · <a href="/deployment-manifest">Deployment Manifest</a></p>
   <p class="muted"><a href="/">Desk</a> · <a href="/disclosures">Disclosures</a> · Not an offer. Not an investment.</p>
+  <script type="module" src="/js/install-launch.mjs"></script>
 </body>
 </html>

@@ -1130,6 +1130,32 @@ test('the coin page names the mint and the donate address exactly', () => {
   assert.equal(readFileSync(join(root, 'sitemap.xml'), 'utf8').includes('https://lgme.app/lgme-coin'), true);
 });
 
+test('real gifts are announced above the simulation and the two methods stay separate', () => {
+  const banner = 'Real donations &amp; grants accepted';
+  for (const file of ['index.html', 'p2p-exchange-sim.html', 'lgme-coin.html', 'grants.html']) {
+    const page = readFileSync(join(root, file), 'utf8');
+    const body = page.slice(page.indexOf('<body>'));
+    const launch = body.indexOf('class="launch-bar"');
+    const give = body.indexOf('class="give-banner"');
+    assert.ok(launch >= 0 && give > launch && give - launch < 500, file);
+    assert.equal(page.includes(banner), true, file);
+    assert.equal(page.includes('href="/lgme-coin#give">How to give</a>'), true, file);
+    assert.equal(page.includes('href="/grants">Grants</a>'), true, file);
+    assert.equal(page.includes('$Trust'), false, file);
+    assert.equal(/<script(?![^>]*\bsrc=)/i.test(page), false, file);
+  }
+  const coin = readFileSync(join(root, 'lgme-coin.html'), 'utf8');
+  assert.equal(coin.includes('id="give"'), true);
+  assert.equal(coin.includes('@EgonAnon'), true);
+  assert.equal(coin.includes('6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY'), true);
+  assert.equal(coin.includes('https://x.com/Trancesage'), true);
+  assert.equal(coin.includes('In-app $lgme balances stay simulated.'), true);
+  const desk = readFileSync(join(root, 'p2p-exchange-sim.html'), 'utf8');
+  assert.ok(desk.indexOf('give-banner') < desk.indexOf('SIMULATION. Practice books only.'));
+  const grants = readFileSync(join(root, 'grants.html'), 'utf8');
+  assert.equal(grants.includes('How to propose'), true);
+});
+
 test('the standing donation is pinned in both listing kinds and never expires', async () => {
   const store = await books();
   const far = '2099-01-01T00:00:00.000Z';
@@ -1512,7 +1538,7 @@ test('DC reference values stay pending when a series has no number', () => {
   assert.equal(page.includes('id="refList"'), true);
   assert.equal(/<script(?![^>]*\bsrc=)/i.test(page), false);
   const worker = readFileSync(join(root, 'sw.js'), 'utf8');
-  assert.equal(worker.includes('lgme-v38'), true);
+  assert.equal(worker.includes('lgme-v39'), true);
   assert.equal(worker.includes('/js/dc-reference.mjs'), true);
   assert.equal(worker.includes('/data/dc-reference-values-v0.json'), true);
 });

@@ -36,10 +36,14 @@
     .launch-bar[hidden] { display: none; }
     .install-launch { font: inherit; font-size: 0.82rem; font-weight: 600; min-height: 44px; padding: 0.35rem 0.85rem; border: 0; border-radius: 999px; background: #F97316; color: #1c1b19; text-decoration: none; display: inline-flex; align-items: center; }
     .install-tip { position: absolute; left: 1.1rem; top: 100%; z-index: 8; margin-top: 0.25rem; background: #1c1b19; color: #fff; border: 1px solid #F97316; border-radius: 8px; padding: 0.4rem 0.65rem; font-size: 0.82rem; }
+    .give-banner { display: flex; flex-wrap: wrap; align-items: center; gap: 0.55rem 0.75rem; margin: 0; padding: 0.75rem 1.1rem; background: #F97316; color: #1c1b19; font-weight: 700; }
+    .give-banner a { display: inline-flex; align-items: center; min-height: 44px; padding: 0.35rem 0.9rem; border-radius: 999px; background: #1c1b19; color: #fff; text-decoration: none; font-weight: 700; }
+    #give { scroll-margin-top: 0.75rem; }
   </style>
 </head>
 <body>
   <p class="launch-bar"><a class="install-launch" data-install-launch href="/p2p-exchange-sim">Install &amp; launch</a></p>
+  <p class="give-banner" role="note"><span>Real donations &amp; grants accepted</span> <a href="/lgme-coin#give">How to give</a> <a href="/grants">Grants</a></p>
   <p class="notice">Real token on Solana. Not financial advice. High risk; you may lose everything. Always verify the mint address. The in-app $lgme balances are a simulation and are not this token.</p>
   <div class="wrap">
     <p class="muted"><a href="/">Desk</a> · <a href="/p2p-exchange-sim">Practice desk</a></p>
@@ -70,7 +74,8 @@
     </ol>
     <p class="muted">This page does not connect a wallet and does not move funds.</p>
 
-    <h2>soBeIT contributions</h2>
+    <h2 id="give">soBeIT contributions</h2>
+    <p>Real gifts, by either method below. They are not the practice desk. In-app $lgme balances stay simulated.</p>
     <div class="card" id="pump-wallet">
       <h3>Pump.fun wallet</h3>
       <p>Wallet name <span id="wallet-name">@EgonAnon</span></p>

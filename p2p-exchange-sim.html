@@ -154,6 +154,8 @@
     .launch-bar[hidden] { display: none; }
     .install-launch { font: inherit; font-size: 0.82rem; font-weight: 600; min-height: 44px; padding: 0.35rem 0.85rem; border: 0; border-radius: 999px; background: #F97316; color: #1c1b19; text-decoration: none; display: inline-flex; align-items: center; }
     .install-tip { position: absolute; left: 1rem; top: 100%; z-index: 8; margin-top: 0.25rem; background: #1c1b19; color: #fff; border: 1px solid #F97316; border-radius: 8px; padding: 0.4rem 0.65rem; font-size: 0.82rem; }
+    .give-banner { display: flex; flex-wrap: wrap; align-items: center; gap: 0.55rem 0.75rem; margin: 0; padding: 0.75rem 1rem; background: #F97316; color: #1c1b19; font-weight: 700; }
+    .give-banner a { display: inline-flex; align-items: center; min-height: 44px; padding: 0.35rem 0.9rem; border-radius: 999px; background: #1c1b19; color: #fff; text-decoration: none; font-weight: 700; }
     .coin-pin { margin:0; padding:0.4rem 1rem; font-size:0.82rem; background:var(--panel); border-bottom:1px solid var(--line); }
     .coin-pin a { color:var(--accent-text); text-decoration:none; }
     .splash { position:fixed; inset:0; z-index:60; display:grid; place-items:center; background:var(--bg); padding:1.25rem; }
@@ -167,6 +169,7 @@
 </head>
 <body>
   <p class="launch-bar"><a class="install-launch" data-install-launch href="/p2p-exchange-sim">Install &amp; launch</a></p>
+  <p class="give-banner" role="note"><span>Real donations &amp; grants accepted</span> <a href="/lgme-coin#give">How to give</a> <a href="/grants">Grants</a></p>
   <div id="splash" class="splash" role="dialog" aria-label="lgme" hidden>
     <div class="splash-card">
       <div class="splash-coin">
