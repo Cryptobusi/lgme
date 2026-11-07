@@ -169,6 +169,7 @@ function renderSeats(peers, seat) {
 
 function renderTabs() {
   const tab = tabName();
+  const phoneTab = tab === 'reconcile' ? 'books' : tab;
   for (const name of TABS) {
     const button = document.getElementById(`tab-${name}`);
     button.setAttribute('aria-selected', name === tab ? 'true' : 'false');
@@ -177,6 +178,9 @@ function renderTabs() {
       location.hash = name;
     };
   }
+  document.querySelectorAll('.tabbar button').forEach((button) => {
+    button.setAttribute('aria-selected', button.dataset.tab === phoneTab ? 'true' : 'false');
+  });
 }
 
 function renderAddPeer(peers) {
@@ -294,7 +298,7 @@ function renderBilateral(peers, me) {
   const creditor = h('select', {}, peerOptions(peers, peers.find((peer) => peer.id !== me.id)?.id || ''));
   const third = h('select', {}, peerOptions(peers, '', 'None'));
   const reference = h('input', { required: true, maxlength: '160', value: '' });
-  const amount = h('input', { type: 'number', min: '0.01', step: '0.01', value: '10', required: true });
+  const amount = h('input', { type: 'number', min: '0.01', step: '0.01', value: '10', required: true, inputmode: 'decimal' });
   const charge = h('input', { type: 'number', min: '0', step: '0.01', value: '0' });
   const refItem = h('select', {}, [option('', 'None', true)]);
   for (const item of catalog) {
@@ -625,15 +629,18 @@ async function renderBooks(peers, seat) {
   const rows = view.rows.slice().reverse();
   for (const row of rows) {
     const detail = sim.entryDetail(row, names);
-    const item = h('article', { class: 'book-row' }, [
-      h('div', {}, [`#${row.index} · ${row.type} · ${row.at}`]),
-      h('div', {}, [detail]),
-      h('div', { class: 'nums' }, [
-        h('span', {}, [`Debit ${row.debit}`]),
-        h('span', {}, [`Credit ${row.credit}`]),
-        h('span', {}, [`Balance ${row.balance}`])
+    const status = row.type === 'iou' ? 'pending' : row.type === 'attested' ? 'attested' : row.type === 'refusal' ? 'refused' : row.type === 'block' ? 'blocked' : (row.type === 'transfer' || row.type === 'settlement') ? 'done' : row.type;
+    const item = h('article', { class: 'tx' }, [
+      h('span', { class: `mark mark-${status}`, 'aria-hidden': 'true' }, [status.slice(0, 1).toUpperCase()]),
+      h('div', {}, [
+        h('div', {}, [detail || row.type]),
+        h('div', { class: 'meta' }, [`#${row.index} · ${row.at}`])
       ]),
-      h('div', { class: 'hash', title: row.hash }, [`prev ${shortHash(row.prev)} · hash ${shortHash(row.hash)}`])
+      h('div', { class: 'tx-side' }, [
+        h('span', { class: `pill pill-${status}` }, [status]),
+        h('span', {}, [row.debit ? `−${row.debit}` : row.credit ? `+${row.credit}` : '']),
+        h('span', { class: 'meta' }, [`Bal ${row.balance}`])
+      ])
     ]);
     item.dataset.search = `${row.type} ${detail} ${row.hash} ${row.prev}`.toLowerCase();
     item.dataset.type = row.type;
@@ -849,7 +856,7 @@ async function renderWallet(peers, seat) {
   const blocks = [
     h('h2', {}, [`Wallet · ${summary.name}`]),
     h('p', { class: 'muted' }, ['SIMULATION. The balance is mock $lgme. The passphrase and the 6-digit code are simulated 2FA. This page does not send the code and does not move real money.']),
-    h('div', { class: 'nums' }, [
+    h('div', { class: 'balance-hero' }, [
       h('div', {}, [h('strong', {}, [String(sim.replay(peer).balance)]), summary.mock ? 'Mock $lgme' : 'Book balance']),
       h('div', {}, [h('strong', {}, [String(sim.terms(peer).floor)]), 'Floor']),
       h('div', {}, [h('strong', {}, [locked ? 'Locked' : 'Open']), 'Key'])
@@ -956,19 +963,51 @@ async function renderDevices(peers, seat) {
   const panel = document.getElementById('panel');
   const peer = await store.get(seat);
   const toId = h('input', { placeholder: 'peer id on the other device' });
-  const amount = h('input', { type: 'number', min: '0.01', step: '0.01', value: '10' });
+  const amount = h('input', { type: 'number', min: '0.01', step: '0.01', value: '10', inputmode: 'decimal' });
   const note = h('input', { maxlength: '160', value: 'mock $lgme' });
-  const address = h('input', { placeholder: 'phone or email, optional' });
+  const address = h('input', { placeholder: 'phone or email, optional', autocomplete: 'off' });
+  const pass = peer.wallet?.ciphertext ? h('input', { type: 'password', autocomplete: 'current-password', required: true }) : null;
+  const code = peer.wallet?.ciphertext ? h('input', { inputmode: 'numeric', autocomplete: 'one-time-code', maxlength: '8', required: true }) : null;
   const shareHost = h('div', {});
   const form = h('form', { class: 'grid two' }, [
     field('Send mock $lgme to peer id', toId),
     field('Amount', amount),
+    pass ? field('Passphrase', pass) : null,
+    code ? field('6-digit code', code) : null,
+    h('div', { class: 'actions sticky-action' }, [h('button', { class: 'primary', type: 'submit' }, [peer.wallet?.ciphertext ? 'Confirm and deliver' : 'Sign the transfer'])]),
     field('Note', note),
     field('Their phone or email, if you want a draft', address),
-    h('div', { class: 'actions' }, [h('button', { class: 'primary', type: 'submit' }, ['Sign the transfer'])])
+    h('p', { class: 'legend' }, [peer.wallet?.ciphertext
+      ? 'Auto-send stays on this device. A valid code delivers the signed transfer into the other book and posts a simulated notice. A wrong code sends nothing.'
+      : 'This demo book has no authenticator yet. Signing prepares a code you can carry. Set up 2FA on the wallet to auto-deliver on this device.'])
   ]);
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
+    if (peer.wallet?.ciphertext) {
+      const result = await sim.autoDeliverTransfer(store, seat, {
+        toId: toId.value.trim(),
+        amount: amount.value,
+        note: note.value,
+        passphrase: pass.value,
+        code: code.value,
+        unixSeconds: Math.floor(Date.now() / 1000)
+      });
+      if (!result.ok) {
+        setStatus(result.error || 'Nothing was sent.', 'bad');
+        toast(result.error || 'Nothing was sent.');
+        return;
+      }
+      carryCode = result.encoded || '';
+      carryAddress = address.value.trim();
+      if (result.encoded && deliveryChannel) deliveryChannel.postMessage({ encoded: result.encoded });
+      const line = result.delivered
+        ? `Delivered. ${peer.name} is at ${result.balance}. The other book appended it. SIMULATION.`
+        : `Signed. ${peer.name} is at ${result.balance}. Carry the code to the other device. SIMULATION.`;
+      setStatus(line, 'ok');
+      toast(line);
+      await render();
+      return;
+    }
     if (!peer.privateKeyJwk) { setStatus('Unlock the wallet before signing.', 'bad'); return; }
     const result = await sim.createTransfer(store, seat, { toId: toId.value.trim(), amount: amount.value, note: note.value });
     if (!result.ok) { setStatus(result.error, 'bad'); return; }
@@ -993,7 +1032,7 @@ async function renderDevices(peers, seat) {
     field('.json file', file),
     h('div', { class: 'actions' }, [
       h('button', { type: 'submit', class: 'primary' }, ['Verify']),
-      h('button', { type: 'button', onClick: () => startScan(video, incoming, preview) }, ['Scan QR'])
+      h('button', { type: 'button', class: 'primary scan-prominent', onClick: () => startScan(video, incoming, preview) }, ['Scan QR'])
     ]),
     video,
     preview
@@ -1209,10 +1248,49 @@ function captureFragment() {
   history.replaceState(null, '', `${location.pathname}${location.search}#devices`);
 }
 
+let toastTimer = 0;
+function toast(text) {
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = text;
+  el.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.hidden = true; }, 4200);
+}
+
+function applyLayout() {
+  const uaMobile = navigator.userAgentData?.mobile === true;
+  const mode = sim.layoutMode({
+    width: window.innerWidth,
+    coarse: window.matchMedia('(pointer: coarse)').matches,
+    uaMobile
+  });
+  document.documentElement.classList.toggle('phone', mode === 'phone');
+  document.documentElement.classList.toggle('desk', mode !== 'phone');
+  document.body.dataset.layout = mode;
+}
+
+const deliveryChannel = typeof BroadcastChannel === 'function' ? new BroadcastChannel('lgme-sim:delivery') : null;
+deliveryChannel?.addEventListener('message', async (event) => {
+  const encoded = event.data?.encoded;
+  if (!encoded) return;
+  const opened = await sim.openMessage(encoded);
+  if (!opened.ok || opened.message.kind !== 'transfer') return;
+  const result = await sim.acceptAutoDelivery(store, opened.message.body.toId, encoded);
+  if (!result.ok || result.duplicate) return;
+  toast(`Received ${opened.message.body.amount} mock $lgme. SIMULATION.`);
+  await render();
+});
+
 captureFragment();
+applyLayout();
+window.addEventListener('resize', applyLayout);
 for (const name of TABS) {
   document.getElementById(`tab-${name}`).addEventListener('click', () => { location.hash = name; });
 }
+document.querySelectorAll('.tabbar button').forEach((button) => {
+  button.addEventListener('click', () => { location.hash = button.dataset.tab; });
+});
 window.addEventListener('hashchange', () => {
   captureFragment();
   render();

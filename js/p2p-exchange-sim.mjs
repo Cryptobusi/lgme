@@ -16,6 +16,14 @@ export const DEMO_OPENING = Object.freeze({
 
 export const MOCK_GRANT = 100;
 export const KDF_ITERATIONS = 100000;
+
+export function layoutMode({ width, coarse = false, uaMobile = false } = {}) {
+  const w = Number(width);
+  if (w <= 767) return 'phone';
+  if (coarse && w <= 1023) return 'phone';
+  if (uaMobile && coarse && w <= 1023) return 'phone';
+  return 'desk';
+}
 const MESSAGE_KINDS = new Set(['proposal', 'countersign', 'refusal', 'transfer', 'attestation', 'iou', 'tape']);
 
 export function canonicalJSON(value) {
@@ -1147,6 +1155,85 @@ export async function createTransfer(store, fromId, spec) {
   from.outbox.push({ at, kind: 'transfer', toId, amount, hash: sealed.message.hash, channel: 'local', simulated: true });
   await store.set(fromId, from);
   return { ok: true, message: sealed.message, encoded: encodeMessage(sealed.message), balance: replay(from).balance };
+}
+
+export async function acceptAutoDelivery(store, peerId, input, at = nowIso()) {
+  const opened = await openMessage(input);
+  if (!opened.ok) return { ...opened, sent: false };
+  if (opened.message.kind !== 'transfer') return fail('This auto-delivery is not a transfer.');
+  return importMessage(store, peerId, opened.message, at);
+}
+
+export async function autoDeliverTransfer(store, fromId, spec) {
+  const from = await store.get(fromId);
+  if (!from) return fail('Unknown peer.');
+  if (!from.wallet?.ciphertext) return { ok: false, error: 'Set up simulated 2FA before auto-send.', sent: false };
+  const toId = String(spec.toId || '').trim();
+  const amount = round2(spec.amount);
+  if (!/^[a-z0-9-]{1,32}$/.test(toId) || toId === fromId) return { ok: false, error: 'Name a different peer id.', sent: false };
+  if (!Number.isFinite(amount) || amount <= 0) return { ok: false, error: 'Enter an amount greater than zero.', sent: false };
+  const unlocked = await unlockWallet(from, spec.passphrase, spec.code, spec.unixSeconds ?? Math.floor(Date.now() / 1000));
+  if (!unlocked.ok) return { ok: false, error: unlocked.error, sent: false };
+  const next = round2(replay(from).balance - amount);
+  const blocked = floorBlockReason(from, next);
+  if (blocked) return { ok: false, error: blocked, sent: false };
+  const recipient = await store.get(toId);
+  if (recipient && !recipient.privateKeyJwk) {
+    return { ok: false, error: 'The recipient book is locked on this device. Nothing was sent.', sent: false };
+  }
+  const at = spec.at || nowIso();
+  const signer = { ...from, privateKeyJwk: unlocked.privateKeyJwk };
+  const body = {
+    simulated: true,
+    kind: 'transfer',
+    fromId,
+    toId,
+    amount,
+    unit: '$lgme',
+    note: String(spec.note || '').trim(),
+    mock: true,
+    auto: true
+  };
+  const sealed = await sealMessage(signer, 'transfer', body);
+  if (!sealed.ok) return { ...sealed, sent: false };
+  await appendEntry(signer, 'transfer', { ...body, hash: sealed.message.hash, sig: sealed.message.sig, direction: 'out' }, at);
+  const notice = {
+    at,
+    kind: 'notice',
+    toId,
+    fromId,
+    amount,
+    hash: sealed.message.hash,
+    simulated: true,
+    text: 'SIMULATION notice. No message was sent.'
+  };
+  signer.outbox = signer.outbox || [];
+  signer.outbox.push({ ...notice, channel: 'sms' }, { ...notice, channel: 'email' });
+  signer.privateKeyJwk = null;
+  signer.wallet = { ...signer.wallet, locked: true };
+  await store.set(fromId, signer);
+  let delivered = false;
+  let recipientBalance = null;
+  if (recipient?.privateKeyJwk) {
+    const accepted = await acceptAutoDelivery(store, toId, sealed.message, at);
+    if (!accepted.ok) return { ...accepted, sent: true, delivered: false };
+    delivered = true;
+    recipientBalance = accepted.balance;
+    const fresh = await store.get(toId);
+    fresh.inbox = fresh.inbox || [];
+    fresh.inbox.push({ ...notice, channel: 'sms' }, { ...notice, channel: 'email' });
+    await store.set(toId, fresh);
+  }
+  return {
+    ok: true,
+    sent: true,
+    delivered,
+    message: sealed.message,
+    encoded: encodeMessage(sealed.message),
+    balance: replay(await store.get(fromId)).balance,
+    recipientBalance,
+    notices: ['sms', 'email']
+  };
 }
 
 async function rememberInbox(peer, item) {

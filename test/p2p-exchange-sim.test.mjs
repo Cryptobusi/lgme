@@ -402,6 +402,59 @@ test('IOU stays pending until attested, and a refusal moves nothing', async () =
   assert.equal(sim.replay(await store.get('alice')).balance, before);
 });
 
+test('auto-delivery happens only after a valid TOTP', async () => {
+  const store = sim.createMemoryStore();
+  await sim.registerPeer(store, { id: 'alice', name: 'Alice', floor: 40, at: '2026-11-06T00:00:00.000Z' });
+  await sim.registerPeer(store, { id: 'bob', name: 'Bob', floor: 40, at: '2026-11-06T00:00:00.000Z' });
+  const setup = await sim.setupWallet(store, 'alice', 'correct horse', { iterations: 2000 });
+  assert.equal(setup.ok, true, setup.error);
+  const now = 1_111_111_111;
+  const code = await sim.totp(sim.base32Decode(setup.secretBase32), now, { digits: 6, period: 30, algorithm: 'SHA-1' });
+  const wrongCode = code === '000000' ? '111111' : '000000';
+  const wrong = await sim.autoDeliverTransfer(store, 'alice', {
+    toId: 'bob',
+    amount: 10,
+    passphrase: 'correct horse',
+    code: wrongCode,
+    unixSeconds: now
+  });
+  assert.equal(wrong.ok, false);
+  assert.equal(wrong.sent, false);
+  assert.equal(sim.replay(await store.get('alice')).balance, 100);
+  assert.equal(sim.replay(await store.get('bob')).balance, 100);
+  assert.equal((await store.get('alice')).tape.some((entry) => entry.type === 'transfer'), false);
+  assert.equal((await store.get('bob')).tape.some((entry) => entry.type === 'transfer'), false);
+  const sent = await sim.autoDeliverTransfer(store, 'alice', {
+    toId: 'bob',
+    amount: 10,
+    passphrase: 'correct horse',
+    code,
+    unixSeconds: now,
+    note: 'auto',
+    at: '2026-11-06T00:05:00.000Z'
+  });
+  assert.equal(sent.ok, true, sent.error);
+  assert.equal(sent.sent, true);
+  assert.equal(sent.delivered, true);
+  assert.equal(sim.replay(await store.get('alice')).balance, 90);
+  assert.equal(sim.replay(await store.get('bob')).balance, 110);
+  assert.equal((await store.get('alice')).tape.some((entry) => entry.type === 'transfer'), true);
+  assert.equal((await store.get('bob')).tape.some((entry) => entry.type === 'transfer' && entry.payload.direction === 'in'), true);
+  const outbox = (await store.get('alice')).outbox.map((item) => item.channel);
+  const inbox = (await store.get('bob')).inbox.map((item) => item.channel);
+  assert.ok(outbox.includes('sms') && outbox.includes('email'));
+  assert.ok(inbox.includes('sms') && inbox.includes('email'));
+  const evil = structuredClone(sent.message);
+  evil.body.amount = 999;
+  const rejected = await sim.acceptAutoDelivery(store, 'bob', evil, '2026-11-06T00:06:00.000Z');
+  assert.equal(rejected.ok, false);
+  assert.match(rejected.error, /Hash/);
+  assert.equal(sim.replay(await store.get('bob')).balance, 110);
+  assert.equal(sim.layoutMode({ width: 390, coarse: true, uaMobile: true }), 'phone');
+  assert.equal(sim.layoutMode({ width: 768, coarse: true, uaMobile: true }), 'phone');
+  assert.equal(sim.layoutMode({ width: 1280, coarse: false, uaMobile: true }), 'desk');
+});
+
 test('pages stay simulation-only', () => {
   const files = [
     'js/p2p-exchange-sim.mjs',
