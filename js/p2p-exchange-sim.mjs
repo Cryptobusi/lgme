@@ -68,7 +68,7 @@ export const STANDING_REPAIR = Object.freeze({
 export const WANTED_STATUSES = Object.freeze(['Available', 'Pending reply', 'Offer made', 'Closed']);
 export const TAILORED_AWAITING = 'Draft, awaiting approval';
 export const THUMBTACK_CAVEAT = 'Third-party pro on Thumbtack, not verified by lgme';
-export const INVITE_URL = 'https://lgme.app/p2p-exchange-sim';
+export const INVITE_URL = 'https://lgme.app/exchange';
 export const KDF_ITERATIONS = 100000;
 
 export function layoutMode({ width, coarse = false, uaMobile = false } = {}) {
@@ -377,7 +377,7 @@ export function entryDetail(entry, names = {}) {
   const payload = entry.payload || {};
   const name = (id) => names[id] || id;
   if (entry.type === 'genesis') {
-    const grant = payload.mock ? `Mock grant ${payload.balance} $lgme. ` : `Opening ${payload.balance}. `;
+    const grant = payload.mock ? `Opening grant ${payload.balance} $lgme. ` : `Opening ${payload.balance}. `;
     return `${grant}Floor ${payload.floor} ${payload.floorNote || ''}`.trim();
   }
   if (entry.type === 'transfer') {
@@ -1092,7 +1092,7 @@ export async function decryptJson(passphrase, sealed) {
 
 export async function registerPeer(store, spec) {
   const floor = spec.floor == null ? 40 : spec.floor;
-  if (Number(floor) > MOCK_GRANT) return fail('The floor sits under the mock grant.');
+  if (Number(floor) > MOCK_GRANT) return fail('The floor sits under the opening grant.');
   return createPeer(store, {
     id: spec.id,
     name: spec.name,
@@ -1231,12 +1231,12 @@ export function shareHrefs(address, text) {
   const to = address ? encodeURIComponent(String(address).trim()) : '';
   return {
     sms: `sms:${to}?&body=${body}`,
-    mailto: `mailto:${to}?subject=${encodeURIComponent('SIMULATION lgme')}&body=${body}`
+    mailto: `mailto:${to}?subject=${encodeURIComponent('lgme')}&body=${body}`
   };
 }
 
 export function shareText(summary, encoded) {
-  return `SIMULATION lgme. ${summary} This page does not send it. Open the link in your own browser.\n${encoded}`;
+  return `lgme. ${summary} This page does not send it. Open the link in your own browser.\n${encoded}`;
 }
 
 function unspentSerials(peer) {
@@ -1515,7 +1515,7 @@ export async function autoDeliverTransfer(store, fromId, spec) {
     amount,
     hash: sealed.message.hash,
     simulated: true,
-    text: 'SIMULATION notice. No message was sent.'
+    text: 'No message was sent.'
   };
   signer.outbox = signer.outbox || [];
   signer.outbox.push({ ...notice, channel: 'sms' }, { ...notice, channel: 'email' });
@@ -2430,7 +2430,7 @@ export function tailoredDraft(item, spec = {}) {
           ? 'Pay in full'
           : `Terms over ${spec.pay} months`;
   return [
-    'SIMULATION draft. Nothing was sent.',
+    'Draft. Nothing was sent.',
     spec.channel === 'thumbtack' ? THUMBTACK_CAVEAT : OFFERUP_CAVEAT,
     item?.title || '',
     item?.price ? `Listed price: ${item.price}` : '',
@@ -2478,7 +2478,7 @@ export function suggestedWantedPair(items) {
 
 export function wantedMatchDraft(match) {
   return [
-    'SIMULATION draft. Nothing was sent.',
+    'Draft. Nothing was sent.',
     OFFERUP_CAVEAT,
     STANDING_WANTED.title,
     match?.title || '',
@@ -2492,9 +2492,9 @@ export function wantedMatchDraft(match) {
 
 export function inviteSellerText(match) {
   return [
-    'SIMULATION. Nothing was sent.',
+    'Nothing was sent.',
     `You listed ${match?.title || 'an item'} on OfferUp.`,
-    `The practice desk is here: ${INVITE_URL}`,
+    `The exchange is here: ${INVITE_URL}`,
     'A payment is real $lgme from your wallet.'
   ].join('\n');
 }
@@ -3283,7 +3283,7 @@ export async function composeChat(store, senderId, spec = {}) {
   await writeVault(sender, vault);
   sender.outbox = sender.outbox || [];
   const encoded = encodeMessage(sealed.message);
-  const preview = `SIMULATION lgme. This page does not send it.\n${text}\n${encoded}`;
+  const preview = `lgme. This page does not send it.\n${text}\n${encoded}`;
   const links = shareHrefs(toPhone, preview);
   sender.outbox.push({ at, kind: 'chat', channel: 'sms', toPhone, hash: messageHash, simulated: true, text: 'Beta. The page did not send a message.' });
   await store.set(senderId, sender);
@@ -3368,7 +3368,7 @@ export async function composeMatch(store, senderId, threadId, toPhone = '') {
   const sealed = await sealMessage(sender, 'chat-match', body);
   if (!sealed.ok) return sealed;
   const encoded = encodeMessage(sealed.message);
-  const preview = `SIMULATION lgme. Chat root ${audit.root.slice(0, 12)}. This page does not send it.\n${encoded}`;
+  const preview = `lgme. Chat root ${audit.root.slice(0, 12)}. This page does not send it.\n${encoded}`;
   return { ok: true, encoded, root: audit.root, hashes: audit.hashes, length: audit.length, sms: shareHrefs(toPhone, preview).sms, preview };
 }
 
@@ -3686,7 +3686,7 @@ export async function createInvoice(store, workerId, spec = {}) {
     ok: true,
     invoiceId,
     encoded,
-    sms: shareHrefs(payerPhone, `SIMULATION lgme. Invoice ${amount} $lgme. This page does not send it.\n${encoded}`).sms,
+    sms: shareHrefs(payerPhone, `lgme. Invoice US$ ${amount}. This page does not send it.\n${encoded}`).sms,
     balance: replay(await store.get(workerId)).balance,
     unchanged: replay(await store.get(workerId)).balance === before && (payerBefore == null || replay(await store.get(payerId)).balance === payerBefore)
   };
@@ -5053,7 +5053,7 @@ export function offerupDraft(offer) {
   const cash = offer?.cash;
   const services = offer?.services || [];
   const lines = [
-    'SIMULATION draft. Nothing was sent.',
+    'Draft. Nothing was sent.',
     OFFERUP_CAVEAT,
     offer?.external?.title || '',
     offer?.external?.price || '',

@@ -1,8 +1,8 @@
 {
   "region": "Washington DC MSA test run",
   "date": "2026-11-02",
-  "label": "simulation reference values",
-  "notice": "reference ranges only, not prices or offers, simulated",
+  "label": "DC reference values",
+  "notice": "reference ranges only, not prices or offers",
   "method": "Services: hourly_avg is the OEWS hourly median, or the mean of p25 and p75 if the median is missing. job_avg is the midpoint of a job low-high span when one exists. avg_value_usd is job_avg when present, otherwise hourly_avg. Goods: avg_value_usd is the listed unit price. Pending series stay null.",
   "items": [
     {

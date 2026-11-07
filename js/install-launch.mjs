@@ -1,4 +1,4 @@
-const APP_PATH = '/p2p-exchange-sim';
+const APP_PATH = '/exchange';
 const TIP = 'Share > Add to Home Screen';
 export const INSTALLED_WAIT_MS = 500;
 

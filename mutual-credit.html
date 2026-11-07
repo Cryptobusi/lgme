@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>lgme.app • Sovereign Provenance & Mutual Credit Simulator</title>
+  <title>lgme.app • Mutual credit</title>
   <script src="/js/vendor/tailwind.cdn.js"></script>
   <script src="/js/vendor/lucide.min.js"></script>
   <style>
@@ -39,7 +39,7 @@
       <div>
         <div class="flex items-center gap-2">
           <span class="font-bold text-white tracking-tight">lgme.app</span>
-          <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-cyan-950/80 text-cyan-300 border border-cyan-800/50">Mock Simulation Mode</span>
+          <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-cyan-950/80 text-cyan-300 border border-cyan-800/50">Beta</span>
           <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-950/80 text-purple-300 border border-purple-800/50">Target: hederica.com</span>
         </div>
         <p class="text-xs text-slate-400">Komunitin Mutual Credit Clearing + Auto-Secure Bilateral Ed25519 + Hedera HCS Anchor</p>
@@ -47,7 +47,7 @@
     </div>
     <!-- Actions -->
     <div class="flex items-center gap-2.5">
-      <a href="/p2p-exchange-sim" class="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition">P2P exchange sim</a>
+      <a href="/exchange" class="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition">Exchange</a>
       <button id="downloadMdBtn" class="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition">
         <i data-lucide="download" class="w-3.5 h-3.5 text-emerald-400"></i>
         Export Spec & Logs (.md)
@@ -61,10 +61,10 @@
   <!-- Main Grid -->
   <main class="flex-1 p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-7xl mx-auto w-full">
     
-    <!-- Left Column: Interactive Simulation Control -->
+    <!-- Left column -->
     <section class="lg:col-span-5 flex flex-col gap-6">
       
-      <!-- Simulation Stepper -->
+      <!-- Program flow -->
       <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-xl">
         <div class="flex items-center justify-between mb-4">
           <h2 class="font-semibold text-white text-sm flex items-center gap-2">
@@ -93,21 +93,21 @@
             </div>
           </div>
           <div>
-            <label class="block text-xs font-medium text-slate-400 mb-1" for="thirdSeat">Third seat (simulated)</label>
+            <label class="block text-xs font-medium text-slate-400 mb-1" for="thirdSeat">Third seat</label>
             <select id="thirdSeat" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
               <option value="">None — bilateral</option>
               <option value="node-alice">Alice (Providore)</option>
               <option value="node-bob">Bob (Agronomist)</option>
               <option value="node-charlie">Charlie (Logistics)</option>
             </select>
-            <p id="thirdSeatNote" class="text-[10px] text-slate-500 mt-1">No third seat. Bilateral exchange only (simulated).</p>
+            <p id="thirdSeatNote" class="text-[10px] text-slate-500 mt-1">No third seat. Bilateral exchange only.</p>
           </div>
           <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80 space-y-2">
-            <label class="block text-xs font-medium text-slate-400" for="refItem">simulation reference values</label>
+            <label class="block text-xs font-medium text-slate-400" for="refItem">DC reference values</label>
             <select id="refItem" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
               <option value="">None</option>
             </select>
-            <p class="text-[10px] text-amber-200/90">simulation reference values. Reference only, not a price.</p>
+            <p class="text-[10px] text-amber-200/90">DC reference values. Reference only, not a price.</p>
             <div id="refQtyWrap" hidden class="grid grid-cols-3 gap-3">
               <div class="col-span-2">
                 <label id="refQtyLabel" class="block text-xs font-medium text-slate-400 mb-1" for="refQty">Hours or quantity</label>
@@ -118,9 +118,9 @@
                 <select id="refBasis" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"></select>
               </div>
             </div>
-            <p id="refDetail" class="text-[10px] text-slate-500">simulation reference values. Reference list loads from this site.</p>
+            <p id="refDetail" class="text-[10px] text-slate-500">DC reference values. Reference list loads from this site.</p>
             <details id="refCatalog" open class="text-[10px] text-slate-400">
-              <summary>simulation reference values</summary>
+              <summary>DC reference values</summary>
               <ul id="refList" class="space-y-2 mt-2"></ul>
             </details>
           </div>
@@ -147,11 +147,11 @@
             </div>
             <div class="flex items-center justify-between text-xs">
               <span class="text-slate-300">Floor seniority</span>
-              <span class="text-amber-300 mono text-[11px] font-medium">Senior (simulated)</span>
+              <span class="text-amber-300 mono text-[11px] font-medium">Senior</span>
             </div>
             <div class="flex items-center justify-between text-xs">
               <span class="text-slate-300">Hedera Consensus (HCS)</span>
-              <span class="text-purple-400 mono text-[11px] font-medium">Example topic 0.0.489104 (simulated)</span>
+              <span class="text-purple-400 mono text-[11px] font-medium">Not written to Hedera</span>
             </div>
           </div>
           <button type="submit" id="executeBtn" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:opacity-95 text-white font-medium text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/30 transition">
@@ -172,7 +172,7 @@
           </h3>
           <span class="text-xs text-slate-400 mono">Sum = <span id="systemSum" class="text-emerald-400 font-bold">0.00</span></span>
         </div>
-        <p class="text-[10px] text-slate-500 mb-2">Replayed from the constitutive tape (simulated). Floor stays senior.</p>
+        <p class="text-[10px] text-slate-500 mb-2">Replayed from the constitutive tape. Floor stays senior.</p>
         <div class="space-y-2.5" id="accountsList">
           <!-- Dynamic balances -->
         </div>
@@ -195,19 +195,19 @@
           <!-- Populated dynamically -->
         </div>
       </div>
-      <!-- Constitutive tape (simulated, append-only) -->
+      <!-- Constitutive tape -->
       <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-xl">
         <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
           <h3 class="font-semibold text-white text-sm flex items-center gap-2">
             <i data-lucide="scroll-text" class="w-4 h-4 text-amber-300"></i>
-            Constitutive tape (simulated)
+            Constitutive tape
           </h3>
           <div class="flex flex-wrap gap-2">
             <button type="button" id="exportTapeBtn" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">Export tape (JSON)</button>
             <button type="button" id="verifyReplayBtn" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">Verify replay</button>
           </div>
         </div>
-        <p class="text-[10px] text-slate-500 mb-2">Append-only and hash-linked (simulated). Refusals stay. Clearing the stream does not erase the tape. Nothing is written to a network.</p>
+        <p class="text-[10px] text-slate-500 mb-2">Append-only and hash-linked. Refusals stay. Clearing the stream does not erase the tape. Nothing is written to a network.</p>
         <div id="tapeList" class="bg-slate-950 border border-slate-800/80 rounded-xl p-3 mono text-xs text-slate-300 custom-scrollbar overflow-y-auto max-h-[280px] space-y-2"></div>
         <p id="verifyResult" class="text-[11px] text-slate-400 mt-2" role="status"></p>
       </div>
@@ -227,7 +227,7 @@
             <div class="text-white font-mono font-medium mt-0.5">lgme.hederica.com</div>
           </div>
           <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
-            <div class="text-slate-400 text-[11px]">Example topic (simulated)</div>
+            <div class="text-slate-400 text-[11px]">Not written to Hedera</div>
             <div class="text-emerald-400 font-mono font-medium mt-0.5">0.0.489104</div>
           </div>
           <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
@@ -242,7 +242,7 @@
           </div>
           <div class="flex justify-between">
             <span>Consensus Timestamp:</span>
-            <span id="consensusTimestamp" class="mono text-purple-300">Mock Synchronized</span>
+            <span id="consensusTimestamp" class="mono text-purple-300">Not written to Hedera</span>
           </div>
         </div>
       </div>

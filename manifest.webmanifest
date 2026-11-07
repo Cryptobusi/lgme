@@ -1,9 +1,9 @@
 {
   "name": "lgme",
   "short_name": "lgme",
-  "description": "SIMULATION. Peer-to-peer practice books. The person keeps the third seat.",
-  "id": "/p2p-exchange-sim",
-  "start_url": "/p2p-exchange-sim",
+  "description": "Beta. Peer-to-peer exchange that settles real $lgme from your own Solana wallet.",
+  "id": "/exchange",
+  "start_url": "/exchange",
   "scope": "/",
   "display": "standalone",
   "prefer_related_applications": false,

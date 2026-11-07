@@ -1,5 +1,13 @@
 {
   "cleanUrls": true,
+  "redirects": [
+    { "source": "/p2p-exchange-sim", "destination": "/exchange", "statusCode": 301 },
+    { "source": "/p2p-exchange-sim.html", "destination": "/exchange", "statusCode": 301 },
+    { "source": "/mutual-credit-simulator", "destination": "/mutual-credit", "statusCode": 301 },
+    { "source": "/mutual-credit-simulator.html", "destination": "/mutual-credit", "statusCode": 301 },
+    { "source": "/simulation-explainer", "destination": "/how-it-works", "statusCode": 301 },
+    { "source": "/simulation-explainer.html", "destination": "/how-it-works", "statusCode": 301 }
+  ],
   "headers": [
     {
       "source": "/manifest.webmanifest",

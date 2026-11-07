@@ -1,4 +1,4 @@
-export const REFERENCE_LABEL = 'simulation reference values';
+export const REFERENCE_LABEL = 'DC reference values';
 
 const MONTH = /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+(20\d{2})\b/i;
 

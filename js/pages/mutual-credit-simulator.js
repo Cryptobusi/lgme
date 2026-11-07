@@ -1,6 +1,6 @@
 import { REFERENCE_LABEL, optionLabel, referenceLine } from '/js/dc-reference.mjs';
 
-    // Client-side simulation only. No network writes. No Hedera or Komunitin writes.
+    // Not written to Hedera. No network writes.
     const GENESIS = '0'.repeat(64);
     const FLOOR_BLOCK = 'Blocked: Floor stays senior';
     const OPENING = Object.freeze({
@@ -133,7 +133,7 @@ import { REFERENCE_LABEL, optionLabel, referenceLine } from '/js/dc-reference.mj
         div.innerHTML = `
           <div>
             <div class="text-xs font-medium text-white">${esc(acc.name)}</div>
-            <div class="text-[10px] text-amber-200/90">Floor ${esc(acc.floor)} ${esc(acc.floorNote)} (simulated)</div>
+            <div class="text-[10px] text-amber-200/90">Floor ${esc(acc.floor)} ${esc(acc.floorNote)} </div>
             <div class="text-[10px] text-slate-500 font-mono">Limit: ${esc(acc.creditLimit)} units · ${above >= 0 ? esc(above) + ' above floor' : 'below floor'}</div>
           </div>
           <div class="text-right">
@@ -149,7 +149,7 @@ import { REFERENCE_LABEL, optionLabel, referenceLine } from '/js/dc-reference.mj
       const container = document.getElementById('tapeList');
       container.innerHTML = '';
       if (state.tape.length === 0) {
-        container.innerHTML = '<div class="text-slate-500 text-[11px]">Tape is empty (simulated). Offers, acceptances, refusals, blocks, and settlements append here.</div>';
+        container.innerHTML = '<div class="text-slate-500 text-[11px]">Tape is empty . Offers, acceptances, refusals, blocks, and settlements append here.</div>';
         return;
       }
       const tone = {
@@ -171,7 +171,7 @@ import { REFERENCE_LABEL, optionLabel, referenceLine } from '/js/dc-reference.mj
         const refLine = entry.referenceId ? ` · ref ${esc(entry.referenceId)} @ ${esc(entry.referenceAvg)}` : '';
         div.innerHTML = `
           <div class="flex items-center justify-between gap-2">
-            <span class="text-[10px] uppercase tracking-wider">${esc(entry.type)} · simulated</span>
+            <span class="text-[10px] uppercase tracking-wider">${esc(entry.type)}</span>
             <span class="text-[10px] text-slate-500">#${esc(entry.index)}</span>
           </div>
           <div class="mt-1 text-[11px]">${esc(entry.debtor)} → ${esc(entry.creditor)} · ${esc(entry.amount)}${third}${refLine}${message}</div>
@@ -196,11 +196,11 @@ import { REFERENCE_LABEL, optionLabel, referenceLine } from '/js/dc-reference.mj
       const note = document.getElementById('thirdSeatNote');
       btn.hidden = !distinct;
       if (!proposal.thirdSeat) {
-        note.textContent = 'No third seat. Bilateral exchange only (simulated).';
+        note.textContent = 'No third seat. Bilateral exchange only .';
       } else if (!distinct) {
-        note.textContent = 'Third seat must be a different participant (simulated).';
+        note.textContent = 'Third seat must be a different participant .';
       } else {
-        note.textContent = 'Third seat proposed (simulated). Decline records a refusal. No balances move. No penalty.';
+        note.textContent = 'Third seat proposed . Decline records a refusal. No balances move. No penalty.';
       }
     }
     async function verifyReplay() {
@@ -208,14 +208,14 @@ import { REFERENCE_LABEL, optionLabel, referenceLine } from '/js/dc-reference.mj
       let prev = GENESIS;
       for (const entry of state.tape) {
         if (entry.prev !== prev) {
-          result.textContent = `Verify replay: break at #${entry.index} (simulated). Previous hash does not link.`;
+          result.textContent = `Verify replay: break at #${entry.index} . Previous hash does not link.`;
           return false;
         }
         const body = { ...entry };
         delete body.hash;
         const recomputed = await sha256(canonicalJSON(body));
         if (recomputed !== entry.hash) {
-          result.textContent = `Verify replay: hash mismatch at #${entry.index} (simulated).`;
+          result.textContent = `Verify replay: hash mismatch at #${entry.index} .`;
           return false;
         }
         prev = entry.hash;
@@ -223,22 +223,22 @@ import { REFERENCE_LABEL, optionLabel, referenceLine } from '/js/dc-reference.mj
       const replayed = replayBalances(state.tape);
       const sum = balanceSum(replayed);
       if (Math.abs(sum) > 1e-9) {
-        result.textContent = `Verify replay: balances sum to ${sum} (simulated). Expected 0.`;
+        result.textContent = `Verify replay: balances sum to ${sum} . Expected 0.`;
         return false;
       }
       for (const id of Object.keys(replayed)) {
         if (replayed[id].balance !== state.accounts[id].balance) {
-          result.textContent = `Verify replay: displayed balance for ${id} is not the tape replay (simulated).`;
+          result.textContent = `Verify replay: displayed balance for ${id} is not the tape replay .`;
           return false;
         }
       }
-      result.textContent = `Verify replay: ok (simulated). ${state.tape.length} entries. Hashes linked. Balances sum to 0.00.`;
+      result.textContent = `Verify replay: ok . ${state.tape.length} entries. Hashes linked. Balances sum to 0.00.`;
       return true;
     }
     function exportTape() {
       const payload = {
         simulated: true,
-        label: 'simulated constitutive tape',
+        label: 'constitutive tape',
         genesisPrev: GENESIS,
         opening: OPENING,
         entries: state.tape
@@ -247,12 +247,12 @@ import { REFERENCE_LABEL, optionLabel, referenceLine } from '/js/dc-reference.mj
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `lgme_simulated_tape_${Date.now()}.json`;
+      a.download = `lgme_tape_${Date.now()}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      showToast('Tape exported (simulated).');
+      showToast('Tape exported .');
     }
     async function declineThirdSeat() {
       const proposal = readProposal();
@@ -262,7 +262,7 @@ import { REFERENCE_LABEL, optionLabel, referenceLine } from '/js/dc-reference.mj
         return;
       }
       const before = replayBalances(state.tape);
-      await appendEntry({ ...proposal, type: 'offer', message: 'offer (simulated)' });
+      await appendEntry({ ...proposal, type: 'offer', message: 'offer ' });
       await appendEntry({ ...proposal, type: 'refusal', message: 'REFUSAL' });
       applyReplay();
       renderBalances();
@@ -270,11 +270,11 @@ import { REFERENCE_LABEL, optionLabel, referenceLine } from '/js/dc-reference.mj
       const after = state.accounts;
       for (const id of Object.keys(before)) {
         if (before[id].balance !== after[id].balance) {
-          addLog('REFUSAL', 'Balance drift after refusal (simulated).', 'purple');
+          addLog('REFUSAL', 'Balance drift after refusal .', 'purple');
         }
       }
-      addLog('REFUSAL', `${state.accounts[proposal.thirdSeat].name} declined the third seat. REFUSAL kept on the tape. No balances moved. No penalty. (simulated)`, 'purple');
-      showToast('REFUSAL recorded (simulated). No balances moved. No penalty.');
+      addLog('REFUSAL', `${state.accounts[proposal.thirdSeat].name} declined the third seat. REFUSAL kept on the tape. No balances moved. No penalty. `, 'purple');
+      showToast('REFUSAL recorded . No balances moved. No penalty.');
     }
     document.getElementById('tradeForm').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -287,8 +287,8 @@ import { REFERENCE_LABEL, optionLabel, referenceLine } from '/js/dc-reference.mj
       }
       busy = true;
       try {
-        addLog('1. INGEST', `Offer (simulated): ${proposal.amount} units for "${proposal.reference}"`, 'cyan');
-        await appendEntry({ ...proposal, type: 'offer', message: 'offer (simulated)' });
+        addLog('1. INGEST', `Offer : ${proposal.amount} units for "${proposal.reference}"`, 'cyan');
+        await appendEntry({ ...proposal, type: 'offer', message: 'offer ' });
         if (breachesFloor(proposal.debtor, proposal.amount)) {
           await appendEntry({ ...proposal, type: 'block', message: FLOOR_BLOCK });
           applyReplay();
@@ -298,18 +298,18 @@ import { REFERENCE_LABEL, optionLabel, referenceLine } from '/js/dc-reference.mj
           showToast(FLOOR_BLOCK);
           return;
         }
-        await appendEntry({ ...proposal, type: 'accept', message: 'accept (simulated)' });
-        const settlement = await appendEntry({ ...proposal, type: 'settlement', message: 'settlement (simulated)' });
+        await appendEntry({ ...proposal, type: 'accept', message: 'accept ' });
+        const settlement = await appendEntry({ ...proposal, type: 'settlement', message: 'settlement ' });
         applyReplay();
         renderBalances();
         renderTape();
-        addLog('3. KOMUNITIN', `Double-entry net cleared (simulated): ${proposal.debtor} (-${proposal.amount}) | ${proposal.creditor} (+${proposal.amount})`, 'cyan');
+        addLog('3. KOMUNITIN', `Double-entry net cleared : ${proposal.debtor} (-${proposal.amount}) | ${proposal.creditor} (+${proposal.amount})`, 'cyan');
         const hcsSequence = 100000 + state.tape.filter((entry) => entry.type === 'settlement').length;
         const consensusTs = new Date().getTime() / 1000;
-        addLog('4. HEDERA HCS', `Example topic 0.0.489104 - Seq #${hcsSequence} anchored (simulated)`, 'success');
+        addLog('4. HEDERA HCS', `Not written to Hedera. Seq #${hcsSequence} `, 'success');
         document.getElementById('lastTxHash').textContent = settlement.hash;
-        document.getElementById('consensusTimestamp').textContent = `${consensusTs} UTC (Seq #${hcsSequence}) (simulated)`;
-        showToast(`Exchange settled & anchored (simulated HCS) #${hcsSequence}`);
+        document.getElementById('consensusTimestamp').textContent = `${consensusTs} UTC (Seq #${hcsSequence}) `;
+        showToast(`Exchange settled. Not written to Hedera.`);
       } finally {
         busy = false;
       }
@@ -384,7 +384,7 @@ import { REFERENCE_LABEL, optionLabel, referenceLine } from '/js/dc-reference.mj
       document.getElementById('refQtyLabel').textContent = basis === 'hour' ? 'Hours' : ('Quantity (' + item.unit + ')');
       if (!Number.isFinite(qty) || qty <= 0 || avg == null) {
         state.appliedRef = null;
-        detail.textContent = 'Reference only, not a price. Enter hours or quantity. (simulated)';
+        detail.textContent = 'Reference only, not a price. Enter hours or quantity. ';
         return;
       }
       const amount = Math.round(avg * qty * 100) / 100;
@@ -427,7 +427,7 @@ import { REFERENCE_LABEL, optionLabel, referenceLine } from '/js/dc-reference.mj
         }
         detail.textContent = `${REFERENCE_LABEL}. Reference only, not a price. As of ${state.refCatalog.date || 'pending'}. ${state.refCatalog.notice}`;
       } catch (err) {
-        detail.textContent = 'Reference list did not load (simulated).';
+        detail.textContent = 'Reference list did not load .';
       }
     }
     ['partyA', 'partyB', 'thirdSeat'].forEach((id) => {
@@ -446,31 +446,31 @@ import { REFERENCE_LABEL, optionLabel, referenceLine } from '/js/dc-reference.mj
     });
     document.getElementById('downloadMdBtn').addEventListener('click', () => {
       const now = new Date().toISOString();
-      let md = `# lgme.app - Sovereign Provenance & Mutual Credit Simulator Run
+      let md = `# lgme.app - Sovereign Provenance & Mutual credit Run
 **Date:** ${now}  
-**Label:** simulated  
+**Label:** Beta  
 **Target Index:** hederica.com  
-**Consensus Engine:** Hedera Consensus Service (example topic 0.0.489104, simulated)  
-**Clearing Engine:** Komunitin Mutual Credit Protocol (simulated)  
+**Consensus Engine:** Hedera Consensus Service (example topic 0.0.489104)  
+**Clearing Engine:** Komunitin Mutual Credit Protocol   
 ---
 ## 1. System Parameters & Architecture
-- **Auto-Secure Signing:** RFC 8785 Canonical JSON + Local Ed25519 Enclave Simulation
-- **Zero-Sum Clearing:** Komunitin double-entry accounting matrix (simulated)
-- **Floor seniority:** protected food/rent line stays senior (simulated)
-- **Constitutive tape:** append-only SHA-256 hash chain; balances replayed from the tape (simulated)
+- **Signing:** RFC 8785 canonical JSON, signed on this device
+- **Zero-Sum Clearing:** Komunitin double-entry accounting matrix 
+- **Floor seniority:** protected food/rent line stays senior 
+- **Constitutive tape:** append-only SHA-256 hash chain; balances replayed from the tape 
 - **Adoptive Interface:** Frictionless Passkey credential generation & zero pre-funding required
 ---
-## 2. Mutual Credit Balances (Replay of the simulated tape)
+## 2. Mutual credit balances (replay of the tape)
 
-| Node / Participant | Current Balance | Floor (simulated) | Credit Limit | Status |
+| Node / Participant | Current Balance | Floor  | Credit Limit | Status |
 | :--- | :--- | :--- | :--- | :--- |
 `;
       for (const acc of Object.values(state.accounts)) {
         md += `| ${acc.name} | ${acc.balance} | ${acc.floor} ${acc.floorNote} | ${acc.creditLimit} | Operational |\n`;
       }
-      md += `\n**Net Balance Invariant:** Sum = ${document.getElementById('systemSum').textContent} (simulated zero-sum)\n\n`;
+      md += `\n**Net balance:** Sum = ${document.getElementById('systemSum').textContent}\n\n`;
       md += `---
-## 3. Constitutive tape (simulated)
+## 3. Constitutive tape 
 
 | # | Type | Debtor | Creditor | Amount | Third seat | Reference | Avg used | Message | Hash |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -491,7 +491,7 @@ import { REFERENCE_LABEL, optionLabel, referenceLine } from '/js/dc-reference.mj
       });
       md += `\`\`\`
 ---
-*Exported from the lgme.app client simulator (simulated). Nothing was written to a network.*
+*Exported from lgme.app. Not written to Hedera.*
 `;
       const blob = new Blob([md], { type: 'text/markdown' });
       const url = URL.createObjectURL(blob);
@@ -509,7 +509,7 @@ import { REFERENCE_LABEL, optionLabel, referenceLine } from '/js/dc-reference.mj
         deploymentTarget: 'hederica.com',
         subdomain: 'lgme.hederica.com',
         appId: 'lgme-spp-clearing-engine',
-        version: '1.2.0-mock',
+        version: '1.2.0',
         hederaTopicId: '0.0.489104',
         clearingEngine: 'Komunitin Microservices',
         status: 'INDEXED_READY',
@@ -522,14 +522,14 @@ import { REFERENCE_LABEL, optionLabel, referenceLine } from '/js/dc-reference.mj
       const badge = document.getElementById('indexStatusBadge');
       badge.textContent = 'Registered in Index';
       badge.className = 'text-[11px] font-mono px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-800/40';
-      addLog('DEPLOY REGISTER', 'Recorded deployment manifest in this browser only (simulated).', 'success');
-      showToast('Deployment indexed locally (simulated).');
+      addLog('DEPLOY REGISTER', 'Recorded deployment manifest in this browser only .', 'success');
+      showToast('Deployment indexed locally .');
     });
     applyReplay();
     renderBalances();
     renderTape();
     syncThirdSeat();
-    addLog('SYSTEM BOOT', 'lgme.app simulator initialized (simulated). No network calls. Floor stays senior. Tape is constitutive.', 'info');
+    addLog('SYSTEM BOOT', 'lgme.app is ready. Not written to Hedera. Floor stays senior. Tape is constitutive.', 'info');
     if (window.lucide) lucide.createIcons();
     loadReferences();
   

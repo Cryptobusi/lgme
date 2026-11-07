@@ -1,5 +1,5 @@
 // lgme.app shell. HTML is fetched from the network first so a published change shows.
-const CACHE_NAME = "lgme-v54";
+const CACHE_NAME = "lgme-v55";
 const NET_MS = 8000;
 const SHELL = [
   "/",
@@ -16,8 +16,8 @@ const SHELL = [
   "/grants",
   "/grants.html",
   "/icons/apple-touch-icon.png",
-  "/p2p-exchange-sim",
-  "/p2p-exchange-sim.html",
+  "/exchange",
+  "/exchange.html",
   "/js/p2p-exchange-sim.mjs",
   "/js/p2p-sim-guard.mjs",
   "/js/dc-reference.mjs",
@@ -43,7 +43,9 @@ const SHELL = [
   "/charter",
   "/bylaws",
   "/membership",
-  "/exchange",
+  "/ididit",
+  "/mutual-credit",
+  "/how-it-works",
   "/technical",
   "/preparation",
 ];
@@ -81,11 +83,23 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+  const moved = {
+    "/p2p-exchange-sim": "/exchange",
+    "/p2p-exchange-sim.html": "/exchange",
+    "/mutual-credit-simulator": "/mutual-credit",
+    "/mutual-credit-simulator.html": "/mutual-credit",
+    "/simulation-explainer": "/how-it-works",
+    "/simulation-explainer.html": "/how-it-works"
+  };
+  if (moved[url.pathname]) {
+    event.respondWith(Response.redirect(moved[url.pathname], 301));
+    return;
+  }
   if (/\.(mp4|webm)$/i.test(url.pathname)) return;
 
   const fallback = () => {
-    const path = url.pathname === "/p2p-exchange-sim" || url.pathname === "/p2p-exchange-sim.html"
-      ? caches.match("/p2p-exchange-sim").then((hit) => hit || caches.match("/p2p-exchange-sim.html")).then((hit) => hit || caches.match("/"))
+    const path = url.pathname === "/exchange" || url.pathname === "/exchange.html"
+      ? caches.match("/exchange").then((hit) => hit || caches.match("/exchange.html")).then((hit) => hit || caches.match("/"))
       : caches.match(url.pathname).then((hit) => hit || (isHtml(request, url) ? caches.match("/") : null));
     return path.then((hit) => hit || new Response("Offline", { status: 503, headers: { "content-type": "text/plain; charset=utf-8" } }));
   };

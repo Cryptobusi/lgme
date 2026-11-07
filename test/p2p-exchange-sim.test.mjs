@@ -579,11 +579,11 @@ test('resources magazine keeps the explainer sections', () => {
     'Settled dashboard',
     'The refusal',
     'The unresolved line',
-    'Mutual credit simulator',
+    'Mutual credit',
     'Deployment manifest',
     'The third seat',
     'The broken car',
-    'Practice market',
+    'Market',
     'IprovIT',
     'Found on OfferUp (DC area)',
     'Reconcile as donation to the floor',
@@ -600,7 +600,7 @@ test('pages stay simulation-only', () => {
     'js/p2p-exchange-sim.mjs',
     'js/p2p-exchange-sim-ui.mjs',
     'js/p2p-resources.mjs',
-    'p2p-exchange-sim.html',
+    'exchange.html',
     'manifest.webmanifest',
     'lgme-coin.html'
   ];
@@ -1150,7 +1150,7 @@ test('the coin page names the mint and the donate address exactly', () => {
   assert.equal(page.includes('Send via X Money to '), true);
   assert.equal(page.includes('https://x.com/Trancesage'), true);
   assert.equal(page.includes('This is a separate account from the Solana wallet.'), true);
-  assert.equal(page.includes('Real token on Solana. Not financial advice. High risk; you may lose everything. Always verify the mint address. The in-app $lgme balances are a simulation and are not this token.'), true);
+  assert.equal(page.includes('Real token on Solana. Not financial advice. High risk; you may lose everything. Always verify the mint address. Transfers are irreversible.'), true);
   const ui = readFileSync(join(root, 'js/p2p-exchange-sim-ui.mjs'), 'utf8');
   assert.equal(ui.includes(donate), true);
   assert.equal(ui.includes('@EgonAnon'), true);
@@ -1159,14 +1159,14 @@ test('the coin page names the mint and the donate address exactly', () => {
   assert.equal(ui.includes('This is a separate account from the Solana wallet.'), true);
   assert.equal(ui.includes('https://x.com/EgonomicAnon'), false);
   assert.equal(ui.includes('https://pump.fun/profile/EgonAnon'), false);
-  assert.equal(readFileSync(join(root, 'p2p-exchange-sim.html'), 'utf8').includes('$lgme on pump.fun'), true);
+  assert.equal(readFileSync(join(root, 'exchange.html'), 'utf8').includes('$lgme on pump.fun'), true);
   assert.equal(readFileSync(join(root, 'index.html'), 'utf8').includes('$lgme on pump.fun'), true);
   assert.equal(readFileSync(join(root, 'sitemap.xml'), 'utf8').includes('https://lgme.app/lgme-coin'), true);
 });
 
 test('real gifts are announced above the simulation and the two methods stay separate', () => {
   const banner = 'Real donations &amp; grants accepted';
-  for (const file of ['index.html', 'p2p-exchange-sim.html', 'lgme-coin.html', 'grants.html']) {
+  for (const file of ['index.html', 'exchange.html', 'lgme-coin.html', 'grants.html']) {
     const page = readFileSync(join(root, file), 'utf8');
     const body = page.slice(page.indexOf('<body>'));
     const launch = body.indexOf('class="launch-bar"');
@@ -1184,21 +1184,21 @@ test('real gifts are announced above the simulation and the two methods stay sep
   assert.equal(coin.includes('@EgonAnon'), true);
   assert.equal(coin.includes('6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY'), true);
   assert.equal(coin.includes('https://x.com/Trancesage'), true);
-  assert.equal(coin.includes('In-app $lgme balances stay simulated.'), true);
+  assert.equal(coin.includes('Solana payments are real $lgme.'), true);
   assert.equal(coin.includes('id="copy-donate"'), true);
   assert.equal(coin.includes('id="solana-pay"'), true);
   assert.equal(coin.includes('Never share a seed phrase'), true);
   assert.equal(coin.includes('THANK YOU FOR YOUR SUPPORT.'), true);
   assert.equal(coin.includes('Install Phantom or Solflare.'), true);
   assert.equal(readFileSync(join(root, 'js/p2p-exchange-sim-ui.mjs'), 'utf8').includes('Give via soBeIT'), true);
-  const desk = readFileSync(join(root, 'p2p-exchange-sim.html'), 'utf8');
+  const desk = readFileSync(join(root, 'exchange.html'), 'utf8');
   assert.ok(desk.indexOf('give-banner') < desk.indexOf('id="beta-notice"'));
   assert.equal(desk.includes('lgme · BETA'), true);
   assert.match(desk, /name="description" content="Beta\. Peer-to-peer exchange that settles real \$lgme from your own Solana wallet\./);
   assert.match(desk, /This beta needs JavaScript/);
   assert.equal(desk.includes('This simulation needs JavaScript'), false);
-  assert.equal(desk.includes('href="/simulation-explainer"'), true);
-  assert.equal(desk.includes('href="/mutual-credit-simulator"'), true);
+  assert.equal(desk.includes('href="/how-it-works"'), true);
+  assert.equal(desk.includes('href="/mutual-credit"'), true);
   const grants = readFileSync(join(root, 'grants.html'), 'utf8');
   assert.equal(grants.includes('How to propose'), true);
   assert.equal(grants.includes('class="give-now"'), true);
@@ -1270,7 +1270,7 @@ test('the wanted pin stays on IwanIT and a concluded match is an IdidIt', async 
   assert.match(draft, /Free|\$50/);
   const invite = sim.inviteSellerText(match);
   assert.match(invite, /Nothing was sent/);
-  assert.match(invite, /https:\/\/lgme\.app\/p2p-exchange-sim/);
+  assert.match(invite, /https:\/\/lgme\.app\/exchange/);
   const before = (await sim.replay(await store.get('alice'))).balance;
   const concluded = await sim.concludeWantedMatch(store, 'alice', match, '2026-11-07T01:00:00.000Z');
   assert.equal(concluded.ok, true, concluded.error);
@@ -1345,11 +1345,11 @@ test('Install & launch hides in the app, prompts when it can, and otherwise open
   assert.equal(source.includes('beforeinstallprompt'), true);
   assert.equal(source.includes('appinstalled'), true);
   assert.equal(source.includes('getInstalledRelatedApps'), true);
-  assert.equal(source.includes("location.assign('/p2p-exchange-sim')") || source.includes('location.assign(APP_PATH)'), true);
-  for (const file of ['index.html', 'p2p-exchange-sim.html', 'lgme-coin.html', 'pumpup.html', 'developer-notes.html']) {
+  assert.equal(source.includes("location.assign('/exchange')") || source.includes('location.assign(APP_PATH)'), true);
+  for (const file of ['index.html', 'exchange.html', 'lgme-coin.html', 'pumpup.html', 'developer-notes.html']) {
     assert.equal(readFileSync(join(root, file), 'utf8').includes('EgonomicAnon'), false, file);
   }
-  for (const file of ['index.html', 'p2p-exchange-sim.html', 'lgme-coin.html']) {
+  for (const file of ['index.html', 'exchange.html', 'lgme-coin.html']) {
     const page = readFileSync(join(root, file), 'utf8');
     assert.equal(page.includes('data-install-launch'), true, file);
     assert.equal(page.includes('Install &amp; launch'), true, file);
@@ -1364,7 +1364,7 @@ function installHarness(navExtras = {}, assign) {
   const assigned = [];
   const listeners = { win: {}, control: {} };
   const control = {
-    getAttribute(name) { return name === 'href' ? '/p2p-exchange-sim' : null; },
+    getAttribute(name) { return name === 'href' ? '/exchange' : null; },
     closest() { return { querySelector() { return null; }, append() {} }; },
     addEventListener(type, fn) { listeners.control[type] = fn; }
   };
@@ -1415,16 +1415,16 @@ test('Install & launch opens the desk after the prompt, a slow install check, an
     const harness = installHarness({ getInstalledRelatedApps: async () => [] });
     harness.prompt(outcome);
     await harness.click();
-    assert.deepEqual(harness.assigned, ['/p2p-exchange-sim'], outcome);
+    assert.deepEqual(harness.assigned, ['/exchange'], outcome);
   }
   const thrown = installHarness({ getInstalledRelatedApps: async () => [] });
   thrown.prompt('dismissed', { fail: 'prompt' });
   await thrown.click();
-  assert.deepEqual(thrown.assigned, ['/p2p-exchange-sim']);
+  assert.deepEqual(thrown.assigned, ['/exchange']);
   const choice = installHarness({ getInstalledRelatedApps: async () => [] });
   choice.prompt('accepted', { fail: 'choice' });
   await choice.click();
-  assert.deepEqual(choice.assigned, ['/p2p-exchange-sim']);
+  assert.deepEqual(choice.assigned, ['/exchange']);
 
   const hung = installHarness({ getInstalledRelatedApps: () => new Promise(() => {}) });
   const started = Date.now();
@@ -1432,7 +1432,7 @@ test('Install & launch opens the desk after the prompt, a slow install check, an
   const elapsed = Date.now() - started;
   assert.ok(elapsed >= 450, String(elapsed));
   assert.ok(elapsed < 1200, String(elapsed));
-  assert.deepEqual(hung.assigned, ['/p2p-exchange-sim']);
+  assert.deepEqual(hung.assigned, ['/exchange']);
 
   const back = installHarness({ getInstalledRelatedApps: async () => [] });
   await back.click();
@@ -1440,7 +1440,7 @@ test('Install & launch opens the desk after the prompt, a slow install check, an
   assert.equal(back.assigned.length, 1);
   back.listeners.win.pageshow.forEach((fn) => fn({ persisted: true }));
   await back.click();
-  assert.deepEqual(back.assigned, ['/p2p-exchange-sim', '/p2p-exchange-sim']);
+  assert.deepEqual(back.assigned, ['/exchange', '/exchange']);
 
   let calls = 0;
   const broken = installHarness({ getInstalledRelatedApps: async () => [] }, (path, assigned) => {
@@ -1449,11 +1449,11 @@ test('Install & launch opens the desk after the prompt, a slow install check, an
     assigned.push(path);
   });
   await broken.click();
-  assert.deepEqual(broken.assigned, ['/p2p-exchange-sim']);
+  assert.deepEqual(broken.assigned, ['/exchange']);
 
-  for (const file of ['index.html', 'p2p-exchange-sim.html', 'lgme-coin.html']) {
+  for (const file of ['index.html', 'exchange.html', 'lgme-coin.html']) {
     const page = readFileSync(join(root, file), 'utf8');
-    assert.match(page, /<a class="install-launch" data-install-launch href="\/p2p-exchange-sim">/, file);
+    assert.match(page, /<a class="install-launch" data-install-launch href="\/exchange">/, file);
   }
 });
 
@@ -1738,8 +1738,8 @@ test('DC reference values stay pending when a series has no number', () => {
     const line = referenceLine(item, catalog);
     assert.equal(line.pending, true);
     assert.equal(line.value, 'pending');
-    assert.equal(line.label, 'simulation reference values');
-    assert.match(line.text, /^simulation reference values\. /);
+    assert.equal(line.label, 'DC reference values');
+    assert.match(line.text, /^DC reference values\. /);
     assert.match(line.sources, /BLS/);
     assert.equal(/\d+\.\d+ USD/.test(line.text), false);
   }
@@ -1765,20 +1765,20 @@ test('DC reference values stay pending when a series has no number', () => {
   assert.equal((ui.match(/fetch\(/g) || []).length, 5);
   assert.equal(ui.includes('REFERENCE_LABEL'), true);
   assert.equal(ui.includes("id: 'dc-reference'"), true);
-  assert.equal(helper.includes("simulation reference values"), true);
+  assert.equal(helper.includes("DC reference values"), true);
   const mutual = readFileSync(join(root, 'js/pages/mutual-credit-simulator.js'), 'utf8');
   assert.equal((mutual.match(/fetch\(/g) || []).length, 1);
   assert.equal(mutual.includes("fetch('/data/dc-reference-values-v0.json', { signal: controller.signal })"), true);
   assert.equal(mutual.includes('AbortController'), true);
-  assert.equal(mutual.includes('simulation reference values') || mutual.includes('REFERENCE_LABEL'), true);
+  assert.equal(mutual.includes('DC reference values') || mutual.includes('REFERENCE_LABEL'), true);
   assert.equal(mutual.includes('— pending') || mutual.includes('optionLabel'), true);
-  const page = readFileSync(join(root, 'mutual-credit-simulator.html'), 'utf8');
-  assert.equal(page.includes('simulation reference values'), true);
+  const page = readFileSync(join(root, 'mutual-credit.html'), 'utf8');
+  assert.equal(page.includes('DC reference values'), true);
   assert.equal(page.includes('id="refList"'), true);
   assert.equal(/<script(?![^>]*\bsrc=)/i.test(page), false);
   const worker = readFileSync(join(root, 'sw.js'), 'utf8');
-  assert.equal(worker.includes('lgme-v54'), true);
-  const desk = readFileSync(join(root, 'p2p-exchange-sim.html'), 'utf8');
+  assert.equal(worker.includes('lgme-v55'), true);
+  const desk = readFileSync(join(root, 'exchange.html'), 'utf8');
   assert.equal(desk.includes('splash-skip'), false);
   assert.equal(desk.includes('>Skip<'), false);
   assert.equal(desk.includes('preload="none"'), true);

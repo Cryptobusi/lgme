@@ -27,17 +27,17 @@
   <p class="muted">Self-hosted inventory system adapted to gather, organize, and keep up-to-date the information required for exchange listing of $LGME / related instruments. Coordinates documents, statuses, and notifications. Floor stays senior. An unpublished change is not a change.</p>
 
   <section>
-    <h2>Mock simulation login</h2>
+    <h2>Sign in</h2>
     <div class="mock-login">
-      <p><strong>Design-research mock</strong> — any username/password will pass.</p>
+      <p><strong>Sign-in check</strong> — any username and password will pass. Not written to Hedera.</p>
       <form id="mockForm">
         <label>Username / Email<br><input type="text" id="user" placeholder="anything" required></label>
         <label>Password<br><input type="password" id="pass" placeholder="anything" required></label>
         <button type="submit">Login</button>
       </form>
       <div id="success" class="mock-success">
-        <strong>✓ Logged in (simulated)</strong><br>
-        Welcome to the HomeBox listing tracker mock. Locations and items would appear here.<br>
+        <strong>Signed in</strong><br>
+        Welcome to the HomeBox listing tracker. Locations and items would appear here.<br>
         Floor stays senior. This is not a live instance.
       </div>
     </div>
@@ -102,7 +102,7 @@ docker run -d --name lgme-homebox --restart unless-stopped \
       <li>Populate the suggested items and attach current documents.</li>
       <li>Set maintenance dates for reviews.</li>
       <li>Wire API notifications if desired.</li>
-      <li>Link the live instance from this page once ready (replace demo links).</li>
+      <li>Link the live instance from this page once ready (replace the placeholder links).</li>
     </ol>
     <p><a href="/">← Back to lgme</a></p>
   </section>

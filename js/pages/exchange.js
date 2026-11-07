@@ -290,7 +290,7 @@
     function doneBlock() {
       return `<section id="room" class="block"><h2>IdidIT</h2><p class="muted">The book. A refusal stays on it. A release writes nothing.</p>
         ${desk.done.map((t) => `<article style="border-bottom:1px solid var(--line);padding:.9rem 0">
-          <p class="faint">${esc(t.category)} / ${esc(t.mock ? "Mock" : wayLabel(t.settlement, t.refused))}${t.tokens ? " · " + t.tokens + " tokens" : ""}</p>
+          <p class="faint">${esc(t.category)} / ${esc(t.mock ? "Shelf" : wayLabel(t.settlement, t.refused))}${t.tokens ? " · " + t.tokens + " tokens" : ""}</p>
           <h3 style="font-size:1.6rem">${esc(t.haveTitle)}</h3>
           <p class="muted">for ${esc(t.wantTitle)}</p>
           ${t.full ? `<p class="muted">${esc(t.full)}</p>` : ""}
@@ -322,16 +322,16 @@
       const rows = trialRows();
       const paired = rows.filter((r) => r.paired).length;
       const at = Date.now();
-      const lines = [{ id: "mock-all", haveTitle: "Mock trial", wantTitle: paired + " of " + rows.length + " shelves have both sides", haveBy: "The desk", wantBy: "The desk", category: "All", note: "Collective result. Nothing was taken.", createdAt: at, mock: true }];
-      for (const row of rows) lines.push({ id: "mock-" + row.category, haveTitle: row.have || "No have", wantTitle: row.want || "No want", haveBy: "Mock trial", wantBy: "Mock trial", category: row.category, note: row.paired ? "Mock. Both sides are on the shelf. Nothing was taken." : "Mock. This shelf has no pair. Nothing was taken.", createdAt: at, mock: true });
+      const lines = [{ id: "mock-all", haveTitle: "Shelf check", wantTitle: paired + " of " + rows.length + " shelves have both sides", haveBy: "The desk", wantBy: "The desk", category: "All", note: "Collective result. Nothing was taken.", createdAt: at, mock: true }];
+      for (const row of rows) lines.push({ id: "mock-" + row.category, haveTitle: row.have || "No have", wantTitle: row.want || "No want", haveBy: "Shelf check", wantBy: "Shelf check", category: row.category, note: row.paired ? "Both sides are on the shelf. Nothing was taken." : "This shelf has no pair. Nothing was taken.", createdAt: at, mock: true });
       desk.done = lines.concat((desk.done || []).filter((t) => !t.mock));
-      if (note) ui.toast = "Mock trial is on the tape. Nothing was taken.";
+      if (note) ui.toast = "Shelf check is on the tape. Nothing was taken.";
       save();
     }
     function mockBlock() {
       const rows = trialRows();
       const paired = rows.filter((r) => r.paired).length;
-      return `<section style="margin-top:2.5rem;border-top:1px solid var(--line);padding-top:1rem"><p class="kicker">All shelves</p><h2>Mock trial</h2>
+      return `<section style="margin-top:2.5rem;border-top:1px solid var(--line);padding-top:1rem"><p class="kicker">All shelves</p><h2>Shelf check</h2>
         <p style="font-family:Newsreader,serif;font-size:3rem;line-height:1;margin:.3rem 0 .6rem">${paired}<span class="muted" style="font-size:1.3rem">/${rows.length}</span></p>
         <div class="trial">${rows.map((r) => `<div style="min-height:3.4rem;border-radius:.5rem;padding:.45rem;border:1px solid var(--line);background:${r.paired ? "var(--fg)" : "var(--panel)"};color:${r.paired ? "var(--bg)" : "var(--muted)"};font-size:.75rem">${esc(r.category)}</div>`).join("")}</div>
         ${rows.map((r) => `<p style="border-bottom:1px solid var(--line);padding:.55rem 0"><strong>${esc(r.category)}</strong> <span class="muted">${r.paired ? esc(r.have) + " with " + esc(r.want) : r.have ? "Have only · " + esc(r.have) : r.want ? "Want only · " + esc(r.want) : "No line on this shelf"}</span></p>`).join("")}

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IdidIt · lgme</title>
+  <link rel="icon" href="/icons/icon-192.png" />
+  <link rel="stylesheet" href="/menu.css" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;1,6..72,500&display=swap" />
+  <style>
+    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --faint:#8ea892; --gold:#c6a15b; --line:#2c352b; --panel:#141a13; }
+    * { box-sizing: border-box; }
+    html[data-look="larger"] { font-size: 125%; }
+    body { margin: 0 auto; max-width: 72rem; padding: 1.25rem 1.25rem 4rem; background: var(--bg); color: var(--fg); font-family: Figtree, sans-serif; font-size: 1rem; line-height: 1.5; }
+    a { color: var(--fg); }
+    h1, h2, h3 { font-family: Newsreader, serif; font-weight: 500; letter-spacing: -0.02em; margin: 0; }
+    h1 { font-size: clamp(2.6rem, 7vw, 4rem); line-height: 0.95; }
+    h2 { font-size: 1.8rem; }
+    .kicker { margin: 0 0 0.4rem; font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); }
+    .muted { color: var(--muted); }
+    .faint { color: var(--faint); font-size: 0.82rem; }
+    button, input, textarea, select { font: inherit; color: var(--fg); }
+    button { min-height: 44px; cursor: pointer; }
+    input, textarea, select { width: 100%; background: var(--panel); border: 1px solid var(--line); padding: 0.65rem 0.75rem; }
+    textarea { min-height: 5.5rem; }
+    .row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+    .btn { border: 1px solid var(--line); background: transparent; color: var(--fg); padding: 0.55rem 0.9rem; }
+    .btn.solid { background: var(--fg); color: var(--bg); border-color: var(--fg); font-weight: 600; }
+    .btn.solid:hover { background: var(--gold); border-color: var(--gold); color: var(--bg); }
+    .btn[aria-pressed="true"] { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+    .btn.solid[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); box-shadow: none; }
+    .btn:disabled { opacity: 0.4; }
+    .grid { display: grid; gap: 0.5rem; }
+    .cols { display: grid; gap: 1.5rem; }
+    @media (min-width: 900px) { .cols { grid-template-columns: 1fr 1fr; } .span2 { grid-column: 1 / -1; } }
+    .card { border: 1px solid var(--line); background: var(--panel); padding: 0.9rem 1rem; text-align: left; width: 100%; }
+    .card.on { border-color: var(--fg); }
+    .card img.shot, video { width: 100%; max-height: 11rem; object-fit: cover; margin-top: 0.6rem; background: #000; }
+    .feed { display: grid; grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr)); gap: 0.85rem; }
+    h2, section, .block { scroll-margin-top: 4.5rem; }
+    .deskmenu a[aria-current="page"] { color: var(--fg); box-shadow: inset 0 -1px 0 var(--gold); }
+    .block { margin-top: 1.75rem; padding-top: 1.15rem; border-top: 1px solid var(--line); }
+    .search { margin: 0.2rem 0 0.7rem; }
+    .search input { flex: 1 1 16rem; max-width: none; }
+    .ledger { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.8rem 1.2rem; margin: 0.7rem 0; }
+    .ledger p { margin: 0; }
+    .tile { display: block; width: 100%; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; }
+    .tile .frame { position: relative; display: block; aspect-ratio: 1; overflow: hidden; border-radius: 0.6rem; background: var(--panel); border: 1px solid var(--line); }
+    .tile img { width: 100%; height: 100%; object-fit: cover; margin: 0; max-height: none; }
+    .tile .badge { position: absolute; top: 0.4rem; left: 0.4rem; background: var(--bg); color: var(--fg); border-radius: 999px; padding: 0.15rem 0.45rem; font-size: 0.72rem; }
+    .tile strong { display: block; margin-top: 0.4rem; font-weight: 600; font-size: 0.95rem; line-height: 1.25; }
+    img.sign { width: 100%; height: 4.5rem; object-fit: contain; background: var(--bg); border: 1px solid var(--line); margin-top: 0.5rem; }
+    canvas.pad { width: 100%; height: 8rem; touch-action: none; background: var(--bg); border: 1px solid var(--line); margin-top: 0.4rem; }
+    .settle { display: grid; grid-template-columns: 1fr 1fr; gap: 0.45rem; }
+    label.field { display: block; margin-top: 0.8rem; font-size: 0.92rem; }
+    .check { display: flex; gap: 0.6rem; align-items: flex-start; margin-top: 0.9rem; }
+    .check input { width: auto; margin-top: 0.3rem; }
+    hr { border: 0; border-top: 1px solid var(--line); margin: 1.2rem 0; }
+    .back { color: var(--muted); text-decoration: none; }
+    .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; margin: 0.75rem 0 0.45rem; }
+    .num { font-family: Newsreader, serif; font-size: 2rem; line-height: 1; }
+    .tile .frame.bare { aspect-ratio: auto; min-height: 0; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 0.3rem; padding: 0.8rem 0.9rem 0.85rem; }
+    .tile .frame.bare .badge { position: static; }
+    .tile .frame.bare .gloss { font-family: Newsreader, serif; font-size: 1.25rem; line-height: 1.15; }
+    .seats p { margin: 0.25rem 0 0; }
+    .hold, .pair { border-bottom: 1px solid var(--line); padding: 0.8rem 0 1rem; }
+    .pair p, .waynote { margin: 0 0 0.35rem; }
+    .reason { color: var(--muted); }
+    .toast { margin: 0.6rem 0; border-left: 2px solid var(--gold); padding-left: 0.7rem; }
+    .board { display: grid; grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr)); gap: 0.45rem; margin-top: 0.7rem; }
+    .shelf { display: flex; flex-direction: column; align-items: flex-start; gap: 0.15rem; min-height: 5.4rem; }
+    .shelf .count { font-family: Newsreader, serif; font-size: 1.45rem; line-height: 1.05; }
+    .trial { display: grid; grid-template-columns: repeat(auto-fill, minmax(6.2rem, 1fr)); gap: 0.4rem; margin-bottom: 1rem; }
+    @media (min-width: 900px) { .cols { gap: 2rem; } }
+    @media (max-width: 640px) {
+      .stats, .ledger { grid-template-columns: 1fr; }
+      .settle { grid-template-columns: 1fr; }
+      h1 { font-size: 2.7rem; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="deskmenu" aria-label="Desk">
+  <a href="/nswo">NSWO</a>
+  <a href="/dominion">Dominion</a>
+  <a href="/story">Story</a>
+    <a href="/study">Study/Prerequisite</a>
+    <a href="/#ididit">IDidit</a>
+    <a href="/ididit" aria-current="page">IdidIt</a>
+    <a href="/technical">Technical</a>
+    <a href="/preparation">Preparation</a>
+    <a href="/">Desk</a>
+  </nav>
+  <div id="app"></div>
+  <script src="/js/pages/exchange.js"></script>
+  <p class="muted"><a href="/">Desk</a> · <a href="/disclosures">Disclosures</a> · Not an offer. Not an investment.</p>
+</body>
+</html>

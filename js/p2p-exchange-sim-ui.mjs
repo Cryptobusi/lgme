@@ -806,7 +806,7 @@ function renderSeats(peers, seat) {
       'aria-pressed': peer.id === seat ? 'true' : 'false'
     }, [
       peer.name,
-      h('small', {}, [`${peer.mock ? peer.balance + ' mock $lgme' : peer.balance} · floor ${peer.floor}${peer.locked ? ' · locked' : ''}`]),
+      h('small', {}, [`${peer.balance} $lgme · floor ${peer.floor}${peer.locked ? ' · locked' : ''}`]),
       h('span', { class: peer.kyc === 'VERIFIED' ? 'badge badge-verified' : 'badge badge-unverified' }, [peer.kyc === 'VERIFIED' ? 'Verified' : 'Unverified'])
     ]);
     button.addEventListener('click', () => {
@@ -816,8 +816,8 @@ function renderSeats(peers, seat) {
     });
     bar.append(button);
   }
-  bar.append(h('button', { type: 'button', class: 'seat', onClick: () => renderAddPeer(peers) }, ['Register', h('small', {}, ['Mock grant of 100 $lgme'])]));
-  bar.append(h('button', { type: 'button', class: 'seat', onClick: resetDemo }, ['Reset demo', h('small', {}, ['Clears every local book'])]));
+  bar.append(h('button', { type: 'button', class: 'seat', onClick: () => renderAddPeer(peers) }, ['Register', h('small', {}, ['Opening grant of 100 $lgme'])]));
+  bar.append(h('button', { type: 'button', class: 'seat', onClick: resetDemo }, ['Reset', h('small', {}, ['Clears local books on this device'])]));
 }
 
 function selectTab(name) {
@@ -884,7 +884,7 @@ function renderAddPeer(peers) {
       const opened = await sim.unlockWallet(stored, passphrase.value, code, Math.floor(Date.now() / 1000));
       if (opened.ok) sessionKeys.set(id, opened.privateKeyJwk);
       rememberSeat(id);
-      setStatus(`${name.value.trim()} has a mock grant of 100 $lgme on a GENESIS line. The key is locked. Scan the wallet code, then unlock with the passphrase and the 6-digit code.`, 'ok');
+      setStatus(`${name.value.trim()} has an opening grant of 100 $lgme on a GENESIS line. The key is locked. Scan the wallet code, then unlock with the passphrase and the 6-digit code.`, 'ok');
       location.hash = 'wallet';
       await render();
     } finally {
@@ -900,12 +900,12 @@ function renderAddPeer(peers) {
 
 async function resetDemo() {
   if (busy) return;
-  if (!confirm('Reset the demo? This clears every local book in this browser. It does not move Solana $lgme.')) return;
+  if (!confirm('Reset? This clears the local books on this device. It does not move Solana $lgme.')) return;
   busy = true;
   try {
     await sim.resetAndSeed(store);
     rememberSeat('alice');
-    setStatus('Demo books restored. The market has a few listings, one open counter, and one pending handoff. Nothing in the market has settled.', 'ok');
+    setStatus('Local books restored on this device. The market has a few listings, one open counter, and one pending handoff. Nothing in the market has settled.', 'ok');
     openListingId = '';
     openThreadId = '';
     if (location.hash && location.hash !== '#market') location.hash = 'market';
@@ -1492,7 +1492,7 @@ async function renderBooks(peers, seat) {
   const offchain = await offchainCards(seat);
   panel.replaceChildren(
     h('h2', {}, [`${peer.name}'s book`]),
-    h('p', { class: 'muted' }, [`Every line below is on this peer’s tape. Credits and debits come only from settlements, payments, and mock rewards. The running balance is a replay. Key ${finger}. Limit ${rule.creditLimit}.`]),
+    h('p', { class: 'muted' }, [`Every line below is on this peer’s tape. Credits and debits come only from settlements, payments, and rewards. The running balance is a replay. Key ${finger}. Limit ${rule.creditLimit}.`]),
     h('div', { class: 'nums' }, [
       h('div', {}, [coinMark(), h('strong', {}, [String(view.balance)]), 'Balance']),
       h('div', {}, [h('strong', {}, [String(rule.floor)]), `Floor · ${rule.floorNote}`]),
@@ -1686,7 +1686,7 @@ async function renderWallet(peers, seat) {
     if (!secret) return;
     const code = await liveCode(secret);
     const left = 30 - (Math.floor(Date.now() / 1000) % 30);
-    codeLine.textContent = `Mock authenticator on this page session: ${code}. It changes in ${left}s. An authenticator app that scanned the code shows the same number.`;
+    codeLine.textContent = `Authenticator code on this page: ${code}. It changes in ${left}s. An authenticator app that scanned the code shows the same number.`;
   }
   if (secret) {
     await paintCode();
@@ -1697,7 +1697,7 @@ async function renderWallet(peers, seat) {
     h('p', { class: 'muted' }, ['Beta. The book key is local. The passphrase and the 6-digit code unlock that book. They are not a Solana seed. A $lgme payment is signed by your wallet.']),
     h('div', { class: 'balance-hero' }, [
       coinMark(),
-      h('div', {}, [h('strong', {}, [String(sim.replay(peer).balance)]), summary.mock ? 'Mock $lgme' : 'Book balance']),
+      h('div', {}, [h('strong', {}, [String(sim.replay(peer).balance)]), 'Book balance']),
       h('div', {}, [h('strong', {}, [String(sim.terms(peer).floor)]), 'Floor']),
       h('div', {}, [h('strong', {}, [locked ? 'Locked' : 'Open']), 'Key'])
     ])
@@ -1707,7 +1707,7 @@ async function renderWallet(peers, seat) {
   if (!peer.wallet?.ciphertext) {
     const passphrase = h('input', { type: 'password', minlength: '8', autocomplete: 'new-password', required: true });
     const form = h('form', {}, [
-      h('p', { class: 'legend' }, ['This demo book is unlocked so the desk can be tried. Set a passphrase to encrypt the key at rest.']),
+      h('p', { class: 'legend' }, ['This book is unlocked. Set a passphrase to encrypt the key at rest.']),
       field('Passphrase', passphrase),
       h('div', { class: 'actions' }, [h('button', { class: 'primary', type: 'submit' }, ['Encrypt and lock'])])
     ]);
@@ -1875,9 +1875,9 @@ function selfieStep(peer) {
     const kept = await sim.keepSelfieHash(store, peer.id, hash);
     stopAnyCamera();
     if (!kept.ok) { setStatus(kept.error, 'bad'); return; }
-    note.textContent = `Simulated. Picture discarded. Hash ${hash.slice(0, 12)} stays on this device.`;
+    note.textContent = `Picture discarded. Hash ${hash.slice(0, 12)} stays on this device.`;
   } }, ['Keep only the hash']);
-  return h('div', {}, [h('h3', {}, ['Simulated selfie']), note, video, h('div', { class: 'actions' }, [start, hashBtn])]);
+  return h('div', {}, [h('h3', {}, ['Selfie check']), note, video, h('div', { class: 'actions' }, [start, hashBtn])]);
 }
 
 function iouSection(peer) {
@@ -1933,13 +1933,13 @@ async function renderDevices(peers, seat) {
   const peer = await store.get(seat);
   const toId = h('input', { placeholder: 'peer id on the other device' });
   const amount = h('input', { type: 'number', min: '0.01', step: '0.01', value: '10', inputmode: 'decimal' });
-  const note = h('input', { maxlength: '160', value: 'mock $lgme' });
+  const note = h('input', { maxlength: '160', value: '$lgme' });
   const address = h('input', { placeholder: 'phone or email, optional', autocomplete: 'off' });
   const pass = peer.wallet?.ciphertext ? h('input', { type: 'password', autocomplete: 'current-password', required: true }) : null;
   const code = peer.wallet?.ciphertext ? h('input', { inputmode: 'numeric', autocomplete: 'one-time-code', maxlength: '8', required: true }) : null;
   const shareHost = h('div', {});
   const form = h('form', { class: 'grid two' }, [
-    field('Send mock $lgme to peer id', toId),
+    field('Send $lgme to peer id', toId),
     field('Amount', amount),
     pass ? field('Passphrase', pass) : null,
     code ? field('6-digit code', code) : null,
@@ -1948,7 +1948,7 @@ async function renderDevices(peers, seat) {
     field('Their phone or email, if you want a draft', address),
     h('p', { class: 'legend' }, [peer.wallet?.ciphertext
       ? 'Auto-send stays on this device. A valid code delivers the signed note into the other book. A wrong code sends nothing. Solana $lgme still needs your wallet.'
-      : 'This demo book has no authenticator yet. Signing prepares a code you can carry. Set up 2FA on the wallet to auto-deliver on this device.']),
+      : 'This book has no authenticator yet. Signing prepares a code you can carry. Set up 2FA on the wallet to auto-deliver on this device.']),
     sim.kycStatus(peer) === 'VERIFIED' ? null : h('p', { class: 'legend' }, ['Unverified members can send up to 20 $lgme. Receiving is open.'])
   ]);
   form.addEventListener('submit', async (event) => {
@@ -2017,12 +2017,12 @@ async function renderDevices(peers, seat) {
     h('h2', {}, [`Another device · ${peer.name}`]),
     h('p', { class: 'muted' }, ['There is no server. Copy the code, open the share link, scan the QR, or save a .json file. On the other device, verify the signature and the hash before anything is appended. sms: and mailto: only open your own app. This page never sends the message.']),
     h('div', { class: 'actions' }, [h('button', { type: 'button', onClick: () => download(`${seat}-tape.json`, JSON.stringify(sim.toExport(peer), null, 2), 'application/json') }, ['Export tape JSON'])]),
-    h('h3', {}, ['Send mock $lgme']),
+    h('h3', {}, ['Send $lgme']),
     form,
     shareHost,
     h('h3', {}, ['Receive']),
     importForm,
-    h('h3', {}, ['Simulated log']),
+    h('h3', {}, ['Log']),
     outbox.length ? h('div', {}, outbox) : h('p', { class: 'legend' }, ['Outbox is empty.']),
     inbox.length ? h('div', {}, inbox) : h('p', { class: 'legend' }, ['Inbox is empty.'])
   );
@@ -2269,7 +2269,7 @@ function soBeItCard(peers, seat) {
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     const result = await sim.soBeItGrant(store, seat, member.value, { amount: amount.value, reason: reason.value });
-    setStatus(result.ok ? `Simulated grant recorded. Balance ${result.balance}. No real funds moved.` : result.error, result.ok ? 'ok' : 'bad');
+    setStatus(result.ok ? `Grant recorded on this book. Balance ${result.balance}. Solana $lgme did not move.` : result.error, result.ok ? 'ok' : 'bad');
     if (result.ok) await render();
   });
   return h('article', { class: 'card', id: 'sobeit' }, [
@@ -3626,11 +3626,11 @@ function renderHelp() {
     ['Tape', 'Each book is append-only. Every entry names the previous hash and is signed with that peer’s key. Export the JSON and verify it. If a byte changes, the hash or the signature fails and the import stops.'],
     ['IOU and attestation', 'A dollar IOU is recorded as pending. Pending lines do not change the balance. The balance moves only when the named counterparty signs an ATTESTED entry. If they refuse, the tape records REFUSAL and the balance stays put.'],
     ['Local book', 'Registration writes a GENESIS entry for a local grant of 100. It is not Solana $lgme. Your wallet signs a real payment.'],
-    ['Simulated 2FA', 'A passphrase encrypts the key at rest with AES-GCM and PBKDF2. A 6-digit TOTP, RFC 6238, is checked with WebCrypto HMAC. The setup QR can be scanned by an authenticator app. This page generates the same code while the secret is still on screen. It never sends the code. A wrong code leaves the wallet locked.'],
+    ['Authenticator', 'A passphrase encrypts the key at rest with AES-GCM and PBKDF2. A 6-digit TOTP, RFC 6238, is checked with WebCrypto HMAC. The setup QR can be scanned by an authenticator app. This page generates the same code while the secret is still on screen. It never sends the code. A wrong code leaves the wallet locked.'],
     ['Another device', 'There is no server. Sign a proposal, countersign, refusal, transfer, attestation, or handoff, then carry the lgme1. code by copy, by a link whose data sits in the URL fragment, by a QR, or by a .json file. On the other device, verification runs before anything is appended. A QR is for an in-person handoff. To text or email a draft, the page opens sms: or mailto: so you send it from your own app. The outbox and inbox are a local log of that.'],
     ['Phone chat', 'A text is signed here, then Open SMS hands it to your phone’s own messages app. The link or the pasted token is checked for the sender’s signature and the member hash. A call button opens tel: on your phone. The tape records the start, the end, the other member’s hash, and a note you type. No audio is stored. Match sends the chat root by SMS and says Matched, or names the first message that differs. This page does not send the text and does not place the call. The other person’s signup details stay on their phone. You keep the phone number and the hash.'],
     ['Photos and video', 'The camera and the gallery stay on this phone. Photos are compressed and video is kept short. The file is encrypted in this browser. The tape stores only the signed hash, the type, the size, and the length. Share hands the file to your own apps. The signed text carries the hash. A file that does not match says Not authentic. Nothing is uploaded.'],
-    ['Invoices', 'Invoice in $lgme is optional on a work receipt. An unpaid invoice does not change a balance. A reminder opens your own SMS app. The payer pays with the 6-digit code when the wallet is locked. Floors still hold. A refusal is recorded and carries no penalty. A paid receipt can earn a small mock reward, capped each period. Unpaid and refused receipts earn none.'],
+    ['Invoices', 'An invoice in US$ is optional on a work receipt. An unpaid invoice does not change a balance. A reminder opens your own SMS app. The payer pays with the 6-digit code when the wallet is locked. Floors still hold. A refusal is recorded and carries no penalty. A paid receipt can earn a small reward, capped each period. Unpaid and refused receipts earn none.'],
     ['Market', 'Listings are signed with the peer key. The origin hash names the listing. A photo stays on this device. Offer, counter, and Accept & Sign create a pending hold. Final balances move only when the seller countersigns the buyer’s single-use handoff. A refusal is recorded and carries no penalty. Peer standing is read from the local book.']
   ];
   const install = h('div', { class: 'card' }, [
@@ -3645,7 +3645,7 @@ function renderHelp() {
     h('button', { type: 'button', class: 'card mag-card', onClick: () => { location.hash = 'resources'; } }, [
       h('span', { class: 'kicker' }, ['Magazine']),
       h('h3', {}, ['Resources']),
-      h('p', { class: 'muted' }, ['Alice, Bob, and Charlie. The practice market. The fifteen exchanges. The refusal. The third seat and the story.'])
+      h('p', { class: 'muted' }, ['Alice, Bob, and Charlie. The market. The fifteen exchanges. The refusal. The third seat and the story.'])
     ]),
     install,
     ...sections.map(([title, body]) => h('article', { class: 'card' }, [h('h3', {}, [title]), h('p', { class: 'muted' }, [body])])),
@@ -3676,7 +3676,7 @@ function renderResources() {
     panel.replaceChildren(
       h('p', { class: 'kicker' }, ['Beta · Resources']),
       h('h2', {}, ['The magazine']),
-      h('p', { class: 'muted' }, ['The explainer, the simulator, and the third-seat story, kept in this app so they can be read offline.']),
+      h('p', { class: 'muted' }, ['How it works, mutual credit, and the third-seat story, kept in this app so they can be read offline.']),
       h('div', { class: 'mag' }, ARTICLES.map((item) => h('button', {
         type: 'button',
         class: 'card mag-card',
@@ -3761,7 +3761,7 @@ const WALK = [
   ['Separate books', 'Alice, Bob, and Charlie each keep their own tape. On one device you switch seats. On two devices you carry a signed message. There is no central ledger.'],
   ['Floor', 'Bob and Charlie start above their floors. A line that would spend the floor is blocked and the block stays on the tape.'],
   ['Third seat', 'Refuse a line that skipped the order. The no is recorded. Nothing moves. There is no penalty.'],
-  ['100 mock $lgme', 'Register a new peer and the GENESIS line grants 100 $lgme, labeled mock. Then the key is locked behind a passphrase and a 6-digit code.'],
+  ['100 $lgme', 'Register a new peer and the GENESIS line grants 100 $lgme on this book. Then the key is locked behind a passphrase and a 6-digit code.'],
   ['Carry the signature', 'Copy the code, open the share link, scan the QR, or save the JSON. The other device checks the signature and the hash link before it appends.']
 ];
 
@@ -3946,7 +3946,7 @@ deliveryChannel?.addEventListener('message', async (event) => {
   if (opened.message.kind !== 'transfer') return;
   const result = await sim.acceptAutoDelivery(store, opened.message.body.toId, encoded);
   if (!result.ok || result.duplicate) return;
-  toast(`Received ${opened.message.body.amount} mock $lgme. Beta.`);
+  toast(`Received ${opened.message.body.amount} $lgme. Beta.`);
   await render();
 });
 

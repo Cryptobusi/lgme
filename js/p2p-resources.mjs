@@ -5,7 +5,7 @@ export const ARTICLES = [
     title: 'Alice, Bob, and Charlie',
     deck: 'Three people. Floor first. The same rules for each.',
     blocks: [
-      { type: 'p', text: 'SIMULATION. This is the recorded explainer, kept inside the app. It is not a live book.' },
+      { type: 'p', text: 'This is the recorded explainer, kept inside the app.' },
       { type: 'p', text: 'Alice: “I put the walkway clearing and the books on the desk. Floor first.”' },
       { type: 'p', text: 'Bob: “Soil credits are ready. Same rules for me as for anyone.”' },
       { type: 'p', text: 'Charlie: “Logistics is on the shelf. I’ll refuse anything I can’t see.”' },
@@ -33,7 +33,7 @@ export const ARTICLES = [
         ['Charlie', '−75', '−107', 'Within limit'],
         ['System', '0', '0.00', 'Zero-sum held']
       ] },
-      { type: 'p', text: 'Refusal of the 16-unit ride share never posted. The open 10-unit item was still pending. Simulation only. Floor stays senior.' }
+      { type: 'p', text: 'Refusal of the 16-unit ride share never posted. The open 10-unit item was still pending. Floor stays senior. Not written to Hedera.' }
     ]
   },
   {
@@ -53,7 +53,7 @@ export const ARTICLES = [
     title: 'The refusal',
     deck: 'Bob to Charlie, 16 units. Nothing taken.',
     blocks: [
-      { type: 'p', text: 'Bob → Charlie, 16 units, ride share coordination. Charlie: “Could not be shown.” Nothing was taken. The explainer keeps this as a mock refusal record. The no stays. It does not move a balance and it carries no penalty.' }
+      { type: 'p', text: 'Bob → Charlie, 16 units, ride share coordination. Charlie: “Could not be shown.” Nothing was taken. The no stays. It does not move a balance and it carries no penalty.' }
     ]
   },
   {
@@ -62,7 +62,7 @@ export const ARTICLES = [
     title: 'The unresolved line',
     deck: 'Charlie to Alice, 10 units. Either side may show it or refuse it.',
     blocks: [
-      { type: 'p', text: 'Charlie → Alice, 10 units, final bookkeeping review. It is still waiting. Either side may show the work or refuse it. The explainer keeps this as a mock open item. An open line is not a settled line.' }
+      { type: 'p', text: 'Charlie → Alice, 10 units, final bookkeeping review. It is still waiting. Either side may show the work or refuse it. An open line is not a settled line.' }
     ]
   },
   {
@@ -76,20 +76,20 @@ export const ARTICLES = [
         'Either side can show the clear record of the work, or refuse it.',
         'If shown and accepted, the 10 units move. Charlie −10, Alice +10. The sum stays zero.',
         'If refused, the refusal is written and nothing moves.',
-        'The result is recorded on the local tape. No real network is used.'
+        'The result is recorded on the local tape. Not written to Hedera.'
       ] },
-      { type: 'p', text: 'Simulation only. Floor stays senior.' }
+      { type: 'p', text: 'Floor stays senior. Not written to Hedera.' }
     ]
   },
   {
     id: 'resources-simulator',
     kicker: 'The other desk',
-    title: 'Mutual credit simulator',
+    title: 'Mutual credit',
     deck: 'The same floor, the same refusal, a tape you can export.',
     blocks: [
-      { type: 'p', text: 'The mutual credit simulator is a separate practice page. Balances are replayed from an append-only hash-linked tape. A line that would spend the floor is stored as Blocked: Floor stays senior. A third-seat decline is a refusal: nothing moves, and there is no penalty. Reference figures are suggestions, not prices.' },
-      { type: 'link', href: '/mutual-credit-simulator', text: 'Open the mutual credit simulator' },
-      { type: 'link', href: '/simulation-explainer', text: 'Open the simulation explainer' },
+      { type: 'p', text: 'Mutual credit is a separate page. Balances are replayed from an append-only hash-linked tape. A line that would spend the floor is stored as Blocked: Floor stays senior. A third-seat decline is a refusal: nothing moves, and there is no penalty. Reference figures are suggestions, not prices. Not written to Hedera.' },
+      { type: 'link', href: '/mutual-credit', text: 'Open mutual credit' },
+      { type: 'link', href: '/how-it-works', text: 'Open how it works' },
       { type: 'link', href: '/docs/SPP_Overview.pptx', text: 'Slides from the explainer' }
     ]
   },
@@ -97,9 +97,9 @@ export const ARTICLES = [
     id: 'resources-manifest',
     kicker: 'Framing',
     title: 'Deployment manifest',
-    deck: 'Design research. The banner says simulation.',
+    deck: 'Design research. Not written to Hedera.',
     blocks: [
-      { type: 'p', text: 'The deployment manifest is framed as simulation and design research. Its banner says nothing is written to a network. It is not a live desk, and it is not this practice app. This app keeps each book in the browser.' },
+      { type: 'p', text: 'The deployment manifest is design research. Not written to Hedera. This app keeps each book in the browser.' },
       { type: 'link', href: '/deployment-manifest', text: 'Read the deployment manifest' }
     ]
   },
@@ -117,7 +117,7 @@ export const ARTICLES = [
   {
     id: 'resources-market',
     kicker: 'The market',
-    title: 'Practice market',
+    title: 'Market',
     deck: 'List, chat, hold, and hand off. The books stay on this device.',
     blocks: [
       { type: 'p', text: 'Beta. The market is this desk. A listing is signed with the peer key. The origin hash is the listing id. Photos are compressed in the browser and stay there. The tape stores the hash, not the picture. Agreed $lgme payments are signed by your Solana wallet. This desk does not write to Hedera.' },
@@ -126,10 +126,10 @@ export const ARTICLES = [
       { type: 'p', text: 'Circles are mutual-credit rings, not a map. Peer standing is read from the local book: verification, clearing history, and whether the balance sits above the floor. A line that would take the floor is blocked: Floor stays senior. An unverified member cannot send or hold more than 20 $lgme. A dollar figure from the reference list is a suggestion, not a price.' },
       { type: 'p', text: 'IprovIT is a service you provide, in barter or on agreed terms. It sits beside ihavIT, IwanIT, and IdidIt. The member hash, the device unlock (fingerprint / face / device PIN (your phone decides)), and a signed envelope are what secure it. Both tapes record the consent. A contract does not exist until both parties have signed.' },
       { type: 'p', text: 'Found on OfferUp (DC area) is a static list. Each card says: Third-party listing on OfferUp, not verified by lgme. Price and availability may have changed. Deal is between you and the seller. Continue on OfferUp opens that site yourself. Offer on this item can be cash in full, a term plan of 3, 4, 5, or 6 months, and/or an IprovIT service. An OfferUp row makes a draft offer you copy and paste. Nothing is sent automatically.' },
-      { type: 'p', text: 'A pinned IwanIT post asks for a working treadmill and elliptical under $500 in the Washington DC area. Pay with cash, terms over 3 to 6 months, or $lgme services (IprovIT). Matches from OfferUp start empty. Each match can be Available, Pending reply, Offer made, or Closed. Make an offer copies a draft. Invite seller to lgme.app copies text and can open the share sheet for https://lgme.app/p2p-exchange-sim. Nothing is sent. A concluded deal is an IdidIt on this book, then an invoice, with Reconcile as donation to the floor. A payment is real $lgme from your wallet.' },
+      { type: 'p', text: 'A pinned IwanIT post asks for a working treadmill and elliptical under $500 in the Washington DC area. Pay with cash, terms over 3 to 6 months, or $lgme services (IprovIT). Matches from OfferUp start empty. Each match can be Available, Pending reply, Offer made, or Closed. Make an offer copies a draft. Invite seller to lgme.app copies text and can open the share sheet for https://lgme.app/exchange. Nothing is sent. A concluded deal is an IdidIt on this book, then an invoice, with Reconcile as donation to the floor. A payment is real $lgme from your wallet.' },
       { type: 'p', text: 'Continue with tailored options builds a draft and saves it on this device as Draft, awaiting approval. Copy and Open OfferUp or Thumbtack stay off until you tap Approve. An edit sends it back to awaiting approval. Nothing is sent. A second pinned want is for exercise equipment repair or service. Matches from Thumbtack use the caveat Third-party pro on Thumbtack, not verified by lgme. An IprovIT flag is labeled Listed from Thumbtack (not affiliated).' },
       { type: 'p', text: 'When both parties consent, a term plan writes an IdidIt-style invoice for each installment on both tapes. Overdue invoices sort to the top. A reminder is a tape entry, not a penalty. A partial payment leaves the rest open. Every invoice and contract offers Reconcile as donation to the floor. Both must consent. It then closes with THANK YOU FOR YOUR SUPPORT. A payment is real $lgme from your wallet.' },
-      { type: 'link', href: '/p2p-exchange-sim#market', text: 'Open the practice market' }
+      { type: 'link', href: '/exchange#market', text: 'Open the market' }
     ]
   },
   {
@@ -153,7 +153,7 @@ export const ARTICLES = [
       { type: 'p', text: 'Beta. Agreed payments settle in real $lgme on Solana. Transfers are irreversible. Use at your own risk and start small. This desk never asks for a seed phrase or a Solana private key. Your wallet signs each payment. The local tape records the transaction signature. It does not write to Hedera. Offline, you can read the books. You cannot spend.' },
       { type: 'p', text: 'Spends, invoices, handoffs, and signed chats need the browser online, and both peers must sign a challenge and an acknowledgement within 10 minutes. Offline, you can read the books. You cannot spend.' },
       { type: 'p', text: 'The signing key is kept in this browser as a non-extractable key. A wallet can also unlock with fingerprint / face / device PIN (your phone decides). A passphrase is the fallback, and it is not a short PIN. A 6-digit code remains an optional second factor. Recovery codes are shown once.' },
-      { type: 'p', text: 'Each mock $lgme bundle carries a serial from the opening line. A receipt checks that chain. If the same serial names two next owners, both books get a signed fraud proof and the cheater’s floor and standing move against them.' },
+      { type: 'p', text: 'Each $lgme bundle on this book carries a serial from the opening line. A receipt checks that chain. If the same serial names two next owners, both books get a signed fraud proof and the cheater’s floor and standing move against them.' },
       { type: 'p', text: 'The service worker can keep the app shell for the next visit. It does not make an offline spend valid.' }
     ]
   }
