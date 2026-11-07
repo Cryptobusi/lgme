@@ -215,3 +215,42 @@ Checked live at 390×844 and 1280×800: 47 pages, all HTTP 200, no CSP violation
 ![Home menu](verification/phone-csp-home.png)
 
 ![Practice desk](verification/phone-csp-desk.png)
+
+## Addendum — 2026-11-07
+
+Live check of https://lgme.app after the script CSP change. `main` had no open pull requests. Two defects found in this pass were fixed before the tag.
+
+| Check | Result |
+| --- | --- |
+| Sitemap and shell URLs | Pass. 44 URLs, all HTTP 200 |
+| `$Trust` and `EgonomicAnon` | Pass, absent |
+| CSP `script-src` | Pass. `'self'` only. `object-src 'none'`, `base-uri 'self'`, `frame-ancestors 'none'`, `upgrade-insecure-requests` |
+| HSTS, nosniff, `X-Frame-Options: DENY`, referrer, `camera=(self)` | Pass |
+| Console and CSP, 390×844 | Pass. 41 sitemap pages |
+| Console and CSP, Pixel 7 412×915 | Pass. 41 sitemap pages |
+| Console and CSP, desktop 1280×800 | Pass. 41 sitemap pages |
+| Install & launch on `/` and the desk | Pass. First bar, orange, opens `/p2p-exchange-sim` |
+| Coin mint, `@EgonAnon`, donate address, X Money `@Trancesage` | Pass |
+| Donate QR on `/lgme-coin` | Pass. Decoded to `6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY` |
+| Passkey wording | Pass. `fingerprint / face / device PIN (your phone decides)` |
+| Donation cards on the desk | Pass. Address and “Send via X Money to @Trancesage” |
+| Short handoff QR | Pass. Image decoded to `lgme1q.af99f5a9e23cf868b2f9c5` |
+| Third-seat co-sign above 50 | Pass. Blocked, then allowed with a co-sign |
+| Double-spend | Pass. Fraud proof. Floor 41. The balance did not move again |
+| Offline spend | Pass. `Offline is read-only. Open the books, but do not spend, until this browser is online.` |
+| IdidIt invoice | Pass. `Invoice signed. The balance did not move.` |
+| soBeIT grant | Pass. Balance 65. No real funds moved |
+| Offline suite | Pass. 46 tests, 0 failed |
+
+Fixes in the tagged commit:
+
+- The vault write now finishes before the device key is treated as saved. A later visit reuses that key, so a sealed member salt still opens and an invoice can be signed.
+- Android 13 was read as an ancient browser, so the QR bitmap was never exported. A major-only version is read as current, and the donate and handoff images decode.
+
+Service worker cache: `lgme-v36`. Verified code: `99abb5b95b88573ccedccd0d95f2244d3c57be85`. Tag: `v-sim-2026-11-07`.
+
+Not driven on a physical device: the platform authenticator (fingerprint, face, or device PIN), a second phone’s camera, a carrier SMS, a placed call, the iPhone Share tooltip, and the browser’s own install prompt.
+
+![Install bar](verification/phone-1107-home.png)
+
+![Handoff QR](verification/phone-1107-desk.png)
