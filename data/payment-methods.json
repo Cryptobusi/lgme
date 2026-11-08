@@ -17,5 +17,9 @@
     "band": 0.05,
     "quoteSeconds": 15,
     "holdDays": 7
+  },
+  "clearing": {
+    "windowDays": 7,
+    "epoch": "2026-01-01T00:00:00.000Z"
   }
 }

@@ -70,6 +70,7 @@ const PICKUPS = ['Pickup', 'Porch', 'Meet'];
 let pendingImport = '';
 let carryAddress = '';
 let activeCodeTimer = 0;
+let windowTimer = 0;
 let catalog = [];
 let offerupItems = [];
 let wantedMatches = [];
@@ -79,7 +80,8 @@ let paymentMethods = {
   cash: { inPersonOnly: true },
   notice: 'Zelle and cash are not reversible-protected. This app does not process them.',
   loyalty: { ...sim.LOYALTY_DEFAULTS },
-  peg: { band: sim.DEFAULT_CLAMP_BAND, holdDays: 7 }
+  peg: { band: sim.DEFAULT_CLAMP_BAND, holdDays: 7 },
+  clearing: { windowDays: 7, epoch: '2026-01-01T00:00:00.000Z' }
 };
 let openTailored = '';
 let offerupIndex = -1;
@@ -771,10 +773,36 @@ async function render() {
   }
 }
 
+function clearingRulesNow() {
+  return {
+    windowDays: Number(paymentMethods.clearing?.windowDays || paymentMethods.peg?.holdDays || 7),
+    epoch: paymentMethods.clearing?.epoch || '2026-01-01T00:00:00.000Z'
+  };
+}
+
+function windowBanner() {
+  const host = h('p', { class: 'legend', id: 'clearing-window' }, ['']);
+  const tick = () => {
+    const window = sim.clearingWindow(new Date().toISOString(), clearingRulesNow());
+    const ms = window.remainingMs;
+    const days = Math.floor(ms / 86400000);
+    const hours = Math.floor((ms % 86400000) / 3600000);
+    const mins = Math.floor((ms % 3600000) / 60000);
+    host.textContent = `Clearing window ${window.windowId} · closes ${window.closesAt.slice(0, 16).replace('T', ' ')} UTC · ${days}d ${hours}h ${mins}m left.`;
+  };
+  tick();
+  windowTimer = setInterval(tick, 30000);
+  return host;
+}
+
 async function renderNow() {
   if (activeCodeTimer) {
     clearInterval(activeCodeTimer);
     activeCodeTimer = 0;
+  }
+  if (windowTimer) {
+    clearInterval(windowTimer);
+    windowTimer = 0;
   }
   const peers = await ensureBooks();
   if (renderQueued) return;
@@ -969,7 +997,8 @@ async function renderExchange(peers, seat) {
   const open = Object.values(full.exchanges || {}).sort((a, b) => a.createdAt < b.createdAt ? 1 : -1);
   panel.replaceChildren(
     h('h2', {}, [`Exchange · ${me.name}`]),
-    h('p', { class: 'muted' }, ['You are acting as this peer. Switch seats to countersign or to refuse. A proposal is not a debt until the other parties countersign.']),
+    windowBanner(),
+    h('p', { class: 'muted' }, ['You are acting as this peer. Switch seats to countersign, to refuse, or to veto as the named third seat. A proposal is not a debt until the other parties countersign.']),
     referenceCatalogCard(),
     h('h3', {}, ['Lines on this book']),
     open.length ? h('div', {}, open.map((ex) => exchangeCard(ex, full, peers))) : h('p', { class: 'muted' }, ['No exchanges on this book yet.']),
@@ -1227,6 +1256,21 @@ function exchangeCard(ex, me, peers) {
   if ((ex.status === 'proposed' || ex.status === 'countersigned') && needed.includes(me.id) && !ex.signatures?.[me.id]) {
     actions.push(h('button', { type: 'button', class: 'primary', onClick: () => run(() => sim.countersign(store, me.id, ex.id), 'Countersigned. Settlement still waits for every signature and the floor.') }, ['Countersign']));
   }
+  if ((ex.status === 'proposed' || ex.status === 'countersigned') && ex.thirdSeatId === me.id) {
+    const reason = h('input', { maxlength: '240', placeholder: 'Reason for the veto', required: true });
+    actions.push(field('Veto reason. It stays on both tapes.', reason));
+    actions.push(h('button', {
+      type: 'button',
+      class: 'primary',
+      onClick: () => {
+        if (!reason.value.trim()) {
+          setStatus('A veto needs a reason.', 'bad');
+          return;
+        }
+        run(() => sim.thirdSeatVeto(store, me.id, ex.id, reason.value), 'Veto recorded. No balance moves. No penalty.');
+      }
+    }, ['Veto']));
+  }
   if ((ex.status === 'proposed' || ex.status === 'countersigned') && (needed.includes(me.id) || ex.thirdSeatId === me.id)) {
     const statement = h('input', { value: 'REFUSAL', maxlength: '240' });
     refusalBox.append(
@@ -1251,9 +1295,11 @@ function exchangeCard(ex, me, peers) {
     : ex.status === 'blocked'
       ? ex.block?.message || sim.FLOOR_BLOCK
       : `Signed ${signed.map((id) => names[id] || id).join(', ') || 'nobody'}. ${waiting.length ? 'Waiting on ' + waiting.map((id) => names[id] || id).join(', ') + '.' : 'Every party has signed.'}`;
+  const seatName = ex.thirdSeatId ? (names[ex.thirdSeatId] || ex.thirdSeatId) : 'none named';
   return h('article', { class: 'row' }, [
     h('header', {}, [
       h('span', { class: 'pill' }, [`${ex.kind} · ${ex.status}`]),
+      h('a', { class: 'pill', href: 'https://www.egonomicanonymous.live/' }, [`Third seat · ${seatName}`]),
       h('span', { class: 'meta' }, [shortHash(ex.id)])
     ]),
     h('p', {}, [legText]),
@@ -1302,7 +1348,7 @@ async function renderBooks(peers, seat) {
   const above = sim.round2(view.balance - rule.floor);
   const finger = (await sim.sha256(sim.canonicalJSON(peer.publicKeyJwk))).slice(0, 16);
   const search = h('input', { type: 'search', placeholder: 'Filter by work, type, or hash' });
-  const typeNames = ['all', 'genesis', 'ididit', 'INVOICE', 'INVOICE_PAID', 'INVOICE_REFUSED', 'REWARD', 'proposal', 'countersign', 'refusal', 'block', 'settlement', 'transfer', 'iou', 'attested'];
+  const typeNames = ['all', 'genesis', 'ididit', 'INVOICE', 'INVOICE_PAID', 'INVOICE_REFUSED', 'REWARD', 'proposal', 'countersign', 'refusal', 'block', 'settlement', 'transfer', 'iou', 'attested', 'THIRD_SEAT_VETO', 'WINDOW_OPEN', 'WINDOW_CLOSE', 'NETTING', 'PRICE_LOCK'];
   const typeLabels = { all: 'All types', ididit: 'Legacy receipt' };
   const type = h('select', {}, typeNames.map((name, index) => option(name, typeLabels[name] || name, index === 0)));
   const list = h('div', {});
@@ -1381,6 +1427,8 @@ async function renderBooks(peers, seat) {
     }
   });
   const now = new Date().toISOString();
+  const day = now.slice(0, 10);
+  const dayRoot = await sim.merkleRootOf((peer.tape || []).filter((entry) => String(entry.at || '').slice(0, 10) === day).map((entry) => entry.hash));
   const invoices = sim.sortInvoices(sim.readInvoices(peer, now), now);
   const buckets = sim.invoiceBuckets(peer, now);
   const invoiceCards = invoices.map((row) => {
@@ -1453,6 +1501,7 @@ async function renderBooks(peers, seat) {
     return h('article', { class: 'card', id: row.role === 'AR' ? 'invoice-ar' : 'invoice-ap' }, [
       h('h3', {}, [`${row.role} · ${row.status} · ${row.amount} $lgme`]),
       h('p', { class: 'muted' }, [`Paid ${row.paid}. Remaining ${row.remaining}. Bucket ${row.bucket}. Due ${String(row.dueAt).slice(0, 10)}. Phone ${row.payerPhone}. Hash ${String(row.payerKycHash || '').slice(0, 12)}.`]),
+      h('p', { class: 'legend' }, [`Day root ${dayRoot.slice(0, 16)}. Not written to Hedera.`]),
       row.thanks ? h('p', { class: 'legend' }, [row.thanks]) : null,
       row.role === 'AP' && row.remaining > 0 ? h('div', {}, [field('Amount', payAmount), field('Passphrase', pass), field('6-digit code', code), field('Refusal note', note), field('Solana address for a floor rebate', h('input', { id: `rebate-wallet-${row.invoiceId}`, maxlength: '64', placeholder: 'Your address, not a seed phrase' }))]) : null,
       h('div', { class: 'actions' }, actions)
@@ -1460,8 +1509,16 @@ async function renderBooks(peers, seat) {
   });
   const solana = await solanaCards(seat);
   const offchain = await offchainCards(seat);
+  const proveHash = h('input', { placeholder: 'entry hash' });
+  const proofOut = h('textarea', { class: 'codebox', readonly: true });
+  const verifyIn = h('textarea', { class: 'codebox', placeholder: 'Paste an inclusion proof' });
+  const verifyNote = h('p', { class: 'legend' }, ['']);
+  const disposition = h('select', {}, [option('roll', 'Roll to the next window', true), option('terms', 'Pay in terms', false)]);
+  const months = h('input', { type: 'number', min: '3', max: '6', step: '1', value: '3' });
   panel.replaceChildren(
     h('h2', {}, [`${peer.name}'s book`]),
+    windowBanner(),
+    h('p', { class: 'legend' }, [`Today's tape root ${dayRoot.slice(0, 16)}. A future Hedera anchor would publish this root. Not written to Hedera.`]),
     h('p', { class: 'muted' }, [`Every line below is on this peer’s tape. Credits and debits come only from settlements, payments, and rewards. The running balance is a replay. Key ${finger}. Limit ${rule.creditLimit}.`]),
     h('div', { class: 'nums' }, [
       h('div', {}, [coinMark(), h('strong', {}, [String(view.balance)]), 'Balance']),
@@ -1495,10 +1552,47 @@ async function renderBooks(peers, seat) {
     h('h3', {}, ['Send an invoice']),
     h('p', { class: 'legend' }, ['An invoice names the amount in US$. It does not change the balance until it is paid.']),
     receiptForm,
+    h('h3', {}, ['Clearing window']),
+    h('p', { class: 'legend' }, ['Open IOUs accrue until the window closes. Close nets them, locks one US$ price when a quote is available, and rolls what is left or turns it into pay-in-terms. The payer chooses.']),
+    h('div', { class: 'grid two' }, [field('Unresolved balances', disposition), field('Terms, months', months)]),
+    h('div', { class: 'actions' }, [
+      h('button', { type: 'button', onClick: async () => {
+        const result = await sim.closeClearingWindow(store, peer.id, {
+          disposition: disposition.value,
+          months: months.value,
+          navigator: navigator,
+          rules: clearingRulesNow()
+        });
+        if (!result.ok) { setStatus(result.error, 'bad'); return; }
+        setStatus(`Window ${result.windowId} closed. Root ${String(result.merkleRoot).slice(0, 12)}.`, 'ok');
+        await render();
+      } }, ['Close window'])
+    ]),
+    h('h3', {}, ['Prove entry']),
+    field('Tape hash', proveHash),
+    h('div', { class: 'actions' }, [
+      h('button', { type: 'button', onClick: async () => {
+        const result = await sim.proveEntry(peer, { hash: proveHash.value.trim(), day });
+        if (!result.ok) { setStatus(result.error, 'bad'); return; }
+        proofOut.value = JSON.stringify(result.proof, null, 2);
+        download(`${peer.id}-proof.json`, proofOut.value, 'application/json');
+      } }, ['Prove entry'])
+    ]),
+    proofOut,
+    field('Check a proof', verifyIn),
+    h('div', { class: 'actions' }, [
+      h('button', { type: 'button', onClick: async () => {
+        let proof;
+        try { proof = JSON.parse(verifyIn.value); } catch { verifyNote.textContent = 'invalid'; return; }
+        const result = await sim.verifyInclusion(proof);
+        verifyNote.textContent = result.valid ? 'valid' : 'invalid';
+      } }, ['Check proof'])
+    ]),
+    verifyNote,
     h('div', { class: 'actions' }, [
       h('button', { type: 'button', onClick: () => verify(peer) }, ['Verify tape']),
       h('button', { type: 'button', onClick: () => download(`${peer.id}-tape.csv`, sim.toCsv(peer, names), 'text/csv') }, ['Export CSV']),
-      h('button', { type: 'button', onClick: () => download(`${peer.id}-tape.json`, JSON.stringify(sim.toExport(peer), null, 2), 'application/json') }, ['Export JSON'])
+      h('button', { type: 'button', onClick: async () => download(`${peer.id}-tape.json`, JSON.stringify(await sim.exportRecords(peer, clearingRulesNow()), null, 2), 'application/json') }, ['Export JSON'])
     ]),
     h('div', { class: 'grid two' }, [field('Search', search), field('Type', type)]),
     list,
@@ -1885,14 +1979,51 @@ function iouSection(peer) {
     return h('article', { class: 'row' }, [
       h('p', { class: 'pill' }, [iou.status || 'pending']),
       h('p', {}, [`${iou.debtorId} owes ${iou.creditorId} ${iou.amount} · ${iou.reference}`]),
-      h('p', { class: 'legend' }, ['Unattested IOUs do not change the balance.']),
+      h('p', { class: 'legend' }, [`Window ${iou.windowId || 'open'}. Unattested IOUs do not change the balance.`]),
       actions.length ? h('div', { class: 'actions' }, actions) : null
     ]);
   });
+  const other = h('input', { placeholder: 'peer id' });
+  const pass = h('input', { type: 'password', autocomplete: 'current-password' });
+  const code = h('input', { inputmode: 'numeric', maxlength: '8', autocomplete: 'one-time-code' });
+  const netForm = h('form', { class: 'grid two' }, [
+    field('Other party', other),
+    field('Passphrase', pass),
+    field('6-digit code', code),
+    h('div', { class: 'actions' }, [
+      h('button', { class: 'primary', type: 'submit' }, ['Net out']),
+      h('button', { type: 'button', onClick: async () => {
+        const pending = Object.values(peer.nettings || {}).find((row) => row.status === 'proposed' && (row.parties || []).includes(peer.id));
+        if (!pending) { setStatus('No netting is waiting on this book.', 'bad'); return; }
+        const result = await sim.refuseNetting(store, peer.id, pending.nettingId, {
+          passphrase: pass.value,
+          code: code.value,
+          statement: 'REFUSAL',
+          unixSeconds: Math.floor(Date.now() / 1000)
+        });
+        if (!result.ok) { setStatus(result.error, 'bad'); return; }
+        setStatus('Netting refused. Nothing was netted. No penalty.', 'ok');
+        await render();
+      } }, ['Refuse netting'])
+    ])
+  ]);
+  netForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const pending = Object.values(peer.nettings || {}).find((row) => row.status === 'proposed' && row.signatures && !row.signatures[peer.id] && (row.parties || []).includes(peer.id));
+    const result = pending
+      ? await sim.attestNetting(store, peer.id, pending.nettingId, { passphrase: pass.value, code: code.value, unixSeconds: Math.floor(Date.now() / 1000) })
+      : await sim.proposeNetting(store, peer.id, { otherId: other.value.trim(), passphrase: pass.value, code: code.value, unixSeconds: Math.floor(Date.now() / 1000) });
+    if (!result.ok) { setStatus(result.error, 'bad'); return; }
+    setStatus(result.status === 'attested' ? `Netted ${result.offset}. Both attested. Balances already showed the net.` : 'Net out proposed. The other party still has to attest.', 'ok');
+    await render();
+  });
   return h('div', {}, [
     h('h3', {}, ['Dollar IOU']),
-    h('p', { class: 'legend' }, ['A dollar IOU is pending until the named counterparty attests it. Refusal is recorded and carries no penalty. The floor still blocks a debit that would spend it.']),
+    h('p', { class: 'legend' }, ['A dollar IOU is pending until the named counterparty attests it. Open IOUs accrue in the current 7-day window. Refusal is recorded and carries no penalty. The floor still blocks a debit that would spend it.']),
     form,
+    h('h3', {}, ['Net out']),
+    h('p', { class: 'legend' }, ['When you owe each other, Net out proposes the smaller amount as an offset. Both attest with the 6-digit code. Either can refuse. A 3-party cycle waits for a later window close.']),
+    netForm,
     ...list
   ]);
 }
@@ -1986,7 +2117,7 @@ async function renderDevices(peers, seat) {
   panel.replaceChildren(
     h('h2', {}, [`Another device · ${peer.name}`]),
     h('p', { class: 'muted' }, ['There is no server. Copy the code, open the share link, scan the QR, or save a .json file. On the other device, verify the signature and the hash before anything is appended. sms: and mailto: only open your own app. This page never sends the message.']),
-    h('div', { class: 'actions' }, [h('button', { type: 'button', onClick: () => download(`${seat}-tape.json`, JSON.stringify(sim.toExport(peer), null, 2), 'application/json') }, ['Export tape JSON'])]),
+    h('div', { class: 'actions' }, [h('button', { type: 'button', onClick: async () => download(`${seat}-tape.json`, JSON.stringify(await sim.exportRecords(peer, clearingRulesNow()), null, 2), 'application/json') }, ['Export tape JSON'])]),
     h('h3', {}, ['Send $lgme']),
     form,
     shareHost,
@@ -2118,8 +2249,9 @@ function profileCard(profile) {
   return h('article', { class: 'card' }, [
     h('h3', {}, [`${profile.name} · Peer standing ${profile.standing}`]),
     h('p', { class: 'muted' }, [
-      `${profile.status === 'VERIFIED' ? 'Verified' : 'Unverified'}. Account age ${profile.ageDays} day${profile.ageDays === 1 ? '' : 's'}. Clearing history ${profile.clearingCount}.`
+      `${profile.status === 'VERIFIED' ? 'Verified' : 'Unverified'}. Account age ${profile.ageDays} day${profile.ageDays === 1 ? '' : 's'}. Clearing history ${profile.clearingCount}. Vetoes ${profile.vetoCount || 0}.`
     ]),
+    h('p', { class: 'legend' }, ['The third seat can veto a line that skipped the order. ', h('a', { href: 'https://www.egonomicanonymous.live/' }, ['Egonomic Anonymous']), '.']),
     h('p', { class: 'muted' }, [
       `${profile.balance} $lgme · floor ${profile.floor} · ${profile.aboveFloor} above the floor. Credit use versus the floor ${Math.round(profile.utilization * 100)}%. Rewards ${profile.rewards || 0} $lgme.${profile.held ? ` Held ${profile.held} $lgme.` : ''}`
     ])
@@ -3842,6 +3974,10 @@ async function loadReferences() {
         band: Number(body?.peg?.band ?? sim.DEFAULT_CLAMP_BAND),
         holdDays: Number(body?.peg?.holdDays ?? 7),
         quoteSeconds: Number(body?.peg?.quoteSeconds ?? 15)
+      },
+      clearing: {
+        windowDays: Number(body?.clearing?.windowDays ?? body?.peg?.holdDays ?? 7),
+        epoch: String(body?.clearing?.epoch || '2026-01-01T00:00:00.000Z')
       }
     };
   } catch {
@@ -3850,7 +3986,8 @@ async function loadReferences() {
       cash: { inPersonOnly: true },
       notice: 'Zelle and cash are not reversible-protected. This app does not process them.',
       loyalty: { ...sim.LOYALTY_DEFAULTS },
-      peg: { band: sim.DEFAULT_CLAMP_BAND, holdDays: 7, quoteSeconds: 15 }
+      peg: { band: sim.DEFAULT_CLAMP_BAND, holdDays: 7, quoteSeconds: 15 },
+      clearing: { windowDays: 7, epoch: '2026-01-01T00:00:00.000Z' }
     };
   } finally {
     gate.stop();

@@ -6,6 +6,9 @@
 
 import { ACK_MS, CO_SIGN_ABOVE, FORK, OFFLINE_SPEND, REPLAY, STALE_ACK, ackFresh, assertOnline, coSignReason, expiryFrom, fraudPenalty, handoffToken, passphraseReason } from './p2p-sim-guard.mjs';
 import { ALT_CHOICES, DEFAULT_CLAMP_BAND, HISTORY_UNAVAILABLE, NO_COIN, PEG_LABEL, PEG_NOTE, QUOTE_MS, applyPegBands, buildPegQuote, clampBand, round6, withinLock } from './lgme-price.mjs';
+import { bilateralNet, clearingRules, clearingWindow, cycleNetStub, dayEntries, merkleProofFor, merkleRootOf, nextWindow, verifyMerkleProof, windowEntries } from './clearing.mjs';
+
+export { bilateralNet, clearingRules, clearingWindow, cycleNetStub, merkleProofFor, merkleRootOf, nextWindow, verifyMerkleProof };
 
 export { ALT_CHOICES, DEFAULT_CLAMP_BAND, HISTORY_UNAVAILABLE, NO_COIN, PEG_LABEL, PEG_NOTE, QUOTE_MS };
 
@@ -422,6 +425,10 @@ export function entryDetail(entry, names = {}) {
   if (entry.type === 'FLOOR_REBATE_DUE') return `Floor rebate due ${payload.amount} $lgme`.trim();
   if (entry.type === 'FLOOR_REBATE_DEFERRED') return 'Floor rebate deferred. No penalty.';
   if (entry.type === 'FLOOR_REBATE_PAID') return `Floor rebate paid ${payload.amount} $lgme`.trim();
+  if (entry.type === 'THIRD_SEAT_VETO') return `Third seat veto ${payload.reason || ''}`.trim();
+  if (entry.type === 'WINDOW_OPEN') return `Window ${payload.windowId || ''} open`.trim();
+  if (entry.type === 'WINDOW_CLOSE') return `Window ${payload.windowId || ''} close ${payload.merkleRoot ? String(payload.merkleRoot).slice(0, 12) : ''}`.trim();
+  if (entry.type === 'NETTING') return `Netting ${payload.status || ''} offset ${payload.offset ?? ''}`.trim();
   if (entry.type === 'GRANT') return `soBeIT grant ${payload.amount} $lgme ${payload.reason || ''}`.trim();
   if (entry.type === 'MEDIA' || entry.type === 'MEDIA_RECEIVED') return `${entry.type === 'MEDIA_RECEIVED' ? 'Received' : 'Media'} ${payload.mime || ''} ${payload.hash ? String(payload.hash).slice(0, 12) : ''}`.trim();
   if (entry.type === 'countersign') {
@@ -715,6 +722,7 @@ export async function countersign(store, peerId, exchangeId, at = nowIso()) {
   if (!loaded.ok) return loaded;
   const { ex, peers } = loaded;
   if (ex.status === 'refused' || ex.refusal) return fail('Refused. No balance moves. No penalty.');
+  if (ex.status === 'vetoed' || ex.veto) return fail('Vetoed. No balance moves. No penalty.');
   if (ex.status === 'settled') return fail('Already settled on these books.');
   if (ex.status === 'blocked') return fail(FLOOR_BLOCK);
   if (!requiredSigners(ex).includes(peerId)) return fail('Only a party countersigns.');
@@ -773,6 +781,40 @@ export async function refuse(store, peerId, exchangeId, statement, at = nowIso()
   return { ok: true, exchangeId, status: 'refused', balances };
 }
 
+export function vetoCount(peer) {
+  if (!peer) return 0;
+  return (peer.tape || []).filter((entry) => entry.type === 'THIRD_SEAT_VETO' && entry.payload?.by === peer.id).length;
+}
+
+export async function thirdSeatVeto(store, peerId, exchangeId, reason, at = nowIso()) {
+  const loaded = await loadConsistent(store, peerId, exchangeId);
+  if (!loaded.ok) return loaded;
+  const { ex, peers } = loaded;
+  if (!ex.thirdSeatId) return fail('This deal has no third seat.');
+  if (ex.thirdSeatId !== peerId) return fail('Only the named third seat can veto.');
+  const text = String(reason || '').trim();
+  if (!text) return fail('A veto needs a reason.');
+  if (ex.status === 'settled') return fail('Already settled. A veto does not unwind a shown line.');
+  if (ex.status === 'vetoed' || ex.veto) return { ok: true, exchangeId, status: 'vetoed', noop: true, vetoCount: vetoCount(peers[peerId]) };
+  const before = {};
+  for (const id of Object.keys(peers)) before[id] = replay(peers[id]).balance;
+  const vetoBody = { exchangeId, type: 'THIRD_SEAT_VETO', peerId, reason: text };
+  const hash = await sha256(canonicalJSON(vetoBody));
+  const sig = await signText(peers[peerId].privateKeyJwk, hash);
+  ex.status = 'vetoed';
+  ex.veto = { ...vetoBody, hash, sig, at };
+  const payload = { exchangeId, by: peerId, thirdSeatId: peerId, reason: text, hash, sig };
+  for (const peer of Object.values(peers)) {
+    peer.exchanges[exchangeId] = structuredClone(ex);
+    await appendEntry(peer, 'THIRD_SEAT_VETO', payload, at);
+  }
+  await saveAll(store, peers);
+  const balances = {};
+  for (const peer of Object.values(peers)) balances[peer.id] = replay(peer).balance;
+  const unchanged = Object.keys(before).every((id) => balances[id] === before[id]);
+  return { ok: true, exchangeId, status: 'vetoed', balances, unchanged, vetoCount: vetoCount(await store.get(peerId)) };
+}
+
 async function signaturesComplete(ex) {
   for (const id of requiredSigners(ex)) {
     const rec = ex.signatures[id];
@@ -789,6 +831,7 @@ export async function settle(store, peerId, exchangeId, at = nowIso()) {
   const { ex, peers } = loaded;
   if (!partyIds(ex).includes(peerId)) return fail('Only a party can settle.');
   if (ex.status === 'refused' || ex.refusal) return fail('Refused. No balance moves. No penalty.');
+  if (ex.status === 'vetoed' || ex.veto) return fail('Vetoed. No balance moves. No penalty.');
   if (ex.status === 'settled') return fail('Already settled on these books.');
   if (ex.status === 'blocked' || ex.block) return fail(FLOOR_BLOCK);
   const signed = await signaturesComplete(ex);
@@ -965,7 +1008,9 @@ export function toExport(peer) {
     debits: view.debits,
     tape: peer.tape,
     exchanges: peer.exchanges,
-    receipts: peer.receipts
+    receipts: peer.receipts,
+    roots: peer.roots || { days: {}, windows: {} },
+    vetoCount: vetoCount(peer)
   };
 }
 
@@ -992,6 +1037,375 @@ export function toCsv(peer, names = {}) {
     ].map(csvCell).join(','));
   }
   return lines.join('\n') + '\n';
+}
+
+function releaseLockedKey(peer) {
+  if (peer?.wallet?.ciphertext) peer.privateKeyJwk = null;
+}
+
+async function rememberRoots(peer, at, rules) {
+  const day = String(at || nowIso()).slice(0, 10);
+  const window = clearingWindow(at || nowIso(), rules || {});
+  peer.roots = peer.roots || { days: {}, windows: {} };
+  peer.roots.days[day] = await merkleRootOf(dayEntries(peer.tape, day).map((entry) => entry.hash));
+  peer.roots.windows[window.windowId] = await merkleRootOf(windowEntries(peer.tape, window, at).map((entry) => entry.hash));
+  return peer.roots;
+}
+
+export async function exportRecords(peer, rules = {}) {
+  const copy = structuredClone(peer);
+  const days = [...new Set((copy.tape || []).map((entry) => String(entry.at || '').slice(0, 10)).filter(Boolean))];
+  copy.roots = { days: {}, windows: {} };
+  for (const day of days) {
+    copy.roots.days[day] = await merkleRootOf(dayEntries(copy.tape, day).map((entry) => entry.hash));
+  }
+  const seen = new Set();
+  for (const entry of copy.tape || []) {
+    if (entry.type === 'WINDOW_OPEN' && entry.payload?.windowId) seen.add(entry.payload.windowId);
+  }
+  for (const windowId of seen) {
+    const open = (copy.tape || []).find((entry) => entry.type === 'WINDOW_OPEN' && entry.payload?.windowId === windowId);
+    const window = {
+      windowId,
+      opensAt: open.payload.opensAt,
+      closesAt: open.payload.closesAt,
+      windowDays: open.payload.windowDays
+    };
+    const end = (copy.tape || []).filter((entry) => entry.type === 'WINDOW_CLOSE' && entry.payload?.windowId === windowId).at(-1);
+    copy.roots.windows[windowId] = await merkleRootOf(windowEntries(copy.tape, window, end?.at || window.closesAt).map((entry) => entry.hash));
+  }
+  if (!Object.keys(copy.roots.windows).length) {
+    const window = clearingWindow(copy.tape?.at(-1)?.at || nowIso(), rules);
+    copy.roots.windows[window.windowId] = await merkleRootOf(windowEntries(copy.tape, window, window.closesAt).map((entry) => entry.hash));
+  }
+  const exported = toExport(copy);
+  exported.roots = copy.roots;
+  return exported;
+}
+
+export async function proveEntry(peer, spec = {}) {
+  const hash = String(spec.hash || '');
+  const rules = clearingRules(spec.rules || {});
+  let leaves = [];
+  let scope = 'day';
+  let scopeId = spec.day || String(spec.at || peer?.tape?.find((entry) => entry.hash === hash)?.at || '').slice(0, 10);
+  if (spec.scope === 'window' || spec.windowId) {
+    scope = 'window';
+    const open = (peer.tape || []).find((entry) => entry.type === 'WINDOW_OPEN' && (!spec.windowId || entry.payload?.windowId === spec.windowId));
+    const window = open
+      ? { windowId: open.payload.windowId, opensAt: open.payload.opensAt, closesAt: open.payload.closesAt }
+      : clearingWindow(spec.at || nowIso(), rules);
+    scopeId = window.windowId;
+    leaves = windowEntries(peer.tape, window, spec.at || window.closesAt).map((entry) => entry.hash);
+  } else {
+    leaves = dayEntries(peer.tape, scopeId).map((entry) => entry.hash);
+  }
+  const index = leaves.indexOf(hash);
+  if (index < 0) return fail('That entry is not in this root.');
+  const proof = await merkleProofFor(leaves, index);
+  return {
+    ok: true,
+    proof: { version: 1, scope, scopeId, index: proof.index, leaf: proof.leaf, root: proof.root, path: proof.path, entryHash: hash }
+  };
+}
+
+export async function verifyInclusion(proof) {
+  const valid = await verifyMerkleProof(proof);
+  return { ok: true, valid };
+}
+
+export async function openClearingWindow(store, peerId, spec = {}) {
+  const peer = await store.get(peerId);
+  if (!peer?.privateKeyJwk && !peer?.signingKey) return fail(peer ? 'Wallet is locked.' : 'Unknown peer.');
+  const at = spec.at || nowIso();
+  const window = clearingWindow(at, spec.rules || {});
+  const already = (peer.tape || []).some((entry) => entry.type === 'WINDOW_OPEN' && entry.payload?.windowId === window.windowId);
+  if (!already) {
+    await appendEntry(peer, 'WINDOW_OPEN', {
+      windowId: window.windowId,
+      opensAt: window.opensAt,
+      closesAt: window.closesAt,
+      windowDays: window.windowDays
+    }, at);
+    await store.set(peerId, peer);
+  }
+  return { ok: true, ...window, already };
+}
+
+export async function closeClearingWindow(store, actorId, spec = {}) {
+  const actor = await store.get(actorId);
+  if (!actor?.privateKeyJwk && !actor?.signingKey) return fail(actor ? 'Wallet is locked.' : 'Unknown peer.');
+  const gate = assertOnline(spec.navigator);
+  if (!gate.ok) return fail(gate.error);
+  const at = spec.at || nowIso();
+  const rules = clearingRules(spec.rules || {});
+  const inside = spec.windowAt || new Date(Date.parse(at) - 1).toISOString();
+  const window = clearingWindow(inside, rules);
+  if (Date.parse(at) < Date.parse(window.closesAt)) return fail('This window is still open.');
+  const following = nextWindow(window);
+  const disposition = spec.disposition === 'terms' ? 'terms' : 'roll';
+  const ious = Object.values(actor.ious || {}).filter((iou) => iou && iou.status === 'attested' && !iou.closed && !iou.netted && iou.windowId === window.windowId);
+  const nets = bilateralNet(ious);
+  const locks = [];
+  const rolled = [];
+  const termed = [];
+  for (const net of nets) {
+    if (net.offset > 0 && net.residual <= 0) continue;
+    if (!(net.residual > 0)) continue;
+    if (disposition === 'terms') {
+      const alt = await proposeAltSettlement(store, net.debtorId, {
+        choice: 'terms',
+        usdAmount: net.residual,
+        months: spec.months || 3,
+        otherId: net.creditorId,
+        invoiceId: `window:${window.windowId}`,
+        at,
+        navigator: spec.navigator
+      });
+      if (!alt.ok) return alt;
+      termed.push({ ...net, altId: alt.altId });
+      continue;
+    }
+    const price = Number(spec.price);
+    if (price > 0 && spec.priceSource) {
+      const quote = await openQuote(store, net.debtorId, {
+        usdAmount: net.residual,
+        price,
+        priceSource: spec.priceSource,
+        otherId: net.creditorId,
+        invoiceId: `window:${window.windowId}`,
+        purpose: 'settlement',
+        at,
+        history: spec.history || 'history unavailable',
+        navigator: spec.navigator,
+        rules: spec.rules,
+        candles: spec.candles
+      });
+      if (quote.ok) {
+        locks.push({ ...net, lockId: quote.lock.lockId, lgmeAmount: quote.lock.lgmeAmount });
+        continue;
+      }
+    }
+    rolled.push(net);
+  }
+  const touched = new Set([actorId]);
+  for (const iou of ious) {
+    touched.add(iou.debtorId);
+    touched.add(iou.creditorId);
+  }
+  let root = '';
+  for (const id of touched) {
+    const peer = await store.get(id);
+    if (!peer?.privateKeyJwk && !peer?.signingKey) continue;
+    for (const net of locks) {
+      for (const iouId of net.iouIds || []) {
+        if (peer.ious?.[iouId]) peer.ious[iouId] = { ...peer.ious[iouId], closed: 'priced', lockId: net.lockId || null };
+      }
+    }
+    for (const net of termed) {
+      for (const iouId of net.iouIds || []) {
+        if (peer.ious?.[iouId]) peer.ious[iouId] = { ...peer.ious[iouId], closed: 'terms', lockId: null };
+      }
+    }
+    for (const net of rolled) {
+      for (const iouId of net.iouIds || []) {
+        if (peer.ious?.[iouId]) peer.ious[iouId] = { ...peer.ious[iouId], windowId: following.windowId, rolledFrom: window.windowId };
+      }
+    }
+    for (const net of nets) {
+      if (net.residual <= 0 && net.offset > 0) {
+        for (const iouId of net.iouIds || []) {
+          if (peer.ious?.[iouId]) peer.ious[iouId] = { ...peer.ious[iouId], netted: true, closed: 'netted' };
+        }
+      }
+    }
+    const leaves = windowEntries(peer.tape, window, at).map((entry) => entry.hash);
+    const merkleRoot = await merkleRootOf(leaves);
+    if (id === actorId) root = merkleRoot;
+    peer.roots = peer.roots || { days: {}, windows: {} };
+    peer.roots.windows[window.windowId] = merkleRoot;
+    await appendEntry(peer, 'WINDOW_CLOSE', {
+      windowId: window.windowId,
+      opensAt: window.opensAt,
+      closesAt: window.closesAt,
+      nextWindowId: following.windowId,
+      nets,
+      locks,
+      rolled,
+      termed,
+      disposition,
+      merkleRoot,
+      count: leaves.length
+    }, at);
+    await rememberRoots(peer, at, rules);
+    await store.set(id, peer);
+  }
+  return { ok: true, windowId: window.windowId, nextWindowId: following.windowId, nets, locks, rolled, termed, disposition, merkleRoot: root };
+}
+
+function pairIous(left, right, a, b) {
+  const rows = new Map();
+  for (const iou of [...Object.values(left?.ious || {}), ...Object.values(right?.ious || {})]) {
+    if (!iou?.iouId || iou.status !== 'attested' || iou.closed || iou.netted) continue;
+    const hit = (iou.debtorId === a && iou.creditorId === b) || (iou.debtorId === b && iou.creditorId === a);
+    if (hit) rows.set(iou.iouId, iou);
+  }
+  return [...rows.values()];
+}
+
+async function findNetting(store, peer, nettingId) {
+  if (peer.nettings?.[nettingId]) return peer.nettings[nettingId];
+  for (const id of await store.listIds()) {
+    const other = await store.get(id);
+    if (other?.nettings?.[nettingId]) return other.nettings[nettingId];
+  }
+  return null;
+}
+
+export async function proposeNetting(store, proposerId, spec = {}) {
+  const proposer = await store.get(proposerId);
+  if (!proposer) return fail('Unknown peer.');
+  const otherId = String(spec.otherId || '').trim();
+  if (!otherId || otherId === proposerId) return fail('Name the other party.');
+  const other = await store.get(otherId);
+  if (!other) return fail('Unknown peer.');
+  const unlocked = await requireCode(proposer, spec);
+  if (!unlocked.ok) return unlocked;
+  proposer.privateKeyJwk = unlocked.privateKeyJwk;
+  const net = bilateralNet(pairIous(proposer, other, proposerId, otherId)).find((row) => row.offset > 0);
+  if (!net) {
+    releaseLockedKey(proposer);
+    await store.set(proposerId, proposer);
+    return fail('Net out needs both directions.');
+  }
+  const at = spec.at || nowIso();
+  const nettingId = await sha256(canonicalJSON({
+    shape: 'bilateral',
+    parties: [proposerId, otherId].sort(),
+    offset: net.offset,
+    residual: net.residual,
+    iouIds: [...net.iouIds].sort()
+  }));
+  const prior = await findNetting(store, proposer, nettingId);
+  if (prior?.status === 'attested') {
+    releaseLockedKey(proposer);
+    await store.set(proposerId, proposer);
+    return { ok: true, duplicate: true, nettingId, status: 'attested', offset: net.offset };
+  }
+  if (prior?.status === 'refused') {
+    releaseLockedKey(proposer);
+    await store.set(proposerId, proposer);
+    return fail('Refused. Nothing was netted.');
+  }
+  const proposal = {
+    nettingId,
+    shape: 'bilateral',
+    kind: 'bilateral',
+    offset: net.offset,
+    residual: net.residual,
+    debtorId: net.debtorId,
+    creditorId: net.creditorId,
+    iouIds: net.iouIds,
+    status: 'proposed',
+    signatures: { ...(prior?.signatures || {}) },
+    parties: [proposerId, otherId],
+    cycle: null
+  };
+  proposal.signatures[proposerId] = { at, sig: await signText(proposer.privateKeyJwk, nettingId) };
+  const payload = { ...proposal, by: proposerId };
+  proposer.nettings = proposer.nettings || {};
+  proposer.nettings[nettingId] = structuredClone(proposal);
+  await appendEntry(proposer, 'NETTING', payload, at);
+  releaseLockedKey(proposer);
+  await store.set(proposerId, proposer);
+  if (other.privateKeyJwk || other.signingKey) {
+    other.nettings = other.nettings || {};
+    other.nettings[nettingId] = structuredClone(proposal);
+    await appendEntry(other, 'NETTING', { ...payload, role: 'received' }, at);
+    await store.set(otherId, other);
+  }
+  return { ok: true, nettingId, status: 'proposed', offset: net.offset, residual: net.residual };
+}
+
+async function writeNetting(store, actor, proposal, at) {
+  const ids = proposal.parties || [];
+  for (const id of ids) {
+    const peer = id === actor.id ? actor : await store.get(id);
+    if (!peer?.privateKeyJwk && !peer?.signingKey) continue;
+    peer.nettings = peer.nettings || {};
+    peer.nettings[proposal.nettingId] = structuredClone(proposal);
+    if (proposal.status === 'attested' || proposal.status === 'refused') {
+      for (const iouId of proposal.iouIds || []) {
+        if (!peer.ious?.[iouId]) continue;
+        peer.ious[iouId] = proposal.status === 'attested'
+          ? { ...peer.ious[iouId], netted: true, nettingId: proposal.nettingId }
+          : peer.ious[iouId];
+      }
+    }
+    await appendEntry(peer, 'NETTING', { ...proposal, by: actor.id }, at);
+    const locked = peer.wallet?.ciphertext;
+    if (id !== actor.id) await store.set(id, peer);
+    if (locked && id !== actor.id) {
+      peer.privateKeyJwk = null;
+      await store.set(id, peer);
+    }
+  }
+}
+
+export async function attestNetting(store, peerId, nettingId, spec = {}) {
+  const peer = await store.get(peerId);
+  if (!peer) return fail('Unknown peer.');
+  const unlocked = await requireCode(peer, spec);
+  if (!unlocked.ok) return unlocked;
+  peer.privateKeyJwk = unlocked.privateKeyJwk;
+  const found = await findNetting(store, peer, nettingId);
+  if (!found) {
+    releaseLockedKey(peer);
+    await store.set(peerId, peer);
+    return fail('No netting on this book.');
+  }
+  if (found.status === 'refused') return fail('Refused. Nothing was netted.');
+  if (!(found.parties || []).includes(peerId)) return fail('Only a party attests a netting.');
+  if (found.status === 'attested' && found.signatures?.[peerId]) return { ok: true, duplicate: true, nettingId, status: 'attested' };
+  const at = spec.at || nowIso();
+  const before = replay(peer).balance;
+  const proposal = structuredClone(found);
+  proposal.signatures = proposal.signatures || {};
+  proposal.signatures[peerId] = { at, sig: await signText(peer.privateKeyJwk, nettingId) };
+  const complete = (proposal.parties || []).every((id) => proposal.signatures[id]);
+  proposal.status = complete ? 'attested' : 'proposed';
+  await writeNetting(store, peer, proposal, at);
+  releaseLockedKey(peer);
+  await store.set(peerId, peer);
+  const fresh = await store.get(peerId);
+  return { ok: true, nettingId, status: proposal.status, offset: proposal.offset, unchanged: replay(fresh).balance === before };
+}
+
+export async function refuseNetting(store, peerId, nettingId, spec = {}) {
+  const peer = await store.get(peerId);
+  if (!peer) return fail('Unknown peer.');
+  const unlocked = await requireCode(peer, spec);
+  if (!unlocked.ok) return unlocked;
+  peer.privateKeyJwk = unlocked.privateKeyJwk;
+  const found = await findNetting(store, peer, nettingId);
+  if (!found) {
+    releaseLockedKey(peer);
+    await store.set(peerId, peer);
+    return fail('No netting on this book.');
+  }
+  if (!(found.parties || []).includes(peerId)) return fail('Only a party can refuse a netting.');
+  if (found.status === 'attested') return fail('Already netted. A refusal does not unwind a shown line.');
+  const at = spec.at || nowIso();
+  const before = replay(peer).balance;
+  const text = String(spec.statement || spec.reason || 'REFUSAL').trim() || 'REFUSAL';
+  const proposal = structuredClone(found);
+  proposal.status = 'refused';
+  proposal.refusal = { by: peerId, statement: text, at };
+  await writeNetting(store, peer, proposal, at);
+  releaseLockedKey(peer);
+  await store.set(peerId, peer);
+  const fresh = await store.get(peerId);
+  return { ok: true, nettingId, status: 'refused', unchanged: replay(fresh).balance === before };
 }
 
 const B32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
@@ -1630,6 +2044,16 @@ export async function recordIou(store, makerId, spec) {
   if (!reference) return fail('Name the dollar IOU.');
   const attesterId = makerId === debtorId ? creditorId : debtorId;
   const at = spec.at || nowIso();
+  const window = clearingWindow(at, spec.rules || {});
+  const openPayload = {
+    windowId: window.windowId,
+    opensAt: window.opensAt,
+    closesAt: window.closesAt,
+    windowDays: window.windowDays
+  };
+  if (!(maker.tape || []).some((entry) => entry.type === 'WINDOW_OPEN' && entry.payload?.windowId === window.windowId)) {
+    await appendEntry(maker, 'WINDOW_OPEN', openPayload, at);
+  }
   const body = {
     simulated: true,
     kind: 'iou',
@@ -1640,6 +2064,7 @@ export async function recordIou(store, makerId, spec) {
     unit: 'USD',
     reference,
     status: 'pending',
+    windowId: window.windowId,
     mock: true
   };
   const sealed = await sealMessage(maker, 'iou', body);
@@ -1654,6 +2079,9 @@ export async function recordIou(store, makerId, spec) {
   if (other?.privateKeyJwk) {
     other.ious = other.ious || {};
     other.ious[iouId] = pending;
+    if (!(other.tape || []).some((entry) => entry.type === 'WINDOW_OPEN' && entry.payload?.windowId === window.windowId)) {
+      await appendEntry(other, 'WINDOW_OPEN', openPayload, at);
+    }
     await appendEntry(other, 'iou', { ...pending, role: 'received' }, at);
     await rememberInbox(other, { at, kind: 'iou', fromId: makerId, amount, hash: iouId });
     await store.set(attesterId, other);
@@ -2082,7 +2510,8 @@ export function peerProfile(peer, at = nowIso()) {
     status: kycStatus(peer),
     standing: peerStanding(peer),
     held: heldBy(peer),
-    rewards: rewardTotal(peer)
+    rewards: rewardTotal(peer),
+    vetoCount: vetoCount(peer)
   };
 }
 

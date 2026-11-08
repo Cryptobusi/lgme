@@ -1780,7 +1780,7 @@ test('DC reference values stay pending when a series has no number', () => {
   assert.equal(page.includes('id="refList"'), true);
   assert.equal(/<script(?![^>]*\bsrc=)/i.test(page), false);
   const worker = readFileSync(join(root, 'sw.js'), 'utf8');
-  assert.equal(worker.includes('lgme-v57'), true);
+  assert.equal(worker.includes('lgme-v58'), true);
   const desk = readFileSync(join(root, 'exchange.html'), 'utf8');
   assert.equal(desk.includes('splash-skip'), false);
   assert.equal(desk.includes('>Skip<'), false);
@@ -2177,4 +2177,181 @@ test('a price lock lasts 15 seconds, a mismatch is rejected, and no price offers
   assert.equal(traded.choice, 'barter');
   assert.equal((await store.get('alice')).tape.some((entry) => entry.type === 'SOLANA_TX' && entry.payload?.invoiceId === 'deal-2'), false);
   assert.equal(sim.PEG_NOTE.includes('never moves more than 5%'), true);
+});
+
+test('the named third seat can veto, and the co-sign threshold stays', async () => {
+  const store = await books();
+  const before = await balances(store);
+  const proposed = await sim.proposeBilateral(store, {
+    proposerId: 'alice',
+    debtorId: 'alice',
+    creditorId: 'bob',
+    thirdSeatId: 'charlie',
+    amount: 10,
+    reference: 'Soil credits',
+    at: '2026-11-06T00:01:00.000Z'
+  });
+  assert.equal(proposed.ok, true, proposed.error);
+  const empty = await sim.thirdSeatVeto(store, 'charlie', proposed.exchangeId, '   ', '2026-11-06T00:02:00.000Z');
+  assert.equal(empty.ok, false);
+  assert.match(empty.error, /reason/);
+  const party = await sim.thirdSeatVeto(store, 'bob', proposed.exchangeId, 'Not my seat', '2026-11-06T00:02:00.000Z');
+  assert.equal(party.ok, false);
+  const vetoed = await sim.thirdSeatVeto(store, 'charlie', proposed.exchangeId, 'The line skipped the floor.', '2026-11-06T00:02:00.000Z');
+  assert.equal(vetoed.ok, true, vetoed.error);
+  assert.equal(vetoed.status, 'vetoed');
+  assert.equal(vetoed.unchanged, true);
+  assert.equal(vetoed.vetoCount, 1);
+  assert.deepEqual(await balances(store), before);
+  for (const id of ['alice', 'bob']) {
+    assert.equal((await store.get(id)).tape.some((entry) => entry.type === 'THIRD_SEAT_VETO' && entry.payload.reason === 'The line skipped the floor.'), true);
+  }
+  assert.equal(sim.peerProfile(await store.get('charlie')).vetoCount, 1);
+  assert.equal(sim.peerProfile(await store.get('alice')).vetoCount, 0);
+  const settled = await sim.settle(store, 'alice', proposed.exchangeId, '2026-11-06T00:03:00.000Z');
+  assert.equal(settled.ok, false);
+  assert.match(settled.error, /Vetoed/);
+  assert.equal(guard.coSignReason(60, ''), 'Amounts above 50 $lgme need a third-seat co-sign.');
+  assert.equal(guard.coSignReason(60, 'signed'), '');
+});
+
+test('a clearing window nets, locks one price, or rolls and terms the remainder', async () => {
+  const store = sim.createMemoryStore();
+  await sim.registerPeer(store, { id: 'alice', name: 'Alice', floor: 0, at: '2026-11-01T00:00:00.000Z' });
+  await sim.registerPeer(store, { id: 'bob', name: 'Bob', floor: 0, at: '2026-11-01T00:00:00.000Z' });
+  const rules = { windowDays: 7, epoch: '2026-01-01T00:00:00.000Z' };
+  const at = '2026-11-06T12:00:00.000Z';
+  const window = sim.clearingWindow(at, rules);
+  assert.equal(window.windowDays, 7);
+  const methods = JSON.parse(readFileSync(join(root, 'data/payment-methods.json'), 'utf8'));
+  assert.equal(methods.clearing.windowDays, methods.peg.holdDays);
+  const first = await sim.recordIou(store, 'alice', { debtorId: 'alice', creditorId: 'bob', amount: 10, reference: 'Soil', at, rules });
+  const second = await sim.recordIou(store, 'bob', { debtorId: 'bob', creditorId: 'alice', amount: 4, reference: 'Tools', at, rules });
+  assert.equal((await sim.attestIou(store, 'bob', first.iouId, at)).ok, true);
+  assert.equal((await sim.attestIou(store, 'alice', second.iouId, at)).ok, true);
+  assert.equal((await store.get('alice')).tape.some((entry) => entry.type === 'WINDOW_OPEN' && entry.payload.windowId === window.windowId), true);
+  const early = await sim.closeClearingWindow(store, 'alice', { at, rules, navigator: { onLine: true } });
+  assert.equal(early.ok, false);
+  assert.match(early.error, /still open/);
+  const online = { onLine: true };
+  const priced = await sim.closeClearingWindow(store, 'alice', {
+    at: window.closesAt,
+    rules,
+    price: 1,
+    priceSource: 'geckoterminal',
+    history: 'history unavailable',
+    disposition: 'roll',
+    navigator: online
+  });
+  assert.equal(priced.ok, true, priced.error);
+  assert.equal(priced.nets[0].offset, 4);
+  assert.equal(priced.nets[0].residual, 6);
+  assert.equal(priced.locks.length, 1);
+  assert.equal((await store.get('alice')).tape.some((entry) => entry.type === 'PRICE_LOCK' && entry.payload.usdAmount === 6), true);
+  const aliceClose = (await store.get('alice')).tape.find((entry) => entry.type === 'WINDOW_CLOSE');
+  const bobClose = (await store.get('bob')).tape.find((entry) => entry.type === 'WINDOW_CLOSE');
+  assert.equal(aliceClose.payload.merkleRoot, priced.merkleRoot);
+  assert.equal(bobClose.payload.merkleRoot.length, 64);
+  const rollStore = sim.createMemoryStore();
+  await sim.registerPeer(rollStore, { id: 'alice', name: 'Alice', floor: 0, at: '2026-11-01T00:00:00.000Z' });
+  await sim.registerPeer(rollStore, { id: 'bob', name: 'Bob', floor: 0, at: '2026-11-01T00:00:00.000Z' });
+  const lone = await sim.recordIou(rollStore, 'alice', { debtorId: 'alice', creditorId: 'bob', amount: 5, reference: 'Carry', at, rules });
+  await sim.attestIou(rollStore, 'bob', lone.iouId, at);
+  const rolled = await sim.closeClearingWindow(rollStore, 'alice', { at: window.closesAt, rules, disposition: 'roll', navigator: online });
+  assert.equal(rolled.ok, true, rolled.error);
+  assert.equal(rolled.rolled.length, 1);
+  assert.equal((await rollStore.get('alice')).ious[lone.iouId].windowId, rolled.nextWindowId);
+  const termStore = sim.createMemoryStore();
+  await sim.registerPeer(termStore, { id: 'alice', name: 'Alice', floor: 0, at: '2026-11-01T00:00:00.000Z' });
+  await sim.registerPeer(termStore, { id: 'bob', name: 'Bob', floor: 0, at: '2026-11-01T00:00:00.000Z' });
+  const due = await sim.recordIou(termStore, 'alice', { debtorId: 'alice', creditorId: 'bob', amount: 9, reference: 'Terms', at, rules });
+  await sim.attestIou(termStore, 'bob', due.iouId, at);
+  const termed = await sim.closeClearingWindow(termStore, 'alice', { at: window.closesAt, rules, disposition: 'terms', months: 3, navigator: online });
+  assert.equal(termed.ok, true, termed.error);
+  assert.equal(termed.termed.length, 1);
+  assert.equal((await termStore.get('alice')).tape.some((entry) => entry.type === 'ALT_SETTLEMENT'), true);
+  assert.equal((await termStore.get('alice')).ious[due.iouId].closed, 'terms');
+});
+
+test('a Merkle proof shows an entry in the day root and rejects a tampered path', async () => {
+  const leaves = ['aa', 'bb', 'cc'];
+  const proof = await sim.merkleProofFor(leaves, 2);
+  assert.equal(proof.root, await sim.merkleRootOf(leaves));
+  assert.equal(await sim.verifyMerkleProof(proof), true);
+  const tampered = structuredClone(proof);
+  tampered.path[0].hash = 'ff';
+  assert.equal(await sim.verifyMerkleProof(tampered), false);
+  const store = await books();
+  const peer = await store.get('alice');
+  const entry = peer.tape[0];
+  const proved = await sim.proveEntry(peer, { hash: entry.hash, day: entry.at.slice(0, 10) });
+  assert.equal(proved.ok, true, proved.error);
+  assert.equal((await sim.verifyInclusion(proved.proof)).valid, true);
+  proved.proof.path.push({ hash: '00', side: 'right' });
+  assert.equal((await sim.verifyInclusion(proved.proof)).valid, false);
+  const exported = await sim.exportRecords(peer);
+  assert.equal(exported.roots.days[entry.at.slice(0, 10)], proved.proof.root);
+  assert.equal(typeof exported.roots.windows, 'object');
+});
+
+test('net out offsets both directions after two codes, and a cycle stays a stub', async () => {
+  const store = sim.createMemoryStore();
+  await sim.registerPeer(store, { id: 'alice', name: 'Alice', floor: 0, at: '2026-11-01T00:00:00.000Z' });
+  await sim.registerPeer(store, { id: 'bob', name: 'Bob', floor: 0, at: '2026-11-01T00:00:00.000Z' });
+  const at = '2026-11-06T12:00:00.000Z';
+  const forth = await sim.recordIou(store, 'alice', { debtorId: 'alice', creditorId: 'bob', amount: 10, reference: 'One way', at });
+  const back = await sim.recordIou(store, 'bob', { debtorId: 'bob', creditorId: 'alice', amount: 4, reference: 'Other way', at });
+  await sim.attestIou(store, 'bob', forth.iouId, at);
+  await sim.attestIou(store, 'alice', back.iouId, at);
+  const before = sim.replay(await store.get('alice')).balance;
+  const unix = 1700000000;
+  const aliceSetup = await sim.setupWallet(store, 'alice', 'correct horse', { iterations: 2000 });
+  const aliceCode = await sim.totp(sim.base32Decode(aliceSetup.secretBase32), unix, { digits: 6, period: 30, algorithm: 'SHA-1' });
+  const proposed = await sim.proposeNetting(store, 'alice', { otherId: 'bob', passphrase: 'correct horse', code: aliceCode, unixSeconds: unix, at });
+  assert.equal(proposed.ok, true, proposed.error);
+  assert.equal(proposed.offset, 4);
+  assert.equal((await store.get('bob')).tape.some((entry) => entry.type === 'NETTING'), true);
+  const bobSetup = await sim.setupWallet(store, 'bob', 'correct horse', { iterations: 2000 });
+  const bobCode = await sim.totp(sim.base32Decode(bobSetup.secretBase32), unix, { digits: 6, period: 30, algorithm: 'SHA-1' });
+  const wrong = await sim.attestNetting(store, 'bob', proposed.nettingId, { passphrase: 'correct horse', code: '000000', unixSeconds: unix, at });
+  assert.equal(wrong.ok, false);
+  const alice = await store.get('alice');
+  alice.privateKeyJwk = (await sim.unlockWallet(alice, 'correct horse', aliceCode, unix)).privateKeyJwk;
+  await store.set('alice', alice);
+  const attested = await sim.attestNetting(store, 'bob', proposed.nettingId, { passphrase: 'correct horse', code: bobCode, unixSeconds: unix, at });
+  assert.equal(attested.ok, true, attested.error);
+  assert.equal(attested.status, 'attested');
+  assert.equal(attested.unchanged, true);
+  assert.equal(sim.replay(await store.get('alice')).balance, before);
+  assert.equal((await store.get('alice')).tape.some((entry) => entry.type === 'NETTING' && entry.payload.status === 'attested'), true);
+  assert.equal((await store.get('bob')).tape.some((entry) => entry.type === 'NETTING' && entry.payload.status === 'attested'), true);
+  const aliceAgain = await store.get('alice');
+  aliceAgain.privateKeyJwk = (await sim.unlockWallet(aliceAgain, 'correct horse', aliceCode, unix)).privateKeyJwk;
+  await store.set('alice', aliceAgain);
+  const bobOpen = await store.get('bob');
+  bobOpen.privateKeyJwk = (await sim.unlockWallet(bobOpen, 'correct horse', bobCode, unix)).privateKeyJwk;
+  await store.set('bob', bobOpen);
+  const later = await sim.recordIou(store, 'alice', { debtorId: 'alice', creditorId: 'bob', amount: 8, reference: 'Later', at });
+  const reply = await sim.recordIou(store, 'bob', { debtorId: 'bob', creditorId: 'alice', amount: 3, reference: 'Later back', at });
+  assert.equal((await sim.attestIou(store, 'bob', later.iouId, at)).ok, true);
+  assert.equal((await sim.attestIou(store, 'alice', reply.iouId, at)).ok, true);
+  const afterSecond = sim.replay(await store.get('alice')).balance;
+  const second = await sim.proposeNetting(store, 'alice', { otherId: 'bob', passphrase: 'correct horse', code: aliceCode, unixSeconds: unix, at });
+  assert.equal(second.ok, true, second.error);
+  const bobAgain = await store.get('bob');
+  bobAgain.privateKeyJwk = (await sim.unlockWallet(bobAgain, 'correct horse', bobCode, unix)).privateKeyJwk;
+  await store.set('bob', bobAgain);
+  const refused = await sim.refuseNetting(store, 'bob', second.nettingId, { passphrase: 'correct horse', code: bobCode, unixSeconds: unix, statement: 'REFUSAL', at });
+  assert.equal(refused.ok, true, refused.error);
+  assert.equal(refused.status, 'refused');
+  assert.equal(refused.unchanged, true);
+  const cycle = sim.cycleNetStub([
+    { debtorId: 'alice', creditorId: 'bob', amount: 10 },
+    { debtorId: 'bob', creditorId: 'charlie', amount: 10 },
+    { debtorId: 'charlie', creditorId: 'alice', amount: 10 }
+  ]);
+  assert.equal(cycle.ready, false);
+  assert.equal(cycle.appliesAt, 'window-close');
+  assert.equal(cycle.parties.length, 3);
+  assert.equal(sim.replay(await store.get('alice')).balance, afterSecond);
 });

@@ -1,4 +1,5 @@
 import { REFERENCE_LABEL, optionLabel, referenceLine } from '/js/dc-reference.mjs';
+import { clearingWindow, merkleProofFor, merkleRootOf, verifyMerkleProof } from '/js/clearing.mjs';
 
     // Not written to Hedera. No network writes.
     const GENESIS = '0'.repeat(64);
@@ -130,10 +131,11 @@ import { REFERENCE_LABEL, optionLabel, referenceLine } from '/js/dc-reference.mj
         div.dataset.floor = String(acc.floor);
         const balanceColor = acc.balance >= 0 ? 'text-emerald-400' : 'text-amber-400';
         const above = acc.balance - acc.floor;
+        const vetoes = state.tape.filter((entry) => entry.type === 'THIRD_SEAT_VETO' && entry.thirdSeat === id).length;
         div.innerHTML = `
           <div>
             <div class="text-xs font-medium text-white">${esc(acc.name)}</div>
-            <div class="text-[10px] text-amber-200/90">Floor ${esc(acc.floor)} ${esc(acc.floorNote)} </div>
+            <div class="text-[10px] text-amber-200/90">Floor ${esc(acc.floor)} ${esc(acc.floorNote)} · Vetoes ${esc(vetoes)}</div>
             <div class="text-[10px] text-slate-500 font-mono">Limit: ${esc(acc.creditLimit)} units · ${above >= 0 ? esc(above) + ' above floor' : 'below floor'}</div>
           </div>
           <div class="text-right">
@@ -156,6 +158,8 @@ import { REFERENCE_LABEL, optionLabel, referenceLine } from '/js/dc-reference.mj
         offer: 'text-slate-300 border-slate-700',
         accept: 'text-cyan-300 border-cyan-800/60',
         refusal: 'text-amber-200 border-amber-700/70',
+        THIRD_SEAT_VETO: 'text-amber-200 border-amber-700/70',
+        NETTING: 'text-cyan-200 border-cyan-800/60',
         block: 'text-rose-300 border-rose-800/70',
         settlement: 'text-emerald-300 border-emerald-800/60'
       };
@@ -235,13 +239,17 @@ import { REFERENCE_LABEL, optionLabel, referenceLine } from '/js/dc-reference.mj
       result.textContent = `Verify replay: ok . ${state.tape.length} entries. Hashes linked. Balances sum to 0.00.`;
       return true;
     }
-    function exportTape() {
+    async function exportTape() {
+      const day = new Date().toISOString().slice(0, 10);
+      const leaves = state.tape.filter((entry) => String(entry.at).slice(0, 10) === day).map((entry) => entry.hash);
+      const root = await merkleRootOf(leaves);
       const payload = {
         simulated: true,
         label: 'constitutive tape',
         genesisPrev: GENESIS,
         opening: OPENING,
-        entries: state.tape
+        entries: state.tape,
+        roots: { days: { [day]: root } }
       };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -525,8 +533,91 @@ import { REFERENCE_LABEL, optionLabel, referenceLine } from '/js/dc-reference.mj
       addLog('DEPLOY REGISTER', 'Recorded deployment manifest in this browser only .', 'success');
       showToast('Deployment indexed locally .');
     });
+    async function vetoThirdSeat() {
+      const proposal = readProposal();
+      const error = proposalError(proposal, true);
+      if (error) { showToast(error); return; }
+      const reason = document.getElementById('vetoReason').value.trim();
+      if (!reason) { showToast('A veto needs a reason.'); return; }
+      const before = replayBalances(state.tape);
+      await appendEntry({ ...proposal, type: 'THIRD_SEAT_VETO', message: reason });
+      applyReplay();
+      renderBalances();
+      renderTape();
+      for (const id of Object.keys(before)) {
+        if (before[id].balance !== state.accounts[id].balance) addLog('VETO', 'Balance drift after veto.', 'purple');
+      }
+      addLog('VETO', `${state.accounts[proposal.thirdSeat].name} vetoed. ${reason}`, 'purple');
+      showToast('Veto recorded. No balances moved. No penalty.');
+    }
+    function paintWindow() {
+      const window = clearingWindow(new Date().toISOString(), { windowDays: 7 });
+      const ms = window.remainingMs;
+      const days = Math.floor(ms / 86400000);
+      const hours = Math.floor((ms % 86400000) / 3600000);
+      const line = document.getElementById('windowLine');
+      if (line) line.textContent = `Clearing window ${window.windowId} · ${days}d ${hours}h left.`;
+    }
+    async function paintRoot() {
+      const day = new Date().toISOString().slice(0, 10);
+      const leaves = state.tape.filter((entry) => String(entry.at).slice(0, 10) === day).map((entry) => entry.hash);
+      const root = await merkleRootOf(leaves);
+      const node = document.getElementById('dayRoot');
+      if (node) node.textContent = `Day root ${root.slice(0, 16)}. A future Hedera anchor would publish this. Not written to Hedera.`;
+      return { day, leaves, root };
+    }
+    async function netOut() {
+      const owed = {};
+      for (const entry of state.tape) {
+        if (entry.type !== 'settlement') continue;
+        const key = entry.debtor + '>' + entry.creditor;
+        owed[key] = (owed[key] || 0) + entry.amount;
+      }
+      let best = null;
+      for (const key of Object.keys(owed)) {
+        const [debtor, creditor] = key.split('>');
+        const back = owed[creditor + '>' + debtor] || 0;
+        const offset = Math.min(owed[key], back);
+        if (offset > 0 && (!best || offset > best.offset)) best = { debtor, creditor, offset };
+      }
+      if (!best) { showToast('Net out needs both directions.'); return; }
+      const before = replayBalances(state.tape);
+      await appendEntry({ debtor: best.debtor, creditor: best.creditor, thirdSeat: null, amount: best.offset, reference: 'Net out', type: 'NETTING', message: 'offset' });
+      applyReplay();
+      renderBalances();
+      renderTape();
+      const moved = Object.keys(before).some((id) => before[id].balance !== state.accounts[id].balance);
+      addLog('NETTING', moved ? 'Balance drift after netting.' : `Offset ${best.offset}. Nothing else moved.`, 'cyan');
+      showToast(`Net out recorded for ${best.offset}.`);
+    }
+    document.getElementById('vetoBtn').addEventListener('click', async () => {
+      if (busy) return;
+      busy = true;
+      try { await vetoThirdSeat(); await paintRoot(); } finally { busy = false; }
+    });
+    document.getElementById('netOutBtn').addEventListener('click', async () => {
+      if (busy) return;
+      busy = true;
+      try { await netOut(); await paintRoot(); } finally { busy = false; }
+    });
+    document.getElementById('proveBtn').addEventListener('click', async () => {
+      const packed = await paintRoot();
+      if (!packed.leaves.length) { document.getElementById('proofResult').textContent = 'invalid'; return; }
+      const proof = await merkleProofFor(packed.leaves, packed.leaves.length - 1);
+      const body = { version: 1, scope: 'day', scopeId: packed.day, ...proof };
+      document.getElementById('proofBox').value = JSON.stringify(body, null, 2);
+      document.getElementById('proofResult').textContent = 'valid';
+    });
+    document.getElementById('checkProofBtn').addEventListener('click', async () => {
+      let proof;
+      try { proof = JSON.parse(document.getElementById('proofBox').value); } catch { document.getElementById('proofResult').textContent = 'invalid'; return; }
+      document.getElementById('proofResult').textContent = (await verifyMerkleProof(proof)) ? 'valid' : 'invalid';
+    });
+    paintWindow();
+    setInterval(paintWindow, 30000);
     applyReplay();
     renderBalances();
+    paintRoot();
     renderTape();
     syncThirdSeat();
     addLog('SYSTEM BOOT', 'lgme.app is ready. Not written to Hedera. Floor stays senior. Tape is constitutive.', 'info');

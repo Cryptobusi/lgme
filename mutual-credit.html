@@ -161,6 +161,12 @@
           <button type="button" id="declineThirdBtn" hidden class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-200 font-medium text-xs border border-amber-800/50">
             Decline third seat
           </button>
+          <label class="block text-xs font-medium text-slate-400" for="vetoReason">Veto reason</label>
+          <input id="vetoReason" type="text" maxlength="240" placeholder="Why this line is vetoed" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500">
+          <button type="button" id="vetoBtn" class="w-full py-2.5 rounded-xl bg-amber-700 hover:bg-amber-600 text-white font-medium text-xs">Veto</button>
+          <p class="text-[10px] text-slate-500">The third seat is defined at <a class="underline" href="https://www.egonomicanonymous.live/">egonomicanonymous.live</a>.</p>
+          <p id="windowLine" class="text-[11px] text-amber-200/90"></p>
+          <button type="button" id="netOutBtn" class="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs border border-slate-700">Net out</button>
         </form>
       </div>
       <!-- Live Balances (Komunitin Mutual Credit state) -->
@@ -209,6 +215,13 @@
         </div>
         <p class="text-[10px] text-slate-500 mb-2">Append-only and hash-linked. Refusals stay. Clearing the stream does not erase the tape. Nothing is written to a network.</p>
         <div id="tapeList" class="bg-slate-950 border border-slate-800/80 rounded-xl p-3 mono text-xs text-slate-300 custom-scrollbar overflow-y-auto max-h-[280px] space-y-2"></div>
+        <p id="dayRoot" class="text-[11px] text-slate-400 mt-2"></p>
+        <div class="flex flex-wrap gap-2 mt-2">
+          <button type="button" id="proveBtn" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">Prove entry</button>
+          <button type="button" id="checkProofBtn" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">Check proof</button>
+        </div>
+        <textarea id="proofBox" class="mt-2 w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-[11px] text-slate-300" rows="4" placeholder="Inclusion proof"></textarea>
+        <p id="proofResult" class="text-[11px] text-slate-400 mt-1" role="status"></p>
         <p id="verifyResult" class="text-[11px] text-slate-400 mt-2" role="status"></p>
       </div>
       <!-- Hedera Anchor Status & Deployment Staging for hederica.com -->
