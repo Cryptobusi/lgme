@@ -1300,13 +1300,13 @@ test('the wanted pin stays on IwanIT and a concluded match closes on the book', 
   assert.equal(again.some((card) => card.id === repair.listing.id), true);
   const thumb = JSON.parse(readFileSync(join(root, 'data/thumbtack-wanted-v0.json'), 'utf8'));
   const pros = sim.thumbtackFeed(thumb);
-  assert.equal(pros.length, 3);
+  assert.equal(pros.length, 1);
   assert.equal(pros.every((item) => item.sourcedAt === '2026-11-07' && item.status === 'Available'), true);
   assert.equal(pros[0].title, 'The Repair Extraordinaire');
   assert.equal(pros[0].isIprovIT, true);
   assert.equal(pros[0].rating, '4.8 stars, 639 reviews, 8 yrs');
-  assert.equal(pros[1].rating, '5.0, 554 reviews, 9 yrs');
-  assert.equal(pros[2].rating, '3.9, 41 reviews');
+  assert.equal(JSON.stringify(thumb).includes('Mauricio'), false);
+  assert.equal(JSON.stringify(thumb).includes('Fefe'), false);
   assert.match(pros[0].city, /confirm ZIP/);
   assert.match(pros[0].price, /\$99\/hr/);
   assert.match(pros[0].inquiry, /call-out, labor and parts/);
@@ -1780,7 +1780,10 @@ test('DC reference values stay pending when a series has no number', () => {
   assert.equal(page.includes('id="refList"'), true);
   assert.equal(/<script(?![^>]*\bsrc=)/i.test(page), false);
   const worker = readFileSync(join(root, 'sw.js'), 'utf8');
-  assert.equal(worker.includes('lgme-v59'), true);
+  assert.equal(worker.includes('lgme-v60'), true);
+  assert.equal(ui.includes('lgme.exchange.introSeen'), true);
+  assert.equal(ui.includes('Show intro'), true);
+  assert.equal(ui.includes("sessionStorage.getItem('lgme-sim:ui:seen-walk')"), false);
   const desk = readFileSync(join(root, 'exchange.html'), 'utf8');
   assert.equal(desk.includes('splash-skip'), false);
   assert.equal(desk.includes('>Skip<'), false);

@@ -3110,7 +3110,7 @@ function thumbtackSection(seat) {
     h('h3', {}, ['Matches from Thumbtack']),
     h('p', { class: 'legend' }, [`For “${sim.STANDING_REPAIR.title}”. ${sim.THUMBTACK_CAVEAT} Beta. Nothing is sent.`]),
     h('p', { class: 'legend' }, ['Ratings are shown as listed on Thumbtack. Not an endorsement by lgme.']),
-    rest.length ? h('div', { class: 'grid' }, rest.map((item) => thumbtackCard(item, seat))) : h('p', { class: 'empty', id: 'thumbtack-empty' }, ['No Thumbtack pros in this file yet.']),
+    rest.length ? h('div', { class: 'grid' }, rest.map((item) => thumbtackCard(item, seat))) : pros.length ? null : h('p', { class: 'empty', id: 'thumbtack-empty' }, ['No Thumbtack pros in this file yet.']),
     h('h3', {}, ['Listed from Thumbtack (not affiliated)']),
     pros.length ? h('div', { class: 'grid', id: 'thumbtack-iprov' }, pros.map((item) => thumbtackCard(item, seat))) : h('p', { class: 'empty', id: 'thumbtack-iprov-empty' }, ['No external IprovIT listings in this file yet.'])
   ]);
@@ -3751,7 +3751,7 @@ function renderHelp() {
     ]),
     install,
     ...sections.map(([title, body]) => h('article', { class: 'card' }, [h('h3', {}, [title]), h('p', { class: 'muted' }, [body])])),
-    h('div', { class: 'actions' }, [h('button', { type: 'button', onClick: () => showWalk(0) }, ['Replay the walkthrough'])])
+    h('div', { class: 'actions' }, [h('button', { type: 'button', class: 'quiet', onClick: () => showWalk(0) }, ['Show intro'])])
   );
   syncInstall();
 }
@@ -3788,6 +3788,7 @@ function renderResources() {
         h('h3', {}, [item.title]),
         h('p', { class: 'muted' }, [item.deck])
       ]))),
+      h('button', { type: 'button', class: 'quiet', onClick: () => showWalk(0) }, ['Show intro']),
       h('button', { type: 'button', class: 'quiet', onClick: () => { location.hash = 'help'; } }, ['Back to Help'])
     );
     return;
@@ -3823,10 +3824,21 @@ async function promptInstall() {
   syncInstall();
 }
 
+const INTRO_SEEN = 'lgme.exchange.introSeen';
+const SPLASH_SEEN = 'lgme.exchange.splashSeen';
+
+function storedFlag(key) {
+  try { return localStorage.getItem(key) === '1'; } catch { return false; }
+}
+
+function storeFlag(key) {
+  try { localStorage.setItem(key, '1'); } catch { /* a private window can still close the note */ }
+}
+
 function showSplash() {
   const splash = document.getElementById('splash');
   const video = document.getElementById('splash-video');
-  if (!splash || sessionStorage.getItem('lgme-sim:ui:splash')) {
+  if (!splash || storedFlag(SPLASH_SEEN)) {
     if (video) {
       video.pause();
       video.removeAttribute('src');
@@ -3834,6 +3846,7 @@ function showSplash() {
     }
     return Promise.resolve();
   }
+  storeFlag(SPLASH_SEEN);
   splash.hidden = false;
   return new Promise((resolve) => {
     let closed = false;
@@ -3841,7 +3854,6 @@ function showSplash() {
       if (closed) return;
       closed = true;
       splash.hidden = true;
-      sessionStorage.setItem('lgme-sim:ui:splash', '1');
       if (video) video.pause();
       resolve();
     };
@@ -3868,6 +3880,7 @@ const WALK = [
 ];
 
 function showWalk(step) {
+  storeFlag(INTRO_SEEN);
   let overlay = document.getElementById('walk');
   if (!overlay) {
     overlay = h('div', { class: 'walk', id: 'walk', role: 'dialog', 'aria-modal': 'true' });
@@ -3883,7 +3896,7 @@ function showWalk(step) {
       step > 0 ? h('button', { type: 'button', onClick: () => showWalk(step - 1) }, ['Back']) : null,
       step < WALK.length - 1
         ? h('button', { type: 'button', class: 'primary', onClick: () => showWalk(step + 1) }, ['Next'])
-        : h('button', { type: 'button', class: 'primary', onClick: () => { overlay.hidden = true; sessionStorage.setItem('lgme-sim:ui:seen-walk', '1'); } }, ['Start'])
+        : h('button', { type: 'button', class: 'primary', onClick: () => { overlay.hidden = true; storeFlag(INTRO_SEEN); } }, ['Start'])
     ])
   ]);
   overlay.replaceChildren(card);
@@ -4137,7 +4150,7 @@ bootVault().catch(() => {});
 
 Promise.all([loadReferences(), showSplash()]).then(async () => {
   await render();
-  if (!sessionStorage.getItem('lgme-sim:ui:seen-walk')) showWalk(0);
+  if (!storedFlag(INTRO_SEEN)) showWalk(0);
 }).catch((error) => {
   setStatus(error && error.message ? error.message : 'The books did not open.', 'bad');
 });

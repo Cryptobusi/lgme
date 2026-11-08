@@ -34,38 +34,6 @@
       "kind": "sell",
       "sourcedAt": "2026-11-07",
       "status": "Available"
-    },
-    {
-      "role": "backup",
-      "title": "Mauricio Rojas Services",
-      "city": "Germantown, MD (DMV)",
-      "rating": "5.0, 554 reviews, 9 yrs",
-      "service": "",
-      "price": "",
-      "url": "https://www.thumbtack.com/md/germantown/handyman/mauricio-rojas-services/service/428596631191887876",
-      "image": "https://production-next-images-cdn.thumbtack.com/i/428597075657744388/desktop/standard/thumb",
-      "note": "mostly assembly; confirm repair capability",
-      "inquiry": "Hi, are you available for treadmill and elliptical diagnosis/repair near Washington, DC? Could you share your earliest availability and an estimated quote including call-out, labor and parts? I can send models and symptoms. We can continue on Thumbtack, or record agreed terms on lgme.app (a $lgme payment is signed by your wallet). Thank you!",
-      "isIprovIT": false,
-      "kind": "sell",
-      "sourcedAt": "2026-11-07",
-      "status": "Available"
-    },
-    {
-      "role": "backup",
-      "title": "Fefe appliance repair",
-      "city": "Alexandria, VA",
-      "rating": "3.9, 41 reviews",
-      "service": "",
-      "price": "",
-      "url": "https://www.thumbtack.com/va/alexandria/appliance-repair/fefe-appliance-repair/service/572245290564091910",
-      "image": "https://production-next-images-cdn.thumbtack.com/i/573610720313966621/desktop/standard/thumb",
-      "note": "appliance-focused; confirm treadmill/elliptical expertise",
-      "inquiry": "Hi, are you available for treadmill and elliptical diagnosis/repair near Washington, DC? Could you share your earliest availability and an estimated quote including call-out, labor and parts? I can send models and symptoms. We can continue on Thumbtack, or record agreed terms on lgme.app (a $lgme payment is signed by your wallet). Thank you!",
-      "isIprovIT": false,
-      "kind": "sell",
-      "sourcedAt": "2026-11-07",
-      "status": "Available"
     }
   ]
 }
