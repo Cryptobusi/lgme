@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Campus pilot · lgme</title>
+  <meta name="description" content="A campus pilot kit for 50 to 100 members. Log a deed, attest it, and print volunteer hours." />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" />
+  <link rel="stylesheet" href="/menu.css" />
+  <style>
+    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; --card:#151a15; }
+    body { background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; font-size:1.05rem; line-height:1.55; max-width:40rem; margin:0 auto; padding:1.25rem max(1rem, env(safe-area-inset-right)) 4rem max(1rem, env(safe-area-inset-left)); }
+    h1,h2 { font-family:Newsreader,serif; font-weight:500; }
+    h1 { font-size:clamp(1.9rem, 7vw, 2.5rem); line-height:1.05; margin:0.4rem 0; }
+    h2 { font-size:1.3rem; margin:1.3rem 0 0.3rem; }
+    .kicker { margin:0; font-size:0.72rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--gold); }
+    .muted { color:var(--muted); }
+    a { color:var(--fg); }
+    nav a { min-height:44px; display:inline-flex; align-items:center; margin-right:0.8rem; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:0.9rem 1rem; margin:0.7rem 0; }
+    button { font:inherit; min-height:44px; padding:0.4rem 0.8rem; border-radius:10px; border:1px solid var(--line); background:var(--gold); color:#1c1b19; font-weight:700; }
+    table.gloss { width:100%; border-collapse:collapse; }
+    table.gloss td, table.gloss th { text-align:left; vertical-align:top; padding:0.45rem 0.3rem; border-bottom:1px solid var(--line); word-break:break-all; }
+    @media (max-width:700px) {
+      table.gloss, table.gloss tbody, table.gloss tr, table.gloss td { display:block; }
+      table.gloss thead { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+      table.gloss td::before { content:attr(data-label); display:block; font-size:0.72rem; letter-spacing:0.06em; text-transform:uppercase; color:var(--gold); }
+    }
+    @media print { nav, button, .kicker { display:none; } body { background:#fff; color:#000; } }
+  </style>
+</head>
+<body>
+<nav aria-label="Desk">
+  <a href="/">Desk</a>
+  <a href="/plain-english">Plain English</a>
+  <a href="/exchange?group=campus">Join</a>
+</nav>
+<p class="kicker">lgme · Campus</p>
+<h1>Campus pilot</h1>
+<p>A small room on one campus. People log tutoring, cleanup, and gear share. When the other person attests, the deed is an IdidIt (verified receipt). One verified deed is one campus credit. The credit is not $lgme and it is not written to Hedera.</p>
+<div class="card">
+  <h2>Size</h2>
+  <p>The pilot holds <span id="pilot-cap">50–100</span> members. The number is set in the pilot file. A new handle past the cap is refused.</p>
+</div>
+<div class="card">
+  <h2>Join</h2>
+  <p>Scan this code. It opens the exchange in the campus group and stores that group on the phone.</p>
+  <p id="join-link" class="muted"></p>
+  <div id="join-qr"></div>
+</div>
+<div class="card">
+  <h2>Starter offers</h2>
+  <ul>
+    <li>Tutoring hour</li>
+    <li>Campus cleanup</li>
+    <li>Gear / tool loan</li>
+  </ul>
+  <p>A credit spends once, on one of these. It cannot be spent twice. A named third seat can veto a deed that skipped the order.</p>
+</div>
+<div class="card">
+  <h2>Roles</h2>
+  <p>The organizer is the floor steward. They keep the basic-needs line senior. Everyone else is a member with the same book rules.</p>
+</div>
+<div class="card" id="hours-report">
+  <h2>Volunteer hours</h2>
+  <p class="muted">For a grant packet. Deeds, hours, verified count, and the Merkle root from this phone.</p>
+  <button type="button" id="print-report">Print report</button>
+</div>
+<p class="muted"><a href="/plain-english">Plain English</a> · <a href="/marketing">Marketing &amp; Adoption</a></p>
+<script src="/js/vendor/qrcode.js"></script>
+<script type="module" src="/js/campus-page.mjs"></script>
+</body>
+</html>

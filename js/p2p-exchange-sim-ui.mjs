@@ -991,6 +991,100 @@ function referenceCatalogCard() {
   ]);
 }
 
+function campusGroup() {
+  try { return localStorage.getItem('lgme.exchange.group') || ''; } catch { return ''; }
+}
+
+function campusDeedPanel(peers, me, full) {
+  const kind = h('select', {}, [
+    option('tutoring', 'Tutoring', true),
+    option('cleanup', 'Campus cleanup', false),
+    option('gear', 'Gear share', false)
+  ]);
+  const receiver = h('input', { value: '', placeholder: 'Their handle', maxlength: '32' });
+  const hours = h('input', { type: 'number', min: '0.25', step: '0.25', value: '1' });
+  const third = h('select', {}, peerOptions(peers, '', 'No third seat'));
+  const pass = h('input', { type: 'password', autocomplete: 'current-password' });
+  const code = h('input', { inputmode: 'numeric', maxlength: '8', autocomplete: 'one-time-code' });
+  const form = h('form', { id: 'deed-log', class: 'grid two' }, [
+    field('Deed', kind),
+    field('Their handle', receiver),
+    field('Hours', hours),
+    field('Third seat · everyday member', third),
+    field('Passphrase', pass),
+    field('6-digit code', code),
+    h('div', { class: 'actions' }, [h('button', { class: 'primary', type: 'submit' }, ['Log deed'])])
+  ]);
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const result = await sim.logCampusDeed(store, me.id, {
+      group: 'campus',
+      kind: kind.value,
+      receiverId: receiver.value.trim(),
+      hours: hours.value,
+      thirdSeatId: third.value || null,
+      capMax: 100,
+      passphrase: pass.value,
+      code: code.value,
+      unixSeconds: Math.floor(Date.now() / 1000)
+    });
+    if (!result.ok) { setStatus(result.error, 'bad'); return; }
+    setStatus('Deed logged. It becomes an IdidIt (verified receipt) when they attest. No coin. Not on Hedera.', 'ok');
+    await render();
+  });
+  const deeds = Object.values(full?.campusDeeds || {});
+  const rows = deeds.map((deed) => {
+    const actions = [];
+    if (deed.status === 'pending' && deed.receiverId === me.id) {
+      actions.push(h('button', { type: 'button', class: 'primary', onClick: async () => {
+        const result = await sim.attestCampusDeed(store, me.id, deed.deedId, { passphrase: pass.value, code: code.value, unixSeconds: Math.floor(Date.now() / 1000) });
+        setStatus(result.ok ? 'IdidIt (verified receipt). 1 campus credit. Not $lgme. Not on Hedera.' : result.error, result.ok ? 'ok' : 'bad');
+        if (result.ok) await render();
+      } }, ['Attest']));
+    }
+    if (deed.status !== 'vetoed' && deed.thirdSeatId === me.id) {
+      actions.push(h('button', { type: 'button', onClick: async () => {
+        const result = await sim.vetoCampusDeed(store, me.id, deed.deedId, 'Skipped the order', { passphrase: pass.value, code: code.value, unixSeconds: Math.floor(Date.now() / 1000) });
+        setStatus(result.ok ? 'Veto recorded. No credit moves.' : result.error, result.ok ? 'ok' : 'bad');
+        if (result.ok) await render();
+      } }, ['Veto']));
+    }
+    return h('article', { class: 'row' }, [
+      h('p', {}, [`${deed.kind} · ${deed.hours} h · ${deed.giverId} → ${deed.receiverId}`]),
+      h('p', { class: 'legend' }, [deed.status === 'verified' ? 'IdidIt (verified receipt)' : (deed.status || 'pending')]),
+      actions.length ? h('div', { class: 'actions' }, actions) : null
+    ]);
+  });
+  const credits = Object.values(full?.campusCredits || {}).filter((row) => row.holderId === me.id && row.status === 'open');
+  const redeemOffer = h('select', {}, [
+    option('tutoring', 'Tutoring hour', true),
+    option('cleanup', 'Campus cleanup', false),
+    option('gear', 'Gear / tool loan', false)
+  ]);
+  const redeem = credits.map((row) => h('div', { class: 'actions' }, [
+    h('button', { type: 'button', onClick: async () => {
+      const result = await sim.redeemCampusCredit(store, me.id, row.creditId, {
+        offerId: redeemOffer.value,
+        offers: ['tutoring', 'cleanup', 'gear'],
+        passphrase: pass.value,
+        code: code.value,
+        unixSeconds: Math.floor(Date.now() / 1000)
+      });
+      setStatus(result.ok ? '1 campus credit used once. Not $lgme.' : result.error, result.ok ? 'ok' : 'bad');
+      if (result.ok) await render();
+    } }, [`Redeem 1 credit · ${row.kind}`])
+  ]));
+  return h('section', { id: 'campus-deed' }, [
+    h('h3', {}, ['Campus deed']),
+    h('p', { class: 'legend' }, [campusGroup() === 'campus' ? 'You are in the campus group. One verified deed is one campus credit. Not $lgme. Not on Hedera.' : 'Log a deed for the campus pilot. Join with the campus QR, or log here on this device.']),
+    form,
+    h('p', { class: 'legend' }, ['Redeem inside the pilot']),
+    redeemOffer,
+    ...redeem,
+    ...rows
+  ]);
+}
+
 async function renderExchange(peers, seat) {
   const panel = document.getElementById('panel');
   const me = peers.find((peer) => peer.id === seat);
@@ -1006,6 +1100,7 @@ async function renderExchange(peers, seat) {
   const open = Object.values(full.exchanges || {}).sort((a, b) => a.createdAt < b.createdAt ? 1 : -1);
   panel.replaceChildren(
     h('h2', {}, [`Exchange · ${me.name}`]),
+    campusDeedPanel(peers, me, full),
     windowBanner(),
     h('p', { class: 'muted' }, ['You are acting as this peer. Switch seats to countersign, to refuse, or to veto as the named third seat. A proposal is not a debt until the other parties countersign.']),
     referenceCatalogCard(),
@@ -4264,6 +4359,10 @@ deliveryChannel?.addEventListener('message', async (event) => {
 });
 
 captureFragment();
+try {
+  const group = new URLSearchParams(location.search).get('group');
+  if (group === 'campus') localStorage.setItem('lgme.exchange.group', 'campus');
+} catch { /* the group stays unset */ }
 applyLayout();
 window.addEventListener('resize', applyLayout);
 for (const name of TABS) {

@@ -1,0 +1,12 @@
+{
+  "group": "campus",
+  "capMin": 50,
+  "capMax": 100,
+  "joinPath": "/exchange?group=campus",
+  "organizerRole": "floor steward",
+  "offers": [
+    { "id": "tutoring", "title": "Tutoring hour" },
+    { "id": "cleanup", "title": "Campus cleanup" },
+    { "id": "gear", "title": "Gear / tool loan" }
+  ]
+}

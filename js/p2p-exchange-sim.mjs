@@ -393,6 +393,9 @@ export function entryDetail(entry, names = {}) {
     const hours = payload.hours == null ? '' : ` · ${payload.hours} h`;
     return `Legacy receipt ${payload.work || 'Work'}${payload.scope ? ' · ' + payload.scope : ''}${hours}`;
   }
+  if (entry.type === 'CAMPUS_DEED') return `${payload.receiptName || 'Deed'} ${payload.status || ''} ${payload.kind || ''}`.trim();
+  if (entry.type === 'CAMPUS_CREDIT') return `Campus credit ${payload.status || ''} ${payload.amount || 1}`.trim();
+  if (entry.type === 'CAMPUS_REDEEM') return `Campus credit redeemed ${payload.offerId || ''}`.trim();
   if (entry.type === 'refusal') return payload.statement || 'REFUSAL';
   if (entry.type === 'block') return payload.message || FLOOR_BLOCK;
   if (entry.type === 'KYC_STARTED') return 'KYC started. Details stay on this device.';
@@ -575,6 +578,231 @@ export async function recordIdidIt(store, peerId, spec = {}) {
   };
   await store.set(peerId, peer);
   return { ok: true, receiptId, balance: replay(peer).balance };
+}
+
+export const CAMPUS_RECEIPT = 'IdidIt (verified receipt)';
+export const CAMPUS_KINDS = Object.freeze(['tutoring', 'cleanup', 'gear']);
+
+async function campusRoster(store, group) {
+  const ids = new Set();
+  for (const id of await store.listIds()) {
+    const peer = await store.get(id);
+    for (const entry of peer?.tape || []) {
+      const payload = entry.payload || {};
+      if (payload.group !== group) continue;
+      if (entry.type === 'CAMPUS_JOIN' && payload.peerId) ids.add(payload.peerId);
+      if (entry.type === 'CAMPUS_DEED') {
+        if (payload.giverId) ids.add(payload.giverId);
+        if (payload.receiverId) ids.add(payload.receiverId);
+      }
+    }
+  }
+  return ids;
+}
+
+async function withCampusKey(peer, spec) {
+  const unlocked = await requireCode(peer, spec);
+  if (!unlocked.ok) return unlocked;
+  peer.privateKeyJwk = unlocked.privateKeyJwk;
+  return { ok: true };
+}
+
+export async function logCampusDeed(store, giverId, spec = {}) {
+  const giver = await store.get(giverId);
+  if (!giver) return fail('Unknown peer.');
+  const group = String(spec.group || 'campus');
+  const kind = String(spec.kind || '').trim();
+  const receiverId = String(spec.receiverId || '').trim();
+  const hours = round2(spec.hours ?? 1);
+  const capMax = Number(spec.capMax ?? 100);
+  if (!CAMPUS_KINDS.includes(kind)) return fail('Choose tutoring, cleanup, or gear.');
+  if (!receiverId || receiverId === giverId) return fail('Name the other member.');
+  const receiver = await store.get(receiverId);
+  if (!receiver) return fail('That handle is not on this device.');
+  if (!receiver.privateKeyJwk && !receiver.signingKey) return fail('The other member’s book is locked on this device.');
+  if (!Number.isFinite(hours) || hours <= 0) return fail('Hours need a number greater than zero.');
+  const keyed = await withCampusKey(giver, spec);
+  if (!keyed.ok) return keyed;
+  const roster = await campusRoster(store, group);
+  const newcomers = [giverId, receiverId].filter((id) => !roster.has(id));
+  if (roster.size + newcomers.length > capMax) {
+    releaseLockedKey(giver);
+    await store.set(giverId, giver);
+    return fail('The campus pilot is full.');
+  }
+  const at = spec.at || nowIso();
+  const deedId = await sha256(canonicalJSON({ group, kind, giverId, receiverId, hours, at }));
+  const payload = {
+    deedId,
+    group,
+    kind,
+    giverId,
+    receiverId,
+    hours,
+    thirdSeatId: spec.thirdSeatId || null,
+    status: 'pending',
+    receiptName: '',
+    unit: 'campus-credit',
+    lgme: false,
+    hedera: false
+  };
+  const books = [giver, receiver];
+  if (payload.thirdSeatId) {
+    const seat = await store.get(payload.thirdSeatId);
+    if (seat?.privateKeyJwk || seat?.signingKey) books.push(seat);
+  }
+  for (const peer of books) {
+    if (newcomers.includes(peer.id)) {
+      await appendEntry(peer, 'CAMPUS_JOIN', { group, peerId: peer.id, role: peer.id === spec.organizerId ? 'floor steward' : 'member' }, at);
+    }
+    await appendEntry(peer, 'CAMPUS_DEED', payload, at);
+    peer.campusDeeds = peer.campusDeeds || {};
+    peer.campusDeeds[deedId] = payload;
+    if (peer.id !== giverId) await store.set(peer.id, peer);
+  }
+  releaseLockedKey(giver);
+  await store.set(giverId, giver);
+  const fresh = await store.get(giverId);
+  return { ok: true, deedId, status: 'pending', balance: replay(fresh).balance, credit: 0 };
+}
+
+export async function attestCampusDeed(store, receiverId, deedId, spec = {}) {
+  const receiver = await store.get(receiverId);
+  if (!receiver) return fail('Unknown peer.');
+  const pending = receiver.campusDeeds?.[deedId];
+  if (!pending) return fail('No deed is waiting on this book.');
+  if (pending.receiverId !== receiverId) return fail('Only the receiving member can attest.');
+  if (pending.status === 'vetoed') return fail('Vetoed. No credit.');
+  if (pending.status === 'verified') return { ok: true, duplicate: true, deedId, credit: 1, receiptName: CAMPUS_RECEIPT };
+  const keyed = await withCampusKey(receiver, spec);
+  if (!keyed.ok) return keyed;
+  const at = spec.at || nowIso();
+  const before = replay(receiver).balance;
+  const verified = { ...pending, status: 'verified', receiptName: CAMPUS_RECEIPT };
+  const giver = await store.get(pending.giverId);
+  for (const peer of [receiver, giver].filter(Boolean)) {
+    peer.campusDeeds = peer.campusDeeds || {};
+    peer.campusDeeds[deedId] = verified;
+    if (peer.privateKeyJwk || peer.signingKey || peer.id === receiverId) {
+      if (!peer.privateKeyJwk && peer.id === receiverId) peer.privateKeyJwk = receiver.privateKeyJwk;
+      if (peer.privateKeyJwk || peer.signingKey) await appendEntry(peer, 'CAMPUS_DEED', { ...verified, role: 'verified' }, at);
+    }
+  }
+  const day = at.slice(0, 10);
+  const root = await merkleRootOf(dayEntries(receiver.tape, day).map((entry) => entry.hash));
+  const credit = {
+    creditId: await sha256(canonicalJSON({ deedId, credit: 1 })),
+    deedId,
+    group: pending.group,
+    holderId: pending.giverId,
+    amount: 1,
+    unit: 'campus-credit',
+    status: 'open',
+    kind: pending.kind,
+    hours: pending.hours,
+    receiptName: CAMPUS_RECEIPT,
+    merkleRoot: root,
+    lgme: false,
+    hedera: false,
+    redeemed: false
+  };
+  for (const peer of [receiver, giver].filter((peer) => peer && (peer.privateKeyJwk || peer.signingKey))) {
+    peer.campusCredits = peer.campusCredits || {};
+    peer.campusCredits[credit.creditId] = credit;
+    await appendEntry(peer, 'CAMPUS_CREDIT', credit, at);
+    if (peer.id !== receiverId) {
+      releaseLockedKey(peer);
+      await store.set(peer.id, peer);
+    }
+  }
+  releaseLockedKey(receiver);
+  await store.set(receiverId, receiver);
+  const fresh = await store.get(receiverId);
+  return {
+    ok: true,
+    deedId,
+    creditId: credit.creditId,
+    credit: 1,
+    receiptName: CAMPUS_RECEIPT,
+    merkleRoot: root,
+    unchanged: replay(fresh).balance === before
+  };
+}
+
+export async function redeemCampusCredit(store, holderId, creditId, spec = {}) {
+  const holder = await store.get(holderId);
+  if (!holder) return fail('Unknown peer.');
+  const credit = holder.campusCredits?.[creditId];
+  if (!credit) return fail('No campus credit on this book.');
+  if (credit.holderId !== holderId) return fail('Only the member who earned the credit can redeem it.');
+  if (credit.status === 'vetoed') return fail('Vetoed. No credit.');
+  if (credit.status === 'redeemed' || credit.redeemed) return fail('Already redeemed.');
+  const offerId = String(spec.offerId || credit.kind || '');
+  if (spec.offers && !spec.offers.includes(offerId)) return fail('That offer is not in the pilot list.');
+  const keyed = await withCampusKey(holder, spec);
+  if (!keyed.ok) return keyed;
+  const at = spec.at || nowIso();
+  const before = replay(holder).balance;
+  const spent = { ...credit, status: 'redeemed', redeemed: true, offerId };
+  holder.campusCredits[creditId] = spent;
+  await appendEntry(holder, 'CAMPUS_REDEEM', { creditId, deedId: credit.deedId, offerId, group: credit.group, amount: 1, lgme: false, hedera: false }, at);
+  releaseLockedKey(holder);
+  await store.set(holderId, holder);
+  const fresh = await store.get(holderId);
+  return { ok: true, creditId, status: 'redeemed', unchanged: replay(fresh).balance === before };
+}
+
+export async function vetoCampusDeed(store, peerId, deedId, reason, spec = {}) {
+  const seat = await store.get(peerId);
+  if (!seat) return fail('Unknown peer.');
+  const deed = seat.campusDeeds?.[deedId];
+  if (!deed) return fail('No deed on this book.');
+  if (!deed.thirdSeatId || deed.thirdSeatId !== peerId) return fail('Only the named third seat can veto.');
+  const text = String(reason || '').trim();
+  if (!text) return fail('A veto needs a reason.');
+  if (deed.status === 'vetoed') return { ok: true, status: 'vetoed', noop: true };
+  const credit = Object.values(seat.campusCredits || {}).find((row) => row.deedId === deedId);
+  if (credit?.status === 'redeemed') return fail('Already redeemed. A veto does not unwind a shown line.');
+  const keyed = await withCampusKey(seat, spec);
+  if (!keyed.ok) return keyed;
+  const at = spec.at || nowIso();
+  const before = replay(seat).balance;
+  const vetoed = { ...deed, status: 'vetoed' };
+  const ids = [deed.giverId, deed.receiverId, deed.thirdSeatId];
+  for (const id of ids) {
+    const peer = id === peerId ? seat : await store.get(id);
+    if (!peer) continue;
+    peer.campusDeeds = peer.campusDeeds || {};
+    peer.campusDeeds[deedId] = vetoed;
+    if (peer.campusCredits && credit) {
+      const row = peer.campusCredits[credit.creditId];
+      if (row && row.status !== 'redeemed') peer.campusCredits[credit.creditId] = { ...row, status: 'vetoed' };
+    }
+    if (peer.privateKeyJwk || peer.signingKey) {
+      await appendEntry(peer, 'THIRD_SEAT_VETO', { deedId, by: peerId, reason: text, group: deed.group }, at);
+    }
+    if (id !== peerId) await store.set(id, peer);
+  }
+  releaseLockedKey(seat);
+  await store.set(peerId, seat);
+  return { ok: true, status: 'vetoed', unchanged: replay(await store.get(peerId)).balance === before };
+}
+
+export function campusReport(peers) {
+  return (peers || []).map((peer) => {
+    const deeds = (peer.tape || []).filter((entry) => entry.type === 'CAMPUS_DEED' && entry.payload?.giverId === peer.id && entry.payload?.status === 'verified');
+    const credits = (peer.tape || []).filter((entry) => entry.type === 'CAMPUS_CREDIT' && entry.payload?.holderId === peer.id);
+    const hours = deeds.reduce((sum, entry) => round2(sum + Number(entry.payload?.hours || 0)), 0);
+    const root = credits.map((entry) => entry.payload?.merkleRoot).filter(Boolean).at(-1) || '';
+    return {
+      peerId: peer.id,
+      name: peer.name,
+      deeds: deeds.length,
+      hours,
+      verified: credits.filter((entry) => entry.payload?.receiptName === CAMPUS_RECEIPT).length,
+      merkleRoot: root
+    };
+  });
 }
 
 function normalizeLeg(leg) {

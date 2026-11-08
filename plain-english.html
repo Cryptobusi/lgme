@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Plain English · lgme</title>
+  <meta name="description" content="What the campus desk is, how to log a deed, how a credit works, and how to stay safe." />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" />
+  <link rel="stylesheet" href="/menu.css" />
+  <style>
+    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; --card:#151a15; }
+    body { background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; font-size:1.05rem; line-height:1.55; max-width:40rem; margin:0 auto; padding:1.25rem max(1rem, env(safe-area-inset-right)) 4rem max(1rem, env(safe-area-inset-left)); }
+    h1,h2 { font-family:Newsreader,serif; font-weight:500; }
+    h1 { font-size:clamp(1.9rem, 7vw, 2.5rem); line-height:1.05; margin:0.4rem 0; }
+    h2 { font-size:1.3rem; margin:1.4rem 0 0.3rem; }
+    .kicker { margin:0; font-size:0.72rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--gold); }
+    .muted { color:var(--muted); }
+    a { color:var(--fg); }
+    nav a { min-height:44px; display:inline-flex; align-items:center; margin-right:0.8rem; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:0.9rem 1rem; margin:0.7rem 0; }
+    ol { padding-left:1.2rem; }
+  </style>
+</head>
+<body>
+<nav aria-label="Desk">
+  <a href="/">Desk</a>
+  <a href="/exchange">Exchange</a>
+  <a href="/campus">Campus</a>
+</nav>
+<p class="kicker">lgme · Plain English</p>
+<h1>What this is</h1>
+<p>lgme.app is a shared book on your phone. You log a deed, the other person agrees, and that agreement is an IdidIt (verified receipt). It is not a coin and it is not written to Hedera.</p>
+<div class="card">
+  <h2>How to log a deed</h2>
+  <ol>
+    <li>Open the exchange and find Campus deed.</li>
+    <li>Pick tutoring, cleanup, or gear share.</li>
+    <li>Type their handle, the hours, and your 6-digit code.</li>
+    <li>Tap Log deed. That is the whole step. No coin.</li>
+  </ol>
+</div>
+<div class="card">
+  <h2>How credit works</h2>
+  <p>The deed stays pending until the person who received the help attests. Then it is an IdidIt (verified receipt). One verified deed is one campus credit. You can spend that credit once inside the pilot, on a tutoring hour or a gear loan. It is a mutual-credit IOU on the local tape. It is not $lgme.</p>
+</div>
+<div class="card">
+  <h2>Safety</h2>
+  <p>Both people sign with the code already on this device. A credit cannot be spent twice. A named third seat can veto a deed that skipped the order. Nothing here asks for a seed phrase. A Solana payment, if you make one later, still comes from your own wallet.</p>
+</div>
+<p class="muted"><a href="/campus">Campus pilot kit</a> · <a href="/exchange#exchange">Open the deed log</a></p>
+</body>
+</html>

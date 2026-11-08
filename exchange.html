@@ -208,11 +208,13 @@
   <div class="wrap">
     <nav class="deskmenu" aria-label="Desk">
       <a href="/">Desk</a>
+      <a href="/plain-english">Plain English</a>
+      <a href="/campus">Campus</a>
       <a href="/mutual-credit">Mutual credit</a>
       <a href="/how-it-works">How it works</a>
       <a href="/the-third-seat">Third seat</a>
     </nav>
-    <p class="kicker">lgme · BETA <button type="button" id="install-app" data-install hidden>Install</button> <a class="quiet-link" href="#help">Help</a></p>
+    <p class="kicker">lgme · BETA <button type="button" id="deep-theory" data-deep-theory aria-pressed="false">Deep theory</button> <button type="button" id="install-app" data-install hidden>Install</button> <a class="quiet-link" href="#help">Help</a></p>
     <h1>Exchange</h1>
     <p class="muted lede">Beta. List an item, sign an offer, and settle real $lgme from your own Solana wallet. Each person keeps their own book. A floor stays senior, and a refusal moves nothing.</p>
     <div id="seatbar" class="seatbar" aria-label="Peers"></div>
@@ -253,6 +255,7 @@
   </nav>
   <div id="toast" role="status" aria-live="polite" hidden></div>
   <p class="sim-banner" role="note">Beta. Floor stays senior. A refusal is recorded and carries no penalty. Agreed payments settle in real $lgme from your own wallet. This page never asks for a seed phrase. The local tape records the transaction signature. It does not write to Hedera.</p>
+  <script type="module" src="/js/plain-view.mjs"></script>
   <script type="module" src="/js/install-launch.mjs"></script>
   <script src="/js/vendor/qrcode.js"></script>
   <script src="/js/vendor/jsQR.js"></script>
