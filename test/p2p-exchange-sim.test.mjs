@@ -596,8 +596,7 @@ test('resources magazine keeps the explainer sections', () => {
     'Found on OfferUp (DC area)',
     'Reconcile as donation to the floor',
     'THANK YOU FOR YOUR SUPPORT.',
-    'How this desk stays shut',
-    'SPP_Overview.pptx'
+    'How this desk stays shut'
   ]) {
     assert.equal(text.includes(phrase), true, phrase);
   }
@@ -1781,7 +1780,7 @@ test('DC reference values stay pending when a series has no number', () => {
   assert.equal(page.includes('id="refList"'), true);
   assert.equal(/<script(?![^>]*\bsrc=)/i.test(page), false);
   const worker = readFileSync(join(root, 'sw.js'), 'utf8');
-  assert.equal(worker.includes('lgme-v56'), true);
+  assert.equal(worker.includes('lgme-v57'), true);
   const desk = readFileSync(join(root, 'exchange.html'), 'utf8');
   assert.equal(desk.includes('splash-skip'), false);
   assert.equal(desk.includes('>Skip<'), false);

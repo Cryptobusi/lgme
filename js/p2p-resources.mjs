@@ -89,8 +89,7 @@ export const ARTICLES = [
     blocks: [
       { type: 'p', text: 'Mutual credit is a separate page. Balances are replayed from an append-only hash-linked tape. A line that would spend the floor is stored as Blocked: Floor stays senior. A third-seat decline is a refusal: nothing moves, and there is no penalty. Reference figures are suggestions, not prices. Not written to Hedera.' },
       { type: 'link', href: '/mutual-credit', text: 'Open mutual credit' },
-      { type: 'link', href: '/how-it-works', text: 'Open how it works' },
-      { type: 'link', href: '/docs/SPP_Overview.pptx', text: 'Slides from the explainer' }
+      { type: 'link', href: '/how-it-works', text: 'Open how it works' }
     ]
   },
   {

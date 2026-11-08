@@ -4,109 +4,90 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>How it works · lgme</title>
+  <meta name="description" content="Beta. How lgme.app settles real Solana $lgme, keeps the floor senior, and lets the third seat refuse. Definitions from Egonomic Anonymous." />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" />
+  <link rel="stylesheet" href="/menu.css" />
   <style>
     :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; --card:#151a15; }
-    body { background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; font-size:1.05rem; line-height:1.55; max-width:48rem; margin:0 auto; padding:1.25rem 1rem 4rem; }
+    body { background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; font-size:1.05rem; line-height:1.55; max-width:40rem; margin:0 auto; padding:1.25rem max(1rem, env(safe-area-inset-right)) 4rem max(1rem, env(safe-area-inset-left)); }
     .kicker { margin:0; font-size:0.72rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--gold); }
-    h1,h2 { font-family:Newsreader,serif; font-weight:500; }
-    h1 { font-size:clamp(1.8rem, 5vw, 2.6rem); margin:0.5rem 0 0.4rem; }
+    h1,h2 { font-family:Newsreader,serif; font-weight:500; letter-spacing:-0.02em; }
+    h1 { font-size:clamp(1.9rem, 7vw, 2.6rem); line-height:1.05; margin:0.45rem 0 0.5rem; }
+    h2 { font-size:1.35rem; margin:1.6rem 0 0.4rem; }
+    p { margin:0.55rem 0; }
     .muted { color:var(--muted); }
-    a { color:var(--fg); } a:hover { color:var(--gold); }
-    table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:0.92rem; }
-    th, td { border:1px solid var(--line); padding:0.55rem 0.6rem; text-align:left; }
-    th { background:var(--card); color:var(--gold); }
-    .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:0.9rem 1rem; margin:0.8rem 0; }
-    .remark { font-style:italic; color:var(--muted); }
-    .exch { font-family:ui-monospace,monospace; font-size:0.85rem; white-space:pre-wrap; }
-    @media (max-width:600px) { table { font-size:0.8rem; } th,td { padding:0.4rem; } }
+    a { color:var(--fg); }
+    nav.deskmenu { display:flex; flex-wrap:wrap; gap:0.35rem 0.75rem; margin-bottom:1rem; }
+    nav.deskmenu a { min-height:44px; display:inline-flex; align-items:center; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:0.9rem 1rem; margin:0.75rem 0; }
+    .card h2 { margin-top:0; }
+    blockquote { margin:0.4rem 0 0; padding-left:0.8rem; border-left:3px solid var(--gold); }
+    ol { margin:0.4rem 0 0; padding-left:1.2rem; }
+    li { margin:0.35rem 0; }
+    .go { display:inline-flex; align-items:center; min-height:44px; margin:0.35rem 0.5rem 0 0; padding:0.35rem 0.9rem; border-radius:999px; background:var(--gold); color:#1c1b19; font-weight:700; text-decoration:none; }
   </style>
-  <link rel="stylesheet" href="/menu.css" />
 </head>
 <body>
 <nav class="deskmenu" aria-label="Desk">
-  <a href="/">Desk</a> · <a href="/hederica">Hederica</a> · <a href="/mutual-credit">Mutual credit</a>
+  <a href="/">Desk</a>
+  <a href="/exchange">Exchange</a>
+  <a href="/lgme-coin">$lgme</a>
+  <a href="/mutual-credit">Mutual credit</a>
 </nav>
-<p class="kicker"><a href="/">lgme</a> · How it works</p>
-<h1>How mutual credit works</h1>
-<p class="muted">3 people · 15 exchanges · 1 refusal · 1 open item. Beta. Zero-sum. Third seat keeps the book. Floor stays senior. If it cannot be shown, it is not policy. Not written to Hedera.</p>
+<p class="kicker"><a href="/">lgme</a> · Beta</p>
+<h1>How it works</h1>
+<p>lgme.app is the desk for <a href="https://www.egonomicanonymous.live/">Egonomic Anonymous</a>. The words below are that site’s. The payments on this app are the current Beta.</p>
+<p class="muted">Not financial advice. A Solana transfer is irreversible. Always verify the mint. You may lose what you send. This page does not hold a key and does not ask for a seed phrase.</p>
 
+<h2>The book</h2>
 <div class="card">
-  <strong>Download high-contrast slides:</strong> <a href="/docs/SPP_Overview.pptx" download>How it works slides</a>
+  <p>Egonomic Anonymous proposes the same rule for state, firm, and person: basic living costs are paid first from named surplus, members record a claim before they accept it, and anyone may refuse, on the record, a line that skipped the order.</p>
+  <blockquote class="muted">“Floor stays senior. If it cannot be shown, it is not policy. Sovereignty is the refusal.”</blockquote>
+  <p><a href="https://www.egonomicanonymous.live/">egonomicanonymous.live</a></p>
 </div>
+<p>The order on that site is Floor, then Mint, Issue, Tape, Charge, Agent, Thin, and Desert. <a href="https://www.egonomicanonymous.live/third-seat">Read the chapter</a>.</p>
 
-<h2>Recorded remarks — opening</h2>
+<h2>Five words</h2>
 <div class="card">
-  <div class="remark">Alice: “I put the walkway clearing and the books on the desk. Floor first.”</div>
-  <div class="remark">Bob: “Soil credits are ready. Same rules for me as for anyone.”</div>
-  <div class="remark">Charlie: “Logistics is on the shelf. I’ll refuse anything I can’t see.”</div>
-</div>
-<p class="muted">Starting balances: Alice +120 · Bob −45 · Charlie −75 · Sum 0.00</p>
-
-<h2>The 15 exchanges</h2>
-<div class="card exch">1 Alice→Bob 75  Soil credits
-2 Bob→Charlie 40  Logistics
-3 Charlie→Alice 55  Walkway + tools
-4 Alice→Charlie 30  Books + childcare
-5 Bob→Alice 25  Tomato starts
-6 Charlie→Bob 35  Bike maintenance
-7 Alice→Bob 20  Childcare reciprocity
-8 Bob→Charlie 15  Film support
-9 Charlie→Alice 45  Sourdough
-10 Alice→Charlie 18  Desk time
-11 Bob→Alice 12  Pull saw
-12 Charlie→Bob 22  Seedlings
-13 Alice→Bob 28  Cello support
-14 Bob→Charlie 16  Ride share  → REFUSED
-15 Charlie→Alice 10  Bookkeeping  → OPEN</div>
-
-<h2>Settled dashboard (after refusal)</h2>
-<table>
-  <tr><th>Person</th><th>Start</th><th>Settled now</th><th>Status</th></tr>
-  <tr><td>Alice</td><td>+120</td><td>+96</td><td>Positive</td></tr>
-  <tr><td>Bob</td><td>−45</td><td>+43</td><td>Positive</td></tr>
-  <tr><td>Charlie</td><td>−75</td><td>−107</td><td>Within limit</td></tr>
-  <tr><td>System</td><td>0</td><td>0.00</td><td>Zero-sum held</td></tr>
-</table>
-<p class="muted">Refusal of the 16-unit ride share never posted. Open 10-unit item still pending.</p>
-
-<h2>Personal accounts + remarks</h2>
-<div class="card">
-  <strong>Alice +96</strong><br>
-  <span class="remark">“Book is clear on my side. Open item still waiting.”</span>
+  <h2>Floor</h2>
+  <p>A basket paid first, from surplus already named. Food, rent, and the bus, before a later claim. On this desk a settlement that would spend through that floor is blocked. The tape says the floor stays senior.</p>
+  <p><a href="https://www.egonomicanonymous.live/third-seat">Third seat · Floor</a></p>
 </div>
 <div class="card">
-  <strong>Bob +43</strong><br>
-  <span class="remark">“The refusal was right. Nothing unclear moved.”</span>
+  <h2>Third seat</h2>
+  <p>The person who can read the book and refuse a line that skipped the order. Not a coin. Not an office. Not a quieter name for the printer. The person who refuses is bound by the same order. The no stays. It does not spend.</p>
+  <p><a href="https://www.egonomicanonymous.live/third-seat">egonomicanonymous.live/third-seat</a></p>
 </div>
 <div class="card">
-  <strong>Charlie −107</strong><br>
-  <span class="remark">“I refused what I couldn’t see. The 10 units stay open.”</span>
+  <h2>Public tape</h2>
+  <p>The lines that must be shown: title, mint, lien, conversion, and the registrar’s act. On this phone the tape is the book in the browser, hash-linked and signed on the device. It is the receipt you can open. It is not written to Hedera.</p>
+  <p><a href="https://www.egonomicanonymous.live/show">egonomicanonymous.live/show</a></p>
+</div>
+<div class="card">
+  <h2>Mutual credit</h2>
+  <p>Balances clear between the people in the deal. There is no lender in the middle. A line opens because both sides show the exchange.</p>
+  <p><a href="https://www.egonomicanonymous.live/common-knowledge">Common knowledge · mutual credit</a> · <a href="/mutual-credit">Open it here</a></p>
+</div>
+<div class="card">
+  <h2>Refusal</h2>
+  <p>You tap no, and the no stays on the record. A refusal does not mint and does not spend. Nothing already settled is unwound.</p>
+  <p><a href="https://www.egonomicanonymous.live/refusal">egonomicanonymous.live/refusal</a></p>
 </div>
 
-<h2>Special items on the desk</h2>
-<div class="card">
-  <strong>1 Refusal (closed)</strong><br>
-  Bob → Charlie 16 u · Ride Share Coordination<br>
-  Charlie: “Could not be shown.” Nothing taken.<br>
-  Record: RefusalRecord.sol
-</div>
-<div class="card">
-  <strong>1 Unresolved (open)</strong><br>
-  Charlie → Alice 10 u · Final Bookkeeping Review<br>
-  Still waiting. Either side may show or refuse.<br>
-  Record: PendingExchange.sol
-</div>
-
-<h2>How an open item is resolved</h2>
-<ol class="muted">
-  <li>The open item stays on the desk. The person keeps the book.</li>
-  <li>Either side can show the clear record of the work, or refuse it.</li>
-  <li>If shown and accepted → the 10 units move (Charlie −10, Alice +10). Zero-sum preserved.</li>
-  <li>If refused → the refusal is written and nothing moves.</li>
-  <li>Result recorded on the local tape. Not written to Hedera.</li>
+<h2>What this Beta does</h2>
+<ol>
+  <li>An agreed price is in US dollars. The app reads a live $lgme price and locks the token amount for 15 seconds. Both people see that amount before a wallet request is opened. If the quote expires, it is quoted again.</li>
+  <li>The locked price never moves more than 5% from the recent reference prices: the previous lock, one day, seven days, and thirty days. After a daily jump larger than 5%, that cap stays on the price from before the jump for seven days. $lgme is not a stablecoin.</li>
+  <li>You pay the full price in $lgme from your own wallet. Mint <span class="muted">7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump</span>. The app holds no Solana key.</li>
+  <li>The payment is pending until both parties attest. The payee checks the finalized transaction, then signs or refuses. A refusal has no penalty. One signature settles one invoice. A signature used twice is a double-spend and is not applied.</li>
+  <li>Cash and Zelle are recorded only with proof: a Zelle confirmation, or a cash note or photo. The file stays on the phone. The tape stores the SHA-256 fingerprint. The payee attests or refuses. This app does not process the payment. Fiat may have statutory fees, reviewed per transaction.</li>
+  <li>When a deal is paid in $lgme, the desk can suggest a loyalty discount, usually 5%. Both sign it, or either declines. The payer still pays the full price. After the payment is final, the floor may rebate the discount in $lgme. The floor operator signs that rebate in their own wallet. If the rebate would break the US$ 100 reserve, it waits. The cap is US$ 25 in 30 days. There is no penalty for a wait. The floor funds the rebate because the app supports the floor.</li>
 </ol>
-<p class="muted">Beta. Floor stays senior. Not written to Hedera. A Solana payment, when one is made, is real $lgme from your own wallet.</p>
-<p class="muted"><a href="/hederica">← Hederica</a> · <a href="/mutual-credit">Mutual credit</a> · <a href="/">Desk</a></p>
+<p class="muted">Not written to Hedera. This desk does not keep a work-receipt product, and it does not issue a second token.</p>
+<p>
+  <a class="go" href="/exchange">Open the exchange</a>
+  <a class="go" href="/lgme-coin#give">Give via soBeIT</a>
+</p>
+<p class="muted"><a href="/the-third-seat">The third seat, the long reading</a> · <a href="https://www.egonomicanonymous.live/">Egonomic Anonymous</a> · <a href="/">Desk</a></p>
 </body>
 </html>
