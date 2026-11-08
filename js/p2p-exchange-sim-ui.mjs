@@ -2627,7 +2627,7 @@ async function mediaSlides(ownerId, records) {
     const url = URL.createObjectURL(new Blob([bytes], { type: record.mime || 'image/jpeg' }));
     const view = String(record.mime || '').startsWith('video')
       ? h('video', { controls: true, playsinline: true, src: url })
-      : h('img', { alt: '', src: url });
+      : h('img', { alt: '', src: url, width: '288', height: '288', loading: 'lazy' });
     slides.push(h('div', { class: 'slide' }, [
       view,
       h('button', { type: 'button', onClick: async () => {
@@ -2649,7 +2649,7 @@ async function chatMediaBubble(seat, line) {
       const url = URL.createObjectURL(new Blob([bytes], { type: line.media.mime || 'image/jpeg' }));
       nodes.push(String(line.media.mime).startsWith('video')
         ? h('video', { controls: true, playsinline: true, src: url })
-        : h('img', { alt: '', src: url }));
+        : h('img', { alt: '', src: url, width: '288', height: '288', loading: 'lazy' }));
     }
     nodes.push(h('div', { class: 'actions' }, [
       h('button', { type: 'button', onClick: async () => {
@@ -3117,7 +3117,7 @@ function thumbtackSection(seat) {
 }
 
 function offerupImage(item) {
-  const img = h('img', { alt: '', src: item.image || '/icons/icon-192.png' });
+  const img = h('img', { class: 'listing-photo', alt: '', src: item.image || '/icons/icon-192.png', width: '224', height: '224', loading: 'lazy' });
   img.addEventListener('error', () => {
     if (img.dataset.fallback === '1') return;
     img.dataset.fallback = '1';
@@ -3167,7 +3167,7 @@ async function renderMarket(peers, seat) {
       const slides = await mediaSlides(card.sellerId, sim.listMedia(seller, { listingId: card.id }).filter((record) => !record.ownerId || record.ownerId === card.sellerId));
       const gallery = h('div', { class: 'carousel', id: 'listing-gallery' }, [
         ...slides,
-        card.photo ? h('div', { class: 'slide' }, [h('img', { class: 'shot', alt: '', src: card.photo })]) : null
+        card.photo ? h('div', { class: 'slide' }, [h('img', { class: 'shot', alt: '', src: card.photo, width: '288', height: '288', loading: 'lazy' })]) : null
       ].filter(Boolean));
       const actions = [];
       const wantedPin = card.title === sim.STANDING_WANTED.title;
@@ -3261,7 +3261,7 @@ async function renderMarket(peers, seat) {
     id: card.title === sim.STANDING_DONATION.title ? 'donation-card' : card.title === sim.STANDING_WANTED.title ? 'wanted-card' : card.title === sim.STANDING_REPAIR.title ? 'repair-card' : undefined,
     onClick: () => { openListingId = card.id; render(); }
   }, [
-    h('img', { alt: '', src: card.photo || '' }),
+    h('img', { alt: '', src: card.photo || '', width: '224', height: '224', loading: 'lazy' }),
     h('h3', {}, [card.title]),
     card.pinned ? h('p', { class: 'muted' }, [card.description]) : h('div', { class: 'price' }, [`${card.amount} $lgme`]),
     card.title === sim.STANDING_WANTED.title || card.title === sim.STANDING_REPAIR.title ? h('p', { class: 'legend' }, [(card.title === sim.STANDING_REPAIR.title ? sim.STANDING_REPAIR : sim.STANDING_WANTED).payments.join(' · ')]) : null,
@@ -3335,7 +3335,7 @@ async function renderList(seat) {
       h('h2', {}, ['List']),
       steps,
       h('p', { class: 'muted' }, ['Take a photo or choose one. It is scaled down in this browser and kept on the listing locally.']),
-      listDraft.photo ? h('img', { class: 'shot', alt: '', src: listDraft.photo }) : null,
+      listDraft.photo ? h('img', { class: 'shot', alt: '', src: listDraft.photo, width: '224', height: '224', loading: 'lazy' }) : null,
       field('Photo', file),
       video,
       h('div', { class: 'actions' }, [
