@@ -37,6 +37,15 @@
     .cover{min-height:auto;padding-bottom:2rem}
     .part{margin-top:2.75rem}
     table{font-size:0.92rem}
+    table.gloss{width:100%}
+    table.gloss th,table.gloss td{vertical-align:top}
+    @media (max-width:700px){
+      table.gloss thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+      table.gloss,table.gloss tbody,table.gloss tr,table.gloss td{display:block;width:auto}
+      table.gloss tr{margin:.8rem 0;padding:.2rem 0;border-bottom:1px solid #d9d2c5}
+      table.gloss td{border:0;padding:.2rem 0}
+      table.gloss td::before{content:attr(data-label);display:block;font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:#7a6240}
+    }
     .plate{min-height:0;margin:0 -1.25rem 1.5rem}
     .plate img{width:100%;height:auto}
   }
@@ -82,9 +91,15 @@
 </tbody></table>
 <h2 class="part">1. A glossary for readers of the treatises</h2>
 <p class="kicker">Part I</p>
-<p>The left column is the book’s word. The middle column is the term a current treatise, textbook, or public instrument would reach for. The right column is the limit: resemblance is not enactment. If a counsel, a ministry, or a clearinghouse uses the middle word, they have not thereby adopted the left.</p>
+<p>The left column is the book’s word. The middle column is the term a current treatise, textbook, or public instrument would reach for. The right column is the limit: resemblance is not enactment. If a counsel, a ministry, or a clearinghouse uses the middle word, they have not thereby adopted the left. Five names are set in everyday words first. The longer table keeps the other book words.</p>
+<table class="gloss"><thead><tr><th>Framework term</th><th>Front-end human primitive</th><th>Practical everyday function</th></tr></thead><tbody>
+<tr><td data-label="Framework term">Tape / Constitutive Record</td><td data-label="Front-end human primitive">Public Ledger / Verified Receipt</td><td data-label="Practical everyday function">An immutable proof of completed work everyone can inspect.</td></tr>
+<tr><td data-label="Framework term">Third Seat</td><td data-label="Front-end human primitive">Participant / Everyday Member</td><td data-label="Practical everyday function">The individual citizen operating on equal footing with institutions. In a deal the Third Seat is the named everyday member who can veto.</td></tr>
+<tr><td data-label="Framework term">Quiet Print</td><td data-label="Front-end human primitive">Hidden Issuance / Shadow Dilution</td><td data-label="Practical everyday function">Creating money or promises off-schedule behind closed doors.</td></tr>
+<tr><td data-label="Framework term">Floor</td><td data-label="Front-end human primitive">Basic Needs Reserve</td><td data-label="Practical everyday function">Food, shelter, and essentials secured prior to speculative spending.</td></tr>
+<tr><td data-label="Framework term">Issue / Named Bill</td><td data-label="Front-end human primitive">Peer Promise / Mutual Credit</td><td data-label="Practical everyday function">A non-cash IOU directly tied to human effort, not speculative debt.</td></tr>
+</tbody></table>
 <table><thead><tr><th>Book</th><th>Treatise or instrument</th><th>The limit</th></tr></thead><tbody>
-<tr><td class='term'>Floor</td><td>Senior tranche; minimum consumption claim</td><td>Paid from surplus already titled. Not a transfer financed by seigniorage. Not an entitlement that appears when the surplus is zero.</td></tr>
 <tr><td class='term'>Basket</td><td>Posted consumption bundle</td><td>Five bands on the review page sum to $1,470: shelter 800, staple food 280, primary care 150, connectivity 40, income 200. A sixth band cannot be added. A specimen, not a statute.</td></tr>
 <tr><td class='term'>Mint</td><td>Outside money; monetary base; seigniorage</td><td>One posted schedule. The right to issue a new unit has a listed price. Household, firm, and treasury use the same window or they do not mint.</td></tr>
 <tr><td class='term'>UNIT</td><td>A scarce meter inside a desk</td><td>On the floor desk: open at 400 of a cap of 1,000, issued 100 at a time, seigniorage listed at $1 and then not spent. Not a proposal to replace legal tender.</td></tr>
@@ -92,13 +107,10 @@
 <tr><td class='term'>Par</td><td>Par clearance</td><td>The privilege this order withdraws. A deposit, a bill, and a household promise are three promises, each with a holder, a face, a discount, and a date.</td></tr>
 <tr><td class='term'>Discount</td><td>Haircut; the market price of delay and risk</td><td>Conversion = face × (1 − d). Kept as its own number, not folded into the fee.</td></tr>
 <tr><td class='term'>Charge</td><td>Origination fee; posted risk premium</td><td>Taken when the paper is written, not from the wreck. Same tenor, same collateral, same tape: same schedule. A friend rate is a second mint.</td></tr>
-<tr><td class='term'>Tape</td><td>Public audit trail; verifiable commitment</td><td>Five lines count: title, mint, lien, conversion, agent act. Private life stays off. A missing private line is the rule, not a privilege.</td></tr>
-<tr><td class='term'>Quiet print</td><td>Off-schedule monetary finance; hidden seigniorage</td><td>An expansion, a fee, or a rewrite that cannot be shown. Unpublished liquidity is not policy.</td></tr>
 <tr><td class='term'>Agent</td><td>Agent in the principal–agent sense, with no residual control</td><td>A clerk. Pays the floor on the clock. Does not mint. Does not decide who deserves the basket. A failed hedge is a recorded loss.</td></tr>
 <tr><td class='term'>Thin</td><td>Bid–ask width; illiquidity as information</td><td>A wide quote is an answer. An official rate that ignores an empty book is a lie. No emergency print to tighten it.</td></tr>
 <tr><td class='term'>Desert</td><td>Residual claim (Alchian and Demsetz)</td><td>What remains after floor and listed prices, including zero. Titled to the issuer. Not a vote on whether the basket runs.</td></tr>
 <tr><td class='term'>Retire</td><td>Extinguishment against identified cash</td><td>Debt falls only if a named surplus is locked to cancellation. A deficit is not a retirement. A rollover is a new issue.</td></tr>
-<tr><td class='term'>Third seat</td><td>Voice, not exit (Hirschman); not a veto player (Tsebelis)</td><td>The person may refuse to treat an unshown line as policy. The person need not sign the state’s act. The person is bound by the same order.</td></tr>
 <tr><td class='term'>Refusal</td><td>A recorded no</td><td>Writes nothing and pays nothing. On the technical page, a halt that would freeze others’ liquidity is not this refusal: silence is not a halt, and a halt must be staked.</td></tr>
 <tr><td class='term'>Seed</td><td>Principal; the corpus</td><td>Not spent. Norway’s rule, as the review page uses it, spends the harvest and locks the principal. This book does not claim Norway has adopted it.</td></tr>
 <tr><td class='term'>Grant</td><td>Endogenous money experienced from below</td><td>The granted page’s name for the training that money arrives from someone else. The other motion is to keep a book and refuse a line.</td></tr>

@@ -191,6 +191,16 @@
     .map th { color: var(--fg); font-weight: 600; }
     .map td:first-child, .map th:first-child { width: 7.5rem; }
     .map td { color: var(--muted); }
+    table.gloss { width: 100%; border-collapse: collapse; margin: 0.8rem 0 1rem; }
+    table.gloss th, table.gloss td { text-align: left; vertical-align: top; padding: 0.65rem 0.45rem; border-bottom: 1px solid var(--line); }
+    table.gloss th { font-size: 0.78rem; letter-spacing: 0.04em; }
+    @media (max-width: 700px) {
+      table.gloss thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+      table.gloss, table.gloss tbody, table.gloss tr, table.gloss td { display: block; width: auto; }
+      table.gloss tr { margin: 0.75rem 0; padding: 0.35rem 0; border-bottom: 1px solid var(--line); }
+      table.gloss td { border: 0; padding: 0.2rem 0; }
+      table.gloss td::before { content: attr(data-label); display: block; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg); font-weight: 600; }
+    }
     .plates { display: grid; gap: 0.75rem; margin: 1.15rem 0 0.6rem; }
     .plates a { display: block; }
     .plates img { width: 100%; height: auto; display: block; border: 1px solid var(--line); background: var(--panel); }
@@ -265,21 +275,48 @@
   <section id="glossary" hidden>
     <p class="kicker">Glossary</p>
     <h2>Eight words</h2>
-    <p class="muted">Easy read keeps the eight book words. Precise swaps each name for the narrower one, including the order line.</p>
+    <p class="muted">Easy read keeps the eight book words. Precise swaps each name for the narrower one, including the order line. The five lines below are the everyday names.</p>
+    <table class="gloss">
+      <thead><tr><th>Framework term</th><th>Front-end human primitive</th><th>Practical everyday function</th></tr></thead>
+      <tbody>
+        <tr>
+          <td data-label="Framework term">Tape / Constitutive Record</td>
+          <td data-label="Front-end human primitive">Public Ledger / Verified Receipt</td>
+          <td data-label="Practical everyday function">An immutable proof of completed work everyone can inspect.</td>
+        </tr>
+        <tr>
+          <td data-label="Framework term">Third Seat</td>
+          <td data-label="Front-end human primitive">Participant / Everyday Member</td>
+          <td data-label="Practical everyday function">The individual citizen operating on equal footing with institutions. In a deal the Third Seat is the named everyday member who can veto.</td>
+        </tr>
+        <tr>
+          <td data-label="Framework term">Quiet Print</td>
+          <td data-label="Front-end human primitive">Hidden Issuance / Shadow Dilution</td>
+          <td data-label="Practical everyday function">Creating money or promises off-schedule behind closed doors.</td>
+        </tr>
+        <tr>
+          <td data-label="Framework term">Floor</td>
+          <td data-label="Front-end human primitive">Basic Needs Reserve</td>
+          <td data-label="Practical everyday function">Food, shelter, and essentials secured prior to speculative spending.</td>
+        </tr>
+        <tr>
+          <td data-label="Framework term">Issue / Named Bill</td>
+          <td data-label="Front-end human primitive">Peer Promise / Mutual Credit</td>
+          <td data-label="Practical everyday function">A non-cash IOU directly tied to human effort, not speculative debt.</td>
+        </tr>
+      </tbody>
+    </table>
     <table class="map">
       <thead><tr><th>Easy read</th><th>Precise</th><th>Also</th></tr></thead>
       <tbody>
-        <tr><td>Floor</td><td>Senior tranche</td><td>Food, rent, and the bus, paid first</td></tr>
         <tr><td>Mint</td><td>Fair launch</td><td>Same schedule for everyone. No private drop</td></tr>
-        <tr><td>Issue</td><td>Promissory note</td><td>A bill. Not cash in the app</td></tr>
-        <tr><td>Tape</td><td>Audit trail</td><td>The receipt everyone can open</td></tr>
         <tr><td>Charge</td><td>Risk-adjusted fee</td><td>Same price. No VIP</td></tr>
         <tr><td>Agent</td><td>Registrar</td><td>The app can explain. It cannot tap pay</td></tr>
         <tr><td>Thin</td><td>Informational spread</td><td>A wide number is the honest price</td></tr>
         <tr><td>Desert</td><td>Residual value</td><td>What's left. Even if it's nothing</td></tr>
       </tbody>
     </table>
-    <p class="muted">Also said, and not a new step. Third seat is your seat. A quiet print is a fee that shows up later. Provenance is where it came from. A refusal is: you tap no, and the no stays on the record.</p>
+    <p class="muted">Also said, and not a new step. Provenance is where it came from. A refusal is: you tap no, and the no stays on the record.</p>
   </section>
   <section class="topsecret">
     <span class="badge">ARCHIVE · NOT AN OFFER</span>
@@ -291,7 +328,7 @@
   <section id="exchange-home">
     <p class="kicker">#LeGoMiego · $LGME</p>
     <p><a class="enter" href="/exchange">Exchange</a></p>
-    <p class="muted">The exchange sits under this button. You are the third seat: read the book, and refuse a line that skipped the order. The only check is an X handle. It stays in this browser. Not a new coin, and not the enrollment pilot. Not written to Hedera.</p>
+    <p class="muted">The exchange sits under this button. You are the third seat, an everyday member. In a deal the Third Seat is the named everyday member who can veto. The only check is an X handle. It stays in this browser. Not a new coin, and not the enrollment pilot. Not written to Hedera.</p>
     <p>Contribution, participation welcome. X Money to <a href="https://x.com/Trancesage">@Trancesage</a>. Send it from the Money tab on X. This page does not hold it.</p>
     <h2>The system isn’t broken. It’s working exactly as intended.</h2>
     <p class="muted">Let’s make the economy work for everyone. <a href="https://lgme.app">$LGME</a></p>

@@ -108,7 +108,7 @@ export const ARTICLES = [
     title: 'The third seat',
     deck: 'Read the order. Refuse a line that skipped it. The no stays.',
     blocks: [
-      { type: 'p', text: 'The third seat is the person who can read a posted order and refuse a line that skipped it. The refusal is a record. It does not mint and it does not spend. The person who refuses is bound by the same order. It is not an office, and it does not freeze a line that was already shown. Silence is not a refusal.' },
+      { type: 'p', text: 'The Third Seat is the everyday member: the individual citizen operating on equal footing with institutions. In a deal the Third Seat is the named everyday member who can veto. The veto is a record. It does not mint and it does not spend. Silence is not a refusal.' },
       { type: 'link', href: 'https://www.egonomicanonymous.live/third-seat', text: 'The third seat, on egonomicanonymous.live' },
       { type: 'link', href: '/the-third-seat', text: 'The third seat, on this site' }
     ]

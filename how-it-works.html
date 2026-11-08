@@ -25,6 +25,16 @@
     ol { margin:0.4rem 0 0; padding-left:1.2rem; }
     li { margin:0.35rem 0; }
     .go { display:inline-flex; align-items:center; min-height:44px; margin:0.35rem 0.5rem 0 0; padding:0.35rem 0.9rem; border-radius:999px; background:var(--gold); color:#1c1b19; font-weight:700; text-decoration:none; }
+    table.gloss { width:100%; border-collapse:collapse; margin:0.6rem 0 1rem; }
+    table.gloss th, table.gloss td { text-align:left; vertical-align:top; padding:0.6rem 0.4rem; border-bottom:1px solid var(--line); }
+    table.gloss th { color:var(--gold); font-size:0.78rem; font-weight:600; }
+    @media (max-width:700px) {
+      table.gloss thead { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+      table.gloss, table.gloss tbody, table.gloss tr, table.gloss td { display:block; width:auto; }
+      table.gloss tr { margin:0.8rem 0; padding:0.25rem 0; border-bottom:1px solid var(--line); }
+      table.gloss td { border:0; padding:0.2rem 0; }
+      table.gloss td::before { content:attr(data-label); display:block; font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--gold); font-weight:600; }
+    }
   </style>
 </head>
 <body>
@@ -48,26 +58,36 @@
 <p>The order on that site is Floor, then Mint, Issue, Tape, Charge, Agent, Thin, and Desert. <a href="https://www.egonomicanonymous.live/third-seat">Read the chapter</a>.</p>
 
 <h2>Five words</h2>
-<div class="card">
-  <h2>Floor</h2>
-  <p>A basket paid first, from surplus already named. Food, rent, and the bus, before a later claim. On this desk a settlement that would spend through that floor is blocked. The tape says the floor stays senior.</p>
-  <p><a href="https://www.egonomicanonymous.live/third-seat">Third seat · Floor</a></p>
-</div>
-<div class="card">
-  <h2>Third seat</h2>
-  <p>The person who can read the book and refuse a line that skipped the order. Not a coin. Not an office. Not a quieter name for the printer. The person who refuses is bound by the same order. The no stays. It does not spend.</p>
-  <p><a href="https://www.egonomicanonymous.live/third-seat">egonomicanonymous.live/third-seat</a></p>
-</div>
-<div class="card">
-  <h2>Public tape</h2>
-  <p>The lines that must be shown: title, mint, lien, conversion, and the registrar’s act. On this phone the tape is the book in the browser, hash-linked and signed on the device. It is the receipt you can open. It is not written to Hedera.</p>
-  <p><a href="https://www.egonomicanonymous.live/show">egonomicanonymous.live/show</a></p>
-</div>
-<div class="card">
-  <h2>Mutual credit</h2>
-  <p>Balances clear between the people in the deal. There is no lender in the middle. A line opens because both sides show the exchange.</p>
-  <p><a href="https://www.egonomicanonymous.live/common-knowledge">Common knowledge · mutual credit</a> · <a href="/mutual-credit">Open it here</a></p>
-</div>
+<table class="gloss">
+  <thead><tr><th>Framework term</th><th>Front-end human primitive</th><th>Practical everyday function</th></tr></thead>
+  <tbody>
+    <tr>
+      <td data-label="Framework term">Tape / Constitutive Record</td>
+      <td data-label="Front-end human primitive">Public Ledger / Verified Receipt</td>
+      <td data-label="Practical everyday function">An immutable proof of completed work everyone can inspect. On this phone the tape is the book in the browser. It is not written to Hedera. <a href="https://www.egonomicanonymous.live/show">egonomicanonymous.live/show</a></td>
+    </tr>
+    <tr>
+      <td data-label="Framework term">Third Seat</td>
+      <td data-label="Front-end human primitive">Participant / Everyday Member</td>
+      <td data-label="Practical everyday function">The individual citizen operating on equal footing with institutions. In a deal the Third Seat is the named everyday member who can veto. <a href="https://www.egonomicanonymous.live/third-seat">egonomicanonymous.live/third-seat</a></td>
+    </tr>
+    <tr>
+      <td data-label="Framework term">Quiet Print</td>
+      <td data-label="Front-end human primitive">Hidden Issuance / Shadow Dilution</td>
+      <td data-label="Practical everyday function">Creating money or promises off-schedule behind closed doors.</td>
+    </tr>
+    <tr>
+      <td data-label="Framework term">Floor</td>
+      <td data-label="Front-end human primitive">Basic Needs Reserve</td>
+      <td data-label="Practical everyday function">Food, shelter, and essentials secured prior to speculative spending. On this desk a settlement that would spend that reserve is blocked. <a href="https://www.egonomicanonymous.live/third-seat">Third seat · Floor</a></td>
+    </tr>
+    <tr>
+      <td data-label="Framework term">Issue / Named Bill</td>
+      <td data-label="Front-end human primitive">Peer Promise / Mutual Credit</td>
+      <td data-label="Practical everyday function">A non-cash IOU directly tied to human effort, not speculative debt. Balances clear between the people in the deal. <a href="https://www.egonomicanonymous.live/common-knowledge">Common knowledge</a> · <a href="/mutual-credit">Open it here</a></td>
+    </tr>
+  </tbody>
+</table>
 <div class="card">
   <h2>Refusal</h2>
   <p>You tap no, and the no stays on the record. A refusal does not mint and does not spend. Nothing already settled is unwound.</p>

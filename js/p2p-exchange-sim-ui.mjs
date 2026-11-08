@@ -1042,7 +1042,7 @@ function renderBilateral(peers, me) {
     h('div', { class: 'grid three' }, [
       field('Debtor', debtor),
       field('Creditor', creditor),
-      field('Third seat', third)
+      field('Third seat · everyday member', third)
     ]),
     field('Work', reference),
     h('div', { class: 'grid three' }, [
@@ -1190,7 +1190,7 @@ function renderCycle(peers, me) {
       : 'Add peers and amounts to preview the floor.';
   }
   const form = h('form', {}, [
-    field('Third seat, if someone outside the cycle is reading it', third),
+    field('Third seat · everyday member, if someone outside the cycle is reading it', third),
     field('Named charge, before any signature', charge),
     h('p', { class: 'legend' }, ['Every party countersigns. The floor is tested on the net of the whole cycle. One leg that takes a floor blocks every leg.']),
     legs,
@@ -1308,7 +1308,7 @@ function exchangeCard(ex, me, peers) {
   return h('article', { class: 'row' }, [
     h('header', {}, [
       h('span', { class: 'pill' }, [`${ex.kind} · ${ex.status}`]),
-      h('a', { class: 'pill', href: 'https://www.egonomicanonymous.live/' }, [`Third seat · ${seatName}`]),
+      h('a', { class: 'pill', href: 'https://www.egonomicanonymous.live/' }, [`Third seat · everyday member · ${seatName}`]),
       h('span', { class: 'meta' }, [shortHash(ex.id)])
     ]),
     h('p', {}, [legText]),
@@ -1528,10 +1528,10 @@ async function renderBooks(peers, seat) {
     h('h2', {}, [`${peer.name}'s book`]),
     windowBanner(),
     h('p', { class: 'legend' }, [`Today's tape root ${dayRoot.slice(0, 16)}. A future Hedera anchor would publish this root. Not written to Hedera.`]),
-    h('p', { class: 'muted' }, [`Every line below is on this peer’s tape. Credits and debits come only from settlements, payments, and rewards. The running balance is a replay. Key ${finger}. Limit ${rule.creditLimit}.`]),
+    h('p', { class: 'muted' }, [`Tape · public ledger. Every line below is on this peer’s book. Credits and debits come only from settlements, payments, and rewards. The running balance is a replay. Key ${finger}. Limit ${rule.creditLimit}.`]),
     h('div', { class: 'nums' }, [
       h('div', {}, [coinMark(), h('strong', {}, [String(view.balance)]), 'Balance']),
-      h('div', {}, [h('strong', {}, [String(rule.floor)]), `Floor · ${rule.floorNote}`]),
+      h('div', {}, [h('strong', {}, [String(rule.floor)]), `Floor · basic needs reserve · ${rule.floorNote}`]),
       h('div', {}, [h('strong', {}, [above >= 0 ? String(above) : 'below']), above >= 0 ? 'Above the floor' : 'Below the floor']),
       h('div', {}, [h('strong', {}, [String(sim.rewardTotal(peer))]), 'Rewards']),
       h('div', {}, [h('strong', {}, [String(view.credits)]), 'Credits']),
@@ -1771,7 +1771,7 @@ async function renderWallet(peers, seat) {
     h('div', { class: 'balance-hero' }, [
       coinMark(),
       h('div', {}, [h('strong', {}, [String(sim.replay(peer).balance)]), 'Book balance']),
-      h('div', {}, [h('strong', {}, [String(sim.terms(peer).floor)]), 'Floor']),
+      h('div', {}, [h('strong', {}, [String(sim.terms(peer).floor)]), 'Floor · basic needs reserve']),
       h('div', {}, [h('strong', {}, [locked ? 'Locked' : 'Open']), 'Key'])
     ])
   ];
@@ -2027,8 +2027,8 @@ function iouSection(peer) {
     await render();
   });
   return h('div', {}, [
-    h('h3', {}, ['Dollar IOU']),
-    h('p', { class: 'legend' }, ['A dollar IOU is pending until the named counterparty attests it. Open IOUs accrue in the current 7-day window. Refusal is recorded and carries no penalty. The floor still blocks a debit that would spend it.']),
+    h('h3', {}, ['Issue · peer promise']),
+    h('p', { class: 'legend' }, ['A non-cash IOU directly tied to human effort, not speculative debt. It stays pending until the named counterparty attests it. Open IOUs accrue in the current 7-day window. Refusal is recorded and carries no penalty. The floor still blocks a debit that would spend the basic needs reserve.']),
     form,
     h('h3', {}, ['Net out']),
     h('p', { class: 'legend' }, ['When you owe each other, Net out proposes the smaller amount as an offset. Both attest with the 6-digit code. Either can refuse. A 3-party cycle waits for a later window close.']),
@@ -3892,14 +3892,28 @@ async function renderSources() {
   );
 }
 
+function glossaryTable() {
+  const rows = [
+    ['Tape / Constitutive Record', 'Public Ledger / Verified Receipt', 'An immutable proof of completed work everyone can inspect.'],
+    ['Third Seat', 'Participant / Everyday Member', 'The individual citizen operating on equal footing with institutions. In a deal the Third Seat is the named everyday member who can veto.'],
+    ['Quiet Print', 'Hidden Issuance / Shadow Dilution', 'Creating money or promises off-schedule behind closed doors.'],
+    ['Floor', 'Basic Needs Reserve', 'Food, shelter, and essentials secured prior to speculative spending.'],
+    ['Issue / Named Bill', 'Peer Promise / Mutual Credit', 'A non-cash IOU directly tied to human effort, not speculative debt.']
+  ];
+  return h('table', { class: 'gloss' }, [
+    h('thead', {}, [h('tr', {}, ['Framework term', 'Front-end human primitive', 'Practical everyday function'].map((label) => h('th', {}, [label])))]),
+    h('tbody', {}, rows.map((row) => h('tr', {}, row.map((cell, index) => h('td', { 'data-label': ['Framework term', 'Front-end human primitive', 'Practical everyday function'][index] }, [cell])))))
+  ]);
+}
+
 function renderHelp() {
   stopAnyCamera();
   const panel = document.getElementById('panel');
   const sections = [
-    ['Floor', 'The floor is the protected balance: food, rent, and the bus. A settlement, a transfer, or an attested IOU that would lower a peer through that floor is not applied. The tape records Blocked: Floor stays senior. A cycle is judged on the net, so equal work can clear.'],
-    ['Third seat', 'The third seat is the person who can read the line and refuse it. The refusal is a REFUSAL entry. It moves no balance and carries no penalty. It does not unwind a line already shown. Silence is not a refusal. A line waits until every party has countersigned.'],
-    ['Tape', 'Each book is append-only. Every entry names the previous hash and is signed with that peer’s key. Export the JSON and verify it. If a byte changes, the hash or the signature fails and the import stops.'],
-    ['IOU and attestation', 'A dollar IOU is recorded as pending. Pending lines do not change the balance. The balance moves only when the named counterparty signs an ATTESTED entry. If they refuse, the tape records REFUSAL and the balance stays put.'],
+    ['Floor · basic needs reserve', 'Food, shelter, and essentials secured prior to speculative spending. A settlement, a transfer, or an attested IOU that would spend that reserve is not applied. The tape records Blocked: Floor stays senior.'],
+    ['Third seat · everyday member', 'The individual citizen operating on equal footing with institutions. In a deal the Third Seat is the named everyday member who can veto. The veto stays on the tape. Nothing moves. There is no penalty.'],
+    ['Tape · public ledger', 'An immutable proof of completed work everyone can inspect. Each book is append-only. Every entry names the previous hash and is signed with that peer’s key. Export the JSON and verify it.'],
+    ['Issue · peer promise', 'A non-cash IOU directly tied to human effort, not speculative debt. It is recorded as pending. The balance moves only when the named counterparty signs. A refusal leaves the balance put.'],
     ['Local book', 'Registration writes a GENESIS entry for a local grant of 100. It is not Solana $lgme. Your wallet signs a real payment.'],
     ['Authenticator', 'A passphrase encrypts the key at rest with AES-GCM and PBKDF2. A 6-digit TOTP, RFC 6238, is checked with WebCrypto HMAC. The setup QR can be scanned by an authenticator app. This page generates the same code while the secret is still on screen. It never sends the code. A wrong code leaves the wallet locked.'],
     ['Another device', 'There is no server. Sign a proposal, countersign, refusal, transfer, attestation, or handoff, then carry the lgme1. code by copy, by a link whose data sits in the URL fragment, by a QR, or by a .json file. On the other device, verification runs before anything is appended. A QR is for an in-person handoff. To text or email a draft, the page opens sms: or mailto: so you send it from your own app. The outbox and inbox are a local log of that.'],
@@ -3923,6 +3937,8 @@ function renderHelp() {
       h('p', { class: 'muted' }, ['Alice, Bob, and Charlie. The market. The fifteen exchanges. The refusal. The third seat and the story.'])
     ]),
     install,
+    h('h3', {}, ['Glossary']),
+    glossaryTable(),
     ...sections.map(([title, body]) => h('article', { class: 'card' }, [h('h3', {}, [title]), h('p', { class: 'muted' }, [body])])),
     h('div', { class: 'actions' }, [h('button', { type: 'button', class: 'quiet', onClick: () => showWalk(0) }, ['Show intro'])])
   );
@@ -4042,8 +4058,8 @@ function showSplash() {
 const WALK = [
   ['Beta', 'This desk settles agreed $lgme from your own Solana wallet. It does not hold a seed phrase, write to Hedera, or send text or email. You send a draft yourself, from your own app, if you want to.'],
   ['Separate books', 'Alice, Bob, and Charlie each keep their own tape. On one device you switch seats. On two devices you carry a signed message. There is no central ledger.'],
-  ['Floor', 'Bob and Charlie start above their floors. A line that would spend the floor is blocked and the block stays on the tape.'],
-  ['Third seat', 'Refuse a line that skipped the order. The no is recorded. Nothing moves. There is no penalty.'],
+  ['Floor · basic needs reserve', 'Food, shelter, and essentials secured prior to speculative spending. A line that would spend that reserve is blocked and the block stays on the tape.'],
+  ['Third seat · everyday member', 'The individual citizen operating on equal footing with institutions. In a deal the Third Seat is the named everyday member who can veto. Nothing moves. There is no penalty.'],
   ['100 $lgme', 'Register a new peer and the GENESIS line grants 100 $lgme on this book. Then the key is locked behind a passphrase and a 6-digit code.'],
   ['Carry the signature', 'Copy the code, open the share link, scan the QR, or save the JSON. The other device checks the signature and the hash link before it appends.']
 ];

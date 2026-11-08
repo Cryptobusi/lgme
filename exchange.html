@@ -73,6 +73,16 @@
     .badge { display:inline-block; margin-left:0.35rem; font-size:0.68rem; font-weight:600; letter-spacing:0.04em; text-transform:uppercase; border-radius:999px; padding:0.12rem 0.45rem; vertical-align:middle; }
     .badge-verified { background:#F97316; color:#1c1b19; }
     .badge-unverified { background:transparent; color:var(--accent-text); border:1px solid #F97316; }
+    table.gloss { width:100%; border-collapse:collapse; margin:0.6rem 0 1rem; }
+    table.gloss th, table.gloss td { text-align:left; vertical-align:top; padding:0.6rem 0.4rem; border-bottom:1px solid var(--line); }
+    table.gloss th { font-size:0.78rem; }
+    @media (max-width:700px) {
+      table.gloss thead { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+      table.gloss, table.gloss tbody, table.gloss tr, table.gloss td { display:block; width:auto; }
+      table.gloss tr { margin:0.8rem 0; padding:0.25rem 0; border-bottom:1px solid var(--line); }
+      table.gloss td { border:0; padding:0.2rem 0; }
+      table.gloss td::before { content:attr(data-label); display:block; font-size:0.72rem; letter-spacing:0.06em; text-transform:uppercase; color:var(--accent-text); font-weight:600; }
+    }
     .pill-pending { color:#8a5a12; } .pill-attested, .pill-done { color:var(--ok); } .pill-refused, .pill-blocked { color:var(--bad); }
     .tx-side { text-align:right; display:grid; gap:0.1rem; }
     .bad { color:var(--bad); }
@@ -219,16 +229,16 @@
     <div id="panel" class="panel"></div>
     <div class="rules">
       <article class="card">
-        <h3>Floor stays senior</h3>
-        <p class="muted">Food, rent, and the bus are a protected balance. A settlement that would lower a peer through that floor is not settled. The tape records <strong>Blocked: Floor stays senior</strong>. A cycle is judged on the net, so equal work can clear without spending the floor.</p>
+        <h3>Floor · basic needs reserve</h3>
+        <p class="muted">Food, shelter, and essentials secured prior to speculative spending. A settlement that would spend that reserve is not settled. The tape records <strong>Blocked: Floor stays senior</strong>.</p>
       </article>
       <article class="card">
-        <h3>Third seat</h3>
-        <p class="muted">The third seat is the person who can read the line and refuse it. The refusal is recorded. It moves no balance and carries no penalty. The person who refuses is bound by the same order. It does not unwind a line already shown, and it does not freeze anyone else’s settled book.</p>
+        <h3>Third seat · everyday member</h3>
+        <p class="muted">The individual citizen operating on equal footing with institutions. In a deal the Third Seat is the named everyday member who can veto. The veto is recorded. It moves no balance and carries no penalty.</p>
       </article>
       <article class="card">
-        <h3>Tape</h3>
-        <p class="muted">Each book is append-only and hash-linked with SHA-256. Every line is signed with a key generated in this browser for that peer. Export the tape and verify it. If a copy is edited, verification fails.</p>
+        <h3>Tape · public ledger</h3>
+        <p class="muted">An immutable proof of completed work everyone can inspect. Each book is append-only and hash-linked with SHA-256. Export the tape and verify it. If a copy is edited, verification fails.</p>
       </article>
     </div>
     <noscript><p>This beta needs JavaScript in the browser. Settlement uses your own Solana wallet. This page does not hold a seed phrase.</p></noscript>
