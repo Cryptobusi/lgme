@@ -110,7 +110,8 @@ export const ARTICLES = [
     blocks: [
       { type: 'p', text: 'The Third Seat is the everyday member: the individual citizen operating on equal footing with institutions. In a deal the Third Seat is the named everyday member who can veto. The veto is a record. It does not mint and it does not spend. Silence is not a refusal.' },
       { type: 'link', href: 'https://www.egonomicanonymous.live/third-seat', text: 'The third seat, on egonomicanonymous.live' },
-      { type: 'link', href: '/the-third-seat', text: 'The third seat, on this site' }
+      { type: 'link', href: '/the-third-seat', text: 'The third seat, on this site' },
+      { type: 'link', href: '/marketing', text: 'Marketing & Adoption' }
     ]
   },
   {

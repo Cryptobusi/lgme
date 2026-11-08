@@ -3931,6 +3931,7 @@ function renderHelp() {
   panel.replaceChildren(
     h('h2', {}, ['Help']),
     h('p', { class: 'muted' }, ['Beta. Real $lgme moves only when your Solana wallet signs. This page does not send a message for you and does not write to Hedera.']),
+    h('p', {}, [h('a', { href: '/marketing' }, ['Marketing & Adoption'])]),
     h('button', { type: 'button', class: 'card mag-card', onClick: () => { location.hash = 'resources'; } }, [
       h('span', { class: 'kicker' }, ['Magazine']),
       h('h3', {}, ['Resources']),
