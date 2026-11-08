@@ -208,6 +208,37 @@
     .topsecret { border: 4px solid #dc2626; background: #1a0a0a; padding: 1.5rem; margin: 0 0 2rem; text-align: center; }
     .topsecret h2 { color: #f87171; margin: 0 0 0.5rem; font-size: clamp(1.4rem, 3vw, 2rem); }
     .topsecret .badge { display: inline-block; background: #dc2626; color: white; font-weight: 700; padding: 0.25rem 0.75rem; font-size: 0.8rem; letter-spacing: 0.2em; margin-bottom: 1rem; }
+    .hero { margin: 0.4rem 0 1.5rem; }
+    .hero h1 { font-size: clamp(2rem, 8vw, 3.2rem); }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 0.7rem; align-items: center; margin: 1.1rem 0; }
+    .hero-actions a { min-height: 44px; display: inline-flex; align-items: center; }
+    a.cta { background: #F97316; color: #1c1b19; text-decoration: none; font-weight: 700; padding: 0.55rem 0.95rem; border-radius: 999px; }
+    a.cta:hover { color: #1c1b19; }
+    a.quiet { color: var(--gold); }
+    .split { display: grid; gap: 0.8rem; }
+    @media (min-width: 720px) { .split { grid-template-columns: 1fr 1fr; } }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 0.9rem 1rem; }
+    .card h2 { font-size: 1.35rem; margin: 0.2rem 0 0.4rem; }
+    .steps { display: grid; gap: 0.7rem; margin: 0.6rem 0; }
+    .steps article { border-top: 1px solid var(--line); padding-top: 0.7rem; }
+    .note { font-size: 0.92rem; color: var(--muted); }
+    .onboard { border: 1px solid var(--line); border-radius: 14px; padding: 1rem; margin-top: 1rem; }
+    .onboard h2 { font-size: 1.5rem; }
+    .screen[hidden] { display: none; }
+    .choices { display: grid; gap: 0.5rem; }
+    .choices button, .onboard button {
+      font: inherit; min-height: 44px; text-align: left; padding: 0.55rem 0.8rem;
+      border: 1px solid var(--line); background: transparent; color: var(--fg); border-radius: 10px; cursor: pointer;
+    }
+    .onboard a.cta, .onboard button.cta { background: #F97316; color: #1c1b19; font-weight: 700; text-decoration: none; border-color: #F97316; border-radius: 999px; display: inline-flex; align-items: center; }
+    .onboard a.cta:hover, .onboard button.cta:hover { color: #1c1b19; }
+    .choices button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+    .onboard label { display: block; margin: 0.7rem 0 0.25rem; font-size: 0.82rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gold); }
+    .onboard input { width: 100%; box-sizing: border-box; min-height: 44px; font: inherit; padding: 0.45rem 0.6rem; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--fg); }
+    .receipt { border: 1px solid var(--gold); border-radius: 12px; padding: 0.9rem; }
+    .receipt-name { margin: 0; font-weight: 700; letter-spacing: 0.02em; }
+    .badge-ok { display: inline-block; background: #14532d; color: #d1fae5; font-size: 0.78rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 999px; }
+    .later { opacity: 0.65; }
   </style>
 </head>
 <body>
@@ -276,6 +307,122 @@
     <button type="button" id="deep-theory" data-deep-theory aria-pressed="false">Deep theory</button>
     <button type="button" id="glossary-btn" aria-expanded="false" aria-controls="glossary">Glossary</button>
   </div>
+  <header class="hero" id="home-hero">
+    <p class="kicker">lgme</p>
+    <h1>Prove what you did. Keep what you earn. Build trust that lasts.</h1>
+    <p>A tamper-evident digital notebook for your community contributions, work exchanges, and agreements, verified by both people, without middlemen or hidden fees.</p>
+    <div class="hero-actions">
+      <a class="cta" href="/exchange?group=campus#exchange">Record Your First Action — Free</a>
+      <a class="quiet" href="/campus">See how a community tool-share uses it →</a>
+    </div>
+  </header>
+  <section id="problem-fix">
+    <div class="split">
+      <article class="card">
+        <p class="kicker">The problem</p>
+        <h2>The record slips.</h2>
+        <ul>
+          <li>Platforms often take a cut of 10% or more.</li>
+          <li>Informal promises vanish.</li>
+          <li>Centralized records can change.</li>
+        </ul>
+      </article>
+      <article class="card">
+        <p class="kicker">The fix</p>
+        <h2>A light receipt book.</h2>
+        <p>Each record is co-signed by both people and sealed in a daily fingerprint, a Merkle proof you can check on the phone.</p>
+        <p>Keep a backup so you can carry your history to the next device.</p>
+        <p class="note">Public Hedera anchoring: coming — not written to Hedera today.</p>
+      </article>
+    </div>
+    <div class="steps">
+      <article>
+        <p class="kicker">1</p>
+        <h2>Log the Action</h2>
+        <p class="muted">Name the deed, the other person, and the hours. No coin for a campus deed.</p>
+      </article>
+      <article>
+        <p class="kicker">2</p>
+        <h2>Co-Sign &amp; Verify</h2>
+        <p class="muted">Send a link or a QR. The other person confirms in one tap with the code already on their phone.</p>
+      </article>
+      <article>
+        <p class="kicker">3</p>
+        <h2>Carry Your Reputation</h2>
+        <p class="muted">Export a backup of your book, or print the volunteer-hours report for a grant.</p>
+      </article>
+    </div>
+    <div class="split">
+      <article class="card">
+        <h2>No crypto to log</h2>
+        <p class="muted">Deeds and campus credits do not need a coin. Paying in $lgme needs a wallet.</p>
+      </article>
+      <article class="card">
+        <h2>Tamper-evident time</h2>
+        <p class="muted">Both signatures plus the daily Merkle root. Hedera anchoring is coming. It is not written to Hedera today.</p>
+      </article>
+      <article class="card">
+        <h2>Local clearing</h2>
+        <p class="muted">Campus and co-op credits clear inside the group. One verified deed is one campus credit, spent once.</p>
+      </article>
+    </div>
+    <div class="onboard" id="onboarding">
+      <p class="kicker">Five steps</p>
+      <h2>Start a receipt</h2>
+      <p class="dots" id="onboard-dots" aria-live="polite">1 of 5</p>
+      <div class="screen" data-screen="1">
+        <h3>Sign in with a passkey</h3>
+        <p>Use the fingerprint or face unlock already on this phone. The exchange keeps the key on the device.</p>
+        <p class="later">Google and email: later.</p>
+        <p><button type="button" data-next="2">Continue with this device</button></p>
+      </div>
+      <div class="screen" data-screen="2" hidden>
+        <h3>Choose a circle</h3>
+        <div class="choices" id="circle-choices">
+          <button type="button" data-circle="Garden/Tool Library">Garden / Tool Library</button>
+          <button type="button" data-circle="Peer Tutoring">Peer Tutoring</button>
+          <button type="button" data-circle="Local Service">Local Service</button>
+          <button type="button" data-circle="Personal Log">Personal Log</button>
+        </div>
+      </div>
+      <div class="screen" data-screen="3" hidden>
+        <h3>Receipt</h3>
+        <form id="receipt-draft">
+          <label for="deed-what">What</label>
+          <input id="deed-what" name="what" required maxlength="160" placeholder="Tutoring hour, tool loan, cleanup" />
+          <label for="deed-who">With whom</label>
+          <input id="deed-who" name="who" required maxlength="80" placeholder="Their handle" />
+          <label for="deed-photo">Optional photo</label>
+          <input id="deed-photo" name="photo" type="file" accept="image/*" />
+          <p class="note">The photo stays on this phone. It is not uploaded.</p>
+          <p><button class="cta" type="submit">Record Receipt</button></p>
+        </form>
+      </div>
+      <div class="screen" data-screen="4" hidden>
+        <h3>Recipient confirms</h3>
+        <p>Share this link or its QR. They open it and tap Confirm Deed. Nothing is verified until they do.</p>
+        <p><a id="confirm-link" href="/exchange?group=campus#exchange">/exchange?group=campus#exchange</a></p>
+        <div id="confirm-qr"></div>
+        <p class="hero-actions"><a class="cta" id="confirm-deed" href="/exchange?group=campus#exchange">Confirm Deed</a> <button type="button" data-next="5">See the receipt card</button></p>
+      </div>
+      <div class="screen" data-screen="5" hidden>
+        <article class="receipt" id="receipt-card">
+          <p class="receipt-name">IdidIt (verified receipt)</p>
+          <p><span class="badge-ok">Verified by both parties</span></p>
+          <p id="receipt-summary"></p>
+          <p class="note" id="receipt-time">Timestamp appears after both sign.</p>
+          <p class="note">Both signatures sit on the two books. The daily Merkle root is the fingerprint.</p>
+          <p><a href="/exchange?group=campus#exchange">Merkle proof</a></p>
+          <p class="note">This card is the shape of a finished receipt. It is a receipt only after the other person attests. Not written to Hedera today.</p>
+        </article>
+        <p class="hero-actions">
+          <a class="cta" href="/campus#hours-report">Add to Report</a>
+          <a class="cta" href="/exchange?group=campus#exchange">Trade for Campus Credit</a>
+          <button type="button" id="onboard-done" data-next="1">Done</button>
+        </p>
+      </div>
+    </div>
+  </section>
   <section id="glossary" hidden>
     <p class="kicker">Glossary</p>
     <h2>Eight words</h2>
@@ -387,8 +534,10 @@
     <p class="muted"><a href="/docs/Status_Snapshot_2026-10-16.md" download>Status snapshot (16 Oct 2026) →</a> · <a href="/docs/Status_for_Next_Followup_2026-10-15.md" download>Status for next follow-up (15 Oct) →</a> · <a href="/docs/Status_Snapshot_2026-10-15.md" download>Status snapshot (15 Oct 2026) →</a> · <a href="/docs/Status_for_Next_Followup_2026-10-13_v2.md" download>Status for next follow-up (13 Oct v2) →</a> · <a href="/docs/Status_Snapshot_2026-10-13.md" download>Status snapshot (13 Oct 2026) →</a> · <a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Tape_and_Inscription_Plan.md">Example plan →</a> · <a href="/docs/Tape_and_Inscription_Plan.md" download>Download plan (MD)</a></p>
   </section>
   <p class="muted"><a href="/">Desk</a> · <a href="/disclosures">Disclosures</a> · Not an offer. Not an investment.</p>
+  <script src="/js/vendor/qrcode.js"></script>
   <script src="/js/home-menu.js"></script>
   <script type="module" src="/js/plain-view.mjs"></script>
+  <script type="module" src="/js/home-onboarding.mjs"></script>
   <script type="module" src="/js/install-launch.mjs"></script>
 </body>
 </html>

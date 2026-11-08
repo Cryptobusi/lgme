@@ -996,12 +996,15 @@ function campusGroup() {
 }
 
 function campusDeedPanel(peers, me, full) {
+  const params = new URLSearchParams(location.search);
+  const asked = (params.get('what') || '').toLowerCase();
+  const startKind = asked.includes('clean') ? 'cleanup' : asked.includes('gear') || asked.includes('tool') ? 'gear' : 'tutoring';
   const kind = h('select', {}, [
-    option('tutoring', 'Tutoring', true),
-    option('cleanup', 'Campus cleanup', false),
-    option('gear', 'Gear share', false)
+    option('tutoring', 'Tutoring', startKind === 'tutoring'),
+    option('cleanup', 'Campus cleanup', startKind === 'cleanup'),
+    option('gear', 'Gear share', startKind === 'gear')
   ]);
-  const receiver = h('input', { value: '', placeholder: 'Their handle', maxlength: '32' });
+  const receiver = h('input', { value: params.get('who') || '', placeholder: 'Their handle', maxlength: '32' });
   const hours = h('input', { type: 'number', min: '0.25', step: '0.25', value: '1' });
   const third = h('select', {}, peerOptions(peers, '', 'No third seat'));
   const pass = h('input', { type: 'password', autocomplete: 'current-password' });
