@@ -1,0 +1,8 @@
+{
+  "skimRate": 0.01,
+  "deedCapShare": 0.5,
+  "dailyCapLgme": 20,
+  "zeroSplit": { "subfloor": 0.5, "floor": 0.5 },
+  "categories": ["tutoring", "repair", "cleanup", "gear"],
+  "postTypes": ["IwantIT", "IhavIT", "IselIT", "soBeIT"]
+}

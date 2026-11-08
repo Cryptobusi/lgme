@@ -995,6 +995,73 @@ function campusGroup() {
   try { return localStorage.getItem('lgme.exchange.group') || ''; } catch { return ''; }
 }
 
+async function goodDeedPanel(peers, me) {
+  const books = [];
+  for (const row of peers) {
+    const full = await store.get(row.id);
+    if (full) books.push(full);
+  }
+  const ranked = sim.rankCategories(sim.projectSubfloors(books));
+  const category = h('select', {}, ['tutoring', 'repair', 'cleanup', 'gear'].map((name, index) => option(name, name, index === 0)));
+  const postType = h('select', {}, [
+    option('IwantIT', 'IwantIT · request', false),
+    option('IhavIT', 'IhavIT · offer', false),
+    option('IselIT', 'IselIT · priced sale', true),
+    option('soBeIT', 'soBeIT · donation', false)
+  ]);
+  const list = h('input', { type: 'number', min: '0', step: '0.01', value: '10' });
+  const price = h('input', { type: 'number', min: '0', step: '0.000001', value: '1' });
+  const discount = h('input', { type: 'number', min: '0', step: '0.01', value: '0' });
+  const who = h('input', { value: '', placeholder: 'Their handle', maxlength: '32' });
+  const pass = h('input', { type: 'password', autocomplete: 'current-password' });
+  const code = h('input', { inputmode: 'numeric', maxlength: '8', autocomplete: 'one-time-code' });
+  const form = h('form', { id: 'good-deed', class: 'grid two' }, [
+    field('Category', category),
+    field('Post', postType),
+    field('US$ value', list),
+    field('$lgme price in US$', price),
+    field('Discount US$', discount),
+    field('Their handle', who),
+    field('Passphrase', pass),
+    field('6-digit code', code),
+    h('div', { class: 'actions' }, [h('button', { class: 'primary', type: 'submit' }, ['Post deed'])])
+  ]);
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const result = await sim.postDeed(store, me.id, {
+      category: category.value,
+      postType: postType.value,
+      listUsd: list.value,
+      priceUsd: postType.value === 'soBeIT' && Number(list.value) === 0 ? 0 : list.value,
+      unitValueUsd: list.value,
+      priceUsdPerLgme: price.value,
+      discountUsd: discount.value,
+      counterpartyId: who.value.trim(),
+      passphrase: pass.value,
+      code: code.value,
+      unixSeconds: Math.floor(Date.now() / 1000)
+    });
+    if (!result.ok) { setStatus(result.error, 'bad'); return; }
+    const note = result.donationRequest
+      ? 'A zero price became a donation request for the locked unit.'
+      : result.discountPaused
+        ? 'Discount paused. The category pool is empty, so the main floor is not used.'
+        : 'Deed posted. The unit US$ is locked. A payout waits for both signatures.';
+    setStatus(note, 'ok');
+    await render();
+  });
+  const rows = ranked.length
+    ? ranked.map((row) => h('p', { class: 'legend' }, [`${row.category}: ${row.requests} requests, ${row.completed} deeds, pool ${row.balance} $lgme`]))
+    : [h('p', { class: 'legend' }, ['No category pool yet. A sale skims 1%. Donations fill the rest.'])];
+  return h('section', { id: 'good-deeds-desk' }, [
+    h('h3', {}, ['Good deeds']),
+    h('p', { class: 'legend' }, ['Each deed locks its own US$ value. The buyer pays the price. The provider receives 99%. One percent fills that category’s pool, under the main floor. Not written to Hedera.']),
+    h('p', {}, [h('a', { href: '/good-deeds' }, ['Every good deed deserves another'])]),
+    ...rows,
+    form
+  ]);
+}
+
 function campusDeedPanel(peers, me, full) {
   const params = new URLSearchParams(location.search);
   const asked = (params.get('what') || '').toLowerCase();
@@ -1101,8 +1168,10 @@ async function renderExchange(peers, seat) {
     cycle.hidden = kind.value !== 'cycle';
   });
   const open = Object.values(full.exchanges || {}).sort((a, b) => a.createdAt < b.createdAt ? 1 : -1);
+  const goodDeeds = await goodDeedPanel(peers, me);
   panel.replaceChildren(
     h('h2', {}, [`Exchange · ${me.name}`]),
+    goodDeeds,
     campusDeedPanel(peers, me, full),
     windowBanner(),
     h('p', { class: 'muted' }, ['You are acting as this peer. Switch seats to countersign, to refuse, or to veto as the named third seat. A proposal is not a debt until the other parties countersign.']),
@@ -4030,6 +4099,7 @@ function renderHelp() {
     h('h2', {}, ['Help']),
     h('p', { class: 'muted' }, ['Beta. Real $lgme moves only when your Solana wallet signs. This page does not send a message for you and does not write to Hedera.']),
     h('p', {}, [h('a', { href: '/marketing' }, ['Marketing & Adoption'])]),
+    h('p', {}, [h('a', { href: '/good-deeds' }, ['Every good deed deserves another'])]),
     h('button', { type: 'button', class: 'card mag-card', onClick: () => { location.hash = 'resources'; } }, [
       h('span', { class: 'kicker' }, ['Magazine']),
       h('h3', {}, ['Resources']),

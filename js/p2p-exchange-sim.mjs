@@ -7,8 +7,10 @@
 import { ACK_MS, CO_SIGN_ABOVE, FORK, OFFLINE_SPEND, REPLAY, STALE_ACK, ackFresh, assertOnline, coSignReason, expiryFrom, fraudPenalty, handoffToken, passphraseReason } from './p2p-sim-guard.mjs';
 import { ALT_CHOICES, DEFAULT_CLAMP_BAND, HISTORY_UNAVAILABLE, NO_COIN, PEG_LABEL, PEG_NOTE, QUOTE_MS, applyPegBands, buildPegQuote, clampBand, round6, withinLock } from './lgme-price.mjs';
 import { bilateralNet, clearingRules, clearingWindow, cycleNetStub, dayEntries, merkleProofFor, merkleRootOf, nextWindow, verifyMerkleProof, windowEntries } from './clearing.mjs';
+import { DEED_CATEGORIES, DEED_POST_TYPES, RECEIPT_NAME, DEFAULT_SUBFLOOR_RULES, firstClaimCategory, floatedUnit, lockDeedUnit, paidAndHeldToday, planDeedPost, projectSubfloors, rankCategories, splitZeroProceeds } from './subfloor.mjs';
 
 export { bilateralNet, clearingRules, clearingWindow, cycleNetStub, merkleProofFor, merkleRootOf, nextWindow, verifyMerkleProof };
+export { DEED_CATEGORIES, DEED_POST_TYPES, DEFAULT_SUBFLOOR_RULES, firstClaimCategory, floatedUnit, lockDeedUnit, planDeedPost, projectSubfloors, rankCategories, splitZeroProceeds };
 
 export { ALT_CHOICES, DEFAULT_CLAMP_BAND, HISTORY_UNAVAILABLE, NO_COIN, PEG_LABEL, PEG_NOTE, QUOTE_MS };
 
@@ -396,6 +398,11 @@ export function entryDetail(entry, names = {}) {
   if (entry.type === 'CAMPUS_DEED') return `${payload.receiptName || 'Deed'} ${payload.status || ''} ${payload.kind || ''}`.trim();
   if (entry.type === 'CAMPUS_CREDIT') return `Campus credit ${payload.status || ''} ${payload.amount || 1}`.trim();
   if (entry.type === 'CAMPUS_REDEEM') return `Campus credit redeemed ${payload.offerId || ''}`.trim();
+  if (entry.type === 'SUBFLOOR_SKIM') return `Category skim ${payload.amount} $lgme to ${payload.category || ''}`.trim();
+  if (entry.type === 'SUBFLOOR_DONATION') return `Category donation ${payload.amount} $lgme to ${payload.category || ''}`.trim();
+  if (entry.type === 'SUBFLOOR_PAYOUT') return `Subfloor payout ${payload.amount} $lgme`.trim();
+  if (entry.type === 'ZERO_PRICE_SPLIT') return `Zero-price split ${payload.subfloor} subfloor, ${payload.floor} main floor`.trim();
+  if (entry.type === 'DEED_ATTESTED') return `${payload.receiptName || 'Deed'} ${payload.category || ''}`.trim();
   if (entry.type === 'refusal') return payload.statement || 'REFUSAL';
   if (entry.type === 'block') return payload.message || FLOOR_BLOCK;
   if (entry.type === 'KYC_STARTED') return 'KYC started. Details stay on this device.';
@@ -803,6 +810,369 @@ export function campusReport(peers) {
       merkleRoot: root
     };
   });
+}
+
+async function unlockDeed(peer, spec) {
+  if (peer.wallet?.ciphertext) {
+    const unlocked = await requireCode(peer, spec);
+    if (!unlocked.ok) return unlocked;
+    peer.privateKeyJwk = unlocked.privateKeyJwk;
+    return { ok: true };
+  }
+  if (!peer.privateKeyJwk && !peer.signingKey) return fail('Set up the 6-digit code first.');
+  return { ok: true };
+}
+
+async function allPeers(store) {
+  const peers = [];
+  for (const id of await store.listIds()) {
+    const peer = await store.get(id);
+    if (peer) peers.push(peer);
+  }
+  return peers;
+}
+
+async function writeDeed(store, actor, ids, type, payload, at) {
+  const seen = new Set();
+  for (const id of [actor.id, ...ids]) {
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    const peer = id === actor.id ? actor : await store.get(id);
+    if (!peer?.privateKeyJwk && !peer?.signingKey) continue;
+    await appendEntry(peer, type, payload, at);
+    if (id !== actor.id) await store.set(id, peer);
+  }
+}
+
+export async function postDeed(store, peerId, spec = {}) {
+  const peer = await store.get(peerId);
+  if (!peer) return fail('Unknown peer.');
+  const rules = { ...DEFAULT_SUBFLOOR_RULES, ...(spec.rules || {}) };
+  const category = String(spec.category || '').trim();
+  const counterpartyId = String(spec.counterpartyId || '').trim();
+  const at = spec.at || nowIso();
+  const peers = await allPeers(store);
+  const pools = projectSubfloors(peers);
+  const pool = pools.categories[category] || { available: 0, balance: 0 };
+  const today = paidAndHeldToday(peers, spec.postType === 'IwantIT' ? counterpartyId : peerId, at.slice(0, 10));
+  const plan = planDeedPost({ ...spec, category, at, paidToday: today.paid, heldToday: today.held }, pool, rules);
+  if (!plan.ok) return plan;
+  if (plan.postType !== 'IwantIT' && !plan.directDonation && !plan.donationRequest && !counterpartyId) return fail('Name the other member.');
+  if (counterpartyId === peerId) return fail('Name the other member.');
+  const keyed = await unlockDeed(peer, spec);
+  if (!keyed.ok) return keyed;
+  if (plan.directDonation) {
+    const blocked = floorBlockReason(peer, round2(replay(peer).balance - plan.payLgme));
+    if (blocked) {
+      releaseLockedKey(peer);
+      await store.set(peerId, peer);
+      return fail(blocked);
+    }
+  }
+  const postId = await sha256(canonicalJSON({
+    peerId, category, postType: plan.postType, at, valueUsd: plan.unit.valueUsd
+  }));
+  const post = {
+    postId,
+    category,
+    postType: plan.postType,
+    posterId: peerId,
+    counterpartyId: counterpartyId || null,
+    thirdSeatId: spec.thirdSeatId || null,
+    title: String(spec.title || category).trim(),
+    unit: plan.unit,
+    payLgme: plan.payLgme,
+    providerLgme: plan.providerLgme,
+    skimLgme: plan.skimLgme,
+    coverLgme: plan.coverLgme,
+    holdId: plan.coverLgme > 0 ? await sha256(canonicalJSON({ postId, hold: plan.coverLgme })) : null,
+    discountPaused: plan.discountPaused,
+    donationRequest: plan.donationRequest,
+    directDonation: Boolean(plan.directDonation),
+    askLgme: plan.askLgme || 0,
+    status: 'open',
+    receiptName: '',
+    lgme: plan.postType !== 'soBeIT',
+    hedera: false
+  };
+  peer.deedPosts = peer.deedPosts || {};
+  peer.deedPosts[postId] = post;
+  const targets = [counterpartyId, spec.thirdSeatId].filter(Boolean);
+  for (const id of targets) {
+    const other = await store.get(id);
+    if (!other) continue;
+    other.deedPosts = other.deedPosts || {};
+    other.deedPosts[postId] = post;
+    await store.set(id, other);
+  }
+  await writeDeed(store, peer, targets, 'DEED_POST', { ...post, entryId: `post:${postId}` }, at);
+  if (post.holdId) {
+    await writeDeed(store, peer, targets, 'SUBFLOOR_HOLD', {
+      entryId: `hold:${post.holdId}`,
+      holdId: post.holdId,
+      postId,
+      category,
+      amount: post.coverLgme,
+      providerId: plan.postType === 'IwantIT' ? counterpartyId : peerId,
+      toId: plan.postType === 'IwantIT' ? counterpartyId : peerId
+    }, at);
+  }
+  if (plan.directDonation) {
+    await appendEntry(peer, 'transfer', {
+      fromId: peerId,
+      toId: `subfloor:${category}`,
+      amount: post.payLgme,
+      unit: '$lgme',
+      direction: 'out',
+      note: 'Category donation'
+    }, at);
+    await writeDeed(store, peer, targets, 'SUBFLOOR_DONATION', {
+      entryId: `donation:${postId}`,
+      postId,
+      category,
+      amount: post.payLgme,
+      fromId: peerId,
+      hedera: false
+    }, at);
+    post.status = 'donated';
+    peer.deedPosts[postId] = post;
+  }
+  releaseLockedKey(peer);
+  await store.set(peerId, peer);
+  return {
+    ok: true,
+    postId,
+    post,
+    unit: plan.unit,
+    discountPaused: plan.discountPaused,
+    donationRequest: Boolean(plan.donationRequest),
+    balance: replay(await store.get(peerId)).balance
+  };
+}
+
+export async function donateToSubfloor(store, peerId, spec = {}) {
+  const peer = await store.get(peerId);
+  if (!peer) return fail('Unknown peer.');
+  const amount = round2(spec.amount);
+  if (!(amount > 0)) return fail('Enter an amount greater than zero.');
+  const peers = await allPeers(store);
+  const snapshot = projectSubfloors(peers);
+  const category = spec.category ? String(spec.category) : firstClaimCategory(snapshot);
+  if (!DEED_CATEGORIES.includes(category)) return fail('Choose tutoring, repair, cleanup, or gear.');
+  const keyed = await unlockDeed(peer, spec);
+  if (!keyed.ok) return keyed;
+  const next = round2(replay(peer).balance - amount);
+  const blocked = floorBlockReason(peer, next);
+  if (blocked) {
+    releaseLockedKey(peer);
+    await store.set(peerId, peer);
+    return fail(blocked);
+  }
+  const at = spec.at || nowIso();
+  const entryId = await sha256(canonicalJSON({ kind: 'subfloor-donation', peerId, category, amount, at }));
+  await appendEntry(peer, 'transfer', {
+    fromId: peerId,
+    toId: `subfloor:${category}`,
+    amount,
+    unit: '$lgme',
+    direction: 'out',
+    note: 'Category donation'
+  }, at);
+  await appendEntry(peer, 'SUBFLOOR_DONATION', { entryId, category, amount, fromId: peerId, hedera: false, routed: !spec.category }, at);
+  releaseLockedKey(peer);
+  await store.set(peerId, peer);
+  return { ok: true, category, amount, balance: replay(await store.get(peerId)).balance, floorReserve: projectSubfloors(await allPeers(store)).floorReserve };
+}
+
+export async function fundZeroPrice(store, donorId, postId, spec = {}) {
+  const donor = await store.get(donorId);
+  if (!donor) return fail('Unknown peer.');
+  const peers = await allPeers(store);
+  let post = null;
+  for (const peer of peers) {
+    if (peer.deedPosts?.[postId]) post = peer.deedPosts[postId];
+  }
+  if (!post?.donationRequest) return fail('That is not a zero-price donation request.');
+  if (post.status === 'funded' || post.status === 'vetoed') return fail(post.status === 'vetoed' ? 'Vetoed. Nothing moves.' : 'Already funded.');
+  const keyed = await unlockDeed(donor, spec);
+  if (!keyed.ok) return keyed;
+  const amount = post.askLgme;
+  const blocked = floorBlockReason(donor, round2(replay(donor).balance - amount));
+  if (blocked) {
+    releaseLockedKey(donor);
+    await store.set(donorId, donor);
+    return fail(blocked);
+  }
+  const at = spec.at || nowIso();
+  const split = splitZeroProceeds(amount, spec.rules || DEFAULT_SUBFLOOR_RULES);
+  const entryId = `zero:${postId}`;
+  await appendEntry(donor, 'transfer', {
+    fromId: donorId,
+    toId: 'floor-and-subfloor',
+    amount,
+    unit: '$lgme',
+    direction: 'out',
+    note: 'Zero-price donation'
+  }, at);
+  await appendEntry(donor, 'ZERO_PRICE_SPLIT', {
+    entryId,
+    postId,
+    category: post.category,
+    amount,
+    subfloor: split.subfloor,
+    floor: split.floor,
+    hedera: false
+  }, at);
+  post.status = 'funded';
+  for (const peer of peers) {
+    if (!peer.deedPosts?.[postId]) continue;
+    peer.deedPosts[postId] = { ...post };
+    if (peer.id !== donorId) await store.set(peer.id, peer);
+  }
+  releaseLockedKey(donor);
+  await store.set(donorId, donor);
+  const view = projectSubfloors(await allPeers(store));
+  return { ok: true, split, floorReserve: view.floorReserve, subfloor: view.categories[post.category]?.balance || 0 };
+}
+
+export async function attestDeedReceipt(store, peerId, postId, spec = {}) {
+  const actor = await store.get(peerId);
+  if (!actor) return fail('Unknown peer.');
+  const post = actor.deedPosts?.[postId];
+  if (!post) return fail('No deed is waiting on this book.');
+  if (post.status === 'vetoed') return fail('Vetoed. No payout.');
+  if (post.status === 'attested') return { ok: true, duplicate: true, receiptName: RECEIPT_NAME };
+  if (post.counterpartyId !== peerId) return fail('Only the other member can attest.');
+  if (post.donationRequest || post.directDonation) return fail('A donation is not a priced deed.');
+  const keyed = await unlockDeed(actor, spec);
+  if (!keyed.ok) return keyed;
+  const buyerId = post.postType === 'IwantIT' ? post.posterId : post.counterpartyId;
+  const providerId = post.postType === 'IwantIT' ? post.counterpartyId : post.posterId;
+  const buyer = buyerId === actor.id ? actor : await store.get(buyerId);
+  const provider = providerId === actor.id ? actor : await store.get(providerId);
+  if (!buyer?.privateKeyJwk && !buyer?.signingKey) return fail('The buyer book is locked on this device.');
+  if (!provider?.privateKeyJwk && !provider?.signingKey) return fail('The provider book is locked on this device.');
+  const at = spec.at || nowIso();
+  const beforeBuyer = replay(buyer).balance;
+  const beforeProvider = replay(provider).balance;
+  if (post.payLgme > 0) {
+    const blocked = floorBlockReason(buyer, round2(beforeBuyer - post.payLgme));
+    if (blocked) {
+      releaseLockedKey(actor);
+      await store.set(peerId, actor);
+      return fail(blocked);
+    }
+  }
+  const attested = {
+    entryId: `attest:${postId}`,
+    postId,
+    category: post.category,
+    postType: post.postType,
+    receiptName: RECEIPT_NAME,
+    buyerId,
+    providerId,
+    unit: post.unit,
+    hedera: false
+  };
+  const books = [buyer, provider];
+  for (const peer of books) {
+    peer.deedPosts = peer.deedPosts || {};
+    peer.deedPosts[postId] = { ...post, status: 'attested', receiptName: RECEIPT_NAME };
+    await appendEntry(peer, 'DEED_ATTESTED', attested, at);
+  }
+  if (post.payLgme > 0) {
+    await appendEntry(buyer, 'transfer', {
+      fromId: buyerId, toId: providerId, amount: post.payLgme, unit: '$lgme', direction: 'out', note: 'Deed price'
+    }, at);
+    await appendEntry(provider, 'transfer', {
+      fromId: buyerId, toId: providerId, amount: post.providerLgme, unit: '$lgme', direction: 'in', note: 'Deed price'
+    }, at);
+  }
+  if (post.skimLgme > 0) {
+    await appendEntry(buyer, 'SUBFLOOR_SKIM', {
+      entryId: `skim:${postId}`, postId, category: post.category, amount: post.skimLgme, hedera: false
+    }, at);
+    await appendEntry(provider, 'SUBFLOOR_SKIM', {
+      entryId: `skim:${postId}`, postId, category: post.category, amount: post.skimLgme, hedera: false
+    }, at);
+  }
+  if (post.coverLgme > 0 && post.holdId) {
+    await appendEntry(provider, 'transfer', {
+      fromId: 'subfloor', toId: providerId, amount: post.coverLgme, unit: '$lgme', direction: 'in', note: 'Subfloor payout'
+    }, at);
+    const payout = {
+      entryId: `payout:${postId}`,
+      holdId: post.holdId,
+      postId,
+      category: post.category,
+      amount: post.coverLgme,
+      toId: providerId,
+      providerId,
+      hedera: false
+    };
+    await appendEntry(provider, 'SUBFLOOR_PAYOUT', payout, at);
+    await appendEntry(buyer, 'SUBFLOOR_PAYOUT', payout, at);
+  }
+  for (const peer of books) {
+    if (peer.wallet?.ciphertext) releaseLockedKey(peer);
+    await store.set(peer.id, peer);
+  }
+  const freshBuyer = await store.get(buyerId);
+  const freshProvider = await store.get(providerId);
+  return {
+    ok: true,
+    receiptName: RECEIPT_NAME,
+    payLgme: post.payLgme,
+    providerLgme: post.providerLgme,
+    skimLgme: post.skimLgme,
+    coverLgme: post.coverLgme,
+    discountPaused: post.discountPaused,
+    buyerBalance: replay(freshBuyer).balance,
+    providerBalance: replay(freshProvider).balance,
+    moved: replay(freshBuyer).balance === round2(beforeBuyer - post.payLgme)
+      && replay(freshProvider).balance === round2(beforeProvider + post.providerLgme + post.coverLgme)
+  };
+}
+
+export async function vetoDeedPost(store, peerId, postId, reason, spec = {}) {
+  const seat = await store.get(peerId);
+  if (!seat) return fail('Unknown peer.');
+  const post = seat.deedPosts?.[postId];
+  if (!post) return fail('No deed on this book.');
+  if (!post.thirdSeatId || post.thirdSeatId !== peerId) return fail('Only the named third seat can veto.');
+  const text = String(reason || '').trim();
+  if (!text) return fail('A veto needs a reason.');
+  if (post.status === 'attested' || post.status === 'funded' || post.status === 'donated') return fail('Already attested. A veto does not unwind a shown line.');
+  if (post.status === 'vetoed') return { ok: true, status: 'vetoed', noop: true };
+  const keyed = await unlockDeed(seat, spec);
+  if (!keyed.ok) return keyed;
+  const at = spec.at || nowIso();
+  const before = replay(seat).balance;
+  const ids = [post.posterId, post.counterpartyId, post.thirdSeatId].filter(Boolean);
+  for (const id of ids) {
+    const peer = id === peerId ? seat : await store.get(id);
+    if (!peer) continue;
+    peer.deedPosts = peer.deedPosts || {};
+    if (peer.deedPosts[postId]) peer.deedPosts[postId] = { ...post, status: 'vetoed' };
+    if (peer.privateKeyJwk || peer.signingKey) {
+      await appendEntry(peer, 'THIRD_SEAT_VETO', { entryId: `veto:${postId}`, postId, by: peerId, reason: text, category: post.category }, at);
+      if (post.holdId) {
+        await appendEntry(peer, 'SUBFLOOR_RELEASE', {
+          entryId: `release:${post.holdId}`,
+          holdId: post.holdId,
+          postId,
+          category: post.category,
+          amount: post.coverLgme,
+          providerId: post.postType === 'IwantIT' ? post.counterpartyId : post.posterId,
+          toId: post.postType === 'IwantIT' ? post.counterpartyId : post.posterId
+        }, at);
+      }
+    }
+    if (id !== peerId) await store.set(id, peer);
+  }
+  releaseLockedKey(seat);
+  await store.set(peerId, seat);
+  return { ok: true, status: 'vetoed', unchanged: replay(await store.get(peerId)).balance === before };
 }
 
 function normalizeLeg(leg) {
