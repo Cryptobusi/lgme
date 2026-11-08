@@ -1,5 +1,5 @@
 // lgme.app shell. HTML is fetched from the network first so a published change shows.
-const CACHE_NAME = "lgme-v55";
+const CACHE_NAME = "lgme-v56";
 const NET_MS = 8000;
 const SHELL = [
   "/",
@@ -43,7 +43,6 @@ const SHELL = [
   "/charter",
   "/bylaws",
   "/membership",
-  "/ididit",
   "/mutual-credit",
   "/how-it-works",
   "/technical",
@@ -89,7 +88,9 @@ self.addEventListener("fetch", (event) => {
     "/mutual-credit-simulator": "/mutual-credit",
     "/mutual-credit-simulator.html": "/mutual-credit",
     "/simulation-explainer": "/how-it-works",
-    "/simulation-explainer.html": "/how-it-works"
+    "/simulation-explainer.html": "/how-it-works",
+    "/ididit": "/exchange",
+    "/ididit.html": "/exchange"
   };
   if (moved[url.pathname]) {
     event.respondWith(Response.redirect(moved[url.pathname], 301));

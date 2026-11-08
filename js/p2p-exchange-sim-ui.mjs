@@ -1000,7 +1000,6 @@ function renderBilateral(peers, me) {
   ]);
   refWrap.hidden = true;
   const preview = h('p', { class: 'legend' }, ['']);
-  const receipt = h('select', {}, [option('', 'None', true)]);
   const form = h('form', {}, [
     h('div', { class: 'grid three' }, [
       field('Debtor', debtor),
@@ -1010,8 +1009,7 @@ function renderBilateral(peers, me) {
     field('Work', reference),
     h('div', { class: 'grid three' }, [
       field('Amount', amount),
-      field('Named charge, before any signature', charge),
-      field('Cite IdidIt', receipt)
+      field('Named charge, before any signature', charge)
     ]),
     field('Reference value (optional)', refItem),
     h('p', { class: 'legend' }, [`${REFERENCE_LABEL}. Reference only, not a price. The amount on the line is what would settle.`]),
@@ -1020,16 +1018,6 @@ function renderBilateral(peers, me) {
     preview,
     h('div', { class: 'actions' }, [h('button', { type: 'submit', class: 'primary' }, ['Propose'])])
   ]);
-
-  async function refreshReceipts() {
-    const creditorId = creditor.value;
-    const worker = creditorId ? await store.get(creditorId) : null;
-    const current = receipt.value;
-    receipt.replaceChildren(option('', 'None', !current));
-    for (const item of Object.values(worker?.receipts || {})) {
-      receipt.append(option(item.receiptId, item.work, item.receiptId === current));
-    }
-  }
 
   async function refreshPreview() {
     const debtorPeer = await store.get(debtor.value);
@@ -1076,7 +1064,7 @@ function renderBilateral(peers, me) {
   refBasis.addEventListener('change', applyReference);
   refQty.addEventListener('input', applyReference);
   debtor.addEventListener('change', refreshPreview);
-  creditor.addEventListener('change', () => { refreshReceipts(); refreshPreview(); });
+  creditor.addEventListener('change', refreshPreview);
   amount.addEventListener('input', refreshPreview);
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -1092,7 +1080,6 @@ function renderBilateral(peers, me) {
       amount: amount.value,
       reference: reference.value,
       charge: charge.value,
-      ididitId: receipt.value || null,
       referenceId: item && avg != null ? item.id : null,
       referenceAvg: item && avg != null ? avg : null
     });
@@ -1104,7 +1091,6 @@ function renderBilateral(peers, me) {
     setStatus('Proposed. The other party still has to countersign. Nothing has settled.', 'ok');
     render();
   });
-  refreshReceipts();
   refreshPreview();
   return form;
 }
@@ -1228,7 +1214,7 @@ function exchangeCard(ex, me, peers) {
   const waiting = needed.filter((id) => !ex.signatures?.[id]);
   const legText = (ex.legs || []).map((leg) => {
     const ref = leg.referenceId ? ` · reference ${leg.referenceAvg} (not a price)` : '';
-    const work = leg.ididit ? ` · IdidIt ${leg.ididit.work}` : '';
+    const work = leg.ididit ? ` · Legacy receipt ${leg.ididit.work}` : '';
     return `${names[leg.debtorId] || leg.debtorId} → ${names[leg.creditorId] || leg.creditorId} ${leg.amount} ${leg.reference || ''}${work}${ref}`;
   }).join(' · ');
   const mine = sim.applyLegs(0, me.id, ex.legs);
@@ -1290,9 +1276,7 @@ async function run(action, okMessage) {
       return;
     }
     const tail = result.balances ? ` ${formatBalances(result.balances)}` : '';
-    if (result.receiptId) {
-      setStatus(`IdidIt recorded. Balance stays ${result.balance}. A receipt is not cash.`, 'ok');
-    } else if (result.status === 'settled') {
+    if (result.status === 'settled') {
       setStatus(`Settled.${tail}`, 'ok');
     } else {
       setStatus(`${okMessage || 'Recorded.'}${tail}`, 'ok');
@@ -1318,7 +1302,9 @@ async function renderBooks(peers, seat) {
   const above = sim.round2(view.balance - rule.floor);
   const finger = (await sim.sha256(sim.canonicalJSON(peer.publicKeyJwk))).slice(0, 16);
   const search = h('input', { type: 'search', placeholder: 'Filter by work, type, or hash' });
-  const type = h('select', {}, ['all', 'genesis', 'ididit', 'INVOICE', 'INVOICE_PAID', 'INVOICE_REFUSED', 'REWARD', 'proposal', 'countersign', 'refusal', 'block', 'settlement', 'transfer', 'iou', 'attested'].map((name, index) => option(name, name === 'all' ? 'All types' : name, index === 0)));
+  const typeNames = ['all', 'genesis', 'ididit', 'INVOICE', 'INVOICE_PAID', 'INVOICE_REFUSED', 'REWARD', 'proposal', 'countersign', 'refusal', 'block', 'settlement', 'transfer', 'iou', 'attested'];
+  const typeLabels = { all: 'All types', ididit: 'Legacy receipt' };
+  const type = h('select', {}, typeNames.map((name, index) => option(name, typeLabels[name] || name, index === 0)));
   const list = h('div', {});
   const rows = view.rows.slice().reverse();
   for (const row of rows) {
@@ -1355,10 +1341,6 @@ async function renderBooks(peers, seat) {
   empty.hidden = rows.length !== 0;
   search.addEventListener('input', applyFilter);
   type.addEventListener('change', applyFilter);
-  const work = h('input', { maxlength: '160', required: true, id: 'ididit-work' });
-  const scope = h('input', { maxlength: '160' });
-  const hours = h('input', { type: 'number', min: '0', step: '0.01' });
-  const invoiceOn = h('input', { type: 'checkbox', id: 'invoice-toggle' });
   const payer = h('select', {}, peerOptions(peers.filter((item) => item.id !== seat), ''));
   const invoiceAmount = h('input', { type: 'number', min: '0.01', step: '0.01', inputmode: 'decimal', id: 'invoice-amount' });
   const due = h('input', { type: 'date', id: 'invoice-due', value: new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10) });
@@ -1372,30 +1354,18 @@ async function renderBooks(peers, seat) {
     h('p', { class: 'legend' }, [`${REFERENCE_LABEL}. Reference only, not a price.`]),
     field('Linked media hashes', mediaHashes)
   ]);
-  extra.hidden = true;
-  invoiceOn.addEventListener('change', () => { extra.hidden = !invoiceOn.checked; });
-  const receiptForm = h('form', { id: 'ididit-form' }, [
-    h('div', { class: 'grid three' }, [field('Work', work), field('Scope', scope), field('Hours', hours)]),
-    h('label', { class: 'row' }, [invoiceOn, 'Invoice in US$']),
+  const receiptForm = h('form', { id: 'invoice-form' }, [
     extra,
-    h('div', { class: 'actions' }, [h('button', { type: 'submit', class: 'primary' }, ['Record IdidIt'])])
+    h('div', { class: 'actions' }, [h('button', { type: 'submit', class: 'primary' }, ['Send invoice'])])
   ]);
   receiptForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (busy) return;
     busy = true;
     try {
-      const recorded = await sim.recordIdidIt(store, seat, { work: work.value, scope: scope.value, hours: hours.value });
-      if (!recorded.ok) { setStatus(recorded.error, 'bad'); return; }
-      if (!invoiceOn.checked) {
-        setStatus(`IdidIt recorded. Balance stays ${recorded.balance}. A receipt is not cash.`, 'ok');
-        await render();
-        return;
-      }
       const item = catalog.find((row) => row.id === reference.value);
       const hashes = mediaHashes.value.split(/[\s,]+/).filter((hash) => /^[0-9a-f]{64}$/i.test(hash));
       const created = await sim.createInvoice(store, seat, {
-        receiptId: recorded.receiptId,
         payerId: payer.value,
         amount: invoiceAmount.value,
         dueAt: due.value ? new Date(`${due.value}T00:00:00.000Z`).toISOString() : '',
@@ -1403,7 +1373,7 @@ async function renderBooks(peers, seat) {
         referenceAvg: item ? item.avg_value_usd : null,
         mediaHashes: hashes
       });
-      if (!created.ok) { setStatus(`Work recorded. ${created.error}`, 'bad'); await render(); return; }
+      if (!created.ok) { setStatus(created.error, 'bad'); return; }
       setStatus('Invoice signed. The balance did not move. Open SMS from the ledger to remind. Beta.', 'ok');
       await render();
     } finally {
@@ -1522,8 +1492,8 @@ async function renderBooks(peers, seat) {
       invoices.length ? null : h('p', { class: 'empty' }, ['No invoices on this book.']),
       h('div', { class: 'actions' }, [h('button', { type: 'button', onClick: () => download(`${peer.id}-ar-ap.csv`, sim.invoicesToCsv(peer, now), 'text/csv') }, ['Export AR/AP'])])
     ]),
-    h('h3', {}, ['Record work']),
-    h('p', { class: 'legend' }, ['IdidIt stores the fact of the work on this tape. It does not change the balance. Invoice in $lgme is optional.']),
+    h('h3', {}, ['Send an invoice']),
+    h('p', { class: 'legend' }, ['An invoice names the amount in US$. It does not change the balance until it is paid.']),
     receiptForm,
     h('div', { class: 'actions' }, [
       h('button', { type: 'button', onClick: () => verify(peer) }, ['Verify tape']),
@@ -2930,7 +2900,7 @@ function wantedMatchSection(seat) {
           const result = await sim.concludeWantedMatch(store, seat, item);
           if (!result.ok) { setStatus(result.error, 'bad'); return; }
           patchWanted(item.url, { status: 'Closed', concluded: true, receiptId: result.receiptId });
-          setStatus('Concluded. IdidIt is on this book. Invoice from the book, or reconcile as donation to the floor. Beta. Nothing was sent.', 'ok');
+          setStatus('Concluded. The match is closed on this book. Reconcile as donation to the floor if both consent. Beta. Nothing was sent.', 'ok');
           location.hash = 'books';
         } }, ['Mark concluded'])
       ])
@@ -3097,7 +3067,7 @@ async function renderMarket(peers, seat) {
         wantedPin || repairPin ? h('ul', { id: wantedPin ? 'wanted-payments' : 'repair-payments' }, (wantedPin ? sim.STANDING_WANTED : sim.STANDING_REPAIR).payments.map((item) => h('li', {}, [item]))) : null,
         !card.pinned ? h('p', { class: 'price' }, [`${card.amount} $lgme`]) : null,
         card.pinned && !wantedPin ? h('p', { class: 'legend' }, ['Beta. A soBeIT grant below stays on this tape. The link above is the real token page.']) : null,
-        wantedPin || repairPin ? h('p', { class: 'legend' }, ['Beta. A concluded match is an IdidIt on this book. A $lgme payment is signed by your wallet. Reconcile as donation to the floor needs both consents.']) : null,
+        wantedPin || repairPin ? h('p', { class: 'legend' }, ['Beta. A concluded match is closed on this book. A $lgme payment is signed by your wallet. Reconcile as donation to the floor needs both consents.']) : null,
         card.pinned && !wantedPin && !repairPin ? soBeItCard(peers, seat) : null,
         wantedPin ? wantedMatchSection(seat) : null,
         repairPin ? thumbtackSection(seat) : null,

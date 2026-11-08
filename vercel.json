@@ -6,7 +6,9 @@
     { "source": "/mutual-credit-simulator", "destination": "/mutual-credit", "statusCode": 301 },
     { "source": "/mutual-credit-simulator.html", "destination": "/mutual-credit", "statusCode": 301 },
     { "source": "/simulation-explainer", "destination": "/how-it-works", "statusCode": 301 },
-    { "source": "/simulation-explainer.html", "destination": "/how-it-works", "statusCode": 301 }
+    { "source": "/simulation-explainer.html", "destination": "/how-it-works", "statusCode": 301 },
+    { "source": "/ididit", "destination": "/exchange", "statusCode": 301 },
+    { "source": "/ididit.html", "destination": "/exchange", "statusCode": 301 }
   ],
   "headers": [
     {

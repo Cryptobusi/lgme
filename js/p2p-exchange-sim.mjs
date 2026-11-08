@@ -388,7 +388,7 @@ export function entryDetail(entry, names = {}) {
   if (entry.type === 'attested') return `IOU attested ${payload.amount} ${name(payload.debtorId)} → ${name(payload.creditorId)} ${payload.reference || ''}`.trim();
   if (entry.type === 'ididit') {
     const hours = payload.hours == null ? '' : ` · ${payload.hours} h`;
-    return `${payload.work || 'Work'}${payload.scope ? ' · ' + payload.scope : ''}${hours}`;
+    return `Legacy receipt ${payload.work || 'Work'}${payload.scope ? ' · ' + payload.scope : ''}${hours}`;
   }
   if (entry.type === 'refusal') return payload.statement || 'REFUSAL';
   if (entry.type === 'block') return payload.message || FLOOR_BLOCK;
@@ -542,7 +542,10 @@ export async function listPeers(store) {
   return peers;
 }
 
-export async function recordIdidIt(store, peerId, spec) {
+export async function recordIdidIt(store, peerId, spec = {}) {
+  if (spec.allowLegacyWrite !== true) {
+    return fail('New work receipts are closed. An old receipt stays on the tape and can still be read.');
+  }
   const peer = await store.get(peerId);
   if (!peer) return fail('Unknown peer.');
   const work = String(spec.work || '').trim();
@@ -553,7 +556,7 @@ export async function recordIdidIt(store, peerId, spec) {
   const at = spec.at || nowIso();
   const draft = { peerId, work, scope, hours };
   const receiptId = await sha256(canonicalJSON(draft));
-  const entry = await appendEntry(peer, 'ididit', { receiptId, work, scope, hours }, at);
+  const entry = await appendEntry(peer, 'ididit', { receiptId, work, scope, hours, legacy: true }, at);
   peer.receipts[receiptId] = {
     receiptId,
     peerId,
@@ -612,7 +615,7 @@ async function propose(store, input) {
     const worker = peers[leg.creditorId];
     const receipt = worker && worker.receipts[leg.ididitId];
     if (!receipt || receipt.peerId !== leg.creditorId) {
-      return fail("IdidIt receipt is not on the worker's tape.");
+      return fail("That legacy receipt is not on the worker's tape.");
     }
     leg.ididit = {
       receiptId: receipt.receiptId,
@@ -2505,16 +2508,13 @@ export async function concludeWantedMatch(store, peerId, match, at = nowIso()) {
   const title = String(match?.title || '').trim();
   if (!title) return fail('Name the match.');
   const before = replay(peer).balance;
-  const work = await recordIdidIt(store, peerId, { work: title, scope: 'OfferUp match', at });
-  if (!work.ok) return work;
   await writeOn(store, peerId, 'WANTED_CLOSED', {
     simulated: true,
     title,
     url: String(match?.url || ''),
-    receiptId: work.receiptId,
     penalty: false
   }, at);
-  return { ok: true, receiptId: work.receiptId, unchanged: replay(await store.get(peerId)).balance === before, penalty: false };
+  return { ok: true, unchanged: replay(await store.get(peerId)).balance === before, penalty: false };
 }
 
 export async function circlesOf(store, at = nowIso()) {
@@ -2970,9 +2970,6 @@ export async function resetAndSeed(store) {
     const verified = await markDemoVerified(store, id, at);
     if (!verified.ok) return verified;
   }
-  const soil = await recordIdidIt(store, 'bob', { work: 'Soil credits', scope: 'biomass on the bench', hours: 3, at });
-  await recordIdidIt(store, 'alice', { work: 'Walkway clearing', scope: 'path and tools', hours: 2, at });
-  await recordIdidIt(store, 'charlie', { work: 'Logistics run', scope: 'delivery', hours: 1, at });
   const proposed = await proposeBilateral(store, {
     proposerId: 'alice',
     debtorId: 'alice',
@@ -2981,7 +2978,6 @@ export async function resetAndSeed(store) {
     amount: 10,
     reference: 'Soil credits',
     charge: 0,
-    ididitId: soil.receiptId,
     at
   });
   if (!proposed.ok) return proposed;
@@ -3651,8 +3647,8 @@ export async function createInvoice(store, workerId, spec = {}) {
   const worker = await store.get(workerId);
   if (!worker?.privateKeyJwk) return fail('Wallet is locked.');
   const receiptId = String(spec.receiptId || '');
-  if (!worker.receipts?.[receiptId] && !(worker.tape || []).some((entry) => entry.type === 'ididit' && entry.payload?.receiptId === receiptId)) {
-    return fail('Record the work before invoicing it.');
+  if (receiptId && !worker.receipts?.[receiptId] && !(worker.tape || []).some((entry) => entry.type === 'ididit' && entry.payload?.receiptId === receiptId)) {
+    return fail('That legacy receipt is not on this tape.');
   }
   const payerId = String(spec.payerId || '').trim();
   const payer = payerId ? await store.get(payerId) : null;
@@ -5290,10 +5286,7 @@ export async function countersignOffer(store, peerId, offerId, spec = {}) {
     await writeOn(store, offer.buyerId, 'SERIAL_AUDIT', { offerId, ok: audit.ok, count: audit.reports.length, error: audit.error, penalty: false }, at);
     if (!audit.ok) return { ok: false, error: audit.error, offer, contract: true };
     for (const row of offer.cash.schedule) {
-      const work = await recordIdidIt(store, offer.sellerId, { work: `Installment ${row.n} · ${offer.title}`, scope: offerId, at });
-      if (!work.ok) return { ok: false, error: work.error, offer, contract: true };
       const invoice = await createInvoice(store, offer.sellerId, {
-        receiptId: work.receiptId,
         payerId: offer.buyerId,
         amount: row.amount,
         dueAt: row.dueAt,

@@ -256,16 +256,24 @@ test('cycle settles only on the net, and a floor breach blocks every leg', async
   assert.equal(alice.tape.filter((entry) => entry.type === 'settlement').length, 1);
 });
 
-test('IdidIt receipt does not move a balance, and export withholds the private key', async () => {
+test('a new work receipt is refused and an old one still verifies', async () => {
   const store = await books();
   const before = (await balances(store)).alice;
-  const receipt = await sim.recordIdidIt(store, 'alice', { work: 'Walkway clearing', scope: 'path', hours: 2 });
-  assert.equal(receipt.ok, true, receipt.error);
-  assert.equal(receipt.balance, before);
+  const closed = await sim.recordIdidIt(store, 'alice', { work: 'Walkway clearing', scope: 'path', hours: 2 });
+  assert.equal(closed.ok, false);
+  assert.match(closed.error, /closed/);
+  assert.equal((await balances(store)).alice, before);
+  const legacy = await sim.recordIdidIt(store, 'alice', { work: 'Walkway clearing', scope: 'path', hours: 2, allowLegacyWrite: true });
+  assert.equal(legacy.ok, true, legacy.error);
+  assert.equal(legacy.balance, before);
   const alice = await store.get('alice');
   const exported = sim.toExport(alice);
   assert.equal(exported.privateKeyJwk, undefined);
   assert.equal(exported.tape.some((entry) => entry.type === 'ididit'), true);
+  assert.equal((await sim.verifyTape(exported)).ok, true);
+  const opened = await sim.openTape(JSON.stringify(exported));
+  assert.equal(opened.ok, true, opened.error);
+  assert.equal(sim.entryDetail(opened.peer.tape.find((entry) => entry.type === 'ididit')).includes('Walkway clearing'), true);
   assert.equal(sim.toCsv(alice).includes('Walkway clearing'), true);
   const cited = await sim.proposeBilateral(store, {
     proposerId: 'alice',
@@ -273,17 +281,17 @@ test('IdidIt receipt does not move a balance, and export withholds the private k
     creditorId: 'bob',
     amount: 5,
     reference: 'Walkway clearing',
-    ididitId: receipt.receiptId
+    ididitId: legacy.receiptId
   });
   assert.equal(cited.ok, false);
-  assert.match(cited.error, /worker's tape/);
+  assert.match(cited.error, /legacy receipt/);
   const owned = await sim.proposeBilateral(store, {
     proposerId: 'alice',
     debtorId: 'bob',
     creditorId: 'alice',
     amount: 5,
     reference: 'Walkway clearing',
-    ididitId: receipt.receiptId
+    ididitId: legacy.receiptId
   });
   assert.equal(owned.ok, true, owned.error);
 });
@@ -1005,11 +1013,8 @@ async function invoiced(amount, dueAt = '2026-12-01T00:00:00.000Z') {
     const bound = await sim.bindMemberKyc(store, id, { displayName: peer.name, phone, salt: `salt-${id}` });
     assert.equal(bound.ok, true, bound.error);
   }
-  const work = await sim.recordIdidIt(store, 'bob', { work: 'Soil credits', scope: 'bench', hours: 2, at: '2026-11-07T00:00:00.000Z' });
-  assert.equal(work.ok, true, work.error);
   const before = await balances(store);
   const invoice = await sim.createInvoice(store, 'bob', {
-    receiptId: work.receiptId,
     payerId: 'alice',
     amount,
     dueAt,
@@ -1019,7 +1024,7 @@ async function invoiced(amount, dueAt = '2026-12-01T00:00:00.000Z') {
   assert.equal(invoice.unchanged, true);
   assert.deepEqual(await balances(store), before);
   assert.match(invoice.sms, /^sms:/);
-  return { store, invoice, receiptId: work.receiptId, before };
+  return { store, invoice, before };
 }
 
 test('an invoice does not move a balance', async () => {
@@ -1086,8 +1091,7 @@ test('a reward is minted only when the invoice is paid, and the period cap holds
   const bound = await sim.bindMemberKyc(store, 'dana', { displayName: 'Dana', phone: '+12025550109', salt: 'salt-dana' });
   assert.equal(bound.ok, true, bound.error);
   async function bill(amount, at) {
-    const work = await sim.recordIdidIt(store, 'bob', { work: `Job ${amount}`, scope: 'bench', hours: 1, at });
-    return sim.createInvoice(store, 'bob', { receiptId: work.receiptId, payerId: 'dana', amount, dueAt: '2026-12-01T00:00:00.000Z', at });
+    return sim.createInvoice(store, 'bob', { payerId: 'dana', amount, dueAt: '2026-12-01T00:00:00.000Z', at });
   }
   const first = await bill(400, '2026-11-08T00:00:00.000Z');
   const paid = await sim.payInvoice(store, 'dana', first.invoiceId, { at: '2026-11-08T01:00:00.000Z' });
@@ -1233,7 +1237,7 @@ test('the standing donation is pinned in both listing kinds and never expires', 
   assert.equal(again.listing.id, ensured.listing.id);
 });
 
-test('the wanted pin stays on IwanIT and a concluded match is an IdidIt', async () => {
+test('the wanted pin stays on IwanIT and a concluded match closes on the book', async () => {
   const file = JSON.parse(readFileSync(join(root, 'data/offerup-wanted-v0.json'), 'utf8'));
   const matches = sim.wantedFeed(file);
   assert.equal(matches.length, 8);
@@ -1277,7 +1281,7 @@ test('the wanted pin stays on IwanIT and a concluded match is an IdidIt', async 
   assert.equal(concluded.unchanged, true);
   assert.equal(concluded.penalty, false);
   const tape = (await store.get('alice')).tape;
-  assert.equal(tape.some((entry) => entry.type === 'ididit' && entry.payload.work === match.title), true);
+  assert.equal(tape.some((entry) => entry.type === 'ididit'), false);
   assert.equal(tape.some((entry) => entry.type === 'WANTED_CLOSED' && entry.payload.penalty === false), true);
   assert.equal((await sim.replay(await store.get('alice'))).balance, before);
   const ui = readFileSync(join(root, 'js/p2p-exchange-sim-ui.mjs'), 'utf8');
@@ -1777,7 +1781,7 @@ test('DC reference values stay pending when a series has no number', () => {
   assert.equal(page.includes('id="refList"'), true);
   assert.equal(/<script(?![^>]*\bsrc=)/i.test(page), false);
   const worker = readFileSync(join(root, 'sw.js'), 'utf8');
-  assert.equal(worker.includes('lgme-v55'), true);
+  assert.equal(worker.includes('lgme-v56'), true);
   const desk = readFileSync(join(root, 'exchange.html'), 'utf8');
   assert.equal(desk.includes('splash-skip'), false);
   assert.equal(desk.includes('>Skip<'), false);
@@ -1804,10 +1808,7 @@ test('a Solana signature settles one invoice and only after both parties attest'
     peer.kyc = { status: 'VERIFIED', displayName: peer.name, phone, salt: `salt-${id}` };
     await store.set(id, peer);
   }
-  const work = await sim.recordIdidIt(store, 'bob', { work: 'Bench', scope: 'hour', hours: 1, at: '2026-11-07T00:00:00.000Z' });
-  assert.equal(work.ok, true, work.error);
   const invoice = await sim.createInvoice(store, 'bob', {
-    receiptId: work.receiptId,
     payerId: 'alice',
     amount: 1.5,
     dueAt: '2026-12-01T00:00:00.000Z',
@@ -1900,9 +1901,7 @@ test('Zelle and cash stay pending until the payee attests and a proof cannot be 
     peer.kyc = { status: 'VERIFIED', displayName: peer.name, phone, salt: `salt-${id}` };
     await store.set(id, peer);
   }
-  const work = await sim.recordIdidIt(store, 'bob', { work: 'Bench', scope: 'hour', hours: 1, at: '2026-11-07T00:00:00.000Z' });
   const invoice = await sim.createInvoice(store, 'bob', {
-    receiptId: work.receiptId,
     payerId: 'alice',
     amount: 1.5,
     dueAt: '2026-12-01T00:00:00.000Z',
@@ -2036,9 +2035,7 @@ test('an $lgme loyalty discount needs both signatures and the floor rebate follo
   assert.equal(declined.ok, true, declined.error);
   assert.equal(sim.loyaltyStanding(declined.offer).agreed, false);
   assert.equal(sim.loyaltyStanding(declined.offer).declined, true);
-  const work = await sim.recordIdidIt(store, 'bob', { work: 'Loyalty bench', scope: 'hour', hours: 1, at: '2026-11-07T00:00:00.000Z' });
   const invoice = await sim.createInvoice(store, 'bob', {
-    receiptId: work.receiptId,
     payerId: 'alice',
     amount: 10,
     dueAt: '2026-12-01T00:00:00.000Z',

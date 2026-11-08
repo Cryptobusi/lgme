@@ -59,7 +59,7 @@ Headless Chrome against the live origin. Phone viewport 390×844. Desktop viewpo
 | Listing → offer → accept → handoff settle | Phone | Pass | Tomato starts, offer 8, accept, same-device settle. Status: `Settled. Buyer 112 · seller 88. SIMULATION.` [phone-handoff.png](verification/phone-handoff.png) |
 | SMS token verify and match | Phone | Pass | Same-device record of the signed token, then root-hash match. [phone-chat-match.png](verification/phone-chat-match.png) |
 | Media file pick and verify | Phone | Pass | File input, then `Verified. The file matches the tape.` [phone-media-preview.png](verification/phone-media-preview.png) [phone-media-verify.png](verification/phone-media-verify.png) |
-| IdidIt invoice → pay → reward | Phone | Pass | Paid invoice. Reward 0.12 on a book that shows 94.12. [phone-invoice.png](verification/phone-invoice.png) [phone-reward.png](verification/phone-reward.png) |
+| Invoice → pay → reward | Phone | Pass | Paid invoice. Reward 0.12 on a book that shows 94.12. [phone-invoice.png](verification/phone-invoice.png) [phone-reward.png](verification/phone-reward.png) |
 | soBeIT grant | Phone | Pass | `Simulated grant recorded. Balance 99.12. No real funds moved.` [phone-sobeit.png](verification/phone-sobeit.png) |
 | Resources | Phone | Pass | Magazine opened. [phone-resources.png](verification/phone-resources.png) |
 | Register, KYC, 2FA, send | Phone | Pass | Wrong code rejected. Valid code verified the member and delivered a send. [phone-kyc.png](verification/phone-kyc.png) [phone-send.png](verification/phone-send.png) |
@@ -238,7 +238,7 @@ Live check of https://lgme.app after the script CSP change. `main` had no open p
 | Third-seat co-sign above 50 | Pass. Blocked, then allowed with a co-sign |
 | Double-spend | Pass. Fraud proof. Floor 41. The balance did not move again |
 | Offline spend | Pass. `Offline is read-only. Open the books, but do not spend, until this browser is online.` |
-| IdidIt invoice | Pass. `Invoice signed. The balance did not move.` |
+| Invoice | Pass. `Invoice signed. The balance did not move.` |
 | soBeIT grant | Pass. Balance 65. No real funds moved |
 | Offline suite | Pass. 46 tests, 0 failed |
 
