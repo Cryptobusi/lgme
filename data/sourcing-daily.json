@@ -6,31 +6,31 @@
       "request": "Wanted: working treadmill and elliptical, under $500 total budget, Washington DC area",
       "picks": [
         {
+          "title": "Precor 9.21 si Treadmill",
+          "site": "Craigslist",
+          "url": "https://www.craigslist.org/view/d/silver-spring-precor-921-si-treadmill/7MoPCanM8VQgvUTwri8eom",
+          "price": "$100",
+          "location": "Silver Spring, MD",
+          "note": "Seller says it is fully functional and runs smoothly; mat included. Commercial-grade and heavy, so bring help. Posted Nov 3. With the $100 elliptical below the pair is about $200.",
+          "image": "https://images.craigslist.org/00W0W_jbQtduX2aup_0CI0t2_600x450.jpg"
+        },
+        {
+          "title": "Fitness Reality E5500XL Elliptical Trainer \u2013 Excellent Condition \u2013 $100 FIRM",
+          "site": "OfferUp",
+          "url": "https://offerup.com/item/detail/01ab6340-4ac1-3645-aed9-2c0d0200d4b4",
+          "price": "$100 firm",
+          "location": "Clarksburg, MD",
+          "note": "Seller says fully functional and about 1 year old. Pickup only: two people and a truck needed. Also cross-posted on Craigslist.",
+          "image": "https://images.offerup.com/NqzYqoqEefVDO5QqbbaTwRm4WmU=/1000x1000/8b9a/8b9abb7d421f4b6b888c4c9230585180.jpg"
+        },
+        {
           "title": "Schwinn 810 Treadmill",
           "site": "OfferUp",
           "url": "https://offerup.com/item/detail/702d63ef-a252-3ae3-8e06-57822fac7dbd",
           "price": "$300",
           "location": "Chantilly, VA",
-          "note": "Seller says no issues. Pair with the elliptical below stays under $500.",
+          "note": "Backup treadmill. Seller says no issues and barely used; seller is moving. With the $100 elliptical the pair is $400, still under budget.",
           "image": "https://images.offerup.com/h8bZ06RZZs6fOpiwwpoPoQpHtck=/1110x1920/c487/c4877481f00f4d51abaeb0feb3178729.jpg"
-        },
-        {
-          "title": "Fitness Reality E5500XL Elliptical",
-          "site": "OfferUp",
-          "url": "https://offerup.com/item/detail/01ab6340-4ac1-3645-aed9-2c0d0200d4b4",
-          "price": "$100 firm",
-          "location": "Clarksburg, MD",
-          "note": "Seller says fully functional. Two people and a truck.",
-          "image": "https://images.offerup.com/NqzYqoqEefVDO5QqbbaTwRm4WmU=/1000x1000/8b9a/8b9abb7d421f4b6b888c4c9230585180.jpg"
-        },
-        {
-          "title": "Folding Treadmill with Display Console",
-          "site": "OfferUp",
-          "url": "https://offerup.com/item/detail/8c5cd02a-9a5c-3696-bd4b-0d03a99e8832",
-          "price": "$50",
-          "location": "Washington, DC",
-          "note": "Seller will deliver. Confirm that it works.",
-          "image": "https://images.offerup.com/V2wLC3nfvcNQxAh8Xn24RDGgXUE=/720x1280/c041/c0410569d5fd4b2e82386b64916b7cc6.jpg"
         }
       ]
     },
@@ -42,10 +42,26 @@
           "title": "The Repair Extraordinaire",
           "site": "Thumbtack",
           "url": "https://www.thumbtack.com/va/fairfax/fitness-equipment-repair/repair-extraordinaire/service/397653732991655944",
-          "price": "about $99/hr",
+          "price": "about $99/hr on average (per profile)",
           "location": "Fairfax, VA",
-          "note": "Serves DC and Greenbelt. Confirm the ZIP. Not verified by lgme.",
+          "note": "Thumbtack Top Pro, rated 4.8 from 639 reviews, 157 reviews mention treadmills. Listed on Thumbtack's DC fitness-equipment-repair page. Confirm your ZIP. Not verified by lgme.",
           "image": "https://production-next-images-cdn.thumbtack.com/i/570315114138157058/desktop/standard/thumb"
+        },
+        {
+          "title": "Fitness installation & Repairs treadmill, elliptical, bikes, gyms",
+          "site": "Craigslist",
+          "url": "https://www.craigslist.org/view/d/woodbridge-fitness-installation-repairs/9wajUKQG48R1fq4mDE8zjT",
+          "price": "$95\u2013$120 diagnostic",
+          "location": "Woodbridge, VA (serves DC, MD, VA)",
+          "note": "Repairs, maintains and installs treadmills, ellipticals and bikes; the estimate depends on distance and model. Updated Nov 6. Not verified by lgme."
+        },
+        {
+          "title": "Best Technical Services \u2013 Fitness Equipment Repair",
+          "site": "Web (company site)",
+          "url": "https://besttechnicalservices.com/services/",
+          "price": "Call for quote",
+          "location": "Maryland (serves Montgomery, Frederick and Howard counties, Northern VA, and DC)",
+          "note": "Repairs treadmills and ellipticals, including older models. Says it does not repair big-box-store equipment. Not verified by lgme."
         }
       ]
     }
