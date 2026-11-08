@@ -1,5 +1,6 @@
 import * as sim from './p2p-exchange-sim.mjs';
 import { ARTICLES } from './p2p-resources.mjs';
+import { buildLinks, capPicks, customSite, detectLocalAi, dueRequests, matchCriteria, presetsFor, SOURCE_KEY, SOURCE_SITES, suggestSites } from './sourcing.mjs';
 import { PASSKEY_WORDING, createIndexedDbVault, deviceKeyForMigration, importNonExtractable, openJson, passkeyCreationOptions, sealJson } from './p2p-sim-guard.mjs';
 import { REFERENCE_LABEL, optionLabel, referenceLine } from './dc-reference.mjs';
 import { DONATION_ADDRESS, MINT, buildTransferRequest, createReference, findReferencePayment, isValidPublicKey, readTokenBalance } from './solana-pay.mjs';
@@ -62,7 +63,7 @@ const store = {
   }
 };
 const SEAT_KEY = 'lgme-sim:ui:seat';
-const TABS = ['market', 'circles', 'list', 'chats', 'wallet', 'help'];
+const TABS = ['market', 'sources', 'circles', 'list', 'chats', 'wallet', 'help'];
 const KNOWN = new Set([...TABS, 'books', 'exchange', 'devices', 'reconcile']);
 const CATEGORIES = ['Goods', 'Services', 'Household', 'Food', 'Tools'];
 const CONDITIONS = ['New', 'Good', 'Fair', 'For parts'];
@@ -75,6 +76,7 @@ let catalog = [];
 let offerupItems = [];
 let wantedMatches = [];
 let thumbtackItems = [];
+let dailyPicks = { updated: '', categories: [] };
 let paymentMethods = {
   zelle: { recipient: '' },
   cash: { inPersonOnly: true },
@@ -812,6 +814,7 @@ async function renderNow() {
   renderTabs();
   const tab = tabName();
   if (tab === 'market') await renderMarket(peers, seat);
+  else if (tab === 'sources') await renderSources();
   else if (tab === 'circles') await renderCircles();
   else if (tab === 'list') await renderList(seat);
   else if (tab === 'chats') await renderChats(seat);
@@ -859,6 +862,12 @@ function selectTab(name) {
 function renderTabs() {
   const tab = tabName();
   const phoneTab = ['reconcile', 'books', 'devices', 'exchange'].includes(tab) ? 'wallet' : tab === 'resources' ? 'help' : tab;
+  const due = dueRequests(sourceBook().requests, Date.now()).length;
+  const badge = document.getElementById('source-badge');
+  if (badge) {
+    badge.hidden = due === 0;
+    badge.textContent = String(due);
+  }
   for (const name of TABS) {
     const button = document.getElementById(`tab-${name}`);
     button.setAttribute('aria-selected', name === tab ? 'true' : 'false');
@@ -3719,6 +3728,170 @@ async function settleHandoff(sellerId, encoded) {
   await render();
 }
 
+function sourceBook() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(SOURCE_KEY) || '');
+    if (parsed && Array.isArray(parsed.requests)) return parsed;
+  } catch { /* a new book */ }
+  return { requests: [] };
+}
+
+function saveSourceBook(book) {
+  try { localStorage.setItem(SOURCE_KEY, JSON.stringify(book)); } catch { /* the screen still shows the links */ }
+}
+
+function localSourcePool() {
+  return [
+    ...offerupItems.map((item) => ({ ...item, category: 'exercise equipment', site: 'Already on lgme' })),
+    ...thumbtackItems.map((item) => ({ ...item, category: item.isIprovIT ? 'exercise-equipment repair' : 'services', site: 'Already on lgme' }))
+  ];
+}
+
+async function renderSources() {
+  stopAnyCamera();
+  const panel = document.getElementById('panel');
+  const detected = await detectLocalAi(globalThis);
+  const book = sourceBook();
+  const category = h('select', {}, [
+    option('exercise equipment', 'Exercise equipment', true),
+    option('exercise-equipment repair', 'Exercise-equipment repair', false),
+    option('goods', 'Goods', false),
+    option('services', 'Services', false)
+  ]);
+  const keywords = h('input', { value: 'treadmill elliptical', maxlength: '120' });
+  const location = h('input', { value: 'Washington DC', maxlength: '80' });
+  const radius = h('input', { type: 'number', min: '0', step: '1', value: '25' });
+  const maxPrice = h('input', { type: 'number', min: '0', step: '1', value: '500' });
+  const frequency = h('select', {}, [
+    option('off', 'Off', true),
+    option('daily', 'Daily', false),
+    option('weekly', 'Weekly', false)
+  ]);
+  const notify = h('input', { type: 'checkbox' });
+  const useAi = h('input', { type: 'checkbox' });
+  const customName = h('input', { maxlength: '60', placeholder: 'Site name' });
+  const customTemplate = h('input', { maxlength: '240', placeholder: 'https://example.com/search?q={query}' });
+  const siteBox = h('div', { id: 'source-sites' });
+  const results = h('div', { id: 'source-results' });
+  function paintSites() {
+    const selected = new Set(presetsFor(category.value).map((site) => site.id));
+    siteBox.replaceChildren(...SOURCE_SITES.map((site) => {
+      const box = h('input', { type: 'checkbox' });
+      box.checked = selected.has(site.id);
+      box.dataset.site = site.id;
+      return h('label', { class: 'row' }, [box, site.name]);
+    }));
+  }
+  category.addEventListener('change', paintSites);
+  paintSites();
+  const picks = (dailyPicks.categories || []).map((row) => h('article', { class: 'card', id: 'daily-picks' }, [
+    h('h3', {}, [`Today's top 3 · ${row.category}`]),
+    h('p', { class: 'legend' }, [`${dailyPicks.updated || 'undated'} · ${row.request || ''}`]),
+    h('p', { class: 'legend' }, ['Curated, verify before contacting. Nothing is sent.']),
+    ...(row.picks || []).slice(0, 3).map((pick) => h('div', { class: 'row' }, [
+      pick.image ? h('img', { class: 'listing-photo', alt: '', src: pick.image, width: '224', height: '224', loading: 'lazy' }) : null,
+      h('p', {}, [pick.title]),
+      h('p', { class: 'price' }, [`${pick.price || ''} · ${pick.location || ''} · ${pick.site || ''}`]),
+      h('p', { class: 'legend' }, [pick.note || '']),
+      h('p', {}, [h('a', { href: pick.url, rel: 'noopener noreferrer' }, ['Open this listing'])])
+    ]))
+  ]));
+  const form = h('form', { id: 'source-finder' }, [
+    h('div', { class: 'grid two' }, [
+      field('Category', category),
+      field('Keywords', keywords),
+      field('Location', location),
+      field('Radius, miles', radius),
+      field('Max price, US$', maxPrice),
+      field('Look again', frequency)
+    ]),
+    h('p', { class: 'legend' }, ['Pick the sites to open. A link is only a search. This desk does not contact anyone.']),
+    siteBox,
+    h('div', { class: 'grid two' }, [
+      field('Custom site name', customName),
+      field('Custom search link', customTemplate)
+    ]),
+    h('label', { class: 'row' }, [notify, 'In-app badge when this search is due']),
+    h('label', { class: 'row' }, [useAi, 'Use on-device AI to suggest sites and search terms']),
+    h('p', { class: 'legend', id: 'source-ai-status' }, [
+      detected.labels.length ? `On this device: ${detected.labels.join(', ')}. ${detected.note}` : detected.note
+    ]),
+    h('div', { class: 'actions' }, [
+      h('button', { class: 'primary', type: 'submit' }, ['Build search links']),
+      h('button', { type: 'button', id: 'allow-notifications', onClick: async () => {
+        if (!('Notification' in window)) {
+          setStatus('This browser has no notification setting. The badge still works.', 'bad');
+          return;
+        }
+        const choice = await Notification.requestPermission();
+        setStatus(choice === 'granted' ? 'Notifications allowed on this device. Nothing was contacted.' : 'Notifications stay off. The badge still works.', choice === 'granted' ? 'ok' : 'bad');
+      } }, ['Allow notifications'])
+    ])
+  ]);
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const criteria = {
+      category: category.value,
+      keywords: keywords.value.trim(),
+      location: location.value.trim(),
+      radius: radius.value,
+      maxPrice: maxPrice.value
+    };
+    const custom = customName.value.trim() || customTemplate.value.trim()
+      ? customSite(customName.value, customTemplate.value)
+      : { ok: true, site: null };
+    if (!custom.ok) { setStatus(custom.error, 'bad'); return; }
+    const chosen = [...siteBox.querySelectorAll('input[data-site]')].filter((box) => box.checked).map((box) => box.dataset.site);
+    const customSites = custom.site ? [custom.site] : [];
+    if (custom.site) chosen.push(custom.site.id);
+    let siteIds = chosen;
+    let note = 'Preset lists.';
+    if (useAi.checked) {
+      const suggested = await suggestSites(criteria, {
+        optedIn: true,
+        detected,
+        prompt: detected.canSuggest && globalThis.LanguageModel?.create ? async (text) => {
+          const session = await globalThis.LanguageModel.create();
+          try { return await session.prompt(text); } finally { session.destroy?.(); }
+        } : undefined
+      });
+      siteIds = [...new Set([...chosen, ...suggested.siteIds])];
+      note = suggested.note;
+    }
+    const locals = matchCriteria(localSourcePool(), criteria);
+    const links = buildLinks(criteria, siteIds, customSites);
+    const saved = {
+      ...criteria,
+      sites: siteIds,
+      customSites,
+      frequency: frequency.value,
+      notify: notify.checked,
+      useAi: useAi.checked,
+      lastSeen: new Date().toISOString()
+    };
+    saveSourceBook({ requests: [saved, ...book.requests.filter((row) => row.category !== saved.category)].slice(0, 12) });
+    results.replaceChildren(
+      h('h3', {}, ['Already on lgme']),
+      locals.length ? h('div', {}, locals.map((item) => h('article', { class: 'row' }, [
+        h('p', {}, [item.title]),
+        h('p', { class: 'legend' }, [`${item.price || ''} · ${item.city || item.location || ''} · listed here first`])
+      ]))) : h('p', { class: 'legend' }, ['No listing already on lgme fits this request.']),
+      h('h3', {}, ['Search links']),
+      h('p', { class: 'legend' }, [`${note} Nothing is contacted. You open a site yourself.`]),
+      ...links.map((link) => h('p', {}, [h('a', { href: link.url, rel: 'noopener noreferrer' }, [link.name])]))
+    );
+    setStatus('Links are ready. Nothing was sent.', 'ok');
+    renderTabs();
+  });
+  panel.replaceChildren(
+    h('h2', {}, ['Sources']),
+    h('p', { class: 'muted' }, ['Find a wanted item on the sites you name. Matches already on lgme come first. Drafts are not sent.']),
+    ...picks,
+    form,
+    results
+  );
+}
+
 function renderHelp() {
   stopAnyCamera();
   const panel = document.getElementById('panel');
@@ -3848,6 +4021,8 @@ function showSplash() {
   }
   storeFlag(SPLASH_SEEN);
   splash.hidden = false;
+  const coin = splash.querySelector('.splash-coin');
+  if (coin) coin.classList.add('is-growing');
   return new Promise((resolve) => {
     let closed = false;
     const done = () => {
@@ -3859,14 +4034,8 @@ function showSplash() {
     };
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduce && video) video.remove();
-    if (!reduce && video) {
-      video.addEventListener('ended', done);
-      video.addEventListener('error', done);
-      video.play().catch(() => {});
-      setTimeout(done, 6200);
-    } else {
-      setTimeout(done, 1200);
-    }
+    if (!reduce && video) video.play().catch(() => {});
+    setTimeout(done, reduce ? 700 : 3000);
   });
 }
 
@@ -3965,6 +4134,13 @@ async function loadReferences() {
     thumbtackItems = sim.thumbtackFeed(body);
   } catch {
     thumbtackItems = [];
+  }
+  try {
+    const response = await fetch('/data/sourcing-daily.json', { signal: gate.signal });
+    if (!response.ok) throw new Error(String(response.status));
+    dailyPicks = capPicks(await response.json());
+  } catch {
+    dailyPicks = { updated: '', categories: [] };
   }
   try {
     const response = await fetch('/data/payment-methods.json', { signal: gate.signal });

@@ -166,10 +166,16 @@
     .splash { position:fixed; inset:0; z-index:60; display:grid; place-items:center; background:var(--bg); padding:1.25rem; }
     .splash[hidden] { display:none; }
     .splash-card { display:grid; justify-items:center; gap:0.8rem; text-align:center; }
-    .splash-coin { width:min(70vw, 280px); aspect-ratio:1; border-radius:50%; overflow:hidden; clip-path:circle(50% at 50% 50%); background:#111; }
-    .splash-coin { position:relative; }
+    .splash-coin { width:min(70vw, 280px); aspect-ratio:1; border-radius:50%; overflow:hidden; clip-path:circle(50% at 50% 50%); background:#111; position:relative; transform:scale(0.3); transform-origin:center; }
+    .splash-coin.is-growing { animation: lgme-coin-grow 3s ease-out forwards; }
     .splash-coin video, .splash-coin img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center; display:block; }
-    @media (prefers-reduced-motion: reduce) { .splash-coin video { display:none; } }
+    @keyframes lgme-coin-grow { from { transform:scale(0.3); } to { transform:scale(1); } }
+    @keyframes lgme-coin-fade { from { opacity:0; } to { opacity:1; } }
+    @media (prefers-reduced-motion: reduce) {
+      .splash-coin video { display:none; }
+      .splash-coin { transform:none; }
+      .splash-coin.is-growing { animation: lgme-coin-fade 0.45s ease forwards; }
+    }
   </style>
 </head>
 <body>
@@ -184,7 +190,7 @@
         </video>
       </div>
       <p class="kicker">Beta</p>
-      <p class="muted">The desk opens when the coin finishes.</p>
+      <p class="muted">The desk opens when the coin is full.</p>
     </div>
   </div>
   <p class="sim-banner" id="beta-notice" role="note">Beta. Real $lgme on Solana, mint 7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump. Transfers are irreversible. Use at your own risk. Start small. This desk never asks for a seed phrase or a Solana private key. Your wallet signs each payment. Mainnet is the default. Devnet is a test mode.</p>
@@ -202,6 +208,7 @@
     <div id="seatbar" class="seatbar" aria-label="Peers"></div>
     <div class="tabs" role="tablist" aria-label="Desk sections">
       <button type="button" id="tab-market" role="tab">Market</button>
+      <button type="button" id="tab-sources" role="tab">Sources <span id="source-badge" class="badge badge-verified" hidden>0</span></button>
       <button type="button" id="tab-circles" role="tab">Circles</button>
       <button type="button" id="tab-list" role="tab">List</button>
       <button type="button" id="tab-chats" role="tab">Chats</button>
@@ -228,6 +235,7 @@
   </div>
   <nav class="tabbar" aria-label="Phone">
     <button type="button" data-tab="market">Market</button>
+    <button type="button" data-tab="sources">Sources</button>
     <button type="button" data-tab="circles">Circles</button>
     <button type="button" data-tab="list" aria-label="List an item"><span class="plus">+</span>List</button>
     <button type="button" data-tab="chats">Chats</button>

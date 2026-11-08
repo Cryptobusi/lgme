@@ -624,7 +624,8 @@ test('pages stay simulation-only', () => {
   assert.equal(ui.includes("fetch('/data/offerup-wanted-v0.json', { signal: gate.signal })"), true);
   assert.equal(ui.includes("fetch('/data/thumbtack-wanted-v0.json', { signal: gate.signal })"), true);
   assert.equal(ui.includes("fetch('/data/payment-methods.json', { signal: gate.signal })"), true);
-  assert.equal((ui.match(/fetch\(/g) || []).length, 5);
+  assert.equal(ui.includes("fetch('/data/sourcing-daily.json', { signal: gate.signal })"), true);
+  assert.equal((ui.match(/fetch\(/g) || []).length, 6);
   const design = readFileSync(join(root, 'docs/marketplace-design.md'), 'utf8');
   for (const word of banned) assert.equal(design.includes(word), false, `docs/marketplace-design.md contains ${word}`);
   assert.equal(design.includes('Trust Score'), false);
@@ -1765,7 +1766,8 @@ test('DC reference values stay pending when a series has no number', () => {
   assert.equal(ui.includes("fetch('/data/offerup-wanted-v0.json', { signal: gate.signal })"), true);
   assert.equal(ui.includes("fetch('/data/thumbtack-wanted-v0.json', { signal: gate.signal })"), true);
   assert.equal(ui.includes("fetch('/data/payment-methods.json', { signal: gate.signal })"), true);
-  assert.equal((ui.match(/fetch\(/g) || []).length, 5);
+  assert.equal(ui.includes("fetch('/data/sourcing-daily.json', { signal: gate.signal })"), true);
+  assert.equal((ui.match(/fetch\(/g) || []).length, 6);
   assert.equal(ui.includes('REFERENCE_LABEL'), true);
   assert.equal(ui.includes("id: 'dc-reference'"), true);
   assert.equal(helper.includes("DC reference values"), true);
@@ -1780,7 +1782,7 @@ test('DC reference values stay pending when a series has no number', () => {
   assert.equal(page.includes('id="refList"'), true);
   assert.equal(/<script(?![^>]*\bsrc=)/i.test(page), false);
   const worker = readFileSync(join(root, 'sw.js'), 'utf8');
-  assert.equal(worker.includes('lgme-v60'), true);
+  assert.equal(worker.includes('lgme-v61'), true);
   assert.equal(ui.includes('lgme.exchange.introSeen'), true);
   assert.equal(ui.includes('Show intro'), true);
   assert.equal(ui.includes("sessionStorage.getItem('lgme-sim:ui:seen-walk')"), false);

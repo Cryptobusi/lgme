@@ -1,0 +1,53 @@
+{
+  "updated": "2026-11-08",
+  "categories": [
+    {
+      "category": "exercise equipment",
+      "request": "Wanted: working treadmill and elliptical, under $500 total budget, Washington DC area",
+      "picks": [
+        {
+          "title": "Schwinn 810 Treadmill",
+          "site": "OfferUp",
+          "url": "https://offerup.com/item/detail/702d63ef-a252-3ae3-8e06-57822fac7dbd",
+          "price": "$300",
+          "location": "Chantilly, VA",
+          "note": "Seller says no issues. Pair with the elliptical below stays under $500.",
+          "image": "https://images.offerup.com/h8bZ06RZZs6fOpiwwpoPoQpHtck=/1110x1920/c487/c4877481f00f4d51abaeb0feb3178729.jpg"
+        },
+        {
+          "title": "Fitness Reality E5500XL Elliptical",
+          "site": "OfferUp",
+          "url": "https://offerup.com/item/detail/01ab6340-4ac1-3645-aed9-2c0d0200d4b4",
+          "price": "$100 firm",
+          "location": "Clarksburg, MD",
+          "note": "Seller says fully functional. Two people and a truck.",
+          "image": "https://images.offerup.com/NqzYqoqEefVDO5QqbbaTwRm4WmU=/1000x1000/8b9a/8b9abb7d421f4b6b888c4c9230585180.jpg"
+        },
+        {
+          "title": "Folding Treadmill with Display Console",
+          "site": "OfferUp",
+          "url": "https://offerup.com/item/detail/8c5cd02a-9a5c-3696-bd4b-0d03a99e8832",
+          "price": "$50",
+          "location": "Washington, DC",
+          "note": "Seller will deliver. Confirm that it works.",
+          "image": "https://images.offerup.com/V2wLC3nfvcNQxAh8Xn24RDGgXUE=/720x1280/c041/c0410569d5fd4b2e82386b64916b7cc6.jpg"
+        }
+      ]
+    },
+    {
+      "category": "exercise-equipment repair",
+      "request": "Wanted: exercise equipment repair/service (treadmill, elliptical), Washington DC area",
+      "picks": [
+        {
+          "title": "The Repair Extraordinaire",
+          "site": "Thumbtack",
+          "url": "https://www.thumbtack.com/va/fairfax/fitness-equipment-repair/repair-extraordinaire/service/397653732991655944",
+          "price": "about $99/hr",
+          "location": "Fairfax, VA",
+          "note": "Serves DC and Greenbelt. Confirm the ZIP. Not verified by lgme.",
+          "image": "https://production-next-images-cdn.thumbtack.com/i/570315114138157058/desktop/standard/thumb"
+        }
+      ]
+    }
+  ]
+}
