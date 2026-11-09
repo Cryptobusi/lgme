@@ -72,4 +72,13 @@ test('the page carries the disclaimer, CLPR caveat, pilot names, and proposed-de
   assert.equal(/became socialism/i.test(page), false);
   assert.equal(page.includes('28% to 40%'), true);
   assert.equal(page.includes('32% to 37%'), true);
+  assert.equal(page.includes('A Practical Foundation: SPP + DLT + AI under the Constitution'), true);
+  assert.equal(page.includes('id="foundation"'), true);
+  assert.equal(page.includes('href="#foundation"'), true);
+  assert.equal(page.includes('constitutional alignment'), true);
+  assert.equal(page.includes('This section is not legal advice.'), true);
+  assert.equal(page.includes('Fifth Amendment'), true);
+  assert.equal(page.includes('Fourteenth Amendment'), true);
+  assert.equal(page.includes('non-convertible'), true);
+  assert.equal(page.includes('no yield'), true);
 });
