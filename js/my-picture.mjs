@@ -676,6 +676,7 @@ export function quickMarkup(state) {
       <h2 id="quick-heading">Quick Log</h2>
       <p class="hint">Tap any pillar to open pre-filled smart attestation. Chips start from the sample history.</p>
       <div class="log-list">${pillars}</div>
+      <p class="fine">Live desks, separate from this sample: <a href="/exchange">Exchange</a>, <a href="/campus">Campus</a>, <a href="/mutual-credit">Mutual credit</a>.</p>
     </section>`;
 }
 
@@ -718,6 +719,7 @@ export function ledgerMarkup(state) {
     <section class="card feed-card" aria-labelledby="full-feed">
       <h2 id="full-feed">Live Attestation Feed</h2>
       ${feedList(state.feed)}
+      <p class="fine">Live desks, separate from this sample: <a href="/exchange">Exchange</a>, <a href="/campus">Campus</a>, <a href="/mutual-credit">Mutual credit</a>.</p>
     </section>`;
 }
 

@@ -3,6 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="/js/ui-view.js"></script>
+  <link rel="stylesheet" href="/css/ui-view.css" />
   <link rel="manifest" href="/manifest.json" />
   <meta name="theme-color" content="#39e36a" />
   <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
@@ -311,6 +313,11 @@
     <a class="study" href="/preparation">Preparation</a>
     <button type="button" id="deep-theory" data-deep-theory aria-pressed="false">Deep theory</button>
     <button type="button" id="glossary-btn" aria-expanded="false" aria-controls="glossary">Glossary</button>
+    <div class="view-switch" role="radiogroup" aria-label="View">
+      <span class="view-switch-kicker">View</span>
+      <a role="radio" href="/" data-ui-view="classic" aria-checked="true">Classic</a>
+      <a role="radio" href="/my-picture" data-ui-view="app" aria-checked="false">Sovereign App</a>
+    </div>
   </div>
   <header class="hero" id="home-hero">
     <p class="kicker">lgme</p>

@@ -53,7 +53,7 @@ test('the my-picture route exists as its own page', () => {
   assert.equal(text('css/my-picture.css').includes('--stage: #05060c'), true);
   assert.equal(text('vercel.json').includes('"cleanUrls": true'), true);
   assert.equal(text('vercel.json').includes('my-picture'), false);
-  assert.equal(text('sitemap.xml').includes('my-picture'), false);
+  assert.equal(text('sitemap.xml').includes('https://lgme.app/my-picture'), true);
 });
 
 test('the consent dialog uses the on-device wording', () => {
@@ -199,9 +199,9 @@ test('my picture is not in the main nav', () => {
   const nav = home.slice(start, end);
   assert.equal(start > 0, true);
   assert.equal(nav.includes('my-picture'), false);
-  assert.equal(nav.includes('My Picture'), false);
-  assert.equal(home.includes('href="/my-picture"'), false);
-  assert.equal(home.includes('>My Picture<'), false);
+  assert.equal(nav.includes('Sovereign App'), false);
+  assert.equal(home.includes('role="radiogroup" aria-label="View"'), true);
+  assert.equal(home.includes('data-ui-view="app"'), true);
 });
 
 test('exchange, solana payment, campus, and mutual-credit files are unchanged', () => {
@@ -212,7 +212,10 @@ test('exchange, solana payment, campus, and mutual-credit files are unchanged', 
   assert.equal(script.includes('solana'), false);
   assert.equal(script.includes('p2p-exchange'), false);
   assert.equal(script.includes('campus-page'), false);
-  assert.equal(script.includes('mutual-credit'), false);
+  assert.equal(/from ['"][^'"]*mutual-credit/.test(script), false);
+  assert.equal(script.includes('href="/exchange"'), true);
+  assert.equal(script.includes('href="/campus"'), true);
+  assert.equal(script.includes('href="/mutual-credit"'), true);
   for (const [file, hash] of Object.entries(UNTOUCHED)) {
     const bytes = readFileSync(join(root, file));
     assert.equal(createHash('sha256').update(bytes).digest('hex'), hash, file);

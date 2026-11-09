@@ -1,0 +1,48 @@
+.view-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  min-height: 44px;
+  margin: 0;
+  padding: 0.15rem;
+  border: 1px solid #2c352b;
+  border-radius: 999px;
+  background: #10160f;
+}
+
+.view-switch-kicker {
+  padding: 0 0.45rem 0 0.6rem;
+  color: #c6a15b;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.view-switch [data-ui-view] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  color: #f4f1e8;
+  background: transparent;
+  text-decoration: none;
+  font: inherit;
+  font-size: 0.92rem;
+  line-height: 1.2;
+}
+
+html[data-ui-view="classic"] .view-switch [data-ui-view="classic"],
+html:not([data-ui-view]) .view-switch [data-ui-view="classic"],
+html[data-ui-view="app"] .view-switch [data-ui-view="app"] {
+  background: #f4f1e8;
+  color: #0c100c;
+  font-weight: 700;
+}
+
+.view-switch [data-ui-view]:focus-visible {
+  outline: 3px solid #c6a15b;
+  outline-offset: 2px;
+}

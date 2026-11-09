@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="robots" content="noindex" />
+  <script src="/js/ui-view.js"></script>
+  <link rel="stylesheet" href="/css/ui-view.css" />
   <meta name="description" content="Prototype. Sample LGME.APP phone for sovereign mutual clearing. Data stays on this device." />
   <meta name="theme-color" content="#05060c" />
   <title>LGME.APP · My Picture</title>
@@ -14,10 +15,15 @@
 <body id="my-picture-app">
   <a class="skip" href="#view">Skip to the phone</a>
   <header class="stage-bar">
-    <p class="prototype-banner" role="note"><strong>Prototype</strong><span>Sample data on this device. Not in the main nav.</span></p>
+    <p class="prototype-banner" role="note"><strong>Prototype</strong><span>Sample data on this device. Not the live book.</span></p>
     <div class="stage-row">
       <h1><span class="live-dot" aria-hidden="true"></span> LGME.APP <span class="sep">|</span> Sovereign Mutual Clearing &amp; Work Attestation Engine</h1>
       <div class="stage-actions">
+        <div class="view-switch" role="radiogroup" aria-label="View">
+          <span class="view-switch-kicker">View</span>
+          <a role="radio" href="/" data-ui-view="classic" aria-checked="false">Classic</a>
+          <a role="radio" href="/my-picture" data-ui-view="app" aria-checked="true">Sovereign App</a>
+        </div>
         <button type="button" id="frame-toggle" aria-pressed="true">Compact Phone View</button>
         <button type="button" id="reset-open" class="reset">Reset State</button>
       </div>
