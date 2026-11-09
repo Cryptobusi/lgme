@@ -1,5 +1,6 @@
 .view-switch {
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.15rem;
   min-height: 44px;
@@ -36,6 +37,7 @@
 
 html[data-ui-view="classic"] .view-switch [data-ui-view="classic"],
 html:not([data-ui-view]) .view-switch [data-ui-view="classic"],
+html[data-ui-view="picture"] .view-switch [data-ui-view="picture"],
 html[data-ui-view="app"] .view-switch [data-ui-view="app"] {
   background: #f4f1e8;
   color: #0c100c;
