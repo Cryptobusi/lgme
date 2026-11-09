@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Examine · lgme</title>
+  <meta name="description" content="Research papers being read for lgme.app, newest first, with a plain summary and open questions." />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" />
+  <link rel="stylesheet" href="/menu.css" />
+  <style>
+    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; --card:#151a15; }
+    body { background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; font-size:1.05rem; line-height:1.55; max-width:42rem; margin:0 auto; padding:1.25rem max(1rem, env(safe-area-inset-right)) 4rem max(1rem, env(safe-area-inset-left)); }
+    h1,h2,h3 { font-family:Newsreader,serif; font-weight:500; }
+    h1 { font-size:clamp(1.9rem, 7vw, 2.6rem); line-height:1.05; margin:0.4rem 0; }
+    h2 { font-size:clamp(1.35rem, 4vw, 1.7rem); line-height:1.2; margin:0.3rem 0; }
+    h3 { font-size:1.05rem; margin:1rem 0 0.25rem; }
+    .kicker { margin:0; font-size:0.72rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--gold); }
+    .muted { color:var(--muted); }
+    a { color:var(--fg); }
+    nav a { min-height:44px; display:inline-flex; align-items:center; margin-right:0.8rem; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:0.9rem 1rem; margin:0.9rem 0; }
+    ul { margin:0.3rem 0 0; padding-left:1.2rem; }
+  </style>
+</head>
+<body>
+<nav aria-label="Desk">
+  <a href="/">Desk</a>
+  <a href="/exchange">Exchange</a>
+  <a href="/good-deeds">Good deeds</a>
+</nav>
+<p class="kicker">lgme · Examine</p>
+<h1>Examine</h1>
+<p>Papers we are reading. Newest first. A note here is a reading, not a claim that the desk already uses the method.</p>
+<article class="card">
+  <p class="kicker">November 2026</p>
+  <h2>Toward Deployable Hardware Roots of Trust for Edge AI: Software PUFs and Their Trade-offs</h2>
+  <p>Yilin Li and Farhad Merchant, University of Groningen.</p>
+  <p><a href="https://arxiv.org/abs/2611.03194">Abstract</a> · <a href="https://arxiv.org/pdf/2611.03194">PDF</a></p>
+  <h3>Plain English</h3>
+  <p>The paper surveys 37 software PUF methods. Each one derives a unique, repeatable device fingerprint from chips that are already there: memory start-up values, DRAM timing and decay, flash, processor timing, or motion sensors. It uses only software, so a secret key never has to be stored on the device. The survey compares how unique and reliable each method is, how fast it answers (microseconds to minutes), and whether it works while the device is running. Four problems stay open. Low-level hardware access is often locked by firmware. Enough randomness has to remain after error correction. Some methods are too slow to use while a program is running. The attacker model is not always clear: someone who controls the operating system could replay or tamper with the answer.</p>
+  <h3>Why it matters for lgme.app</h3>
+  <p>lgme already binds trust to the device: passkey and fingerprint unlock are planned, the tape stays on the device, and Sources can use on-device AI. A fingerprint like this could later strengthen a “one device, one member” check and protect on-device keys and models without new hardware. It needs kernel or firmware access that a web app does not have. For now, WebAuthn passkeys, which use the phone’s secure chip, remain the practical path. Software PUFs are a watch item, not a build item.</p>
+  <h3>Open questions</h3>
+  <ul>
+    <li>Could a phone vendor or a wallet expose a PUF-backed key through WebAuthn?</li>
+    <li>Can it help stop duplicate accounts in the campus pilot without collecting personal data?</li>
+  </ul>
+</article>
+</body>
+</html>
