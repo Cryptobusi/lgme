@@ -94,6 +94,9 @@ h3 { font-size: 1.28rem; line-height: 1.2; }
 
 .lede { margin: 0.35rem 0 0; color: var(--muted); max-width: 38rem; }
 
+.seat-note { margin: 0.2rem 0 0.8rem; color: var(--muted); font-size: 0.95rem; }
+.seat-note a { color: var(--fg); }
+
 .head-actions, .dialog-actions, .suggestion-actions, .capture-row {
   display: flex;
   flex-wrap: wrap;

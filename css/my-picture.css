@@ -75,6 +75,15 @@ button { cursor: pointer; }
   text-transform: uppercase;
 }
 
+.seat-note {
+  margin: 0.15rem 0 0.35rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.seat-note a { color: var(--ink); }
+
 .stage-row {
   display: flex;
   flex-wrap: wrap;

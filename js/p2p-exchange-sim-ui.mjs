@@ -1080,7 +1080,7 @@ function campusDeedPanel(peers, me, full) {
     field('Deed', kind),
     field('Their handle', receiver),
     field('Hours', hours),
-    field('Third seat · everyday member', third),
+    field('Third Seat · arbiter who can veto', third),
     field('Passphrase', pass),
     field('6-digit code', code),
     h('div', { class: 'actions' }, [h('button', { class: 'primary', type: 'submit' }, ['Log deed'])])
@@ -1209,7 +1209,7 @@ function renderBilateral(peers, me) {
     h('div', { class: 'grid three' }, [
       field('Debtor', debtor),
       field('Creditor', creditor),
-      field('Third seat · everyday member', third)
+      field('Third Seat · arbiter who can veto', third)
     ]),
     field('Work', reference),
     h('div', { class: 'grid three' }, [
@@ -1357,7 +1357,7 @@ function renderCycle(peers, me) {
       : 'Add peers and amounts to preview the floor.';
   }
   const form = h('form', {}, [
-    field('Third seat · everyday member, if someone outside the cycle is reading it', third),
+    field('Third Seat · arbiter who can veto, if someone outside the cycle is reading it', third),
     field('Named charge, before any signature', charge),
     h('p', { class: 'legend' }, ['Every party countersigns. The floor is tested on the net of the whole cycle. One leg that takes a floor blocks every leg.']),
     legs,
@@ -1475,7 +1475,7 @@ function exchangeCard(ex, me, peers) {
   return h('article', { class: 'row' }, [
     h('header', {}, [
       h('span', { class: 'pill' }, [`${ex.kind} · ${ex.status}`]),
-      h('a', { class: 'pill', href: 'https://www.egonomicanonymous.live/' }, [`Third seat · everyday member · ${seatName}`]),
+      h('a', { class: 'pill', href: 'https://www.egonomicanonymous.live/' }, [`Third Seat · arbiter who can veto · ${seatName}`]),
       h('span', { class: 'meta' }, [shortHash(ex.id)])
     ]),
     h('p', {}, [legText]),
@@ -4062,7 +4062,7 @@ async function renderSources() {
 function glossaryTable() {
   const rows = [
     ['Tape / Constitutive Record', 'Public Ledger / Verified Receipt', 'An immutable proof of completed work everyone can inspect.'],
-    ['Third Seat', 'Participant / Everyday Member', 'The individual citizen operating on equal footing with institutions. In a deal the Third Seat is the named everyday member who can veto.'],
+    ['Third Seat', 'Nonprofit arbiter', 'The $lgme self-regulating nonprofit arbiter, a check on the State and Floor seats. In a deal the Third Seat is the arbiter who can veto.'],
     ['Quiet Print', 'Hidden Issuance / Shadow Dilution', 'Creating money or promises off-schedule behind closed doors.'],
     ['Floor', 'Basic Needs Reserve', 'Food, shelter, and essentials secured prior to speculative spending.'],
     ['Issue / Named Bill', 'Peer Promise / Mutual Credit', 'A non-cash IOU directly tied to human effort, not speculative debt.']
@@ -4078,7 +4078,7 @@ function renderHelp() {
   const panel = document.getElementById('panel');
   const sections = [
     ['Floor · basic needs reserve', 'Food, shelter, and essentials secured prior to speculative spending. A settlement, a transfer, or an attested IOU that would spend that reserve is not applied. The tape records Blocked: Floor stays senior.'],
-    ['Third seat · everyday member', 'The individual citizen operating on equal footing with institutions. In a deal the Third Seat is the named everyday member who can veto. The veto stays on the tape. Nothing moves. There is no penalty.'],
+    ['Third Seat · arbiter who can veto', 'The $lgme self-regulating nonprofit arbiter, a check on the State and Floor seats. In a deal the Third Seat is the arbiter who can veto. The veto stays on the tape. Nothing moves. There is no penalty.'],
     ['Tape · public ledger', 'An immutable proof of completed work everyone can inspect. Each book is append-only. Every entry names the previous hash and is signed with that peer’s key. Export the JSON and verify it.'],
     ['Issue · peer promise', 'A non-cash IOU directly tied to human effort, not speculative debt. It is recorded as pending. The balance moves only when the named counterparty signs. A refusal leaves the balance put.'],
     ['Local book', 'Registration writes a GENESIS entry for a local grant of 100. It is not Solana $lgme. Your wallet signs a real payment.'],
@@ -4228,7 +4228,7 @@ const WALK = [
   ['Beta', 'This desk settles agreed $lgme from your own Solana wallet. It does not hold a seed phrase, write to Hedera, or send text or email. You send a draft yourself, from your own app, if you want to.'],
   ['Separate books', 'Alice, Bob, and Charlie each keep their own tape. On one device you switch seats. On two devices you carry a signed message. There is no central ledger.'],
   ['Floor · basic needs reserve', 'Food, shelter, and essentials secured prior to speculative spending. A line that would spend that reserve is blocked and the block stays on the tape.'],
-  ['Third seat · everyday member', 'The individual citizen operating on equal footing with institutions. In a deal the Third Seat is the named everyday member who can veto. Nothing moves. There is no penalty.'],
+  ['Third Seat · arbiter who can veto', 'The $lgme self-regulating nonprofit arbiter, a check on the State and Floor seats. In a deal the Third Seat is the arbiter who can veto. Nothing moves. There is no penalty.'],
   ['100 $lgme', 'Register a new peer and the GENESIS line grants 100 $lgme on this book. Then the key is locked behind a passphrase and a 6-digit code.'],
   ['Carry the signature', 'Copy the code, open the share link, scan the QR, or save the JSON. The other device checks the signature and the hash link before it appends.']
 ];

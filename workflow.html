@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#0c100c" />
+  <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+  <title>SPP Workflow Map · lgme</title>
+  <meta name="description" content="A pannable map of the Sovereign Provenance Protocol on lgme.app. Proposed design with sample data. The Third Seat is the arbiter who can veto." />
+  <link rel="canonical" href="https://lgme.app/workflow" />
+  <link rel="stylesheet" href="/menu.css" />
+  <link rel="stylesheet" href="/css/workflow.css" />
+</head>
+<body id="workflow-app">
+  <nav class="deskmenu" aria-label="Desk">
+    <a href="/">Desk</a>
+    <a href="/workflow" aria-current="page">Workflow map</a>
+    <a href="/clearing-engine">Clearing engine</a>
+    <a href="/spp-framework">SPP framework</a>
+    <a href="/whitepaper">Whitepaper</a>
+    <a href="/my-picture-classic">My Picture</a>
+  </nav>
+  <p class="kicker">lgme · proposed design · sample data</p>
+  <h1>SPP Workflow Map</h1>
+  <p class="lede">One map of the Sovereign Provenance Protocol on lgme.app, from consent to the activity loop, the three seats, refusal, the Floor, the Exchange, the tech stack, and the public Tape that feeds back. It is a proposed design with sample data. Only the $lgme Solana payments beta is live. The Third Seat is the arbiter who can veto.</p>
+  <div class="toolbar" role="toolbar" aria-label="Zoom">
+    <button type="button" data-zoom-out>Zoom −</button>
+    <button type="button" data-zoom-in>Zoom +</button>
+    <button type="button" data-fit>Fit</button>
+    <button type="button" data-reset>Reset</button>
+    <span id="zoom-readout" aria-live="polite">100%</span>
+  </div>
+  <div class="jumps" role="group" aria-label="Jump to a zone">
+    <button type="button" data-zone="1">1 Onboarding</button>
+    <button type="button" data-zone="2">2 Big picture</button>
+    <button type="button" data-zone="3">3 Activity loop</button>
+    <button type="button" data-zone="4">4 Three seats</button>
+    <button type="button" data-zone="5">5 Refusal</button>
+    <button type="button" data-zone="6">6 Floor</button>
+    <button type="button" data-zone="7">7 Exchange</button>
+    <button type="button" data-zone="8">8 Tech</button>
+    <button type="button" data-zone="9">9 Public Tape</button>
+  </div>
+  <div class="legend" aria-label="Legend">
+    <span><i class="swatch main"></i> Main path</span>
+    <span><i class="swatch check"></i> Checks between seats</span>
+    <span><i class="swatch feed"></i> Audit feedback</span>
+  </div>
+  <div class="stage-wrap">
+    <div id="workflow-stage" tabindex="0" role="application" aria-label="Workflow map. Drag, scroll, or use arrow keys to move. Numbered buttons jump to a zone.">
+      <div data-canvas></div>
+    </div>
+    <div id="workflow-minimap"><p>Minimap</p></div>
+  </div>
+  <p class="hint">Drag or scroll up, down, left, and right. Arrow keys pan when the map is focused. Numbers mark the zones. The bold line is the main path. Dashed lines are audit feedback or planned links.</p>
+  <section aria-labelledby="zone-key-heading">
+    <h2 id="zone-key-heading">Zone key</h2>
+    <div id="zone-key"></div>
+  </section>
+  <section aria-labelledby="live-heading">
+    <h2 id="live-heading">Live versus planned</h2>
+    <div id="live-table"></div>
+  </section>
+  <p class="cross"><a href="/clearing-engine">Clearing engine</a><a href="/spp-framework">SPP framework</a><a href="/whitepaper">Whitepaper</a><a href="/spp">Protocol archive</a></p>
+  <noscript><p>This map needs JavaScript in the browser. It does not call the network.</p></noscript>
+  <script type="module" src="/js/workflow-map.mjs"></script>
+</body>
+</html>
