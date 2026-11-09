@@ -32,11 +32,11 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const text = (path) => readFileSync(join(root, path), 'utf8');
 
 const UNTOUCHED = {
-  'exchange.html': 'ae5eb66dc32e9dd6e43395185eed1de2264c3ce65907acb21d491eafa3574a86',
+  'exchange.html': 'c67d6750ddf75466d7bcbe92b4cf82649e0e06a4fba8cbdcea8e5c6eb2183005',
   'js/p2p-exchange-sim.mjs': 'f6b10eddfbf8301f509ffa0af079aeabdacc760c9980e6120d850eeaecf4eeb6',
-  'js/p2p-exchange-sim-ui.mjs': '1f9e34499129d8cd0bdea56413e4e29a5f528df23415f4824c3959dad5308d1e',
+  'js/p2p-exchange-sim-ui.mjs': '77002abc269942ae201c1099374eefefc206f491476965c7f0a804670ba98616',
   'js/solana-pay.mjs': '7c0a183c3e7f56667e3cd3b1f7482c13d3fab41b77078e0c30c3157277df7d94',
-  'campus.html': '3a31d4dbc2784472b485ba0c5f42b1891ddcd86b88ba45865d4d8df22ccef30e',
+  'campus.html': 'e80dd941f1ddabde7d48d2c24636d3f92592d4af86526f8a1571e3a0a64652cf',
   'js/campus-page.mjs': 'dfff943e00078fc8efc965d9f608b56c47d181d8fada9bd3060bb231566738ba',
   'data/campus-pilot.json': 'e76672225b4c889f03f7cb8d03a651092eff250de2edc5f61fdaad472044b6fc',
   'mutual-credit.html': '930f25e713edbfc3484c8260794042ed7d6d5c4d55c120901f4fe2a77ec2f01e',

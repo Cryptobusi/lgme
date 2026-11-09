@@ -104,11 +104,11 @@ export const ARTICLES = [
   },
   {
     id: 'resources-third-seat',
-    kicker: 'The person',
+    kicker: 'The arbiter',
     title: 'The third seat',
     deck: 'Read the order. Refuse a line that skipped it. The no stays.',
     blocks: [
-      { type: 'p', text: 'The Third Seat is the everyday member: the individual citizen operating on equal footing with institutions. In a deal the Third Seat is the named everyday member who can veto. The veto is a record. It does not mint and it does not spend. Silence is not a refusal.' },
+      { type: 'p', text: 'The Third Seat is the arbiter who can veto: the $lgme self-regulating nonprofit arbiter, which holds a veto as a check on the State and Floor seats. The veto is a record. It does not mint and it does not spend. Silence is not a refusal.' },
       { type: 'link', href: 'https://www.egonomicanonymous.live/third-seat', text: 'The third seat, on egonomicanonymous.live' },
       { type: 'link', href: '/the-third-seat', text: 'The third seat, on this site' },
       { type: 'link', href: '/marketing', text: 'Marketing & Adoption' },

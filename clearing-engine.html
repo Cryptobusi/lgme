@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#070d18" />
+  <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+  <title>Clearing engine · lgme</title>
+  <meta name="description" content="Sample canvas of the sovereign workflow and mutual clearing engine. Proposed design. The Third Seat is the arbiter who can veto." />
+  <link rel="canonical" href="https://lgme.app/clearing-engine" />
+  <link rel="stylesheet" href="/css/clearing-engine.css" />
+</head>
+<body id="clearing-app">
+  <header class="topbar">
+    <p class="brand">
+      <span class="mark" aria-hidden="true">LG</span>
+      <a href="/"><strong>LGME.APP</strong></a>
+      <span class="sample-pill">SAMPLE</span>
+      <em>Sovereign workflow and mutual clearing engine</em>
+    </p>
+    <nav class="jump" aria-label="Cards">
+      <button type="button" data-focus="c1">1. 5-Pillars Origin</button>
+      <button type="button" data-focus="c2">2. Local AI &amp; UX</button>
+      <button type="button" data-focus="c3">3. Third Seat Clearing</button>
+      <button type="button" data-focus="c4">4. Cryptographic DAG</button>
+      <button type="button" data-focus="c5">5. Serendipity Loop</button>
+    </nav>
+    <div class="zoom" role="toolbar" aria-label="Zoom">
+      <button type="button" data-zoom-out aria-label="Zoom out">−</button>
+      <span id="zoom-readout">85%</span>
+      <button type="button" data-zoom-in aria-label="Zoom in">+</button>
+      <button type="button" data-fit>Fit View</button>
+      <div class="export-wrap">
+        <button type="button" id="export-spec">Export Spec</button>
+        <div id="export-menu" class="export-menu" hidden>
+          <button type="button" data-export="md">Download Markdown</button>
+          <button type="button" data-export="json">Download JSON</button>
+        </div>
+      </div>
+    </div>
+  </header>
+  <div id="clearing-viewport" tabindex="0" role="application" aria-label="Clearing engine canvas. Drag to pan. Scroll or pinch to zoom. Arrow keys pan.">
+    <div id="clearing-world"></div>
+    <p class="foot-hint">Drag to pan · Scroll to zoom · Arrow keys pan · Click a card for its specification · Sample data only</p>
+    <div id="clearing-minimap">
+      <p>MINIMAP OVERVIEW <span id="mini-coords">X: 0, Y: 0</span></p>
+    </div>
+  </div>
+  <aside id="spec-drawer" class="drawer" hidden aria-labelledby="drawer-title">
+    <header>
+      <h2 id="drawer-title" data-drawer-title>Spec</h2>
+      <button type="button" data-close-drawer>Close Drawer</button>
+    </header>
+    <div data-drawer-body></div>
+    <footer>
+      <span>Lgme.app sovereign protocol · sample</span>
+      <span class="links"><a href="/workflow">Workflow map</a><a href="/spp-framework">SPP framework</a></span>
+    </footer>
+  </aside>
+  <noscript><p>This canvas needs JavaScript in the browser. It does not call the network.</p></noscript>
+  <script type="module" src="/js/clearing-engine.mjs"></script>
+</body>
+</html>

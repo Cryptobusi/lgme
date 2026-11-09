@@ -56,6 +56,8 @@
   <nav class="deskmenu" aria-label="Desk">
     <a href="/">Desk</a>
     <a href="/spp-framework" aria-current="page">SPP framework</a>
+    <a href="/workflow">Workflow map</a>
+    <a href="/clearing-engine">Clearing engine</a>
     <a href="/whitepaper">Whitepaper</a>
     <a href="/spp">Protocol archive</a>
     <a href="/campus">Campus</a>
@@ -63,7 +65,7 @@
   </nav>
   <p class="kicker">lgme · proposed design · 9 November 2026</p>
   <h1>Three seats, three currencies</h1>
-  <p class="muted">A plain-language research page for the Sovereign Provenance Protocol (SPP). It joins the three-seats / three-currencies framework with comparable pilots. Pilot first. Publish the metrics. The formatting draft of the protocol text is the <a href="/whitepaper">Whitepaper</a>.</p>
+  <p class="muted">A plain-language research page for the Sovereign Provenance Protocol (SPP). It joins the three-seats / three-currencies framework with comparable pilots. Pilot first. Publish the metrics. The formatting draft of the protocol text is the <a href="/whitepaper">Whitepaper</a>. The <a href="/workflow">workflow map</a> and the <a href="/clearing-engine">clearing engine</a> are the same proposed design, drawn as sample diagrams.</p>
 
   <aside class="editorial" id="editorial" aria-label="Editorial note">
     <p class="kicker">Editorial note</p>
@@ -126,7 +128,7 @@
       <li>Separate ledgers.</li>
       <li>Fail closed. If a check is missing, the action stops.</li>
       <li>The Tape shows hashes and counts, and it keeps private details off the public record.</li>
-      <li>The Third Seat hears disputes.</li>
+      <li>The Third Seat is the arbiter who can veto, and it hears disputes.</li>
       <li>A pilot comes first: testnet, an allowlist, and caps.</li>
     </ul>
   </section>
@@ -156,7 +158,7 @@
           <td data-label="Seat"><strong>Third Seat / commons</strong></td>
           <td data-label="Currency"><code>$lgme</code> nonprofit</td>
           <td data-label="Seigniorage / policy">Protocol treasury under published limits</td>
-          <td data-label="Limits the others by">Funding infrastructure and independent review, so arbitration does not depend on the state or on any one person.</td>
+          <td data-label="Limits the others by">The Third Seat is the arbiter who can veto. It funds infrastructure and independent review, so arbitration does not depend on the state or on any one person.</td>
         </tr>
       </tbody>
     </table>
@@ -202,7 +204,7 @@
     <h3>Legal</h3>
     <p>This is a short note. Statutes stay with counsel, who are required before any mainnet step. The <code>$lgme</code> role is a nonprofit mission-lock. Self-regulation, if it is real, needs outside audits, published rules, and the Tape.</p>
     <h3>Socio-economic</h3>
-    <p>Campus Credit is meant to recognize care, teaching, and maintenance that wages often underpay. The Floor keeps refusal real: a person can meet a basic service need through confirmed deeds. The Third Seat is there so a dispute can be heard without rule by wealth alone and without rule by the state alone.</p>
+    <p>Campus Credit is meant to recognize care, teaching, and maintenance that wages often underpay. The Floor keeps refusal real: a person can meet a basic service need through confirmed deeds. The Third Seat is the arbiter who can veto, so a dispute can be heard without rule by wealth alone and without rule by the state alone. Disputes go to peer review first, with legal recourse intact.</p>
   </section>
 
   <section id="future" aria-labelledby="future-heading">
@@ -300,7 +302,7 @@
         </tr>
         <tr>
           <td data-label="Layer"><strong>2. Rules</strong></td>
-          <td data-label="Job">SPP: Floor first, a Third Seat for disputes, a Tape of public checks, and a right of refusal. The same caps and the same appeal path apply to every participant.</td>
+          <td data-label="Job">SPP: Floor first, a Third Seat — the arbiter who can veto — for disputes, a Tape of public checks, and a right of refusal. The same caps and the same appeal path apply to every participant.</td>
           <td data-label="Limit">Rules are published before they bind anyone in the pilot. A seat does not rewrite them in private. A model does not either.</td>
         </tr>
         <tr>
@@ -370,7 +372,7 @@
       <li><strong>Barter and timebank tax treatment.</strong> IRS Topic No. 420 says bartering is the exchange of goods or services, and that a person must include in gross income the fair market value of goods or services received from bartering. Timebanks and service exchanges already live under that topic. Campus Credit is not claimed to be tax-free. Tax clarity stays on the counsel list in the policy section.</li>
       <li><strong>State sandboxes.</strong> Arizona Revised Statutes § 41-5601 defines a “regulatory sandbox” as the program that lets a person temporarily test an innovation on a limited basis without otherwise being licensed or authorized under that state’s laws. This page cites that statute as one existing law. It is not an application to Arizona, and it does not survey other states.</li>
       <li><strong>A small start.</strong> The phased path above still holds: a campus pilot with published metrics, then a nonprofit plus a legal and tax opinion and a university partner, then a state enabling step, then Hedera, Hiero, and Chainlink across Floors. In that first step, “testnet” means a capped, allowlisted trial. It does not mean a public chain is already writing the book. CLPR stays marked to be verified until a public specification exists.</li>
-      <li><strong>Useful without the blockchain.</strong> Confirmed deeds, caps, a fade when credit goes unused, refusal, and a human Third Seat can run in a local book, on paper or on an ordinary database. Hedera HCS, if a later phase adds it, is a public copy of hashes. If that network is down, or if the phase never arrives, the Floor can still function.</li>
+      <li><strong>Useful without the blockchain.</strong> Confirmed deeds, caps, a fade when credit goes unused, refusal, and the Third Seat, the arbiter who can veto, can run in a local book, on paper or on an ordinary database. Hedera HCS, if a later phase adds it, is a public copy of hashes. If that network is down, or if the phase never arrives, the Floor can still function.</li>
     </ul>
     <p class="sources"><strong>Institutions.</strong> <a href="https://www.irs.gov/charities-non-profits/charitable-organizations/exemption-requirements-501c3-organizations">IRS, exemption requirements for 501(c)(3) organizations</a> · <a href="https://www.irs.gov/taxtopics/tc420">IRS Topic No. 420, Bartering income</a> · <a href="https://www.azleg.gov/ars/41/05601.htm">Arizona Revised Statutes § 41-5601</a>.</p>
 
@@ -430,7 +432,7 @@
 
     <h3>What refusal means</h3>
     <p>In this design, refusal is the right to say no. A person may refuse a job, a deal, a ruling, a currency, a request to share data, or an AI recommendation. Saying no does not delete the person’s record, and it does not close the Floor. The Tape still shows the hashes and counts that were already public. Private details stay off that record.</p>
-    <p>Albert O. Hirschman, in <em>Exit, Voice, and Loyalty</em> (Harvard University Press, 1970), describes exit, voice, and loyalty as three responses when a firm, an organization, or a state disappoints. This section borrows only those words. Refusal is the exit. The Third Seat is the voice. Staying in the circuit is the loyalty. That is not a summary of his argument, and the book is not evidence about SPP. No working publisher page was confirmed for this note, so the book is cited without a URL.</p>
+    <p>Albert O. Hirschman, in <em>Exit, Voice, and Loyalty</em> (Harvard University Press, 1970), describes exit, voice, and loyalty as three responses when a firm, an organization, or a state disappoints. This section borrows only those words. Refusal is the exit. The Third Seat, the arbiter who can veto, is the voice. Staying in the circuit is the loyalty. That is not a summary of his argument, and the book is not evidence about SPP. No working publisher page was confirmed for this note, so the book is cited without a URL.</p>
     <p>Formal refusal is the right written on paper: the rule says you may decline. Real refusal is different. “No” is survivable only when another way to meet the need is actually there. A right that leaves someone without rent, care, or a record they can carry is a formal refusal. The design aim is the real kind.</p>
 
     <h3>The practical limits of refusal</h3>
@@ -510,7 +512,7 @@
     <h3>Guardrails</h3>
     <ul>
       <li>Refusal cannot be used as cover for fraud, or for walking away from a confirmed IdidIt.</li>
-      <li>The Third Seat hears disputes, including a claim that a refusal was coerced or that a confirmed deed was broken.</li>
+      <li>The Third Seat, the arbiter who can veto, hears disputes, including a claim that a refusal was coerced or that a confirmed deed was broken.</li>
       <li>Caps and fade still apply. Unused CC fades. Balances stay capped.</li>
       <li>Participation stays voluntary. Joining and leaving are both allowed. Leaving does not erase the public hashes already written, and it does not cancel a debit that an IdidIt already created.</li>
       <li><code>$lgme</code> cannot buy a softer cap, a waiver of fade, or a favorable ruling.</li>

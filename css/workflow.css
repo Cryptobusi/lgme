@@ -1,0 +1,169 @@
+:root {
+  --bg: #0c100c;
+  --fg: #f4f1e8;
+  --muted: #c5d0c2;
+  --faint: #8ea892;
+  --gold: #c6a15b;
+  --line: #2c352b;
+  --card: #151a15;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+html { background: var(--bg); color: var(--fg); }
+
+body {
+  margin: 0 auto;
+  max-width: 96rem;
+  padding: 0.75rem max(0.75rem, env(safe-area-inset-right)) 3rem max(0.75rem, env(safe-area-inset-left));
+  font-family: Figtree, "Segoe UI", sans-serif;
+  font-size: 1.02rem;
+  line-height: 1.5;
+}
+
+h1, h2 { font-family: Newsreader, Georgia, serif; font-weight: 500; letter-spacing: -0.02em; }
+
+h1 { font-size: clamp(1.7rem, 5vw, 2.6rem); line-height: 1.1; margin: 0.25rem 0 0.4rem; }
+
+h2 { font-size: 1.45rem; margin: 1.6rem 0 0.4rem; }
+
+p { margin: 0.45rem 0; }
+
+a { color: var(--fg); }
+
+.kicker {
+  margin: 0;
+  color: var(--gold);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.lede { color: var(--muted); max-width: 46rem; }
+
+.toolbar, .jumps, .legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+  margin: 0.7rem 0;
+}
+
+button, .toolbar a {
+  font: inherit;
+  color: var(--fg);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.4rem 0.85rem;
+  cursor: pointer;
+}
+
+button:hover, .toolbar a:hover { color: var(--gold); }
+
+button[data-reset] { background: var(--fg); color: var(--bg); font-weight: 650; }
+
+#zoom-readout {
+  min-width: 3.2rem;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.legend span { display: inline-flex; align-items: center; gap: 0.35rem; color: var(--muted); font-size: 0.92rem; }
+
+.swatch { width: 1.4rem; height: 0.28rem; border-radius: 99px; background: currentColor; }
+
+.swatch.main { color: #e2b656; height: 0.38rem; }
+.swatch.check { color: #7eb6ff; }
+.swatch.feed { color: #6dce8a; background: repeating-linear-gradient(90deg, currentColor 0 7px, transparent 7px 12px); }
+
+.stage-wrap { position: relative; }
+
+#workflow-stage {
+  height: min(78vh, 52rem);
+  min-height: 18rem;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #0c100c;
+  cursor: grab;
+  touch-action: auto;
+}
+
+#workflow-stage:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+
+#workflow-stage.is-dragging { cursor: grabbing; }
+
+[data-canvas] svg { display: block; width: 100%; height: 100%; user-select: none; }
+
+#workflow-minimap {
+  position: absolute;
+  right: 0.6rem;
+  bottom: 0.6rem;
+  width: min(180px, 42vw);
+  background: rgba(12, 16, 12, 0.92);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.35rem 0.4rem 0.4rem;
+  z-index: 2;
+}
+
+#workflow-minimap p {
+  margin: 0 0 0.2rem;
+  color: var(--faint);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+#workflow-minimap svg { display: block; width: 100%; height: auto; cursor: pointer; }
+
+.hint { color: var(--faint); font-size: 0.9rem; }
+
+.zone-key { margin: 0.4rem 0 0.6rem; padding-left: 1.2rem; }
+
+.zone-key li { margin: 0.45rem 0; }
+
+.fine { color: var(--muted); }
+
+table.live { width: 100%; border-collapse: collapse; margin: 0.4rem 0 1rem; }
+
+table.live th, table.live td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.6rem 0.4rem;
+  border-bottom: 1px solid var(--line);
+}
+
+table.live th { color: var(--gold); font-size: 0.78rem; letter-spacing: 0.04em; }
+
+.cross { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; margin-top: 0.4rem; }
+
+@media (max-width: 700px) {
+  h1 { font-size: 1.55rem; }
+  .lede {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .toolbar, .jumps, .legend { margin: 0.35rem 0; }
+  #workflow-stage { height: 62vh; min-height: 16rem; }
+  table.live thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  table.live, table.live tbody, table.live tr, table.live td { display: block; width: 100%; }
+  table.live tr { margin: 0.7rem 0; padding-bottom: 0.4rem; border-bottom: 1px solid var(--line); }
+  table.live td { border: 0; padding: 0.2rem 0; }
+  table.live td::before {
+    content: attr(data-label);
+    display: block;
+    color: var(--gold);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+}
