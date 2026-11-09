@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#0c100c" />
+  <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+  <title>Whitepaper · Sovereign Provenance Protocol · lgme</title>
+  <meta name="description" content="Draft for formatting purposes only. Proposed design for the Sovereign Provenance Protocol. Not legal advice, and not a description of functions lgme.app already runs." />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" />
+  <link rel="stylesheet" href="/menu.css" />
+  <style>
+    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; --card:#151a15; }
+    body { background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; font-size:1.05rem; line-height:1.65; max-width:46rem; margin:0 auto; padding:1.25rem max(1rem, env(safe-area-inset-right)) 4rem max(1rem, env(safe-area-inset-left)); }
+    .kicker { margin:0; font-size:0.72rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--gold); }
+    h1,h2,h3 { font-family:Newsreader,serif; font-weight:500; letter-spacing:-0.02em; }
+    h1 { font-size:clamp(1.7rem, 6.5vw, 2.45rem); line-height:1.12; margin:0.4rem 0 0.6rem; }
+    h2 { font-size:clamp(1.35rem, 4vw, 1.7rem); line-height:1.2; margin:2rem 0 0.45rem; }
+    h3 { font-size:1.15rem; line-height:1.3; margin:1.35rem 0 0.35rem; }
+    p { margin:0.7rem 0; overflow-wrap:anywhere; }
+    .muted { color:var(--muted); }
+    a { color:var(--fg); }
+    nav.deskmenu a, .pdf-link, .toc a { min-height:44px; display:inline-flex; align-items:center; }
+    .pdf-link { margin:0.4rem 0.6rem 0.4rem 0; padding:0.35rem 0.85rem; border:1px solid var(--line); text-decoration:none; }
+    .pdf-link:hover, nav.deskmenu a:hover, .toc a:hover { color:var(--gold); }
+    aside.editorial { border:1px solid var(--gold); background:var(--card); padding:0.9rem 1rem; margin:1rem 0 1.5rem; }
+    aside.editorial p { margin:0.4rem 0; }
+    .draft { border-left:3px solid var(--gold); padding-left:0.9rem; margin:1rem 0 1.4rem; }
+    .toc { margin:0.4rem 0 1.2rem; padding:0; list-style:none; }
+    .toc li { margin:0; }
+    .toc a { text-decoration:none; }
+    .num { color:var(--gold); font-weight:600; margin-right:0.35rem; }
+    article.source { margin-top:0.5rem; }
+    ol.steps { margin:0.4rem 0 0.8rem; padding-left:1.2rem; }
+    ol.steps li { margin:0.45rem 0; }
+    :focus-visible { outline:2px solid var(--gold); outline-offset:3px; }
+  </style>
+</head>
+<body>
+  <nav class="deskmenu" aria-label="Desk">
+    <a href="/">Desk</a>
+    <a href="/whitepaper" aria-current="page">Whitepaper</a>
+    <a href="/technical">Technical</a>
+    <a href="/study">Study</a>
+    <a href="/spp">Protocol archive</a>
+  </nav>
+  <p class="kicker">lgme · proposed design</p>
+  <h1>Sovereign Provenance Protocol</h1>
+  <aside class="editorial" aria-label="Editorial note">
+    <p class="kicker">Editorial note</p>
+    <p>This note is separate from the draft below. The draft is a proposed design. It is not a description of functions that lgme.app already runs, and it does not present this draft as an issued patent.</p>
+    <p><a class="pdf-link" href="/docs/sovereign-provenance-protocol-draft.pdf" type="application/pdf" download>Original PDF</a></p>
+    <p class="muted">The PDF is the source file, unchanged. The HTML below is the same text for reading on a phone or a desk. Page-number footers from the PDF are not repeated here.</p>
+  </aside>
+  <nav class="toc" aria-label="Contents">
+    <p class="kicker">Contents</p>
+    <ol class="toc">
+      <li><a href="#title">Title and draft notice</a></li>
+      <li><a href="#abstract">Abstract of the disclosure</a></li>
+      <li><a href="#background">Background · [0001]–[0002]</a></li>
+      <li><a href="#summary">Brief summary · [0003]–[0006]</a></li>
+      <li><a href="#drawings">Drawings · [0007]–[0010]</a></li>
+      <li><a href="#description">Detailed description · [0011]–[0016]</a></li>
+      <li><a href="#claims">Claims 1–8</a></li>
+    </ol>
+  </nav>
+  <article class="source" id="document">
+    <header id="title">
+      <h2>Sovereign Provenance Protocol system and method for identity-anchored governance and utility-based resource allocation</h2>
+      <div class="draft">
+        <p><strong>DRAFT FOR FORMATTING PURPOSES ONLY - NOT LEGAL ADVICE</strong></p>
+        <p>This document is a structural reformatting into conventional U.S. patent application sections. It is not a complete, file-ready application and has not been reviewed by a registered patent attorney or agent. Actual filing requires professional preparation, search, formal drawings, and compliance with 37 C.F.R. and the MPEP.</p>
+      </div>
+    </header>
+    <section id="abstract" aria-labelledby="abstract-heading">
+      <h2 id="abstract-heading">Abstract of the disclosure</h2>
+      <p>A system and method for a decentralized protocol that anchors governance and resource allocation to verified unique human personhood using zero-knowledge proofs of personhood. Each unique human is bound to exactly one non-transferable identity anchor in an on-chain sparse Merkle tree. Voting weight is computed by attested quadratic voting in which the square root of directional contribution tokens is multiplied by a binary indicator of a verified unique human anchor. Utility is captured exclusively through immutable recorded presentations containing cryptographic signatures, metadata hashes, and peer-validation scores. A continuous provenance score is calculated as the time integral of weighted utility and consensus inputs. Yield generated by a multi-asset basket treasury is allocated proportionally to individual provenance scores. Anti-collusion mechanisms including key rotation guards and on-chain Sybil audits prevent identity rental or sale. Hardware telemetry from edge devices is normalized into utility scores.</p>
+    </section>
+    <section id="background" aria-labelledby="background-heading">
+      <h2 id="background-heading">Background of the invention</h2>
+      <h3>Field of the invention</h3>
+      <p id="p-0001"><span class="num">[0001]</span> The present invention relates generally to decentralized autonomous systems, blockchain-based governance, and digital identity. More particularly, the invention relates to systems and methods that bind voting power and resource allocation to verified unique human identity rather than capital concentration, and that mint value based on cryptographically attested real-world or digital utility.</p>
+      <h3>Description of related art</h3>
+      <p id="p-0002"><span class="num">[0002]</span> Traditional blockchain and token-based governance systems operate under a plutocratic model in which voting power is proportional to token holdings. This structure concentrates control among large capital holders and incentivizes speculative narrative over measurable human output. Existing quadratic voting mechanisms still permit capital to dominate through multiple wallets or Sybil identities. Proof-of-personhood systems have been proposed, yet few integrate personhood anchors with continuous utility scoring, attested presentations, and proportional yield distribution from a productive asset basket. There remains a need for a protocol that enforces one-person-one-vote via zero-knowledge personhood proofs, records utility exclusively through immutable presentations, computes provenance scores as continuous integrals of utility and consensus, and distributes treasury yield solely according to those scores while resisting collusion and identity transfer.</p>
+    </section>
+    <section id="summary" aria-labelledby="summary-heading">
+      <h2 id="summary-heading">Brief summary of the invention</h2>
+      <p id="p-0003"><span class="num">[0003]</span> The Sovereign Provenance Protocol provides a technical architecture in which individual human identity serves as the foundational anchor of voting voice and newly generated wealth is minted directly to actors through verifiable records of physical and digital utility.</p>
+      <p id="p-0004"><span class="num">[0004]</span> Every unique human life is bound to exactly one identity anchor within an on-chain sparse Merkle tree via Zero-Knowledge Proofs of Personhood. Capital concentration cannot purchase, split, or dilute governance control.</p>
+      <p id="p-0005"><span class="num">[0005]</span> Voting weight is calculated by Attested Quadratic Voting according to the formula V_total equals the sum of the square root of C_i multiplied by delta_i, where C_i is the directional contribution tokens allocated to a proposal and delta_i equals 1 only if a unique non-transferable human cryptographic anchor is present.</p>
+      <p id="p-0006"><span class="num">[0006]</span> Value is generated exclusively when human actions are transformed into Recorded Presentations, which are immutable cryptographic ledger entries documenting real-world or digital utility. A continuous Provenance Score is computed as the integral over an epoch of weighted utility and peer-consensus terms. Yield from a multi-asset Basket of Wealth is allocated to each authenticated actor in proportion to that actor's Provenance Score relative to the global sum. Anti-plutocracy guards enforce key rotation so that only the latest key signature under a biometric anchor is processed.</p>
+    </section>
+    <section id="drawings" aria-labelledby="drawings-heading">
+      <h2 id="drawings-heading">Brief description of the drawings</h2>
+      <p id="p-0007"><span class="num">[0007]</span> FIG. 1 is a high-level architectural diagram of the Sovereign Provenance Protocol showing the identity anchor tree, provenance engine, basket treasury, and edge telemetry ingestion path.</p>
+      <p id="p-0008"><span class="num">[0008]</span> FIG. 2 is a flowchart of the recorded presentation lifecycle from logging through escrow, optional challenge, finalization, and score accrual.</p>
+      <p id="p-0009"><span class="num">[0009]</span> FIG. 3 is a schematic of the attested quadratic voting calculation incorporating the unique-human binary indicator.</p>
+      <p id="p-0010"><span class="num">[0010]</span> Actual drawings are to be prepared by a draftsman or patent illustrator in compliance with 37 C.F.R. section 1.84.</p>
+    </section>
+    <section id="description" aria-labelledby="description-heading">
+      <h2 id="description-heading">Detailed description of the invention</h2>
+      <p id="p-0011"><span class="num">[0011]</span> The following detailed description is exemplary and explanatory only and is not restrictive of the invention. Embodiments may be implemented in hardware, software, firmware, or combinations thereof, and may operate on one or more blockchain networks, edge devices, and legal trust wrappers.</p>
+      <h3>Core identity anchor</h3>
+      <p id="p-0012"><span class="num">[0012]</span> Absolute Sybil resistance is achieved without compromising personal anonymity by binding each unique human to exactly one identity anchor stored in an on-chain sparse Merkle tree. Registration requires a valid zero-knowledge proof of personhood verified by a circuit employing Poseidon hashing and Merkle inclusion checks. The identity commitment is non-transferable. A citizen may rotate the associated voting key at any time; the protocol processes only the latest key signature submitted under that biometric anchor during a given epoch.</p>
+      <h3>Attested quadratic voting</h3>
+      <p id="p-0013"><span class="num">[0013]</span> Voting weight is decoupled from capital liquidity. The total voting weight for a proposal is the sum over contributors of the square root of each contributor's directional tokens multiplied by a binary delta that is 1 only when a verified unique human anchor exists.</p>
+      <h3>Provenance engine and recorded presentations</h3>
+      <p id="p-0014"><span class="num">[0014]</span> Value is generated exclusively when human actions are transformed into Recorded Presentations. Each presentation encapsulates a unique cryptographic signature of the contributor, structural metadata hashes including timestamp, geolocation, and hardware telemetry, and decentralized peer-validation scores. Every presentation enters an escrow epoch window. During this window any verified human may challenge validity by posting a slashing bond. Disputes are resolved by a zero-knowledge blinded peer jury selected via verifiable random functions that exclude jurors having social or economic graph overlap with the creator or challenger.</p>
+      <h3>Continuous provenance score and yield allocation</h3>
+      <p id="p-0015"><span class="num">[0015]</span> An individual's Provenance Score over an epoch is evaluated as the integral of weighted utility and consensus inputs. Upon finalization, a calculated score is added to the individual's cumulative score and to the global total. Yield generated by the multi-asset basket treasury is allocated directly to contributors in proportion to their individual scores relative to the global sum. The basket comprises weighted components of commodities, infrastructure, tokenized real-world assets, and intellectual property rights. Under high volatility the weight of stablecoin proxies is driven toward zero.</p>
+      <h3>Hardware telemetry and additional features</h3>
+      <p id="p-0016"><span class="num">[0016]</span> Raw edge payloads from solar arrays or utility hubs must match a strict schema before ingestion. Normalization maps convert physical measurements into abstract utility scores. Telemetry is signed inside silicon enclaves. Automated filters detect bot-like patterns and trigger Sybil audits that freeze scores until randomized zero-knowledge peer verification succeeds. Physical assets are wrapped via a decentralized purpose trust whose trustees must mirror on-chain outputs with zero discretion.</p>
+    </section>
+    <section id="claims" aria-labelledby="claims-heading">
+      <h2 id="claims-heading">Claims</h2>
+      <p>What is claimed is:</p>
+      <h3 id="claim-1">1.</h3>
+      <p>A computer-implemented method for identity-anchored governance and utility-based resource allocation in a decentralized network, comprising:</p>
+      <ol class="steps">
+        <li>registering, on a blockchain, a unique human identity anchor by verifying a zero-knowledge proof of personhood and storing the resulting identity commitment in a sparse Merkle tree such that each unique human is bound to exactly one non-transferable anchor;</li>
+        <li>receiving a recorded presentation comprising a cryptographic signature of a contributor, a content hash, metadata hashes, an objective utility value, and a peer consensus score;</li>
+        <li>holding the recorded presentation in an escrow epoch window during which any verified human identity anchor may challenge the presentation by posting a bond;</li>
+        <li>finalizing the presentation after expiration of the escrow window in the absence of an unresolved challenge by calculating a finalized score as a weighted combination of the objective utility value and the peer consensus score and adding the finalized score to an individual provenance score and a global provenance score;</li>
+        <li>allocating yield generated by a multi-asset basket treasury to the contributor in proportion to the contributor's individual provenance score relative to the global provenance score; and</li>
+        <li>computing voting weight for a proposal as the sum over contributors of the square root of each contributor's directional contribution tokens multiplied by a binary indicator that is non-zero only when the contributor possesses a verified unique human identity anchor.</li>
+      </ol>
+      <h3 id="claim-2">2.</h3>
+      <p>The method of claim 1, further comprising permitting a holder of an identity anchor to rotate an associated voting key at any time while processing only the latest key signature submitted under that identity anchor during a given epoch.</p>
+      <h3 id="claim-3">3.</h3>
+      <p>The method of claim 1, wherein the continuous provenance score is computed as the time integral over an epoch of a first coefficient times an objective utility function plus a second coefficient times a peer-consensus function.</p>
+      <h3 id="claim-4">4.</h3>
+      <p>The method of claim 1, further comprising detecting synchronized automated voting patterns and, in response, freezing the associated provenance score until a randomized zero-knowledge peer-to-peer verification challenge is successfully completed.</p>
+      <h3 id="claim-5">5.</h3>
+      <p>The method of claim 1, further comprising ingesting hardware telemetry payloads from edge devices that match a predefined schema and normalizing measured physical utility quantities into the objective utility value.</p>
+      <h3 id="claim-6">6.</h3>
+      <p>The method of claim 1, wherein the multi-asset basket treasury comprises weighted components of commodities, infrastructure, tokenized real-world assets, and intellectual property rights.</p>
+      <h3 id="claim-7">7.</h3>
+      <p>A system for implementing the method of claim 1, comprising a blockchain node executing a provenance engine smart contract that stores human anchors, a presentation registry, and provenance scores; a basket treasury smart contract that mints yield tokens proportional to unclaimed provenance scores; and one or more edge hardware devices configured to generate signed telemetry payloads.</p>
+      <h3 id="claim-8">8.</h3>
+      <p>The system of claim 7, further comprising a decentralized purpose trust whose trustees are contractually bound to hold physical assets and to execute only those actions that mirror computational outputs of the provenance engine smart contract.</p>
+    </section>
+  </article>
+  <p class="muted"><a href="/">Desk</a> · <a href="/disclosures">Disclosures</a> · Not an offer. Not an investment.</p>
+  <script src="/js/register-sw.js"></script>
+</body>
+</html>
