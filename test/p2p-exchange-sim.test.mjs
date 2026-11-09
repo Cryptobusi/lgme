@@ -1198,7 +1198,7 @@ test('real gifts are announced above the simulation and the two methods stay sep
   const desk = readFileSync(join(root, 'exchange.html'), 'utf8');
   assert.ok(desk.indexOf('give-banner') < desk.indexOf('id="beta-notice"'));
   assert.equal(desk.includes('lgme · BETA'), true);
-  assert.match(desk, /name="description" content="Beta\. Peer-to-peer exchange that settles real \$lgme from your own Solana wallet\./);
+  assert.match(desk, /name="description" content="Exchange\. Shared listings are a Hedera testnet catalog/);
   assert.match(desk, /This beta needs JavaScript/);
   assert.equal(desk.includes('This simulation needs JavaScript'), false);
   assert.equal(desk.includes('href="/how-it-works"'), true);
@@ -1782,7 +1782,8 @@ test('DC reference values stay pending when a series has no number', () => {
   assert.equal(page.includes('id="refList"'), true);
   assert.equal(/<script(?![^>]*\bsrc=)/i.test(page), false);
   const worker = readFileSync(join(root, 'sw.js'), 'utf8');
-  assert.equal(worker.includes('lgme-v66'), true);
+  assert.equal(worker.includes('lgme-v67'), true);
+  assert.equal(worker.includes('/js/public-listings.mjs'), true);
   assert.equal(ui.includes('named everyday member who can veto'), true);
   assert.equal(ui.includes('Public Ledger / Verified Receipt'), true);
   assert.equal(ui.includes('lgme.exchange.introSeen'), true);
