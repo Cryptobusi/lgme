@@ -30,7 +30,47 @@
 </nav>
 <p class="kicker">lgme · Examine</p>
 <h1>Examine</h1>
-<p>Papers we are reading. Newest first. A note here is a reading, not a claim that the desk already uses the method.</p>
+<p>Notes and papers we are reading. Newest first. A note here is a reading, not a claim that the desk already uses the method.</p>
+<article class="card">
+  <p class="kicker">Noted 9 November 2026 · Reference map: watch, not integrating</p>
+  <h2>Crypto neobank / card stack: the infrastructure layers</h2>
+  <p>Gleb Krivosheev described the infrastructure layers behind a crypto neobank and a crypto card stack. <a href="https://lnkd.in/p/e47FVXR9" rel="noopener noreferrer" target="_blank">Source: Gleb Krivosheev on LinkedIn</a></p>
+  <p>The post says there are eight layers. Seven were relayed. The eighth is not listed here. Names are plain text. This list is not a partnership, endorsement, or integration.</p>
+  <h3>Card issuing</h3>
+  <p>Rain, Wirex, Immersve, Monavate, Reap.</p>
+  <p>This layer mints the card a person can tap or type at a shop.</p>
+  <p><strong>Where lgme.app fits.</strong> It does not issue cards.</p>
+  <h3>Card Processing</h3>
+  <p>Lithic, Thredd, Paymentology, Marqeta, i2c Inc., SoFi Tech Solutions, Highnote, Episode Six.</p>
+  <p>This layer carries a card payment from the shop to the issuer.</p>
+  <p><strong>Where lgme.app fits.</strong> It does not process cards.</p>
+  <h3>Pay-ins and payouts</h3>
+  <p>BVNK, Conduit, Lightspark, Bridge, Zero Hash, Transak, Yellow Card, MoonPay.</p>
+  <p>This layer moves money in and out, between fiat and crypto.</p>
+  <p><strong>Where lgme.app fits.</strong> The desk is non-custodial. It holds no keys or seeds and sends no transactions. A member’s own wallet signs a real $lgme payment.</p>
+  <h3>Fiat accounts and rails</h3>
+  <p>OpenPayd, Banking Circle, Clear Junction, Nium.</p>
+  <p>This layer holds ordinary-money accounts and the bank rails under them.</p>
+  <p><strong>Where lgme.app fits.</strong> It holds no fiat account. Floor and subfloor pools are local reserves on the tape. They are a picture of a reserve, not a bank balance.</p>
+  <h3>Balances and ledger</h3>
+  <p>Formance, Modern Treasury. Onchain balances on chains like Solana and Plasma.</p>
+  <p>This layer is the book that says who has what.</p>
+  <p><strong>Where lgme.app fits.</strong> Its book is the tamper-evident tape: an IdidIt (verified receipt) and the daily Merkle root. It does not use Formance or Modern Treasury, and it does not post those balances on a chain. Public Hedera anchoring is coming. It is not written to Hedera today.</p>
+  <h3>Wallets and custody</h3>
+  <p>Fireblocks, DFNS, BitGo, Privy.</p>
+  <p>This layer stores keys for someone else, or builds the wallet those keys live in.</p>
+  <p><strong>Where lgme.app fits.</strong> It is non-custodial. It holds no keys or seeds and sends no transactions.</p>
+  <h3>Risk and compliance</h3>
+  <p>Sumsub, Sardine, Persona, Veriff, iDenfy, TRM Labs.</p>
+  <p>This layer checks identity and watches for abuse.</p>
+  <p><strong>Where lgme.app fits.</strong> The exchange flow already has a local KYC step and a 6-digit code. That is the check on the desk today. These firms are not wired in.</p>
+  <h3>Open questions</h3>
+  <ul>
+    <li>Which on-ramp or off-ramp would fit a deed-credit barter system that keeps no custody?</li>
+    <li>Is a card layer ever needed, or is merchant redemption inside the group enough?</li>
+    <li>Should the tape stay the only ledger, with an outside rail used only when a member chooses to settle in $lgme?</li>
+  </ul>
+</article>
 <article class="card">
   <p class="kicker">November 2026</p>
   <h2>Toward Deployable Hardware Roots of Trust for Edge AI: Software PUFs and Their Trade-offs</h2>
