@@ -1,6 +1,7 @@
 /**
- * Optional Classic / Sovereign App switch.
+ * Optional Classic / My Picture / Sovereign App / One-Tap Entry switch.
  * Default is Classic. A saved choice is applied before the page paints.
+ * One-Tap Entry reuses the /tap-entry page.
  */
 (function (root, factory) {
   var api = factory();
@@ -29,7 +30,8 @@
   var VIEWS = {
     classic: '/',
     picture: '/my-picture-classic',
-    app: '/my-picture'
+    app: '/my-picture',
+    tap: '/tap-entry'
   };
 
   function isApp(pathname) {
@@ -42,10 +44,16 @@
     return path === '/my-picture-classic' || path === '/my-picture-classic.html';
   }
 
+  function isTap(pathname) {
+    var path = pathOf(pathname);
+    return path === '/tap-entry' || path === '/tap-entry.html';
+  }
+
   function pageKind(pathname) {
     if (isHome(pathname)) return 'classic';
     if (isPicture(pathname)) return 'picture';
     if (isApp(pathname)) return 'app';
+    if (isTap(pathname)) return 'tap';
     return null;
   }
 
@@ -83,9 +91,17 @@
       location.replace(dest);
       return;
     }
+    function radiosOf(node) {
+      return node.querySelectorAll('[role="radio"][data-ui-view]');
+    }
+    function radioFrom(target) {
+      var node = target && target.closest ? target.closest('[data-ui-view]') : null;
+      if (!node || node.getAttribute('role') !== 'radio') return null;
+      return node;
+    }
     function sync() {
       var current = doc.documentElement.getAttribute('data-ui-view') || 'classic';
-      var nodes = doc.querySelectorAll('[data-ui-view]');
+      var nodes = radiosOf(doc);
       for (var i = 0; i < nodes.length; i++) {
         nodes[i].setAttribute('aria-checked', nodes[i].getAttribute('data-ui-view') === current ? 'true' : 'false');
       }
@@ -99,14 +115,14 @@
       if (go && typeof location.assign === 'function') location.assign(go);
     }
     doc.addEventListener('click', function (event) {
-      var target = event.target && event.target.closest ? event.target.closest('[data-ui-view]') : null;
+      var target = radioFrom(event.target);
       if (!target) return;
       event.preventDefault();
       choose(target.getAttribute('data-ui-view'));
     });
     doc.addEventListener('keydown', function (event) {
-      var target = event.target;
-      if (!target || !target.closest || !target.getAttribute || !target.getAttribute('data-ui-view')) return;
+      var target = radioFrom(event.target);
+      if (!target) return;
       var group = target.closest('[role="radiogroup"]');
       if (!group) return;
       if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft' && event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
@@ -130,6 +146,7 @@
     isHome: isHome,
     isApp: isApp,
     isPicture: isPicture,
+    isTap: isTap,
     pageKind: pageKind,
     normalizeView: normalizeView,
     readView: readView,

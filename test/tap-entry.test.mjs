@@ -307,7 +307,8 @@ test('the page is linked from the menus, the picture, the workflow, and the site
   assert.equal(text('manifest.json').includes('share_target'), false);
   assert.equal(text('vercel.json').includes('microphone=(self)'), true);
   assert.equal(text('vercel.json').includes('geolocation=(self)'), true);
-  for (const file of ['exchange.html', 'js/solana-pay.mjs', 'js/p2p-exchange-sim.mjs', 'campus.html', 'js/campus-page.mjs', 'mutual-credit.html', 'js/pages/mutual-credit-simulator.js', 'js/ui-view.js', 'clearing-engine.html', 'js/clearing-engine.mjs', 'js/workflow-map.mjs']) {
+  for (const file of ['exchange.html', 'js/solana-pay.mjs', 'js/p2p-exchange-sim.mjs', 'campus.html', 'js/campus-page.mjs', 'mutual-credit.html', 'js/pages/mutual-credit-simulator.js', 'clearing-engine.html', 'js/clearing-engine.mjs', 'js/workflow-map.mjs']) {
     assert.equal(text(file).includes('tap-entry'), false, file);
   }
+  assert.equal(text('js/ui-view.js').includes("tap: '/tap-entry'"), true);
 });

@@ -3,6 +3,8 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.15rem;
+  box-sizing: border-box;
+  max-width: 100%;
   min-height: 44px;
   margin: 0;
   padding: 0.15rem;
@@ -33,15 +35,24 @@
   font: inherit;
   font-size: 0.92rem;
   line-height: 1.2;
+  white-space: nowrap;
 }
 
 html[data-ui-view="classic"] .view-switch [data-ui-view="classic"],
 html:not([data-ui-view]) .view-switch [data-ui-view="classic"],
 html[data-ui-view="picture"] .view-switch [data-ui-view="picture"],
-html[data-ui-view="app"] .view-switch [data-ui-view="app"] {
+html[data-ui-view="app"] .view-switch [data-ui-view="app"],
+html[data-ui-view="tap"] .view-switch [data-ui-view="tap"] {
   background: #f4f1e8;
   color: #0c100c;
   font-weight: 700;
+}
+
+@media (max-width: 480px) {
+  .view-switch {
+    display: flex;
+    width: 100%;
+  }
 }
 
 .view-switch [data-ui-view]:focus-visible {
