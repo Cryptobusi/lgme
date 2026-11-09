@@ -1099,7 +1099,7 @@ function campusDeedPanel(peers, me, full) {
       unixSeconds: Math.floor(Date.now() / 1000)
     });
     if (!result.ok) { setStatus(result.error, 'bad'); return; }
-    setStatus('Deed logged. It becomes an IdidIt (verified receipt) when they attest. No coin. Not on Hedera.', 'ok');
+    setStatus('Deed logged. It becomes an IdidIt (verified receipt) when they attest. No coin. A campus credit is not $lgme and is not a public Hedera listing.', 'ok');
     await render();
   });
   const deeds = Object.values(full?.campusDeeds || {});
@@ -1108,7 +1108,7 @@ function campusDeedPanel(peers, me, full) {
     if (deed.status === 'pending' && deed.receiverId === me.id) {
       actions.push(h('button', { type: 'button', class: 'primary', onClick: async () => {
         const result = await sim.attestCampusDeed(store, me.id, deed.deedId, { passphrase: pass.value, code: code.value, unixSeconds: Math.floor(Date.now() / 1000) });
-        setStatus(result.ok ? 'IdidIt (verified receipt). 1 campus credit. Not $lgme. Not on Hedera.' : result.error, result.ok ? 'ok' : 'bad');
+        setStatus(result.ok ? 'IdidIt (verified receipt). 1 campus credit. Not $lgme, not cash, and not convertible to $lgme. Not a public Hedera listing.' : result.error, result.ok ? 'ok' : 'bad');
         if (result.ok) await render();
       } }, ['Attest']));
     }
@@ -1140,13 +1140,13 @@ function campusDeedPanel(peers, me, full) {
         code: code.value,
         unixSeconds: Math.floor(Date.now() / 1000)
       });
-      setStatus(result.ok ? '1 campus credit used once. Not $lgme.' : result.error, result.ok ? 'ok' : 'bad');
+      setStatus(result.ok ? '1 campus credit used once. Not $lgme and not convertible to $lgme.' : result.error, result.ok ? 'ok' : 'bad');
       if (result.ok) await render();
     } }, [`Redeem 1 credit · ${row.kind}`])
   ]));
   return h('section', { id: 'campus-deed' }, [
     h('h3', {}, ['Campus deed']),
-    h('p', { class: 'legend' }, [campusGroup() === 'campus' ? 'You are in the campus group. One verified deed is one campus credit. Not $lgme. Not on Hedera.' : 'Log a deed for the campus pilot. Join with the campus QR, or log here on this device.']),
+    h('p', { class: 'legend' }, [campusGroup() === 'campus' ? 'You are in the campus group. One verified deed is one campus credit. Not $lgme, not cash, and not convertible to $lgme. Not a public Hedera listing.' : 'Log a deed for the campus pilot. Join with the campus QR, or log here on this device. A campus credit stays on this pilot book.']),
     form,
     h('p', { class: 'legend' }, ['Redeem inside the pilot']),
     redeemOffer,

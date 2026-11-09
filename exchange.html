@@ -12,7 +12,7 @@
   <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
   <title>Exchange · lgme</title>
-  <meta name="description" content="Beta. Peer-to-peer exchange that settles real $lgme from your own Solana wallet. Separate books, countersigned agreements, third-seat refusal, and a floor that stays senior." />
+  <meta name="description" content="Exchange. Shared listings are a Hedera testnet catalog and are off until the server is configured. $lgme payments stay on your own Solana wallet. Campus credits are not $lgme." />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;1,6..72,500&display=swap" />
   <link rel="stylesheet" href="/menu.css" />
   <style>
@@ -203,7 +203,7 @@
       <p class="muted">The desk opens when the coin is full.</p>
     </div>
   </div>
-  <p class="sim-banner" id="beta-notice" role="note">Beta. Real $lgme on Solana, mint 7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump. Transfers are irreversible. Use at your own risk. Start small. This desk never asks for a seed phrase or a Solana private key. Your wallet signs each payment. Mainnet is the default. Devnet is a test mode.</p>
+  <p class="sim-banner" id="beta-notice" role="note">Two rails. A shared listing is a Hedera testnet message and public submission is off until this server has durable auth, an approved-user list, a database, and its own testnet topic. A $lgme payment is separate: real $lgme on Solana, mint 7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump, signed by your own wallet. Mainnet is the Solana payment default. Devnet is a Solana test mode. This desk never asks for a seed phrase. A campus credit is not $lgme and is not converted here.</p>
   <p class="coin-pin"><a href="/lgme-coin">$lgme on pump.fun</a></p>
   <div class="wrap">
     <nav class="deskmenu" aria-label="Desk">
@@ -216,7 +216,15 @@
     </nav>
     <p class="kicker">lgme · BETA <button type="button" id="deep-theory" data-deep-theory aria-pressed="false">Deep theory</button> <button type="button" id="install-app" data-install hidden>Install</button> <a class="quiet-link" href="#help">Help</a></p>
     <h1>Exchange</h1>
-    <p class="muted lede">Beta. List an item, sign an offer, and settle real $lgme from your own Solana wallet. Each person keeps their own book. A floor stays senior, and a refusal moves nothing.</p>
+    <p class="muted lede">The shared catalog is Hedera testnet. The List tab still keeps a private book on this device and does not upload it. A $lgme payment, when you agree to one, is your Solana wallet. A campus credit is a pilot service credit, not cash and not $lgme. A floor stays senior, and a refusal moves nothing.</p>
+    <section id="public-catalog" class="panel" aria-labelledby="public-catalog-heading">
+      <p class="kicker">Hedera testnet</p>
+      <h2 id="public-catalog-heading">Shared listings</h2>
+      <p id="public-catalog-status" class="muted" role="status">No testnet topic is configured. The shared catalog is empty. Public submission is off.</p>
+      <div id="public-catalog-list"></div>
+      <div id="public-catalog-form"></div>
+      <div id="public-catalog-examples"></div>
+    </section>
     <div id="seatbar" class="seatbar" aria-label="Peers"></div>
     <div class="tabs" role="tablist" aria-label="Desk sections">
       <button type="button" id="tab-market" role="tab">Market</button>
@@ -254,7 +262,8 @@
     <button type="button" data-tab="wallet">Wallet</button>
   </nav>
   <div id="toast" role="status" aria-live="polite" hidden></div>
-  <p class="sim-banner" role="note">Beta. Floor stays senior. A refusal is recorded and carries no penalty. Agreed payments settle in real $lgme from your own wallet. This page never asks for a seed phrase. The local tape records the transaction signature. It does not write to Hedera.</p>
+  <p class="sim-banner" role="note">Floor stays senior. A refusal is recorded and carries no penalty. Agreed $lgme payments settle from your own Solana wallet. The local book is not uploaded. A public listing is a separate Hedera testnet message, and that submission is off until the server is configured.</p>
+  <script type="module" src="/js/public-catalog-desk.mjs"></script>
   <script type="module" src="/js/plain-view.mjs"></script>
   <script type="module" src="/js/install-launch.mjs"></script>
   <script src="/js/vendor/qrcode.js"></script>
