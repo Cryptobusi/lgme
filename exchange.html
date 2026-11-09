@@ -12,7 +12,7 @@
   <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
   <title>Exchange · lgme</title>
-  <meta name="description" content="Beta. Peer-to-peer exchange that settles real $lgme from your own Solana wallet. Separate books, countersigned agreements, third-seat refusal, and a floor that stays senior." />
+  <meta name="description" content="Hedera testnet exchange. Public submissions are off until the server is configured. Local books, countersigned agreements, third-seat refusal, and a floor that stays senior." />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;1,6..72,500&display=swap" />
   <link rel="stylesheet" href="/menu.css" />
   <style>
@@ -203,8 +203,7 @@
       <p class="muted">The desk opens when the coin is full.</p>
     </div>
   </div>
-  <p class="sim-banner" id="beta-notice" role="note">Beta. Real $lgme on Solana, mint 7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump. Transfers are irreversible. Use at your own risk. Start small. This desk never asks for a seed phrase or a Solana private key. Your wallet signs each payment. Mainnet is the default. Devnet is a test mode.</p>
-  <p class="coin-pin"><a href="/lgme-coin">$lgme on pump.fun</a></p>
+  <p class="sim-banner" id="beta-notice" role="note">Hedera testnet only. Public submissions are off. This desk does not connect a wallet, move funds, buy tokens, or sign a transaction. Mainnet is not available. A saved title stays on this device.</p>
   <div class="wrap">
     <nav class="deskmenu" aria-label="Desk">
       <a href="/">Desk</a>
@@ -216,7 +215,16 @@
     </nav>
     <p class="kicker">lgme · BETA <button type="button" id="deep-theory" data-deep-theory aria-pressed="false">Deep theory</button> <button type="button" id="install-app" data-install hidden>Install</button> <a class="quiet-link" href="#help">Help</a></p>
     <h1>Exchange</h1>
-    <p class="muted lede">Beta. List an item, sign an offer, and settle real $lgme from your own Solana wallet. Each person keeps their own book. A floor stays senior, and a refusal moves nothing.</p>
+    <p class="muted lede">Hedera testnet. List on the local book, keep a public title on this device, and read a configured topic when one is set. Each person keeps their own book. A floor stays senior, and a refusal moves nothing. Nothing here is submitted unless a server operator turns public submissions on.</p>
+    <section id="hedera-desk" class="panel" aria-labelledby="hedera-heading">
+      <p class="kicker">Hedera testnet</p>
+      <h2 id="hedera-heading">Public submissions are off</h2>
+      <p>This exchange faces Hedera testnet. It does not use a Solana wallet. A local passkey unlocks the book on this device and is not a server session. Submissions stay off until durable authentication, an administrator-approved user list, a database, and a testnet topic are configured. They are not configured on this host.</p>
+      <p id="hedera-status" class="muted" role="status">No testnet topic is configured in this page. Public submissions are off. Read-only history stays empty until a server reports a testnet topic.</p>
+      <div id="hedera-history"></div>
+      <div id="hedera-proposals"></div>
+      <div id="hedera-examples"></div>
+    </section>
     <div id="seatbar" class="seatbar" aria-label="Peers"></div>
     <div class="tabs" role="tablist" aria-label="Desk sections">
       <button type="button" id="tab-market" role="tab">Market</button>
@@ -224,7 +232,7 @@
       <button type="button" id="tab-circles" role="tab">Circles</button>
       <button type="button" id="tab-list" role="tab">List</button>
       <button type="button" id="tab-chats" role="tab">Chats</button>
-      <button type="button" id="tab-wallet" role="tab">Wallet</button>
+      <button type="button" id="tab-wallet" role="tab">Book</button>
       <button type="button" id="tab-help" role="tab">Help</button>
     </div>
     <p id="status" role="status" aria-live="polite"></p>
@@ -240,10 +248,10 @@
       </article>
       <article class="card">
         <h3>Tape · public ledger</h3>
-        <p class="muted">An immutable proof of completed work everyone can inspect. Each book is append-only and hash-linked with SHA-256. Export the tape and verify it. If a copy is edited, verification fails.</p>
+        <p class="muted">An append-only local book, hash-linked with SHA-256. Export it and verify it. A local line is not a Hedera confirmation. A configured testnet topic, when one is set, is a separate public history.</p>
       </article>
     </div>
-    <noscript><p>This beta needs JavaScript in the browser. Settlement uses your own Solana wallet. This page does not hold a seed phrase.</p></noscript>
+    <noscript><p>This page needs JavaScript to show the local book. Public Hedera submissions stay off. This page does not ask for a key.</p></noscript>
   </div>
   <nav class="tabbar" aria-label="Phone">
     <button type="button" data-tab="market">Market</button>
@@ -251,11 +259,12 @@
     <button type="button" data-tab="circles">Circles</button>
     <button type="button" data-tab="list" aria-label="List an item"><span class="plus">+</span>List</button>
     <button type="button" data-tab="chats">Chats</button>
-    <button type="button" data-tab="wallet">Wallet</button>
+    <button type="button" data-tab="wallet">Book</button>
   </nav>
   <div id="toast" role="status" aria-live="polite" hidden></div>
-  <p class="sim-banner" role="note">Beta. Floor stays senior. A refusal is recorded and carries no penalty. Agreed payments settle in real $lgme from your own wallet. This page never asks for a seed phrase. The local tape records the transaction signature. It does not write to Hedera.</p>
+  <p class="sim-banner" role="note">Hedera testnet. Floor stays senior. A refusal is recorded and carries no penalty. Public submissions are off. This page does not sign a transaction.</p>
   <script type="module" src="/js/plain-view.mjs"></script>
+  <script type="module" src="/js/hedera-desk.mjs"></script>
   <script type="module" src="/js/install-launch.mjs"></script>
   <script src="/js/vendor/qrcode.js"></script>
   <script src="/js/vendor/jsQR.js"></script>

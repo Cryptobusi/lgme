@@ -3,8 +3,7 @@ import { ARTICLES } from './p2p-resources.mjs';
 import { buildLinks, capPicks, customSite, detectLocalAi, dueRequests, matchCriteria, presetsFor, SOURCE_KEY, SOURCE_SITES, suggestSites } from './sourcing.mjs';
 import { PASSKEY_WORDING, createIndexedDbVault, deviceKeyForMigration, importNonExtractable, openJson, passkeyCreationOptions, sealJson } from './p2p-sim-guard.mjs';
 import { REFERENCE_LABEL, optionLabel, referenceLine } from './dc-reference.mjs';
-import { DONATION_ADDRESS, MINT, buildTransferRequest, createReference, findReferencePayment, isValidPublicKey, readTokenBalance } from './solana-pay.mjs';
-import { fetchLgmePrice as quoteLgme } from './lgme-price.mjs';
+import { labelLocalChainRecord } from './hedera-exchange.mjs';
 
 const sessionKeys = new Map();
 const sessionCrypto = new Map();
@@ -158,284 +157,6 @@ function peerOptions(peers, selected, placeholder) {
   return nodes;
 }
 
-const CLUSTER_KEY = 'lgme-beta:cluster';
-
-function solanaCluster() {
-  return localStorage.getItem(CLUSTER_KEY) === 'devnet' ? 'devnet' : 'mainnet-beta';
-}
-
-function showSolanaPay(spec) {
-  document.getElementById('solana-pay')?.remove();
-  const overlay = h('div', { id: 'solana-pay', class: 'walk', role: 'dialog' });
-  const recipient = h('input', { value: spec.recipient || '' });
-  if (spec.donation) recipient.readOnly = true;
-  const usd = h('input', { value: String(spec.amount || '') });
-  usd.readOnly = true;
-  const cluster = h('select', {}, [
-    option('mainnet-beta', 'Mainnet', solanaCluster() === 'mainnet-beta'),
-    option('devnet', 'Devnet test mode', solanaCluster() === 'devnet')
-  ]);
-  const preview = h('p', { class: 'legend', id: 'solana-request' }, ['Fetching the US$ price.']);
-  const countdown = h('p', { id: 'quote-countdown' }, ['Price lock 15s']);
-  const clampNote = h('p', { id: 'clamp-note' }, ['']);
-  const link = h('a', { id: 'solana-link', href: '#', target: '_blank', rel: 'noopener noreferrer' }, ['Open in your wallet']);
-  link.hidden = true;
-  const chain = h('a', { id: 'solana-chain', href: '#', target: '_blank', rel: 'noopener noreferrer' }, ['View on Solscan']);
-  chain.hidden = true;
-  const qrHost = h('div', { id: 'solana-qr' });
-  const altHost = h('div', { id: 'coin-alternatives' });
-  let reference = '';
-  let lock = null;
-  let timer = 0;
-  let lgmeAmount = 0;
-  function stopClock() {
-    if (timer) clearInterval(timer);
-    timer = 0;
-  }
-  function paint() {
-    if (!lock) return;
-    preview.textContent = `US$ ${lock.usdAmount} · ${lock.lgmeAmount} $lgme · ${lock.priceSource} · ${lock.price} US$ per $lgme.`;
-    const parts = [sim.PEG_NOTE];
-    if (lock.history === 'history unavailable') parts.push('history unavailable');
-    if (lock.clamped) parts.push(`Raw price ${lock.rawPrice}. Locked price ${lock.price}. Bands ${(lock.bounded || []).join(', ')}.`);
-    clampNote.textContent = parts.join(' ');
-  }
-  function arm() {
-    stopClock();
-    const end = new Date(lock.expiresAt).getTime();
-    const tick = async () => {
-      const left = Math.max(0, end - Date.now());
-      countdown.textContent = left > 0 ? `Price lock ${Math.ceil(left / 1000)}s` : 'The 15 second lock expired. Quoting again.';
-      if (left > 0) return;
-      stopClock();
-      link.hidden = true;
-      const previous = lock?.price;
-      lock = null;
-      lgmeAmount = 0;
-      await pull(previous);
-    };
-    timer = setInterval(tick, 250);
-    tick();
-  }
-  async function pull(previousPrice) {
-    const priced = await quoteLgme();
-    if (!priced.ok) { showBlocked(priced.error); return; }
-    const opened = await sim.openQuote(store, spec.seat, {
-      usdAmount: usd.value,
-      price: priced.price,
-      priceSource: priced.source,
-      previousPrice: previousPrice || '',
-      band: paymentMethods.peg?.band,
-      rules: paymentMethods.peg,
-      candles: priced.candles || [],
-      history: priced.history || 'history unavailable',
-      invoiceId: spec.invoiceId || '',
-      otherId: spec.otherId || '',
-      purpose: spec.purpose || 'settlement',
-      navigator
-    });
-    if (!opened.ok) { showBlocked(opened.error); return; }
-    lock = opened.lock;
-    altHost.replaceChildren();
-    paint();
-    arm();
-  }
-  async function proposeAlt(choice, months) {
-    const result = await sim.proposeAltSettlement(store, spec.seat, {
-      choice,
-      months,
-      usdAmount: usd.value,
-      invoiceId: spec.invoiceId || '',
-      otherId: spec.otherId || '',
-      navigator
-    });
-    preview.textContent = result.ok
-      ? 'Your consent is signed. The other party still has to consent. Coin settlement stays closed.'
-      : result.error;
-  }
-  function showBlocked(message) {
-    stopClock();
-    link.hidden = true;
-    lock = null;
-    preview.textContent = message || sim.NO_COIN;
-    countdown.textContent = sim.NO_COIN;
-    if (altHost.childElementCount) return;
-    const months = h('select', {}, [3, 4, 5, 6].map((n) => option(String(n), `${n} month terms`, n === 3)));
-    altHost.append(
-      h('p', {}, ['Pay in terms is 3 to 6 month installments. Barter is an IprovIT service of the same US$ value. Both parties consent.']),
-      field('Term length', months),
-      h('div', { class: 'actions' }, [
-        h('button', { type: 'button', id: 'pay-terms', onClick: () => proposeAlt('terms', months.value) }, ['Pay in terms']),
-        h('button', { type: 'button', id: 'pay-barter', onClick: () => proposeAlt('barter') }, ['Barter'])
-      ])
-    );
-  }
-  overlay.append(h('article', { class: 'card' }, [
-    h('h2', {}, ['Confirm $lgme payment']),
-    h('p', {}, ['Beta. Real tokens. Irreversible. Start small. This page does not hold a Solana key.']),
-    h('p', { id: 'peg-label' }, [sim.PEG_LABEL]),
-    h('p', { id: 'peg-note' }, [sim.PEG_NOTE]),
-    h('p', { class: 'legend' }, [`Mint ${MINT}`]),
-    field('Amount in US$', usd),
-    field(spec.donation ? 'Floor wallet @EgonAnon' : 'Payee Solana address', recipient),
-    field('Network', cluster),
-    preview,
-    countdown,
-    clampNote,
-    chain,
-    qrHost,
-    altHost,
-    h('div', { class: 'actions' }, [
-      h('button', { type: 'button', onClick: async () => {
-        const provider = globalThis.phantom?.solana || globalThis.solflare || (globalThis.solana?.isPhantom ? globalThis.solana : null);
-        if (!provider?.connect) { preview.textContent = 'Install Phantom or Solflare, or paste the public address. No seed phrase is used.'; return; }
-        try {
-          const connected = await withDeadline(provider.connect(), 15000, 'The wallet did not answer.');
-          if (!connected.ok) { preview.textContent = 'The wallet was not connected.'; return; }
-          const key = connected.value?.publicKey?.toString?.() || provider.publicKey?.toString?.() || '';
-          if (!isValidPublicKey(key)) { preview.textContent = 'The wallet did not share a public address.'; return; }
-          if (!spec.donation) recipient.value = key;
-        } catch { preview.textContent = 'The wallet was not connected.'; }
-      } }, ['Use this wallet']),
-      h('button', { type: 'button', id: 'see-amount', onClick: async () => {
-        if (!lock) { countdown.textContent = 'Wait for the price.'; return; }
-        const seen = await sim.acknowledgeQuote(store, spec.seat, { lockId: lock.lockId, navigator });
-        if (!seen.ok) {
-          if (seen.requote) { await pull(lock.price); return; }
-          countdown.textContent = seen.error;
-          return;
-        }
-        countdown.textContent = 'You see this amount. The other party sees it on their seat before the wallet request.';
-      } }, ['I see this amount']),
-      h('button', { type: 'button', class: 'primary', id: 'solana-confirm', onClick: async () => {
-        if (!lock) { countdown.textContent = 'Wait for the price.'; return; }
-        localStorage.setItem(CLUSTER_KEY, cluster.value);
-        const issued = await sim.issueSolanaRequest(store, spec.seat, { lockId: lock.lockId, navigator });
-        if (!issued.ok) {
-          if (issued.requote) {
-            countdown.textContent = issued.error;
-            const previous = lock.price;
-            lock = null;
-            link.hidden = true;
-            await pull(previous);
-            return;
-          }
-          countdown.textContent = issued.error;
-          return;
-        }
-        reference = createReference();
-        lgmeAmount = issued.lgmeAmount;
-        const built = buildTransferRequest({
-          recipient: recipient.value.trim(),
-          amount: issued.lgmeAmount,
-          reference,
-          mint: MINT,
-          label: 'lgme beta',
-          message: `US$ ${issued.usdAmount}`
-        });
-        if (!built.ok) { preview.textContent = built.error; return; }
-        preview.textContent = `US$ ${issued.usdAmount} is ${issued.lgmeAmount} $lgme. Your wallet signs it. Nothing is sent until then.`;
-        link.href = built.url;
-        link.hidden = false;
-        qrHost.replaceChildren();
-        if (globalThis.QRCode) new globalThis.QRCode(qrHost, { text: built.url, width: 180, height: 180 });
-      } }, ['Open in wallet']),
-      h('button', { type: 'button', id: 'solana-check', onClick: async (event) => {
-        if (!reference || !lock) { preview.textContent = 'Open the wallet request first.'; return; }
-        const button = event.currentTarget;
-        if (button.disabled) return;
-        button.disabled = true;
-        let found;
-        try {
-          found = await findReferencePayment(cluster.value, reference, { mint: MINT, recipient: recipient.value.trim(), amount: lgmeAmount });
-        } finally {
-          button.disabled = false;
-        }
-        if (!found.ok) { preview.textContent = found.error; return; }
-        const recorded = spec.purpose === 'rebate'
-          ? await sim.recordFloorRebate(store, spec.seat, {
-            signature: found.signature,
-            reference,
-            invoiceId: spec.invoiceId,
-            amount: lgmeAmount,
-            lockId: lock.lockId,
-            navigator
-          })
-          : await sim.recordSolanaTx(store, spec.seat, {
-            signature: found.signature,
-            reference,
-            mint: MINT,
-            amount: lgmeAmount,
-            recipient: recipient.value.trim(),
-            invoiceId: spec.invoiceId,
-            otherId: spec.otherId,
-            lockId: lock.lockId,
-            purpose: spec.purpose || 'settlement',
-            cluster: cluster.value,
-            navigator
-          });
-        if (!recorded.ok) { preview.textContent = recorded.error; return; }
-        chain.href = solscanHref(found.signature, cluster.value);
-        chain.hidden = false;
-        preview.textContent = spec.purpose === 'rebate'
-          ? 'Floor rebate is on both tapes. Beta.'
-          : 'Pending attestation. The payee still has to sign on their own seat. No invoice is paid yet.';
-        setStatus(preview.textContent, 'ok');
-        if (spec.purpose !== 'rebate') {
-          const carried = await sim.sealSolanaHandoff(store, spec.seat, found.signature);
-          if (carried.ok) {
-            carryCode = carried.encoded;
-            carryAddress = '';
-          }
-        }
-        render();
-      } }, ['Check payment']),
-      link,
-      h('button', { type: 'button', onClick: async () => {
-        const owner = recipient.value.trim();
-        const balance = await readTokenBalance(cluster.value, owner);
-        preview.textContent = balance.ok ? `Read-only wallet balance: ${balance.amount} $lgme on ${cluster.value}.` : balance.error;
-      } }, ['Read wallet balance']),
-      h('button', { type: 'button', onClick: () => { stopClock(); overlay.remove(); } }, ['Close'])
-    ])
-  ]));
-  document.body.append(overlay);
-  pull();
-}
-
-function solscanHref(signature, cluster) {
-  const base = `https://solscan.io/tx/${encodeURIComponent(signature)}`;
-  return cluster === 'devnet' ? `${base}?cluster=devnet` : base;
-}
-
-async function attestPayment(seat, sample) {
-  const found = await findReferencePayment(sample.cluster || solanaCluster(), sample.reference, {
-    mint: MINT,
-    recipient: sample.recipient,
-    amount: sample.amount
-  });
-  if (!found.ok) { setStatus(found.error, 'bad'); return; }
-  if (found.signature !== sample.signature) { setStatus('The finalized signature does not match this payment.', 'bad'); return; }
-  const result = await sim.attestSolanaTx(store, seat, {
-    ...sample,
-    signature: found.signature,
-    mint: MINT,
-    navigator
-  });
-  if (!result.ok) { setStatus(result.error, 'bad'); return; }
-  if (result.encoded) carryCode = result.encoded;
-  setStatus(result.status === 'settled'
-    ? 'Both parties signed. The invoice is paid. The Solana signature is final. Beta.'
-    : 'Your attestation is signed. The other tape is final when that seat imports it. Beta.', result.status === 'settled' ? 'ok' : 'ok');
-  await render();
-}
-
-async function refusePayment(seat, sample) {
-  const result = await sim.refuseSolanaTx(store, seat, sample, 'REFUSAL');
-  setStatus(result.ok ? 'Refusal recorded. No penalty. The invoice is not paid. Beta.' : result.error, result.ok ? 'ok' : 'bad');
-  if (result.ok) await render();
-}
-
 async function solanaCards(seat) {
   const ids = await store.listIds();
   const full = [];
@@ -450,46 +171,21 @@ async function solanaCards(seat) {
       const signature = entry.payload?.signature;
       if (!signature) continue;
       const rows = grouped.get(signature) || [];
-      rows.push(entry.payload);
+      rows.push(entry);
       grouped.set(signature, rows);
     }
-    if (peer.id !== seat) continue;
-    for (const body of Object.values(peer.solanaPending || {})) {
-      if (!body?.signature) continue;
-      const rows = grouped.get(body.signature) || [];
-      rows.push(body);
-      grouped.set(body.signature, rows);
-    }
   }
-  const mine = full.find((peer) => peer.id === seat);
   const cards = [];
   for (const [signature, rows] of grouped) {
-    const sample = rows.find((row) => row.role === 'payer') || rows[0];
+    const entry = rows[0];
+    const sample = entry.payload || {};
     if (sample.payerId !== seat && sample.payeeId !== seat) continue;
     const status = sim.solanaStatus(full, signature);
-    const signedHere = (mine?.tape || []).some((entry) => entry.type === 'SOLANA_TX' && entry.payload?.signature === signature);
-    const actions = [h('a', { href: solscanHref(signature, sample.cluster), target: '_blank', rel: 'noopener noreferrer' }, ['View on Solscan'])];
-    if (sample.payeeId === seat && !signedHere && status === 'pending-attestation') {
-      actions.push(h('button', { type: 'button', class: 'primary', id: 'solana-attest', onClick: () => attestPayment(seat, sample) }, ['Attest']));
-      actions.push(h('button', { type: 'button', id: 'solana-refuse', onClick: () => refusePayment(seat, sample) }, ['Refuse']));
-    }
-    if (sample.payerId === seat && status === 'pending-attestation') {
-      actions.push(h('button', { type: 'button', onClick: async () => {
-        const carried = await sim.sealSolanaHandoff(store, seat, signature);
-        if (!carried.ok) { setStatus(carried.error, 'bad'); return; }
-        carryCode = carried.encoded;
-        location.hash = 'devices';
-      } }, ['Carry attestation']));
-    }
-    const sentence = status === 'settled'
-      ? 'Both parties signed. The invoice is paid.'
-      : status === 'refused'
-        ? 'Refusal recorded. No penalty. The invoice is not paid.'
-        : 'Pending attestation. Each party signs on their own seat.';
+    const label = labelLocalChainRecord(entry);
     cards.push(h('article', { class: 'card', id: 'solana-payment' }, [
-      h('h3', {}, [`$lgme ${status}`]),
-      h('p', {}, [`${sample.amount} $lgme to ${sample.recipient}. ${sentence}`]),
-      h('div', { class: 'actions' }, actions)
+      h('h3', {}, [`Local Solana record · ${status}`]),
+      h('p', {}, [label.text]),
+      h('p', { class: 'legend' }, [`Signature ${String(signature).slice(0, 12)}. This line stays on the local book. It is not a Hedera confirmation, and this exchange does not submit it.`])
     ]));
   }
   return cards;
@@ -603,45 +299,10 @@ async function floorRebateSection(seat) {
   for (const row of dues) {
     if (!row?.invoiceId || seen.has(row.invoiceId) || paid.has(row.invoiceId)) continue;
     seen.add(row.invoiceId);
-    const wallet = h('input', { value: row.payerWallet || '', maxlength: '64', placeholder: 'Payer Solana address' });
-    const preview = h('p', { class: 'legend' }, [sim.FLOOR_REBATE_LABEL]);
     cards.push(h('article', { class: 'card', id: 'floor-rebate-due' }, [
       h('h3', {}, [`Rebate due US$ ${row.usdAmount || row.amount}`]),
       h('p', {}, [sim.FLOOR_REBATE_LABEL]),
-      h('p', { class: 'legend' }, ['From @EgonAnon 6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY. This desk holds no floor key.']),
-      field('Payer address', wallet),
-      preview,
-      h('div', { class: 'actions' }, [
-        h('button', { type: 'button', onClick: async () => {
-          const priced = await quoteLgme();
-          const balance = await readTokenBalance(solanaCluster(), DONATION_ADDRESS);
-          if (!balance.ok) { preview.textContent = balance.error; return; }
-          const review = await sim.reviewFloorRebate(store, seat, {
-            invoiceId: row.invoiceId,
-            balance: balance.amount,
-            price: priced.ok ? priced.price : 0,
-            payerWallet: wallet.value.trim(),
-            navigator
-          });
-          if (!review.ok) { preview.textContent = review.error; return; }
-          if (review.status === 'deferred') {
-            preview.textContent = 'Deferred. The floor reserve stays in place. No penalty.';
-            render();
-            return;
-          }
-          if (!priced.ok) { preview.textContent = priced.error; return; }
-          if (!isValidPublicKey(wallet.value.trim())) { preview.textContent = 'Enter the payer Solana address.'; return; }
-          preview.textContent = `Floor balance ${balance.amount} $lgme. Rebate US$ ${review.amount}. ${sim.PEG_NOTE}`;
-          showSolanaPay({
-            seat,
-            amount: review.amount,
-            invoiceId: row.invoiceId,
-            otherId: row.payerId,
-            recipient: wallet.value.trim(),
-            purpose: 'rebate'
-          });
-        } }, ['Read floor balance'])
-      ])
+      h('p', { class: 'legend' }, ['This is a local book line. The exchange does not pay it from a wallet and does not submit it to Hedera.'])
     ]));
   }
   return [
@@ -930,14 +591,14 @@ function renderAddPeer(peers) {
   });
   panel.replaceChildren(
     h('h2', {}, ['Register']),
-    h('p', { class: 'muted' }, ['A new peer receives a local grant of 100 on this book. It is written as a GENESIS line. It is not Solana $lgme. The book key is then encrypted with the passphrase.']),
+    h('p', { class: 'muted' }, ['A new peer receives a local grant of 100 on this book. It is written as a GENESIS line. It is not a Hedera message. The book key is then encrypted with the passphrase.']),
     form
   );
 }
 
 async function resetDemo() {
   if (busy) return;
-  if (!confirm('Reset? This clears the local books on this device. It does not move Solana $lgme.')) return;
+  if (!confirm('Reset? This clears the local books on this device. It does not submit to Hedera or move a wallet.')) return;
   busy = true;
   try {
     await sim.resetAndSeed(store);
@@ -1639,24 +1300,8 @@ async function renderBooks(peers, seat) {
       actions.push(h('button', { type: 'button', id: 'loyalty-decline', onClick: () => consentInvoiceLoyalty(seat, row, true) }, ['Decline discount']));
     }
     if (row.role === 'AP' && row.remaining > 0 && row.status !== 'refused') {
-      actions.push(h('button', { type: 'button', class: 'primary', id: 'pay-solana', onClick: () => showSolanaPay({
-        seat,
-        amount: payAmount.value || row.remaining,
-        invoiceId: row.invoiceId,
-        otherId: row.workerId,
-        recipient: '',
-        donation: false
-      }) }, ['Settle in $lgme']));
       actions.push(h('button', { type: 'button', id: 'loyalty-agree', onClick: () => consentInvoiceLoyalty(seat, row, false) }, ['Agree loyalty discount']));
       actions.push(h('button', { type: 'button', id: 'loyalty-decline', onClick: () => consentInvoiceLoyalty(seat, row, true) }, ['Decline discount']));
-      actions.push(h('button', { type: 'button', onClick: () => showSolanaPay({
-        seat,
-        amount: payAmount.value || row.remaining,
-        invoiceId: row.invoiceId,
-        otherId: '',
-        recipient: DONATION_ADDRESS,
-        donation: true
-      }) }, ['Pay donation in $lgme']));
       actions.push(h('button', { type: 'button', id: 'pay-zelle', onClick: () => showOffchainPay({
         seat, method: 'zelle', amount: payAmount.value || row.remaining, invoiceId: row.invoiceId, otherId: row.workerId
       }) }, ['Pay with Zelle']));
@@ -1679,7 +1324,7 @@ async function renderBooks(peers, seat) {
       h('p', { class: 'muted' }, [`Paid ${row.paid}. Remaining ${row.remaining}. Bucket ${row.bucket}. Due ${String(row.dueAt).slice(0, 10)}. Phone ${row.payerPhone}. Hash ${String(row.payerKycHash || '').slice(0, 12)}.`]),
       h('p', { class: 'legend' }, [`Day root ${dayRoot.slice(0, 16)}. Not written to Hedera.`]),
       row.thanks ? h('p', { class: 'legend' }, [row.thanks]) : null,
-      row.role === 'AP' && row.remaining > 0 ? h('div', {}, [field('Amount', payAmount), field('Passphrase', pass), field('6-digit code', code), field('Refusal note', note), field('Solana address for a floor rebate', h('input', { id: `rebate-wallet-${row.invoiceId}`, maxlength: '64', placeholder: 'Your address, not a seed phrase' }))]) : null,
+      row.role === 'AP' && row.remaining > 0 ? h('div', {}, [field('Amount', payAmount), field('Passphrase', pass), field('6-digit code', code), field('Refusal note', note)]) : null,
       h('div', { class: 'actions' }, actions)
     ]);
   });
@@ -1706,9 +1351,10 @@ async function renderBooks(peers, seat) {
     ]),
     h('section', { id: 'offers' }, offerCards(peer, seat)),
     h('section', { id: 'solana-payments' }, [
-      h('h3', {}, ['Solana attestation']),
+      h('h3', {}, ['Local Solana records']),
+      h('p', { class: 'legend' }, ['Older Solana lines stay on this book. They are not Hedera confirmations, and this exchange cannot submit a new Solana payment.']),
       ...solana,
-      solana.length ? null : h('p', { class: 'empty' }, ['No Solana payment is waiting on this seat.'])
+      solana.length ? null : h('p', { class: 'empty' }, ['No local Solana record is on this seat.'])
     ]),
     h('section', { id: 'offchain-payments' }, [
       h('h3', {}, ['Cash and Zelle']),
@@ -1933,8 +1579,8 @@ async function renderWallet(peers, seat) {
     activeCodeTimer = window.setInterval(paintCode, 1000);
   }
   const blocks = [
-    h('h2', {}, [`Wallet · ${summary.name} `, h('span', { class: sim.kycStatus(peer) === 'VERIFIED' ? 'badge badge-verified' : 'badge badge-unverified' }, [sim.kycStatus(peer) === 'VERIFIED' ? 'Verified' : 'Unverified'])]),
-    h('p', { class: 'muted' }, ['Beta. The book key is local. The passphrase and the 6-digit code unlock that book. They are not a Solana seed. A $lgme payment is signed by your wallet.']),
+    h('h2', {}, [`Book · ${summary.name} `, h('span', { class: sim.kycStatus(peer) === 'VERIFIED' ? 'badge badge-verified' : 'badge badge-unverified' }, [sim.kycStatus(peer) === 'VERIFIED' ? 'Verified' : 'Unverified'])]),
+    h('p', { class: 'muted' }, ['The book key is local. The passphrase and the 6-digit code unlock that book. They are not a Hedera key and not a Solana wallet. This page does not sign a transaction.']),
     h('div', { class: 'balance-hero' }, [
       coinMark(),
       h('div', {}, [h('strong', {}, [String(sim.replay(peer).balance)]), 'Book balance']),
@@ -1976,12 +1622,12 @@ async function renderWallet(peers, seat) {
       if (!opened.ok) { setStatus(opened.error, 'bad'); return; }
       sessionKeys.set(seat, opened.privateKeyJwk);
       rememberedSecrets.set(seat, opened.secretBase32);
-      setStatus('Wallet unlocked for this page session. The key stays encrypted in storage. Beta.', 'ok');
+      setStatus('Book unlocked for this page session. The key stays encrypted in storage.', 'ok');
       await render();
     });
     blocks.push(h('p', { class: 'legend' }, ['Unlock asks for the passphrase and the current code. A wrong code leaves the key locked.']), form);
   } else {
-    blocks.push(h('div', { class: 'actions' }, [h('button', { type: 'button', onClick: () => { sessionKeys.delete(seat); setStatus('Wallet locked. Beta.', 'ok'); render(); } }, ['Lock'])]));
+    blocks.push(h('div', { class: 'actions' }, [h('button', { type: 'button', onClick: () => { sessionKeys.delete(seat); setStatus('Book locked.', 'ok'); render(); } }, ['Lock'])]));
     blocks.push(iouSection(peer));
   }
   blocks.push(deskLinks());
@@ -2224,7 +1870,7 @@ async function renderDevices(peers, seat) {
     field('Note', note),
     field('Their phone or email, if you want a draft', address),
     h('p', { class: 'legend' }, [peer.wallet?.ciphertext
-      ? 'Auto-send stays on this device. A valid code delivers the signed note into the other book. A wrong code sends nothing. Solana $lgme still needs your wallet.'
+      ? 'Auto-send stays on this device. A valid code delivers the signed note into the other book. A wrong code sends nothing. Nothing is submitted to Hedera.'
       : 'This book has no authenticator yet. Signing prepares a code you can carry. Set up 2FA on the wallet to auto-deliver on this device.']),
     sim.kycStatus(peer) === 'VERIFIED' ? null : h('p', { class: 'legend' }, ['Unverified members can send up to 20 $lgme. Receiving is open.'])
   ]);
@@ -2367,7 +2013,7 @@ async function acceptIncoming(seat, raw) {
   if (!result.ok) { setStatus(result.error, 'bad'); return; }
   pendingImport = '';
   setStatus(result.status === 'pending-attestation'
-    ? 'Pending attestation. Verify the signature on Solana, then tap Attest. Nothing is settled yet. Beta.'
+    ? 'Pending attestation. Nothing was submitted to Hedera. Beta.'
     : result.status === 'settled'
       ? 'Both parties signed. The invoice is paid. Beta.'
       : result.balance == null ? 'Imported. Beta.' : `Imported. Balance ${result.balance}. Beta.`, 'ok');
@@ -2439,64 +2085,11 @@ function coinMark() {
   return h('picture', {}, [h('source', { srcset: '/icons/lgme-coin-192.webp', type: 'image/webp' }), img]);
 }
 
-const DONATE_ADDRESS = '6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY';
-
-function contributionMethods() {
-  const copy = h('button', { type: 'button' }, ['Copy address']);
-  copy.addEventListener('click', () => {
-    copy.textContent = 'Copied';
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(DONATE_ADDRESS).catch(() => {});
-    }
-  });
-  const qrHost = h('div', {});
-  drawQr(qrHost, DONATE_ADDRESS);
-  const payUrl = `solana:${DONATE_ADDRESS}?spl-token=${MINT}&label=soBeIT&message=THANK+YOU+FOR+YOUR+SUPPORT.`;
-  drawQr(qrHost, payUrl);
-  return h('section', { class: 'contrib', id: 'sobeit-give' }, [
-    h('h3', {}, ['soBeIT contributions']),
-    h('p', {}, [h('a', { class: 'btn primary', href: '/lgme-coin#give' }, ['Give via soBeIT'])]),
-    h('p', { class: 'legend' }, ['Real token on Solana. Not financial advice. High risk; you may lose everything. Always verify the mint address. Transfers are irreversible. Never share a seed phrase. This page never asks for one. A wallet balance is read from Solana. The local tape records signatures and is not a second mint.']),
-    h('p', {}, ['THANK YOU FOR YOUR SUPPORT.']),
-    h('article', { class: 'card pump-wallet' }, [
-      h('h3', {}, ['Option A. $lgme or SOL']),
-      h('p', {}, ['Pump.fun wallet. Wallet name ', h('span', { class: 'wallet-name' }, ['@EgonAnon'])]),
-      h('ol', {}, [
-        h('li', {}, ['Install Phantom or Solflare.']),
-        h('li', {}, ['Buy or hold $lgme. Mint ', MINT, '. ', h('a', { href: `https://pump.fun/coin/${MINT}` }, ['Open the coin on pump.fun']), '.']),
-        h('li', {}, ['Tap Send, or scan the QR.']),
-        h('li', {}, ['Check the address. It starts with 6SYz and ends with okLY.']),
-        h('li', {}, ['Confirm. The transfer is irreversible.'])
-      ]),
-      h('p', {}, ['Solana address']),
-      h('p', { class: 'addr donate-address' }, [DONATE_ADDRESS]),
-      h('div', { class: 'actions' }, [
-        copy,
-        h('a', { class: 'btn primary', href: payUrl }, ['Open in your wallet'])
-      ]),
-      qrHost
-    ]),
-    h('article', { class: 'card x-money' }, [
-      h('h3', {}, ['Option B. X Money']),
-      h('p', {}, ['Send via X Money to ', h('a', { href: 'https://x.com/Trancesage' }, ['@Trancesage'])]),
-      h('p', {}, ['This is a separate account from the Solana wallet.']),
-      h('ol', {}, [
-        h('li', {}, ['Open the X app.']),
-        h('li', {}, ['Open Money.']),
-        h('li', {}, ['Tap Send.']),
-        h('li', {}, ['Choose @Trancesage.']),
-        h('li', {}, ['Enter the amount.']),
-        h('li', {}, ['Confirm.'])
-      ])
-    ])
-  ]);
-}
-
 function coinPanel() {
   return h('article', { class: 'card', id: 'coin-panel' }, [
-    h('div', { class: 'balance-hero' }, [coinMark(), h('div', {}, [h('strong', {}, ['$lgme']), 'Real token, separate from this book'])]),
-    h('p', {}, [h('a', { href: '/lgme-coin' }, ['Mint and buy steps are on the coin page.'])]),
-    contributionMethods()
+    h('h3', {}, ['This exchange does not connect a wallet']),
+    h('p', { class: 'muted' }, ['Public Hedera submissions are off. A local book key is not a Hedera account and not a Solana wallet.']),
+    h('p', {}, [h('a', { href: '/lgme-coin#give' }, ['Give via soBeIT'])])
   ]);
 }
 
@@ -2528,7 +2121,7 @@ async function startPasskey() {
       return;
     }
     freshAuth.set(sessionStorage.getItem(SEAT_KEY) || '', Date.now());
-    setStatus('This device can unlock the book. Beta. The book key is not a Solana key.', 'ok');
+    setStatus('This device can unlock the book. The book key stays on this device.', 'ok');
   } catch {
     setStatus('The device did not unlock. Use a passphrase. Beta.', 'bad');
   }
@@ -2547,14 +2140,13 @@ function soBeItCard(peers, seat) {
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     const result = await sim.soBeItGrant(store, seat, member.value, { amount: amount.value, reason: reason.value });
-    setStatus(result.ok ? `Grant recorded on this book. Balance ${result.balance}. Solana $lgme did not move.` : result.error, result.ok ? 'ok' : 'bad');
+    setStatus(result.ok ? `Grant recorded on this book. Balance ${result.balance}. Nothing was submitted.` : result.error, result.ok ? 'ok' : 'bad');
     if (result.ok) await render();
   });
   return h('article', { class: 'card', id: 'sobeit' }, [
     h('h3', {}, ['soBeIT']),
-    h('p', { class: 'muted' }, ['A local grant on this tape. The grantor signs it. It is attested on the member book. It is not the Solana token.']),
-    form,
-    contributionMethods()
+    h('p', { class: 'muted' }, ['A local grant on this tape. The grantor signs it. It is attested on the member book. It is not submitted to Hedera.']),
+    form
   ]);
 }
 
@@ -2956,7 +2548,7 @@ function offerForm(seat, target, serviceList = []) {
           ? `Cash is in person only. Do not mail cash. It is not counted until the payee attests the receipt. This app does not process it. ${sim.FIAT_FEE_NOTE} Cash and Zelle get no loyalty discount.`
           : choice === 'lgme'
             ? `Pay the full price in $lgme. Suggested loyalty discount ${percent.value || rules.defaultPercent}%. Both parties sign it, or either can decline. ${sim.FLOOR_REBATE_LABEL}`
-            : `Pick one or more IprovIT services. A $lgme payment is signed by your wallet. ${loyaltyBox.checked ? `Suggested loyalty discount ${percent.value || rules.defaultPercent}%. ${sim.FLOOR_REBATE_LABEL}` : 'Cash and Zelle get no loyalty discount.'}`;
+            : `Pick one or more IprovIT services. This desk does not sign a wallet payment. ${loyaltyBox.checked ? `Suggested loyalty discount ${percent.value || rules.defaultPercent}%. ${sim.FLOOR_REBATE_LABEL}` : 'Cash and Zelle get no loyalty discount.'}`;
   }
   mode.addEventListener('change', paint);
   amount.addEventListener('input', paint);
@@ -3018,7 +2610,7 @@ function catalogServices(list) {
     box: h('fieldset', {}, [
       h('legend', {}, ['IprovIT services']),
       boxes.length
-        ? h('p', { class: 'legend', id: 'iprov-services' }, ['Services listed as IprovIT can be offered in place of cash. A $lgme payment is signed by your wallet.'])
+        ? h('p', { class: 'legend', id: 'iprov-services' }, ['Services listed as IprovIT can be offered in place of cash. This desk does not sign a wallet payment.'])
         : h('p', { class: 'legend', id: 'iprov-services' }, ['No IprovIT services are listed yet.']),
       ...boxes.map((row) => h('label', { class: 'row' }, [row.box, ` ${row.title}`]))
     ])
@@ -3375,7 +2967,7 @@ async function renderMarket(peers, seat) {
         wantedPin || repairPin ? h('ul', { id: wantedPin ? 'wanted-payments' : 'repair-payments' }, (wantedPin ? sim.STANDING_WANTED : sim.STANDING_REPAIR).payments.map((item) => h('li', {}, [item]))) : null,
         !card.pinned ? h('p', { class: 'price' }, [`${card.amount} $lgme`]) : null,
         card.pinned && !wantedPin ? h('p', { class: 'legend' }, ['Beta. A soBeIT grant below stays on this tape. The link above is the real token page.']) : null,
-        wantedPin || repairPin ? h('p', { class: 'legend' }, ['Beta. A concluded match is closed on this book. A $lgme payment is signed by your wallet. Reconcile as donation to the floor needs both consents.']) : null,
+        wantedPin || repairPin ? h('p', { class: 'legend' }, ['Beta. A concluded match is closed on this book. This desk does not sign a wallet payment. Reconcile as donation to the floor needs both consents.']) : null,
         card.pinned && !wantedPin && !repairPin ? soBeItCard(peers, seat) : null,
         wantedPin ? wantedMatchSection(seat) : null,
         repairPin ? thumbtackSection(seat) : null,
@@ -4081,7 +3673,7 @@ function renderHelp() {
     ['Third seat · everyday member', 'The individual citizen operating on equal footing with institutions. In a deal the Third Seat is the named everyday member who can veto. The veto stays on the tape. Nothing moves. There is no penalty.'],
     ['Tape · public ledger', 'An immutable proof of completed work everyone can inspect. Each book is append-only. Every entry names the previous hash and is signed with that peer’s key. Export the JSON and verify it.'],
     ['Issue · peer promise', 'A non-cash IOU directly tied to human effort, not speculative debt. It is recorded as pending. The balance moves only when the named counterparty signs. A refusal leaves the balance put.'],
-    ['Local book', 'Registration writes a GENESIS entry for a local grant of 100. It is not Solana $lgme. Your wallet signs a real payment.'],
+    ['Local book', 'Registration writes a GENESIS entry for a local grant of 100 on this device. It is not a Hedera message and not a Solana payment.'],
     ['Authenticator', 'A passphrase encrypts the key at rest with AES-GCM and PBKDF2. A 6-digit TOTP, RFC 6238, is checked with WebCrypto HMAC. The setup QR can be scanned by an authenticator app. This page generates the same code while the secret is still on screen. It never sends the code. A wrong code leaves the wallet locked.'],
     ['Another device', 'There is no server. Sign a proposal, countersign, refusal, transfer, attestation, or handoff, then carry the lgme1. code by copy, by a link whose data sits in the URL fragment, by a QR, or by a .json file. On the other device, verification runs before anything is appended. A QR is for an in-person handoff. To text or email a draft, the page opens sms: or mailto: so you send it from your own app. The outbox and inbox are a local log of that.'],
     ['Phone chat', 'A text is signed here, then Open SMS hands it to your phone’s own messages app. The link or the pasted token is checked for the sender’s signature and the member hash. A call button opens tel: on your phone. The tape records the start, the end, the other member’s hash, and a note you type. No audio is stored. Match sends the chat root by SMS and says Matched, or names the first message that differs. This page does not send the text and does not place the call. The other person’s signup details stay on their phone. You keep the phone number and the hash.'],
@@ -4097,7 +3689,7 @@ function renderHelp() {
   ]);
   panel.replaceChildren(
     h('h2', {}, ['Help']),
-    h('p', { class: 'muted' }, ['Beta. Real $lgme moves only when your Solana wallet signs. This page does not send a message for you and does not write to Hedera.']),
+    h('p', { class: 'muted' }, ['Hedera testnet. Public submissions are off. This page does not connect a wallet, move funds, or sign a transaction.']),
     h('p', {}, [h('a', { href: '/marketing' }, ['Marketing & Adoption'])]),
     h('p', {}, [h('a', { href: '/good-deeds' }, ['Every good deed deserves another'])]),
     h('button', { type: 'button', class: 'card mag-card', onClick: () => { location.hash = 'resources'; } }, [
@@ -4225,7 +3817,7 @@ function showSplash() {
 }
 
 const WALK = [
-  ['Beta', 'This desk settles agreed $lgme from your own Solana wallet. It does not hold a seed phrase, write to Hedera, or send text or email. You send a draft yourself, from your own app, if you want to.'],
+  ['Hedera testnet', 'Public submissions are off. Starter examples and saved titles stay on this device. This desk does not connect a wallet or sign a transaction.'],
   ['Separate books', 'Alice, Bob, and Charlie each keep their own tape. On one device you switch seats. On two devices you carry a signed message. There is no central ledger.'],
   ['Floor · basic needs reserve', 'Food, shelter, and essentials secured prior to speculative spending. A line that would spend that reserve is blocked and the block stays on the tape.'],
   ['Third seat · everyday member', 'The individual citizen operating on equal footing with institutions. In a deal the Third Seat is the named everyday member who can veto. Nothing moves. There is no penalty.'],

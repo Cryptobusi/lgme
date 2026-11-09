@@ -1,7 +1,7 @@
 /**
- * Peer-to-peer beta desk. Agreed $lgme settles from the member's own Solana wallet.
- * Each peer's book lives only in that peer's own store key.
+ * Peer-to-peer desk. Each peer's book lives only in that peer's own store key.
  * Signing is local ECDSA. Links are SHA-256. Nothing here opens a network.
+ * Solana wallet submission is closed. Existing Solana tape lines stay local records.
  */
 
 import { ACK_MS, CO_SIGN_ABOVE, FORK, OFFLINE_SPEND, REPLAY, STALE_ACK, ackFresh, assertOnline, coSignReason, expiryFrom, fraudPenalty, handoffToken, passphraseReason } from './p2p-sim-guard.mjs';
@@ -14,6 +14,7 @@ export { DEED_CATEGORIES, DEED_POST_TYPES, DEFAULT_SUBFLOOR_RULES, firstClaimCat
 
 export { ALT_CHOICES, DEFAULT_CLAMP_BAND, HISTORY_UNAVAILABLE, NO_COIN, PEG_LABEL, PEG_NOTE, QUOTE_MS };
 
+export const SOLANA_SUBMISSION_CLOSED = 'Solana wallet submission is closed on this exchange.';
 export const GENESIS = '0'.repeat(64);
 export { ACK_MS, CO_SIGN_ABOVE, OFFLINE_SPEND, handoffToken };
 export const FLOOR_BLOCK = 'Blocked: Floor stays senior';
@@ -54,7 +55,7 @@ export const STANDING_DONATION = Object.freeze({
 });
 export const STANDING_WANTED = Object.freeze({
   title: 'Wanted: working treadmill and elliptical, under $500 total budget, Washington DC area',
-  description: 'Cash, terms over 3 to 6 months, or $lgme services (IprovIT). Beta. A payment is real $lgme from your wallet.',
+  description: 'Cash, terms over 3 to 6 months, or $lgme services (IprovIT). Beta. This desk does not sign a wallet payment.',
   href: '',
   action: 'Wanted',
   kinds: Object.freeze(['IwanIT']),
@@ -63,7 +64,7 @@ export const STANDING_WANTED = Object.freeze({
 });
 export const STANDING_REPAIR = Object.freeze({
   title: 'Wanted: exercise equipment repair/service (treadmill, elliptical), Washington DC area',
-  description: 'Beta. A Thumbtack pro is not affiliated with this desk. A payment is real $lgme from your wallet.',
+  description: 'Beta. A Thumbtack pro is not affiliated with this desk. This desk does not sign a wallet payment.',
   href: '',
   action: 'Wanted',
   kinds: Object.freeze(['IwanIT']),
@@ -3446,12 +3447,12 @@ export function wantedInquiry(item) {
   if (item?.inquiry) return item.inquiry;
   const title = item?.title || 'item';
   const price = item?.price || 'your price';
-  return `Hi! Is your ${title} still available and fully working? I'd offer ${price} after a quick demonstration. What pickup or delivery works? We can continue here on OfferUp, or use lgme.app to record our agreed terms (a $lgme payment is signed by your wallet).`;
+  return `Hi! Is your ${title} still available and fully working? I'd offer ${price} after a quick demonstration. What pickup or delivery works? We can continue here on OfferUp, or use lgme.app to record our agreed terms (lgme.app records the terms and does not sign a wallet payment).`;
 }
 
 export function tailoredDraft(item, spec = {}) {
   const pay = spec.pay === 'service'
-    ? '$lgme services (IprovIT). A payment is real $lgme from your wallet.'
+    ? '$lgme services (IprovIT). This desk does not sign a wallet payment.'
     : spec.pay === 'zelle'
       ? `Zelle. Not counted until the payee attests the confirmation. This app does not process it. ${FIAT_FEE_NOTE}`
       : spec.pay === 'cash'
@@ -3516,7 +3517,7 @@ export function wantedMatchDraft(match) {
     match?.city || '',
     match?.url || '',
     'Cash, terms over 3 to 6 months, or $lgme services (IprovIT).',
-    'A payment is real $lgme from your wallet.'
+    'This desk does not sign a wallet payment.'
   ].filter(Boolean).join('\n');
 }
 
@@ -3525,7 +3526,7 @@ export function inviteSellerText(match) {
     'Nothing was sent.',
     `You listed ${match?.title || 'an item'} on OfferUp.`,
     `The exchange is here: ${INVITE_URL}`,
-    'A payment is real $lgme from your wallet.'
+    'This desk does not sign a wallet payment.'
   ].join('\n');
 }
 
@@ -5333,36 +5334,8 @@ export async function acknowledgeQuote(store, peerId, spec = {}) {
   return { ok: true, lock, expired: false };
 }
 
-export async function issueSolanaRequest(store, peerId, spec = {}) {
-  const peer = await store.get(peerId);
-  if (!peer?.privateKeyJwk && !peer?.signingKey) return fail(peer ? 'Wallet is locked.' : 'Unknown peer.');
-  const gate = assertOnline(spec.navigator);
-  if (!gate.ok) return fail(gate.error);
-  const lockId = String(spec.lockId || '');
-  const peers = await peersIn(store, [peerId]);
-  const lock = findLock(peers, lockId);
-  if (!lock) return fail('No price lock.');
-  const at = spec.at || nowIso();
-  if (!withinLock(lock, at)) return { ok: false, expired: true, requote: true, alternatives: [...ALT_CHOICES], error: QUOTE_EXPIRED };
-  const seen = new Set(priceRows(peers, 'PRICE_SEEN').filter((row) => row.lockId === lockId).map((row) => row.peerId));
-  const parties = [lock.payerId, lock.payeeId].filter(Boolean);
-  if (parties.length >= 2) {
-    if (!parties.every((id) => seen.has(id))) return fail('Both parties see the new amount before the wallet request.');
-  } else if (!seen.has(lock.payerId)) {
-    return fail('See the amount before the wallet request.');
-  }
-  const payload = { ...lock, requestCreatedAt: at };
-  const ids = parties.length ? parties : [peerId];
-  for (const id of ids) {
-    const book = await store.get(id);
-    if (!book) continue;
-    const already = (book.tape || []).some((entry) => entry.type === 'PRICE_REQUEST' && entry.payload?.lockId === lockId);
-    if (already) continue;
-    if (!book.privateKeyJwk && !book.signingKey) continue;
-    await appendEntry(book, 'PRICE_REQUEST', payload, at);
-    await store.set(id, book);
-  }
-  return { ok: true, ...payload, lgmeAmount: lock.lgmeAmount, requestCreatedAt: at, expired: false };
+export async function issueSolanaRequest() {
+  return { ok: false, closed: true, expired: false, error: SOLANA_SUBMISSION_CLOSED };
 }
 
 export async function proposeAltSettlement(store, peerId, spec = {}) {
@@ -5432,38 +5405,8 @@ export async function consentAltSettlement(store, peerId, spec = {}) {
   return { ok: true, consented: true, choice: proposal.choice, status: 'agreed', coin: false, schedule: proposal.schedule || [] };
 }
 
-export async function recordSolanaTx(store, peerId, spec = {}) {
-  const peer = await store.get(peerId);
-  if (!peer?.privateKeyJwk && !peer?.signingKey) return fail(peer ? 'Wallet is locked.' : 'Unknown peer.');
-  const gate = assertOnline(spec.navigator);
-  if (!gate.ok) return fail(gate.error);
-  const claim = solanaClaim({ ...spec, payerId: peerId, payeeId: spec.otherId || spec.payeeId || '' }, peerId);
-  if (!claim.signature) return fail('The transaction signature is missing.');
-  const at = spec.at || nowIso();
-  const peers = await peersIn(store, [peerId, claim.payeeId]);
-  const known = rejectKnownSignature(peers, claim);
-  if (!known.ok) return known;
-  const match = matchSolanaRequest(peers, { ...claim, amount: spec.amount, lockId: String(spec.lockId || ''), purpose: spec.purpose || 'settlement' });
-  if (!match.ok) return match;
-  const quote = match.request;
-  const before = replay(peer).balance;
-  const payload = {
-    ...claim,
-    amount: quote.lgmeAmount,
-    usdAmount: quote.usdAmount,
-    lgmeAmount: quote.lgmeAmount,
-    price: quote.price,
-    priceSource: quote.priceSource,
-    priceTimestamp: quote.priceTimestamp,
-    requestCreatedAt: quote.requestCreatedAt,
-    lockId: quote.lockId,
-    status: 'pending-attestation',
-    role: 'payer',
-    label: PEG_LABEL
-  };
-  await appendEntry(peer, 'SOLANA_TX', payload, at);
-  await store.set(peerId, peer);
-  return { ok: true, status: 'pending-attestation', payload, unchanged: replay(await store.get(peerId)).balance === before };
+export async function recordSolanaTx() {
+  return { ok: false, closed: true, error: SOLANA_SUBMISSION_CLOSED };
 }
 
 export async function attestSolanaTx(store, payeeId, spec = {}) {
@@ -6088,8 +6031,8 @@ export function offerupDraft(offer) {
     lines.push(`Term plan: ${cash.amount} over ${cash.months} months`);
     for (const row of cash.schedule || []) lines.push(`  ${row.n}. ${row.amount} due ${String(row.dueAt).slice(0, 10)}`);
   }
-  for (const service of services) lines.push(`IprovIT service: ${service.title} (${service.amount} $lgme, signed by your wallet)`);
-  lines.push('A $lgme payment is signed by your wallet. Paste this on OfferUp yourself.');
+  for (const service of services) lines.push(`IprovIT service: ${service.title} (${service.amount} $lgme). This desk does not sign a wallet payment.`);
+  lines.push('This desk does not sign a wallet payment. Paste this on OfferUp yourself.');
   return lines.filter(Boolean).join('\n');
 }
 
