@@ -81,4 +81,10 @@ test('the page carries the disclaimer, CLPR caveat, pilot names, and proposed-de
   assert.equal(page.includes('Fourteenth Amendment'), true);
   assert.equal(page.includes('non-convertible'), true);
   assert.equal(page.includes('no yield'), true);
+  assert.equal(page.includes('Refusal: Its Power, Its Limits, and How IdidIt Balances the Ledger'), true);
+  assert.equal(page.includes('id="refusal"'), true);
+  assert.equal(page.includes('href="#refusal"'), true);
+  assert.equal(page.includes('IdidIt'), true);
+  assert.equal(page.includes('practical limits of refusal'), true);
+  assert.equal(page.includes('limits'), true);
 });
