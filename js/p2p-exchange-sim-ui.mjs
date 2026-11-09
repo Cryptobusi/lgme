@@ -1,7 +1,8 @@
 import * as sim from './p2p-exchange-sim.mjs';
 import { ARTICLES } from './p2p-resources.mjs';
 import { buildLinks, capPicks, customSite, detectLocalAi, dueRequests, matchCriteria, presetsFor, SOURCE_KEY, SOURCE_SITES, suggestSites } from './sourcing.mjs';
-import { PASSKEY_WORDING, createIndexedDbVault, deviceKeyForMigration, importNonExtractable, openJson, passkeyCreationOptions, sealJson } from './p2p-sim-guard.mjs';
+import { createIndexedDbVault, deviceKeyForMigration, importNonExtractable, openJson, sealJson } from './p2p-sim-guard.mjs';
+import { PASSKEY_COPY, PASSKEY_FALLBACK, enrollPasskey, passkeySupported, readCredentialId, unlockWithPasskey } from './passkey-unlock.mjs';
 import { REFERENCE_LABEL, optionLabel, referenceLine } from './dc-reference.mjs';
 import { DONATION_ADDRESS, MINT, buildTransferRequest, createReference, findReferencePayment, isValidPublicKey, readTokenBalance } from './solana-pay.mjs';
 import { fetchLgmePrice as quoteLgme } from './lgme-price.mjs';
@@ -2502,37 +2503,27 @@ function coinPanel() {
 }
 
 function passkeyCard() {
-  const button = h('button', { type: 'button', id: 'passkey-unlock', onClick: () => startPasskey() }, ['Use this device']);
+  const saved = readCredentialId(localStorage);
+  const supported = passkeySupported();
+  const button = supported
+    ? h('button', { type: 'button', id: 'passkey-unlock', onClick: () => startPasskey(Boolean(saved)) }, [saved ? 'Unlock with passkey' : 'Save a passkey'])
+    : null;
   return h('article', { class: 'card', id: 'passkey' }, [
-    h('h3', {}, ['Unlock']),
-    h('p', {}, [PASSKEY_WORDING]),
-    h('p', { class: 'muted' }, ['Beta. A passphrase is the fallback, and it is not a short PIN. The 6-digit code stays optional. Recovery codes are shown once.']),
+    h('h3', {}, ['Passkey']),
+    h('p', {}, [PASSKEY_COPY]),
+    supported ? null : h('p', { id: 'passkey-fallback' }, [PASSKEY_FALLBACK]),
+    h('p', { class: 'muted' }, ['The passphrase is still required for the book key, and it is not a short PIN. The 6-digit code stays optional. Recovery codes are shown once.']),
     button
   ]);
 }
 
-async function startPasskey() {
-  if (location.hostname !== 'lgme.app') {
-    setStatus('This browser can use a passphrase here. The device unlock is for lgme.app. Beta.', 'ok');
-    return;
-  }
-  if (!globalThis.PublicKeyCredential) {
-    setStatus('This browser has no device unlock. Use a passphrase. Beta.', 'bad');
-    return;
-  }
-  const challenge = crypto.getRandomValues(new Uint8Array(32));
-  const options = passkeyCreationOptions('lgme-sim', 'lgme', challenge);
-  try {
-    const created = await withDeadline(navigator.credentials.create(options), 45000, 'The device did not answer.');
-    if (!created.ok) {
-      setStatus('The device did not unlock. Use a passphrase. Beta.', 'bad');
-      return;
-    }
-    freshAuth.set(sessionStorage.getItem(SEAT_KEY) || '', Date.now());
-    setStatus('This device can unlock the book. Beta. The book key is not a Solana key.', 'ok');
-  } catch {
-    setStatus('The device did not unlock. Use a passphrase. Beta.', 'bad');
-  }
+async function startPasskey(saved) {
+  const result = saved ? await unlockWithPasskey() : await enrollPasskey();
+  if (!result.ok) { setStatus(result.error, 'bad'); return; }
+  freshAuth.set(sessionStorage.getItem(SEAT_KEY) || '', Date.now());
+  try { sessionStorage.setItem('lgme.passkey.unlockedAt', new Date().toISOString()); } catch { /* the visit note stays on screen */ }
+  setStatus(saved ? 'This device unlocked. The book key still needs the passphrase.' : 'Passkey saved on this device. Only the credential id is stored.', 'ok');
+  await render();
 }
 
 function soBeItCard(peers, seat) {
