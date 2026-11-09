@@ -26,13 +26,31 @@
     return path === '/' || path === '/index.html';
   }
 
+  var VIEWS = {
+    classic: '/',
+    picture: '/my-picture-classic',
+    app: '/my-picture'
+  };
+
   function isApp(pathname) {
     var path = pathOf(pathname);
     return path === '/my-picture' || path === '/my-picture.html';
   }
 
+  function isPicture(pathname) {
+    var path = pathOf(pathname);
+    return path === '/my-picture-classic' || path === '/my-picture-classic.html';
+  }
+
+  function pageKind(pathname) {
+    if (isHome(pathname)) return 'classic';
+    if (isPicture(pathname)) return 'picture';
+    if (isApp(pathname)) return 'app';
+    return null;
+  }
+
   function normalizeView(value) {
-    return value === 'app' || value === 'classic' ? value : null;
+    return Object.prototype.hasOwnProperty.call(VIEWS, value) ? value : null;
   }
 
   function readView(storage) {
@@ -45,15 +63,15 @@
 
   function destinationFor(pathname, stored) {
     var view = normalizeView(stored);
-    if (view === 'app' && isHome(pathname)) return '/my-picture';
-    if (view === 'classic' && isApp(pathname)) return '/';
-    return null;
+    var here = pageKind(pathname);
+    if (!view || !here || view === here) return null;
+    return VIEWS[view];
   }
 
   function viewForPage(pathname, stored) {
     var view = normalizeView(stored);
     if (view) return view;
-    return isApp(pathname) ? 'app' : 'classic';
+    return pageKind(pathname) || 'classic';
   }
 
   function boot(doc, storage, location) {
@@ -73,7 +91,7 @@
       }
     }
     function choose(next) {
-      if (next !== 'app' && next !== 'classic') return;
+      if (!normalizeView(next)) return;
       try { storage.setItem(KEY, next); } catch (error) { /* private mode still navigates */ }
       doc.documentElement.setAttribute('data-ui-view', next);
       sync();
@@ -108,8 +126,11 @@
   return {
     KEY: KEY,
     pathOf: pathOf,
+    VIEWS: VIEWS,
     isHome: isHome,
     isApp: isApp,
+    isPicture: isPicture,
+    pageKind: pageKind,
     normalizeView: normalizeView,
     readView: readView,
     destinationFor: destinationFor,

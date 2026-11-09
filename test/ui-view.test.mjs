@@ -25,38 +25,53 @@ test('the default view is classic and an unsaved visit stays put', () => {
   assert.equal(ui.viewForPage('/', null), 'classic');
   assert.equal(ui.viewForPage('/study', undefined), 'classic');
   assert.equal(ui.viewForPage('/my-picture', null), 'app');
+  assert.equal(ui.viewForPage('/my-picture-classic', null), 'picture');
   assert.equal(ui.destinationFor('/', null), null);
   assert.equal(ui.destinationFor('/my-picture', null), null);
+  assert.equal(ui.destinationFor('/my-picture-classic', null), null);
   assert.equal(ui.destinationFor('/campus', 'app'), null);
+  assert.equal(ui.destinationFor('/campus', 'picture'), null);
   assert.equal(ui.readView(memory()), null);
 });
 
-test('a saved app choice opens the sovereign app from home, and classic returns', () => {
+test('each saved view persists and switches among classic, picture, and app', () => {
+  assert.deepEqual(ui.VIEWS, {
+    classic: '/',
+    picture: '/my-picture-classic',
+    app: '/my-picture'
+  });
   assert.equal(ui.destinationFor('/', 'app'), '/my-picture');
-  assert.equal(ui.destinationFor('/index.html', 'app'), '/my-picture');
-  assert.equal(ui.destinationFor('/my-picture', 'app'), null);
+  assert.equal(ui.destinationFor('/index.html', 'picture'), '/my-picture-classic');
+  assert.equal(ui.destinationFor('/my-picture', 'picture'), '/my-picture-classic');
+  assert.equal(ui.destinationFor('/my-picture-classic', 'app'), '/my-picture');
+  assert.equal(ui.destinationFor('/my-picture-classic.html', 'classic'), '/');
   assert.equal(ui.destinationFor('/my-picture.html', 'classic'), '/');
   assert.equal(ui.destinationFor('/', 'classic'), null);
+  assert.equal(ui.destinationFor('/my-picture', 'app'), null);
+  assert.equal(ui.destinationFor('/my-picture-classic', 'picture'), null);
+  assert.equal(ui.viewForPage('/', 'picture'), 'picture');
   assert.equal(ui.viewForPage('/my-picture', 'classic'), 'classic');
-  assert.equal(ui.viewForPage('/', 'app'), 'app');
+  assert.equal(ui.viewForPage('/my-picture-classic', 'app'), 'app');
   const store = memory();
-  store.setItem(ui.KEY, 'app');
-  assert.equal(ui.readView(store), 'app');
-  store.setItem(ui.KEY, 'classic');
-  assert.equal(ui.readView(store), 'classic');
+  for (const value of ['classic', 'picture', 'app']) {
+    store.setItem(ui.KEY, value);
+    assert.equal(ui.readView(store), value);
+  }
   assert.equal(ui.readView({ getItem() { throw new Error('blocked'); } }), null);
 });
 
-test('both pages carry the switcher and apply the saved view before the body', () => {
-  for (const file of ['index.html', 'my-picture.html']) {
+test('classic, my picture, and the sovereign app all carry the three-way switcher', () => {
+  for (const file of ['index.html', 'my-picture.html', 'my-picture-classic.html']) {
     const page = text(file);
     const scriptAt = page.indexOf('src="/js/ui-view.js"');
     const bodyAt = page.indexOf('<body');
     assert.equal(scriptAt > 0 && scriptAt < bodyAt, true, file);
     assert.equal(page.includes('aria-label="View"'), true, file);
     assert.equal(page.includes('data-ui-view="classic"'), true, file);
+    assert.equal(page.includes('data-ui-view="picture"'), true, file);
     assert.equal(page.includes('data-ui-view="app"'), true, file);
     assert.equal(page.includes('>Classic</a>'), true, file);
+    assert.equal(page.includes('>My Picture</a>'), true, file);
     assert.equal(page.includes('>Sovereign App</a>'), true, file);
     assert.equal(/<script(?![^>]*\bsrc=)/i.test(page), false, file);
   }
@@ -64,5 +79,6 @@ test('both pages carry the switcher and apply the saved view before the body', (
   const navStart = home.indexOf('id="main-nav"');
   const nav = home.slice(navStart, home.indexOf('</nav>', navStart));
   assert.equal(nav.includes('Sovereign App'), false);
-  assert.equal(text('css/ui-view.css').includes('.view-switch'), true);
+  assert.equal(nav.includes('My Picture'), false);
+  assert.equal(text('css/ui-view.css').includes('data-ui-view="picture"'), true);
 });
