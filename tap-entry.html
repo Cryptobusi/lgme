@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>One-Tap Entry demo · lgme</title>
+  <meta name="description" content="Sample demo. Capture a Did, Sell, Wish, Duty, or Responsible entry, correct an on-device pre-fill, and dual-confirm it onto a sample Tape. Nothing leaves this device." />
+  <link rel="canonical" href="https://lgme.app/tap-entry" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#0c100c" />
+  <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" />
+  <link rel="stylesheet" href="/menu.css" />
+  <link rel="stylesheet" href="/css/tap-entry.css" />
+</head>
+<body id="tap-entry-app">
+  <a class="skip" href="#panel">Skip to the entry</a>
+  <nav class="deskmenu" aria-label="Desk">
+    <a href="/">Desk</a>
+    <a href="/tap-entry" aria-current="page">One-Tap Entry</a>
+    <a href="/my-picture">My Picture</a>
+    <a href="/workflow">Workflow map</a>
+    <a href="/clearing-engine">Clearing engine</a>
+  </nav>
+  <p class="kicker">lgme · sample data · on this device</p>
+  <h1>One-Tap Entry demo</h1>
+  <p class="lede">Three steps for a Did, Sell, Wish, Duty, or Responsible entry: capture it, correct the pre-fill, then dual-confirm it onto the sample Tape. AI suggests, you decide. The rules stay on this device.</p>
+  <p class="banner" role="note">Sample data only. This page does not write the live book, and it does not call the network.</p>
+  <section class="cap" id="capability" aria-labelledby="cap-heading"></section>
+  <div id="progress"></div>
+  <p class="counter" id="counter" aria-live="polite">This method: 0 taps, 0 fields typed.</p>
+  <div id="panel" tabindex="-1"></div>
+  <p id="status" class="lede" aria-live="polite"></p>
+  <section class="tape" id="tape" aria-labelledby="tape-heading"></section>
+  <section class="learned" id="learned" aria-labelledby="learned-heading"></section>
+  <section class="review-block" id="review" aria-labelledby="review-heading"></section>
+  <p class="cross">
+    <a href="/my-picture">My Picture</a>
+    <a href="/workflow">Workflow map</a>
+    <a href="/clearing-engine">Clearing engine</a>
+  </p>
+  <noscript><p>This demo needs JavaScript in the browser. It does not call the network.</p></noscript>
+  <script src="/js/vendor/qrcode.js"></script>
+  <script src="/js/vendor/jsQR.js"></script>
+  <script type="module" src="/js/tap-entry-ui.mjs"></script>
+</body>
+</html>
