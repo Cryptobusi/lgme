@@ -88,6 +88,7 @@
     nav.open { display: flex; }
     nav a { color: var(--muted); text-decoration: none; padding: 0.35rem 0; }
     nav a:hover { color: var(--gold); }
+    nav .menu-group { flex: 1 0 100%; margin: 0.55rem 0 0; font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); }
     .fishbowl {
       display: block;
       width: 100%;
@@ -251,12 +252,33 @@
     <span class="kicker">Menu</span>
   </div>
   <nav id="main-nav">
+    <span class="menu-group">Use</span>
+    <a href="/exchange">Exchange</a>
+    <a href="/help">Help</a>
+    <a href="/glossary">Glossary</a>
+    <a href="/plain-english">Plain English</a>
+    <a href="/campus">Campus</a>
+    <a href="/good-deeds">Good deeds</a>
+    <a href="/marketing">Marketing &amp; Adoption</a>
+    <a href="/how-it-works">How it works</a>
+    <a href="/mutual-credit">Mutual credit</a>
+    <a href="/tap-entry">One-Tap Entry</a>
+    <span class="menu-group">Learn</span>
     <a href="/study">Study/Prerequisite</a>
+    <a href="/technical">Technical</a>
+    <a href="/whitepaper">Whitepaper</a>
+    <a href="/spp-framework">SPP framework</a>
+    <a href="/workflow">Workflow map</a>
+    <a href="/clearing-engine">Clearing engine</a>
+    <a href="/preparation">Preparation</a>
+    <a href="/the-third-seat">Third seat</a>
+    <span class="menu-group">Examine</span>
+    <a href="/examine">Examine</a>
+    <span class="menu-group">About</span>
     <a href="/manifesto">Manifesto</a>
     <a href="/architecture">Architecture</a>
     <a href="/nswo">NSWO</a>
     <a href="/dominion">Dominion</a>
-    
     <a href="/hederica">Hederica</a>
     <a href="/charter">Charter</a>
     <a href="/bylaws">Bylaws</a>
@@ -280,31 +302,11 @@
     <a href="#next">The Next</a>
     <a href="#future">Future development</a>
     <a href="/game-theory">Game theory</a>
-    <a href="/technical">Technical</a>
-    <a href="/whitepaper">Whitepaper</a>
-    <a href="/spp-framework">SPP framework</a>
-    <a href="/workflow">Workflow map</a>
-    <a href="/clearing-engine">Clearing engine</a>
-    <a href="/tap-entry">One-Tap Entry</a>
-    <a href="/preparation">Preparation</a>
-    <a href="/summary-test">Summary test</a>
-    <a href="/mock-runs-report">Run summary</a>
-    <a href="/test-300">Test 300 students</a>
-    <a href="/test-1000">1000 seniors 30 days</a>
-    <a href="/test-5000">5000 seniors</a>
     <a href="/pumpup">Pumpup The Floor</a>
     <a href="/story">Story</a>
     <a href="/developer-notes">Developer Notes</a>
     <a href="/homebox">HomeBox Listing</a>
     <a href="/bigcapital">Bigcapital Accounting</a>
-    <a href="/mutual-credit">Mutual credit</a>
-    <a href="/exchange">Exchange</a>
-    <a href="/how-it-works">How it works</a>
-    <a href="/marketing">Marketing &amp; Adoption</a>
-    <a href="/plain-english">Plain English</a>
-    <a href="/campus">Campus</a>
-    <a href="/good-deeds">Good deeds</a>
-    <a href="/examine">Examine</a>
     <a href="/deployment-manifest">Deployment Manifest</a>
     <a href="#close">Close</a>
   </nav>
@@ -447,7 +449,7 @@
   <section id="glossary" hidden>
     <p class="kicker">Glossary</p>
     <h2>Eight words</h2>
-    <p class="muted">Easy read keeps the eight book words. Precise swaps each name for the narrower one, including the order line. The five lines below are the everyday names.</p>
+    <p class="muted">Easy read keeps the eight book words. Precise swaps each name for the narrower one, including the order line. The five lines below are the everyday names. <a href="/glossary">Open the glossary page</a>.</p>
     <table class="gloss">
       <thead><tr><th>Framework term</th><th>Front-end human primitive</th><th>Practical everyday function</th></tr></thead>
       <tbody>

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Help · lgme</title>
+  <meta name="description" content="What lgme.app is, how to start, and what is live." />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" />
+  <link rel="stylesheet" href="/menu.css" />
+  <style>
+    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; --card:#151a15; }
+    body { background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; font-size:1.05rem; line-height:1.55; max-width:42rem; margin:0 auto; padding:1.25rem max(1rem, env(safe-area-inset-right)) 4rem max(1rem, env(safe-area-inset-left)); }
+    h1,h2 { font-family:Newsreader,serif; font-weight:500; }
+    h1 { font-size:clamp(1.9rem, 7vw, 2.6rem); line-height:1.05; margin:0.4rem 0; }
+    h2 { font-size:1.35rem; margin:1.3rem 0 0.35rem; }
+    .kicker { margin:0; font-size:0.72rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--gold); }
+    .muted { color:var(--muted); }
+    a { color:var(--fg); }
+    nav a { min-height:44px; display:inline-flex; align-items:center; margin-right:0.8rem; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:0.9rem 1rem; margin:0.7rem 0; }
+    .status { display:inline-block; margin:0 0 0.35rem; padding:0.12rem 0.5rem; border-radius:999px; font-size:0.75rem; letter-spacing:0.06em; text-transform:uppercase; font-weight:700; }
+    .live { background:#d7f0d4; color:#14301a; }
+    .part { background:#f3e2b8; color:#3a2a0a; }
+    .plan { background:#2a2418; color:#f4f1e8; border:1px solid var(--line); }
+  </style>
+</head>
+<body>
+<nav aria-label="Desk">
+  <a href="/">Desk</a>
+  <a href="/exchange">Exchange</a>
+  <a href="/glossary">Glossary</a>
+  <a href="/plain-english">Plain English</a>
+</nav>
+<p class="kicker">lgme · Help</p>
+<h1>Help</h1>
+<p>lgme.app is a tamper-evident notebook for work you do with someone else. Two people confirm a deed. The record stays on their phones. The desk does not hold keys or seeds, and it does not send a transaction.</p>
+<div class="card">
+  <h2>How to start</h2>
+  <ol>
+    <li>Open the <a href="/exchange">exchange</a>.</li>
+    <li>Set a passphrase and a 6-digit code on this device. That unlocks the book.</li>
+    <li>Log a campus deed with a handle. No coin is required for the deed.</li>
+    <li>The other person attests. Then it is an IdidIt (verified receipt).</li>
+  </ol>
+  <p class="muted">Google and email sign-in: later.</p>
+</div>
+<div class="card">
+  <h2>FAQ</h2>
+  <p><strong>Is a deed $lgme?</strong> No. A deed credit is a mutual-credit IOU on the local tape. Paying in $lgme is a separate step and needs your own wallet.</p>
+  <p><strong>Who can veto?</strong> The named third seat, the arbiter on that deal. A veto before payment moves nothing.</p>
+  <p><strong>Where is the book?</strong> On this device. Export a backup if you want to carry it.</p>
+</div>
+<div class="card" id="status">
+  <h2>Status</h2>
+  <p class="status live">Live</p>
+  <p>The exchange, the campus deed log, the tape, daily Merkle roots, category subfloors, and the plain pages are on the site.</p>
+  <p class="status part">Partly live</p>
+  <p id="status-invoice">A confirmed deed is called an IdidIt (verified receipt). An exchange invoice still uses the invoice label.</p>
+  <p id="status-price">A $lgme quote asks GeckoTerminal, then DexScreener, from the browser. The 15-second lock and the 5% caps are in the desk. If no price settles, the desk offers pay-in-terms or barter. This line stays partly live until a public quote is confirmed.</p>
+  <p class="status plan">Not started</p>
+  <p id="status-passkey">A stored passkey unlock is not shipped. The exchange can ask this device on lgme.app, and it does not save a credential or unlock the book with one. Use the passphrase and the 6-digit code. Google and email: later.</p>
+  <p id="status-hedera">Public Hedera anchoring: coming. Not written to Hedera today.</p>
+</div>
+<p class="muted"><a href="/exchange">Exchange</a> · <a href="/good-deeds">Good deeds</a> · <a href="/campus">Campus</a> · <a href="/examine">Examine</a> · <a href="/marketing">Marketing</a> · <a href="/plain-english">Plain English</a></p>
+</body>
+</html>

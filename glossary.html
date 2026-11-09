@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Glossary · lgme</title>
+  <meta name="description" content="Framework words, everyday names, and what they do on lgme.app." />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" />
+  <link rel="stylesheet" href="/menu.css" />
+  <style>
+    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; }
+    body { background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; font-size:1.05rem; line-height:1.55; max-width:46rem; margin:0 auto; padding:1.25rem max(1rem, env(safe-area-inset-right)) 4rem max(1rem, env(safe-area-inset-left)); }
+    h1 { font-family:Newsreader,serif; font-weight:500; font-size:clamp(1.9rem, 7vw, 2.6rem); line-height:1.05; margin:0.4rem 0; }
+    .kicker { margin:0; font-size:0.72rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--gold); }
+    .muted { color:var(--muted); }
+    a { color:var(--fg); }
+    nav a { min-height:44px; display:inline-flex; align-items:center; margin-right:0.8rem; }
+    table.gloss { width:100%; border-collapse:collapse; margin:1rem 0; }
+    table.gloss th, table.gloss td { text-align:left; vertical-align:top; padding:0.6rem 0.4rem; border-bottom:1px solid var(--line); }
+    table.gloss th { color:var(--gold); font-size:0.78rem; font-weight:600; }
+    @media (max-width:700px) {
+      table.gloss thead { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+      table.gloss, table.gloss tbody, table.gloss tr, table.gloss td { display:block; width:auto; }
+      table.gloss tr { margin:0.8rem 0; padding:0.25rem 0; border-bottom:1px solid var(--line); }
+      table.gloss td { border:0; padding:0.2rem 0; }
+      table.gloss td::before { content:attr(data-label); display:block; font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--gold); font-weight:600; }
+    }
+  </style>
+</head>
+<body>
+<nav aria-label="Desk">
+  <a href="/">Desk</a>
+  <a href="/help">Help</a>
+  <a href="/exchange">Exchange</a>
+</nav>
+<p class="kicker">lgme · Glossary</p>
+<h1>Glossary</h1>
+<p class="muted">Framework term, everyday name, everyday function. The first five lines match the home page.</p>
+<table class="gloss">
+  <thead><tr><th>Framework term</th><th>Front-end human primitive</th><th>Practical everyday function</th></tr></thead>
+  <tbody>
+    <tr>
+      <td data-label="Framework term">Tape / Constitutive Record</td>
+      <td data-label="Front-end human primitive">Public Ledger / Verified Receipt</td>
+      <td data-label="Practical everyday function">An immutable proof of completed work everyone can inspect.</td>
+    </tr>
+    <tr>
+      <td data-label="Framework term">Third Seat</td>
+      <td data-label="Front-end human primitive">Nonprofit arbiter</td>
+      <td data-label="Practical everyday function">The $lgme self-regulating nonprofit arbiter, a check on the State and Floor seats. In a deal the Third Seat is the arbiter who can veto.</td>
+    </tr>
+    <tr>
+      <td data-label="Framework term">Quiet Print</td>
+      <td data-label="Front-end human primitive">Hidden Issuance / Shadow Dilution</td>
+      <td data-label="Practical everyday function">Creating money or promises off-schedule behind closed doors.</td>
+    </tr>
+    <tr>
+      <td data-label="Framework term">Floor</td>
+      <td data-label="Front-end human primitive">Basic Needs Reserve</td>
+      <td data-label="Practical everyday function">Food, shelter, and essentials secured prior to speculative spending.</td>
+    </tr>
+    <tr>
+      <td data-label="Framework term">Issue / Named Bill</td>
+      <td data-label="Front-end human primitive">Peer Promise / Mutual Credit</td>
+      <td data-label="Practical everyday function">A non-cash IOU directly tied to human effort, not speculative debt.</td>
+    </tr>
+    <tr>
+      <td data-label="Framework term">IdidIt (verified receipt)</td>
+      <td data-label="Front-end human primitive">Both-party receipt</td>
+      <td data-label="Practical everyday function">The record after both people confirm the deed.</td>
+    </tr>
+    <tr>
+      <td data-label="Framework term">IwantIT</td>
+      <td data-label="Front-end human primitive">Request</td>
+      <td data-label="Practical everyday function">A member asks for a deed.</td>
+    </tr>
+    <tr>
+      <td data-label="Framework term">IhavIT</td>
+      <td data-label="Front-end human primitive">Offer</td>
+      <td data-label="Practical everyday function">A member offers a deed.</td>
+    </tr>
+    <tr>
+      <td data-label="Framework term">IselIT</td>
+      <td data-label="Front-end human primitive">Priced sale</td>
+      <td data-label="Practical everyday function">A sale at a locked price. A discount can come from the subfloor.</td>
+    </tr>
+    <tr>
+      <td data-label="Framework term">soBeIT</td>
+      <td data-label="Front-end human primitive">Donation</td>
+      <td data-label="Practical everyday function">A gift. A zero price becomes a donation request.</td>
+    </tr>
+    <tr>
+      <td data-label="Framework term">Deed credit unit</td>
+      <td data-label="Front-end human primitive">Locked value</td>
+      <td data-label="Practical everyday function">One deed’s US$ value, fixed when it is committed. It is not $lgme.</td>
+    </tr>
+    <tr>
+      <td data-label="Framework term">Subfloor</td>
+      <td data-label="Front-end human primitive">Category pool</td>
+      <td data-label="Practical everyday function">A reserve under the main floor for one kind of work. It does not borrow from the floor.</td>
+    </tr>
+  </tbody>
+</table>
+<p class="muted"><a href="/help">Help</a> · <a href="/exchange">Exchange</a></p>
+</body>
+</html>
