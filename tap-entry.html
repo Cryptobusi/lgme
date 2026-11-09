@@ -3,6 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="/js/ui-view.js"></script>
+  <link rel="stylesheet" href="/css/ui-view.css" />
   <title>One-Tap Entry demo · lgme</title>
   <meta name="description" content="Sample demo. Capture a Did, Sell, Wish, Duty, or Responsible entry, correct an on-device pre-fill, and dual-confirm it onto a sample Tape. Nothing leaves this device." />
   <link rel="canonical" href="https://lgme.app/tap-entry" />
@@ -23,6 +25,13 @@
     <a href="/workflow">Workflow map</a>
     <a href="/clearing-engine">Clearing engine</a>
   </nav>
+  <div class="view-switch" role="radiogroup" aria-label="View">
+    <span class="view-switch-kicker">View</span>
+    <a role="radio" href="/" data-ui-view="classic" aria-checked="false">Classic</a>
+    <a role="radio" href="/my-picture-classic" data-ui-view="picture" aria-checked="false">My Picture</a>
+    <a role="radio" href="/my-picture" data-ui-view="app" aria-checked="false">Sovereign App</a>
+    <a role="radio" href="/tap-entry" data-ui-view="tap" aria-checked="true">One-Tap Entry</a>
+  </div>
   <p class="kicker">lgme · sample data · on this device</p>
   <h1>One-Tap Entry demo</h1>
   <p class="lede">Three steps for a Did, Sell, Wish, Duty, or Responsible entry: capture it, correct the pre-fill, then dual-confirm it onto the sample Tape. AI suggests, you decide. The rules stay on this device.</p>
