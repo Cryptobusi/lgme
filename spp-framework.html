@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#0c100c" />
+  <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+  <title>SPP framework · Three seats, three currencies · lgme</title>
+  <meta name="description" content="Proposed design research for the Sovereign Provenance Protocol: three seats, three currencies, and comparable real-world pilots. Not legal, tax, or investment advice." />
+  <link rel="canonical" href="https://lgme.app/spp-framework" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" />
+  <link rel="stylesheet" href="/menu.css" />
+  <style>
+    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; --card:#151a15; }
+    body { background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; font-size:1.05rem; line-height:1.65; max-width:46rem; margin:0 auto; padding:1.25rem max(1rem, env(safe-area-inset-right)) 4rem max(1rem, env(safe-area-inset-left)); }
+    .kicker { margin:0; font-size:0.72rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--gold); }
+    h1,h2,h3 { font-family:Newsreader,serif; font-weight:500; letter-spacing:-0.02em; }
+    h1 { font-size:clamp(1.7rem, 6.5vw, 2.45rem); line-height:1.12; margin:0.4rem 0 0.6rem; }
+    h2 { font-size:clamp(1.35rem, 4vw, 1.7rem); line-height:1.2; margin:2.2rem 0 0.45rem; }
+    h3 { font-size:1.2rem; line-height:1.3; margin:1.5rem 0 0.35rem; }
+    p, li { overflow-wrap:anywhere; }
+    p { margin:0.7rem 0; }
+    .muted { color:var(--muted); }
+    a { color:var(--fg); }
+    nav.deskmenu a, .toc a { min-height:44px; display:inline-flex; align-items:center; }
+    nav.deskmenu a:hover, .toc a:hover, a:hover { color:var(--gold); }
+    aside.editorial, aside.disclaimer { border:1px solid var(--gold); background:var(--card); padding:0.9rem 1rem; margin:1rem 0 1.2rem; }
+    aside.disclaimer { border-color:var(--line); }
+    aside.editorial p, aside.disclaimer p { margin:0.45rem 0; }
+    .toc { margin:0.4rem 0 1.2rem; padding:0; list-style:none; }
+    .toc li { margin:0; }
+    .toc a { text-decoration:none; }
+    .sheet { width:100%; border-collapse:collapse; margin:0.8rem 0 1.1rem; }
+    .sheet th, .sheet td { text-align:left; vertical-align:top; padding:0.65rem 0.45rem; border-bottom:1px solid var(--line); }
+    .sheet th { color:var(--gold); font-size:0.78rem; letter-spacing:0.04em; font-weight:600; }
+    .sheet caption { text-align:left; caption-side:bottom; color:var(--muted); font-size:0.88rem; padding-top:0.45rem; }
+    ul, ol { margin:0.4rem 0 0.9rem; padding-left:1.2rem; }
+    li { margin:0.4rem 0; }
+    article.pilot { border-top:1px solid var(--line); padding-top:0.3rem; margin-top:1.4rem; }
+    .sources { font-size:0.95rem; }
+    .sources li { margin:0.55rem 0; }
+    :focus-visible { outline:2px solid var(--gold); outline-offset:3px; }
+    @media (max-width: 700px) {
+      .sheet thead { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+      .sheet, .sheet tbody, .sheet tr, .sheet td, .sheet caption { display:block; width:100%; }
+      .sheet caption { padding:0.35rem 0 0.7rem; }
+      .sheet tr { margin:0.85rem 0; padding:0.2rem 0 0.55rem; border-bottom:1px solid var(--line); }
+      .sheet td { border:0; padding:0.28rem 0; }
+      .sheet td::before { content:attr(data-label); display:block; font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--gold); font-weight:600; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="deskmenu" aria-label="Desk">
+    <a href="/">Desk</a>
+    <a href="/spp-framework" aria-current="page">SPP framework</a>
+    <a href="/spp">Protocol archive</a>
+    <a href="/campus">Campus</a>
+    <a href="/study">Study</a>
+  </nav>
+  <p class="kicker">lgme · proposed design · 9 November 2026</p>
+  <h1>Three seats, three currencies</h1>
+  <p class="muted">A plain-language research page for the Sovereign Provenance Protocol (SPP). It joins the three-seats / three-currencies framework with comparable pilots. Pilot first. Publish the metrics.</p>
+
+  <aside class="editorial" id="editorial" aria-label="Editorial note">
+    <p class="kicker">Editorial note</p>
+    <p>This note is separate from the design below. The design is proposed. It combines public pilot research with the three-seats / three-currencies framework discussed for lgme. It is a proposed design. It describes research, and it waits on a measured pilot.</p>
+    <p><strong>This page is not legal, tax, or investment advice.</strong></p>
+  </aside>
+
+  <aside class="disclaimer" id="disclaimer" aria-label="Disclaimer">
+    <p class="kicker">Disclaimer</p>
+    <p>This page is proposed design research for the Sovereign Provenance Protocol (SPP). It is not a description of functions that lgme.app already runs. It is not legal, tax, investment, or securities advice. It is not an offer to sell or a solicitation to buy any token, security, or membership. Campus Credit is not cash. <code>$lgme</code> is described here as a proposed utility under nonprofit stewardship; holders receive no yield or payouts in this design. Figures below are from cited public sources and may have changed since publication. Verify before relying on them.</p>
+  </aside>
+
+  <nav class="toc" aria-label="Contents">
+    <p class="kicker">Contents</p>
+    <ol class="toc">
+      <li><a href="#units">Three units and the walls between them</a></li>
+      <li><a href="#seats">Three seats, and the Tape</a></li>
+      <li><a href="#misses">What each money system misses</a></li>
+      <li><a href="#roles">Financial, legal, and socio-economic roles</a></li>
+      <li><a href="#future">Future stack</a></li>
+      <li><a href="#floor">A lasting Floor</a></li>
+      <li><a href="#policy">Policy levers and a phased path</a></li>
+      <li><a href="#limits">Honest limits and pilot metrics</a></li>
+      <li><a href="#pilots">Comparable pilots</a></li>
+      <li><a href="#sources">Sources and disputed figures</a></li>
+    </ol>
+  </nav>
+
+  <section id="units" aria-labelledby="units-heading">
+    <h2 id="units-heading">Three units and the walls between them</h2>
+    <p>The proposal uses three units. Each one has a job, and hard walls keep the jobs apart. Campus Credit (CC) is created by a deed the recipient confirms. <code>$lgme</code> is a proposed platform utility under a self-regulated nonprofit that serves only the Floor and posterity. The US dollar stays outside, as the regulated reference and the tax boundary.</p>
+    <table class="sheet">
+      <caption>Proposed units. Limits are design rules, not features the site already runs.</caption>
+      <thead>
+        <tr><th>Unit</th><th>Role</th><th>Limits</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td data-label="Unit"><strong>Campus Credit (CC)</strong></td>
+          <td data-label="Role">Mutual credit created only by deeds the recipient confirms. It fosters participation.</td>
+          <td data-label="Limits">Non-convertible to <code>$lgme</code> or US$. Capped on what a person can earn and hold. Fades when unused. No seigniorage: a deed creates it, and spending cancels it. It cannot be bought, airdropped, or admin-minted.</td>
+        </tr>
+        <tr>
+          <td data-label="Unit"><strong><code>$lgme</code> (Solana)</strong></td>
+          <td data-label="Role">Platform utility under a self-regulated nonprofit. It serves only the Floor and posterity.</td>
+          <td data-label="Limits">No yield, staking rewards, buybacks, or holder payouts. It cannot buy CC, reputation, votes, Floor access, or dispute outcomes. Its record stays separate from Hedera listing records.</td>
+        </tr>
+        <tr>
+          <td data-label="Unit"><strong>US$</strong></td>
+          <td data-label="Role">Regulated outside reference, and the tax boundary.</td>
+          <td data-label="Limits">The platform does not hold user funds, does not convert <code>$lgme</code> and US$ into each other, and does not pay Campus Credit out as cash. US$ prices are reference only.</td>
+        </tr>
+      </tbody>
+    </table>
+    <p>Rules that cut across all three:</p>
+    <ul>
+      <li>One-way walls. There is no conversion between the units.</li>
+      <li>Separate ledgers.</li>
+      <li>Fail closed. If a check is missing, the action stops.</li>
+      <li>The Tape shows hashes and counts, and it keeps private details off the public record.</li>
+      <li>The Third Seat hears disputes.</li>
+      <li>A pilot comes first: testnet, an allowlist, and caps.</li>
+    </ul>
+  </section>
+
+  <section id="seats" aria-labelledby="seats-heading">
+    <h2 id="seats-heading">Three seats, and the Tape</h2>
+    <p>Each seat holds one currency and one kind of policy. Each seat also limits the other two, so no single seat writes the rules alone.</p>
+    <table class="sheet">
+      <caption>Checks between the state, the Floor, and the commons.</caption>
+      <thead>
+        <tr><th>Seat</th><th>Currency</th><th>Seigniorage / policy</th><th>Limits the others by…</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td data-label="Seat"><strong>State</strong></td>
+          <td data-label="Currency">US$</td>
+          <td data-label="Seigniorage / policy">Central bank / Treasury</td>
+          <td data-label="Limits the others by">Keeping Campus Credit and <code>$lgme</code> lawful and bounded, and by taxing at the US$ boundary.</td>
+        </tr>
+        <tr>
+          <td data-label="Seat"><strong>Individual / Floor</strong></td>
+          <td data-label="Currency">Campus Credit</td>
+          <td data-label="Seigniorage / policy">Nobody. Deeds create it.</td>
+          <td data-label="Limits the others by">Letting people meet basic service needs without state money or issuer tokens. That is the right of refusal in practice.</td>
+        </tr>
+        <tr>
+          <td data-label="Seat"><strong>Third Seat / commons</strong></td>
+          <td data-label="Currency"><code>$lgme</code> nonprofit</td>
+          <td data-label="Seigniorage / policy">Protocol treasury under published limits</td>
+          <td data-label="Limits the others by">Funding infrastructure and independent review, so arbitration does not depend on the state or on any one person.</td>
+        </tr>
+      </tbody>
+    </table>
+    <h3>The Tape</h3>
+    <p>Issuance, cancellation, and dispute outcomes stay publicly checkable. Each seat can audit the others. The public view is hashes and counts. Private details stay off that view.</p>
+  </section>
+
+  <section id="misses" aria-labelledby="misses-heading">
+    <h2 id="misses-heading">What each money system misses</h2>
+    <p>Complementary seigniorage means each system creates or steers purchasing power in its own way, and each one leaves a gap. The proposal asks the other two units to fill that gap, with walls so the fill-in cannot be cashed out or captured.</p>
+    <table class="sheet">
+      <caption>What state money, a private token, and community credit each leave open.</caption>
+      <thead>
+        <tr><th>System</th><th>Does well</th><th>Misses</th><th>Filled by</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td data-label="System"><strong>State US$</strong></td>
+          <td data-label="Does well">Scale, enforcement, tax, and public goods.</td>
+          <td data-label="Misses">Care work, local trust, and people without credit.</td>
+          <td data-label="Filled by"><strong>Campus Credit</strong>. Credit starts with deeds, and it starts without collateral.</td>
+        </tr>
+        <tr>
+          <td data-label="System"><strong>Market / private token</strong></td>
+          <td data-label="Does well">Speed and innovation.</td>
+          <td data-label="Misses">Long-term stewardship, and a pattern where gains pool with early holders.</td>
+          <td data-label="Filled by"><strong>The <code>$lgme</code> nonprofit</strong>. Proceeds go to the Floor and to posterity.</td>
+        </tr>
+        <tr>
+          <td data-label="System"><strong>Community credit alone</strong></td>
+          <td data-label="Does well">Trust and reciprocity.</td>
+          <td data-label="Misses">Scale, a durable record, disputes between strangers, and legal standing.</td>
+          <td data-label="Filled by"><strong>The Tape, the Third Seat, and the US$ boundary.</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="roles" aria-labelledby="roles-heading">
+    <h2 id="roles-heading">Financial, legal, and socio-economic roles</h2>
+    <h3>Financial</h3>
+    <p>No seat captures unchecked money-creation profit. Campus Credit has zero seigniorage. <code>$lgme</code> income, in this design, funds the Floor. The US dollar stays an outside reference.</p>
+    <h3>Legal</h3>
+    <p>This is a short note. Statutes stay with counsel, who are required before any mainnet step. The <code>$lgme</code> role is a nonprofit mission-lock. Self-regulation, if it is real, needs outside audits, published rules, and the Tape.</p>
+    <h3>Socio-economic</h3>
+    <p>Campus Credit is meant to recognize care, teaching, and maintenance that wages often underpay. The Floor keeps refusal real: a person can meet a basic service need through confirmed deeds. The Third Seat is there so a dispute can be heard without rule by wealth alone and without rule by the state alone.</p>
+  </section>
+
+  <section id="future" aria-labelledby="future-heading">
+    <h2 id="future-heading">Future stack</h2>
+    <p>These pieces are proposed later integrations. Listing a name here does not mean lgme.app runs it today.</p>
+    <table class="sheet">
+      <caption>Named for a later stack. CLPR has no confirmed public spec in this research.</caption>
+      <thead>
+        <tr><th>Piece</th><th>Role for SPP</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td data-label="Piece"><strong>Hedera HCS</strong></td>
+          <td data-label="Role for SPP">A tamper-evident, time-ordered public record of confirmations and rulings.</td>
+        </tr>
+        <tr>
+          <td data-label="Piece"><strong>Hiero</strong></td>
+          <td data-label="Role for SPP">Open governance of the underlying software, so no single company controls it.</td>
+        </tr>
+        <tr>
+          <td data-label="Piece"><strong>Chainlink oracles / CCIP</strong></td>
+          <td data-label="Role for SPP">Verified real-world data, and messages across chains.</td>
+        </tr>
+        <tr>
+          <td data-label="Piece"><strong>CLPR</strong></td>
+          <td data-label="Role for SPP"><strong>To be verified.</strong> CLPR is to be verified. It is proposed as cross-chain record tying. This page does not claim a live spec.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="floor" aria-labelledby="floor-heading">
+    <h2 id="floor-heading">A lasting Floor</h2>
+    <p>The Floor is the practical right to meet basic service needs. Lessons below come from ESG ratings practice and from cash and basic-income pilots. They are read for design, and they are evidence with limits.</p>
+    <h3>ESG lesson</h3>
+    <p>Ratings often measure disclosures and policies more than outcomes. Agencies diverge. That gap is a greenwashing risk. Berg et al. call the divergence Aggregate Confusion. An OECD review finds that scores often track disclosures and stated efforts more than outcomes.</p>
+    <p>The SPP response is to publish verified outcome metrics: hours served, needs met, and disputes resolved. A self-reported score is a poor substitute for those counts.</p>
+    <h3>Cash and basic-income lesson</h3>
+    <p>Pilots often improve wellbeing. Employment effects vary with the design. Scaling faces cost, fights over funding, and a serious critique: income with no contribution can become politically fragile. Fiscal scale and work incentives remain contested. Those critiques belong in the open, next to the evidence.</p>
+    <p>The evidence, in short, and only at the figures cited later on this page:</p>
+    <ul>
+      <li>Stockton’s SEED year-1 report found better wellbeing and a rise in full-time work among recipients (28% to 40%, against 32% to 37% in the control group).</li>
+      <li>Finland’s 2017–2018 experiment found better perceived security, mental wellbeing, and trust, with small employment effects.</li>
+      <li>OpenResearch found that unconditional cash widened choice, and that average work dipped by a small, real amount.</li>
+      <li>GiveDirectly’s longer-term summaries found large asset gains.</li>
+      <li>Alaska’s Permanent Fund Dividend has run for decades with small overall labor effects.</li>
+    </ul>
+    <p>The SPP response is to frame the Floor as earned and voluntary. Campus Credit comes from confirmed deeds. It is local and opt-in. It is non-convertible. Where the design can, funding sits outside taxpayer politics: nonprofit <code>$lgme</code> proceeds, fees, and donations. The point of that structure is to meet the “something for nothing” critique in the rules themselves, while still taking the cash-pilot evidence seriously. Cash can raise agency and stability. This design keeps standing tied to a confirmed contribution, and it still owes the public both wellbeing numbers and participation numbers.</p>
+    <h3>What a durable Floor needs</h3>
+    <ul>
+      <li>Verified contribution.</li>
+      <li>Many small Floors, rather than one national claim on day one.</li>
+      <li>Funding that can stand outside a tax fight.</li>
+      <li>Rules anyone can check.</li>
+    </ul>
+  </section>
+
+  <section id="policy" aria-labelledby="policy-heading">
+    <h2 id="policy-heading">Policy levers and a phased path</h2>
+    <p>These are high-level levers to explore with counsel. A legal opinion comes before any of them is treated as available.</p>
+    <ul>
+      <li>Tax clarity for reciprocal community-service credit.</li>
+      <li>Recognition of service.</li>
+      <li>Forms that let co-ops and community currencies exist in the open.</li>
+      <li>Narrow service-hour rules that can accept a verified Campus Credit record.</li>
+      <li>Procurement preference for local circuits that publish outcomes.</li>
+      <li>Regulatory sandboxes.</li>
+    </ul>
+    <p>Counsel is required before any of those levers is treated as available.</p>
+    <h3>Phased path</h3>
+    <ol>
+      <li>A campus testnet pilot, with published metrics.</li>
+      <li>A nonprofit, a legal and tax opinion, and a university partner.</li>
+      <li>A state enabling bill for community-service credits.</li>
+      <li>Hedera, Hiero, and Chainlink interoperability across Floors.</li>
+    </ol>
+  </section>
+
+  <section id="limits" aria-labelledby="limits-heading">
+    <h2 id="limits-heading">Honest limits and pilot metrics</h2>
+    <p>The sections above are design goals. A pilot has to show five things in public before anyone treats them as results:</p>
+    <ul>
+      <li>Broad participation, rather than a few heavy users.</li>
+      <li>An effective Floor: requests met with zero <code>$lgme</code>.</li>
+      <li>Fair disputes.</li>
+      <li>No single seat capturing the system.</li>
+      <li>No gray-market convertibility of Campus Credit at scale.</li>
+    </ul>
+    <p>Metrics worth publishing:</p>
+    <ul>
+      <li>Weekly active deed confirmations.</li>
+      <li>The share of deeds settled with zero <code>$lgme</code>.</li>
+      <li>Balance distribution.</li>
+      <li>Dispute counts and outcomes.</li>
+      <li>Allowlist size.</li>
+      <li>Testnet write success and fail rates.</li>
+    </ul>
+  </section>
+
+  <section id="pilots" aria-labelledby="pilots-heading">
+    <h2 id="pilots-heading">Comparable pilots</h2>
+    <p>Each note below says what the project was, when the cited figures apply, what scale and results those sources report, why it lasted or stalled, and what it suggests for the Floor, Campus Credit, <code>$lgme</code>, or the US dollar. Figures carry the year of the source that states them. Where sources disagree, both years stay on the page.</p>
+
+    <h3>A. Mutual credit and business-to-business currencies</h3>
+
+    <article class="pilot" id="wir">
+      <h3>WIR Bank (Switzerland)</h3>
+      <p><strong>What.</strong> A business-to-business complementary credit circle, the Wirtschaftsring. Small and mid-sized firms credit and debit one another alongside the Swiss franc. Founded in 1934. It became WIR Bank in 1998.</p>
+      <p><strong>Scale, by year.</strong> Stodder’s tables report about 77,000 members and about CHF 1.65 billion in turnover in 2003. Patterns of Commoning reports about 50,000 SMEs and CHF 1.43 billion in trade in 2013. Other summaries speak of about 60,000 users and turnover in a CHF 1.5 billion class; those summaries do not fix one year, so this page does not assign them one.</p>
+      <p><strong>Results.</strong> Stodder finds WIR use empirically counter-cyclical: it rises when Swiss francs are scarce. It is the longest-running durable complementary currency in this set.</p>
+      <p><strong>Why it lasted.</strong> A legal bank form, a network of firms, dual-currency pragmatism, and decades of trust.</p>
+      <p><strong>Lesson.</strong> For Campus Credit and the Floor: mutual credit can steady participation while national money remains in place. For the US dollar: keep the complementary unit non-sovereign, and let people use it beside official money. For <code>$lgme</code>: durability follows a clear legal form and stewardship.</p>
+      <p class="sources"><strong>Sources.</strong> <a href="http://www.jimstodder.com/WIR_Update2.pdf">Stodder, WIR update (PDF)</a> · <a href="https://patternsofcommoning.org/wir-currency-reinventing-social-exchange/">Patterns of Commoning</a> · <a href="https://community-currency.info/wir-bank/">Community Currency</a> (that path returned 404 on 9 November 2026; the Stodder PDF and Patterns of Commoning are the working citations).</p>
+    </article>
+
+    <article class="pilot" id="sardex">
+      <h3>Sardex (Sardinia)</h3>
+      <p><strong>What.</strong> Electronic business-to-business mutual credit. One Sardex is accounted as about one euro. Zero interest among SMEs. Founded around 2009–2010, with the early WIR as an inspiration. VAT is paid in euro on the full amount.</p>
+      <p><strong>Scale, by year.</strong> 237 members and €304,000 in volume in 2010. About 3,000 members and €51 million in 2015. About 3,200 members and €43 million in 2018.</p>
+      <p><strong>Results.</strong> Velocity was high: about 4.8 in 2018, against about 1 for the euro. The circuit supports SME liquidity, and the tax treatment is transparent because VAT is in euro.</p>
+      <p><strong>Why it lasted and grew.</strong> In-person onboarding, iteration of the fee model, and trust among firms. It remains a regional fraction of GDP.</p>
+      <p><strong>Lesson.</strong> For Campus Credit: confirmation by the recipient or the network, plus caps, matters. Mutual credit can be abundant when it is tied to real trade. For the Floor: a local circuit needs brokers and trust, as well as software. For the US dollar: keep the tax boundary clear, as Sardex does by paying VAT in euro.</p>
+      <p class="sources"><strong>Sources.</strong> <a href="https://researchonline.lse.ac.uk/id/eprint/67135/7/Dini_From%20complimentary%20currency.pdf">LSE research PDF</a> · <a href="https://www.tandfonline.com/doi/full/10.1080/23311886.2019.1646625">Taylor &amp; Francis</a> · <a href="https://opencredit.network/2019/10/01/lessons-from-sardinia-a-conversation-with-giuseppe-littera-of-sardex/">Open Credit Network, conversation with Giuseppe Littera (2019)</a>.</p>
+    </article>
+
+    <article class="pilot" id="banco-palmas">
+      <h3>Banco Palmas (Fortaleza, Brazil)</h3>
+      <p><strong>What.</strong> A community development bank from 1998, plus the social currency Palma from 2002. Palma was pegged 1:1 to the real and meant to circulate locally, alongside microcredit and campaigns to buy locally.</p>
+      <p><strong>Scale, by year.</strong> O Povo’s 25-year report in 2023: more than 10,000 people impacted, and R$35 million in credit moved, of which R$25 million was productive credit and R$10 million was consumer credit. Local consumption in the neighbourhood is reported from about 20% in 1997 to 93% in 2011, and about 95% in a 2016 survey cited in SciELO. G1 reporting in 2026 describes later digital accounts above 20,000 and more than 3,000 businesses. This note has no G1 URL, so that 2026 line stays attributed and unlinkable here.</p>
+      <p><strong>Results.</strong> Spending localised strongly. Early legal friction with the Central Bank was resolved by peg and coupon framing. Scale stayed limited by regulation: the project cannot take deposits the way a bank can.</p>
+      <p><strong>Lesson.</strong> For the Floor: a currency on its own is incomplete. Mobilisation and a map of local supply do the work. For Campus Credit: keep geographic and use limits. For the US dollar: a peg or reserve, and legal clarity, reduce conflict with the state.</p>
+      <p class="sources"><strong>Sources.</strong> <a href="https://mais.opovo.com.br/jornal/reportagem/2023/01/19/em-25-anos-moeda-social-criada-no-ceara-beneficia-10-mil-pessoas-e-movimenta-rs-35-milhoes.html">O Povo, 19 January 2023</a> · <a href="https://www.iss.nl/sites/corporate/files/Fare_Meyer_de_Freitas.pdf">Fare, Meyer, and de Freitas (PDF)</a> · <a href="https://www.scielo.br/j/inter/a/R4GKj3p5vTctvpJ73sN9fGJ/?lang=">SciELO</a>.</p>
+    </article>
+
+    <h3>B. Convertible local currencies</h3>
+
+    <article class="pilot" id="berkshares">
+      <h3>BerkShares (Berkshire County, United States)</h3>
+      <p><strong>What.</strong> A local currency launched in 2006. Convertible with the US dollar at a discount. Accepted by local businesses and banks.</p>
+      <p><strong>Scale.</strong> An early splash of about 1 million issued in nine months, growing toward about 2.7 million issued. Later circulation was reported at about 140,000. The same accounts describe hundreds of businesses and multiple banks. The later circulation figure is reported without a single year fixed in this research note.</p>
+      <p><strong>Results.</strong> A cultural “local first” effect is claimed. Circulation was too small for a macro cushion. It declined when publicity and staff were not sustained.</p>
+      <p><strong>Why it stalled.</strong> Businesses redeemed notes to the bank instead of recirculating them. Funding and staff for promotion ran thin.</p>
+      <p><strong>Lesson.</strong> For Campus Credit: non-convertible mutual credit fits this design better than a convertible local currency that leaks back to national money. For the Floor: recirculation beats launch publicity. For <code>$lgme</code>: stewardship funding has to last longer than a campaign.</p>
+      <p class="sources"><strong>Sources.</strong> <a href="https://newstartmag.co.uk/articles/do-local-currencies-work/">New Start, “Do local currencies work?”</a> · <a href="https://eprints.whiterose.ac.uk/id/eprint/125484/1/Marshall%20and%20O/Neill%202018%20%5BThe%20Bristol%20Pound%20-%20A%20tool%20for%20localisation%5D%20AAM%20Version.pdf">Marshall and O’Neill, Bristol Pound paper (AAM PDF)</a>.</p>
+    </article>
+
+    <article class="pilot" id="bristol">
+      <h3>Bristol Pound (United Kingdom)</h3>
+      <p><strong>What.</strong> A city convertible local currency, with credit-union and council support. Paper, then digital. A community-interest company operated it.</p>
+      <p><strong>Results.</strong> The profile was high. Research found little evidence that it increased local supplier sourcing or productivity. Financial viability was hard without grants. The successor, Bristol Pay, was not fully funded.</p>
+      <p><strong>Why it stalled.</strong> Cash use declined, digital upgrades were costly, and the project depended on grants.</p>
+      <p><strong>Lesson.</strong> Convertibility plus a public profile is a weak stand-in for a Floor. Measure outcomes: local sourcing, hours served. Brand awareness is a different question.</p>
+      <p class="sources"><strong>Sources.</strong> <a href="https://www.ijccr.net/article/view/8851">International Journal of Community Currency Research</a> · <a href="https://www.wired.com/story/local-currencies-dead/">Wired</a> · <a href="https://eprints.whiterose.ac.uk/id/eprint/125484/1/Marshall%20and%20O/Neill%202018%20%5BThe%20Bristol%20Pound%20-%20A%20tool%20for%20localisation%5D%20AAM%20Version.pdf">Marshall and O’Neill (AAM PDF)</a>.</p>
+    </article>
+
+    <article class="pilot" id="brixton">
+      <h3>Brixton Pound (United Kingdom)</h3>
+      <p><strong>What.</strong> A Transition-town convertible local currency from 2009. A community-interest company from 2011. Paper and electronic. About 250 businesses at the peak. Council-tax acceptance is reported for business rates.</p>
+      <p><strong>Why it stalled, as each source reports it.</strong> Wired in 2020 said some local currencies were still ongoing. A later Good Money Lab report says COVID shop closures and project disruption halted the Brixton Pound. This page keeps both reports, and it leaves the ending date with each source.</p>
+      <p><strong>Lesson.</strong> Local paper currencies are fragile to shocks. For an SPP Floor, digital mutual credit plus a durable Tape is the more resilient shape.</p>
+      <p class="sources"><strong>Sources.</strong> <a href="https://goodmoneylab.org/2025/03/brixton-pound-report_en/">Good Money Lab, Brixton Pound report</a> · <a href="https://www.wired.com/story/local-currencies-dead/">Wired</a>.</p>
+    </article>
+
+    <h3>C. Inclusion, time, and care credits</h3>
+
+    <article class="pilot" id="sarafu">
+      <h3>Grassroots Economics / Sarafu (Kenya)</h3>
+      <p><strong>What.</strong> Community Inclusion Currencies, reached by feature-phone USSD. The networks were consolidated to Sarafu in January 2020. A blockchain served as a secondary record in the xDAI era. The design uses demurrage, or holding fees, and works through chamas.</p>
+      <p><strong>Scale, by year.</strong> Nature Scientific Data: registered accounts from about 8,354 to about 55,000 between January 2020 and June 2021, and about 300 million Sarafu (about US$2.8 million) of transaction volume in that dataset window. The Grassroots Economics 2021 recap, at end-2021: about 59,800 users, about KSh 16 million in circulation, and about 473,000 outgoing transactions. A 2021 Frontiers paper reports that US$30 community-inclusion-currency transfers were associated with higher wallet balances, higher income and spending in the community currency, and more spending on food and water, with a gender gap in the effects. The Grassroots Economics 2024 impacts note: 33 pools, 239 vouchers, 3,149 monthly active users, and 1,504 Mweria cycles.</p>
+      <p><strong>Why it lasted, and what strained it.</strong> NGO operations, Red Cross partnerships, open data, and adaptation (demurrage and pools). Some surveys report merchant price inflation. Gender imbalances show up in the evidence. Effects on the national currency are hard to measure inside a closed network.</p>
+      <p><strong>Lesson.</strong> For Campus Credit: demurrage, a fade on unused balances, fights hoarding. For the Tape: publish anonymized ledgers. For the Floor: crisis response works when liquidity reaches local trade networks. For the US dollar: aid multipliers can stay inside the complementary unit.</p>
+      <p class="sources"><strong>Sources.</strong> <a href="https://www.nature.com/articles/s41597-022-01539-4">Nature Scientific Data</a> · <a href="https://www.frontiersin.org/journals/blockchain/articles/10.3389/fbloc.2021.739751/full">Frontiers in Blockchain, 2021</a> · <a href="https://grassrootseconomics.org/2021-recap">Grassroots Economics, 2021 recap</a> · <a href="https://grassecon.substack.com/p/impacts-2024html">Grassroots Economics, 2024 impacts</a>.</p>
+    </article>
+
+    <article class="pilot" id="timebanks">
+      <h3>TimeBanks USA / hOurworld</h3>
+      <p><strong>What.</strong> Hour-for-hour service exchange. Community Weaver is the TimeBanks USA software. Time &amp; Talents is the hOurworld software.</p>
+      <p><strong>Scale, by year.</strong> hOurworld reported growth from about 8,000 members in 2011 to more than 26,000 members across 230 or more timebanks by late 2014, as carried in academic sources. This page uses those dated figures. It does not repeat an undated marketing claim about current membership. Surveys, including the hOurworld outcome study, report social connection, access to help, and health and self-esteem outcomes.</p>
+      <p><strong>Why some lasted and some stalled.</strong> Local coordinators carry the network. Software helps, and it does not replace trust or quality control. Growth can outrun coordination.</p>
+      <p><strong>Lesson.</strong> For Campus Credit: one hour equal to one hour is egalitarian Floor logic. For the Third Seat: coordination capacity is the scarce resource. For <code>$lgme</code>: fund coordinators and review.</p>
+      <p class="sources"><strong>Sources.</strong> <a href="https://hourworld.org/train/K_Surveys_and_Results/TimeBank_Outcome_Study_Executive_Summary.pdf">hOurworld outcome study, executive summary (PDF)</a> · <a href="http://www.transitsocialinnovation.eu/content/original/Book%20covers/Local%20PDFs/253%20Time%20Banks%20-%20Case%20study%20report%20Time%20Banks-2017.pdf">TRANSIT time banks case study (2017 PDF)</a> · <a href="https://www.ijccr.net/article/view/9081">International Journal of Community Currency Research</a>.</p>
+    </article>
+
+    <article class="pilot" id="fureai">
+      <h3>Fureai Kippu (Japan)</h3>
+      <p><strong>What.</strong> A “ticket for a caring relationship”: time credits for elder care. The line begins with volunteer labour banks, including Osaka in 1973, and a national expansion in the 1990s under Hotta.</p>
+      <p><strong>Scale.</strong> Branches grew from 113 in 1992 to about 300 or more by the late 1990s and early 2000s. A MoPAct summary notes about 70,000 active participants across about 400 branches. Schemes combine time credits with modest cash.</p>
+      <p><strong>What strained it.</strong> Local schemes stayed fragmented. The 2000 Long-Term Care Insurance system at first pulled demand and workers toward paid care. A shortage of volunteers followed the demographic trend.</p>
+      <p><strong>Lesson.</strong> For Campus Credit: care work can be recognized without full monetization. For the Floor: state policy can crowd community credit out, and it can also revive it. Keep Campus Credit complementary to public systems.</p>
+      <p class="sources"><strong>Sources.</strong> <a href="https://www.ijccr.net/article/view/9150">International Journal of Community Currency Research</a> · <a href="https://mopact.sites.sheffield.ac.uk/research-fields/social-support-and-long-term-care/innovations/fureai-kippu-ticket-for-a-caring-relationship">MoPAct, Fureai Kippu</a> · <a href="https://bernard-lietaer.org/wp-content/uploads/2022/07/2004-Complementary-currencies-in-Japan-today-History-originality-and-relevance-Lietaer-annotated.pdf">Lietaer, complementary currencies in Japan (annotated PDF)</a>.</p>
+    </article>
+
+    <h3>D. Cash, basic income, and dividends</h3>
+    <p>These pilots pay national money. They are here so the Floor stays honest about what unconditional cash has and has not shown. Campus Credit is a different instrument: a confirmed deed, local and non-convertible.</p>
+
+    <article class="pilot" id="stockton">
+      <h3>Stockton SEED (California)</h3>
+      <p><strong>What.</strong> A randomized trial. US$500 a month, unconditional, for 24 months, to 125 recipients, compared with a control group. Philanthropically funded.</p>
+      <p><strong>Year-1 results (February 2019–February 2020).</strong> The detailed report: full-time employment among recipients moved from 28% to 40%, and in the control group from 32% to 37%. Recipients reported less anxiety and depression, and improved wellbeing. Spending was mostly food and essentials. Alcohol and tobacco were under 1% of spending. A press summary said recipients obtained full-time work at more than twice the rate of non-recipients. That sentence is press phrasing. The percentages in the report are the figures this page relies on.</p>
+      <p><strong>Lesson.</strong> Cash can raise agency and stability. The SPP difference is structural: the Floor and Campus Credit keep standing tied to a confirmed contribution, so the “something for nothing” critique is met in the rules. That difference does not dismiss what SEED measured.</p>
+      <p class="sources"><strong>Sources.</strong> <a href="https://www.stocktondemonstration.org/press-landing/guaranteed-income-increases-employment-improves-financial-and-physical-health">Stockton demonstration press page</a> · <a href="https://assets.ctfassets.net/thownz9vc5w0/1fEFnafA2gyxp5IRbkHHmu/3f21c03813360b1022035e23e25d5dee/SEED_Preliminary_Analysis-SEEDs_First_Year_Final_Report_Individual_Pages_.pdf">SEED first-year report (PDF)</a>.</p>
+    </article>
+
+    <article class="pilot" id="finland">
+      <h3>Finland basic income experiment (2017–2018)</h3>
+      <p><strong>What.</strong> 2,000 unemployed people received €560 a month, unconditional, compared with a control group.</p>
+      <p><strong>Results, as officially summarized.</strong> Employment effects were small. There was no clear employment boost in year one. Later, people worked a modest number of extra days, with confounding changes from an activation model. Participants reported better perceived economic security, mental wellbeing, and trust.</p>
+      <p><strong>Lesson.</strong> Wellbeing gains and large employment shifts are different findings. A fair critique remains: fiscal scale and work incentives are contested. An SPP Floor should publish both wellbeing and participation.</p>
+      <p class="sources"><strong>Sources.</strong> <a href="https://valtioneuvosto.fi/en/-/1271139/perustulokokeilun-tulokset-tyollisyysvaikutukset-vahaisia-toimeentulo-ja-psyykkinen-terveys-koettiin-paremmaksi">Finnish Government (valtioneuvosto)</a> · <a href="https://stm.fi/en/-/perustulokokeilun-tulokset-tyollisyysvaikutukset-vahaisia-toimeentulo-ja-psyykkinen-terveys-koettiin-paremmaksi">Ministry of Social Affairs and Health (STM)</a>. Automated checks of these two pages returned 403 on 9 November 2026. The URLs remain the official citations.</p>
+    </article>
+
+    <article class="pilot" id="openresearch">
+      <h3>OpenResearch Unconditional Cash Study (United States)</h3>
+      <p><strong>What.</strong> 1,000 adults received US$1,000 a month for 3 years. 2,000 people in the control group received US$50 a month.</p>
+      <p><strong>Results.</strong> Recipients were about 2 percentage points less likely to be employed. They worked about 1.3 fewer hours a week. Earned income was lower when transfers are excluded, and higher when transfers are included. The spread across people was wide: cash funded care, study, and a more selective job search.</p>
+      <p><strong>Lesson.</strong> Unconditional cash increases choice. The average dip in work is small, and it is real. SPP should promise a measurable Floor and a contribution path. A promise of “no labor effect” is outside what this evidence supports.</p>
+      <p class="sources"><strong>Sources.</strong> <a href="https://www.openresearchlab.org/findings/key-findings-employment-and-income">OpenResearch, employment and income findings</a> · <a href="https://www.nber.org/papers/w32719">NBER working paper 32719</a>.</p>
+    </article>
+
+    <article class="pilot" id="givedirectly">
+      <h3>GiveDirectly (Kenya cash transfers)</h3>
+      <p><strong>What.</strong> Large unconditional cash transfers, studied by Haushofer and Shapiro and in later follow-ons.</p>
+      <p><strong>Results, from 3-year follow-up summaries.</strong> About 40% more assets than controls, about US$422 PPP. Asset gains held up: livestock, roofs, furniture, and savings. Within villages, consumption, food security, and wellbeing rose. General-equilibrium effects have been studied separately.</p>
+      <p><strong>Lesson.</strong> Cash works for assets and welfare. A complementary currency such as Sarafu can multiply local trade by a different route. SPP uses Campus Credit for service standing, and it uses the US dollar only at regulated edges.</p>
+      <p class="sources"><strong>Sources.</strong> <a href="https://www.givedirectly.org/longer-term-impacts-of-givedirectly-transfers-first-evidence">GiveDirectly, longer-term impacts</a> · <a href="https://www.povertyactionlab.org/case-study/giving-directly-support-poor-households">J-PAL, giving directly</a>.</p>
+    </article>
+
+    <article class="pilot" id="alaska">
+      <h3>Alaska Permanent Fund Dividend</h3>
+      <p><strong>What.</strong> A permanent, universal cash dividend from resource wealth, ongoing since the 1980s.</p>
+      <p><strong>Results, from AEA research.</strong> No large drop in the employment-to-population ratio. Some increase in part-time work, about 1.8 percentage points. Overall labor effects are small.</p>
+      <p><strong>Lesson.</strong> A long-running dividend can coexist with work. It differs from SPP: oil rents fund it, and deeds do not. SPP’s Floor is contribution-linked Campus Credit, plus nonprofit stewardship of <code>$lgme</code>.</p>
+      <p class="sources"><strong>Sources.</strong> <a href="https://www.aeaweb.org/articles?id=10.1257%2Fpol.20190299">American Economic Journal: Economic Policy</a> · <a href="https://scholarworks.alaska.edu/cgi/viewcontent.cgi?article=1410&amp;context=uaa_iser_reports">ISER report, ScholarWorks</a> (automated check returned 403 on 9 November 2026).</p>
+    </article>
+
+    <h3>E. Crypto and commons-funding analogues</h3>
+
+    <article class="pilot" id="circles">
+      <h3>Circles UBI / Encointer</h3>
+      <p><strong>Circles.</strong> Personal cryptocurrencies plus a trust graph, with minting and demurrage (documents describe on the order of 7% a year) and transitive payments. Research papers exist. Scale remains modest relative to national money. Sybil attacks on the trust graph are a central open problem.</p>
+      <p><strong>Encointer.</strong> Proof-of-personhood meetups and local community currencies. Project materials describe small pilots: hundreds of people globally, with chapters in Zurich, Tanzania, and Nigeria. Project and press materials report aid multipliers in Tanzania, including a 240% figure. Treat that figure as project-reported. This note leaves it outside the independent-trial evidence, and it assigns the figure no study year.</p>
+      <p><strong>Lesson.</strong> Personhood and demurrage line up with the Tape and with a fade on unused credit. Sybil risk and trust-graph capture stay open. That is why the proposal starts with a Third Seat and an allowlist pilot.</p>
+      <p class="sources"><strong>Sources.</strong> <a href="https://www.frontiersin.org/journals/blockchain/articles/10.3389/fbloc.2024.1362939/full">Frontiers in Blockchain, 2024</a> · <a href="https://whitepaper.aboutcircles.com/">Circles whitepaper</a> · <a href="https://encointer.org/">Encointer</a> · <a href="https://nextbillion.net/creating-local-means-of-exchange-for-african-entrepreneurs-how-blockchain-based-community-currency-gained-traction-tanzania/">NextBillion, Tanzania community currency</a>.</p>
+    </article>
+
+    <article class="pilot" id="gitcoin">
+      <h3>Gitcoin (quadratic funding)</h3>
+      <p><strong>What.</strong> Matching rounds for public goods, using quadratic funding.</p>
+      <p><strong>Scale.</strong> GG21 through GG24 retrospectives report matching on the order of US$0.9 million to US$1.5 million, and hundreds of projects. This page does not split that range into a figure for each round. The published lessons: quadratic funding supports visible mid-stage projects well, and it underfunds less-visible infrastructure. The mechanism needs Sybil resistance, and it works best beside other tools (microgrants, requests for proposals, and retrospective funding).</p>
+      <p><strong>Lesson.</strong> For the Third Seat and the <code>$lgme</code> nonprofit: transparent matching toward the Floor and toward infrastructure beats a yield paid to holders. Pair quadratic-funding-like rules with published audits.</p>
+      <p class="sources"><strong>Sources.</strong> <a href="https://gitcoin.co/case-studies/gg21-community-led-round-results-retrospective">Gitcoin, GG21 retrospective</a> · <a href="https://gitcoin.co/blog/gg22-results-recap">Gitcoin, GG22 recap</a> (an automated check returned 502 on 9 November 2026) · <a href="https://gov.gitcoin.co/t/gg23-oss-program-quadratic-funding-results/20334">Gitcoin governance, GG23 results</a>.</p>
+    </article>
+
+    <h3>F. ESG, as a lesson rather than a pilot</h3>
+    <article class="pilot" id="esg">
+      <h3>Ratings measure disclosure more often than outcomes</h3>
+      <p>Berg et al. document Aggregate Confusion: ESG ratings diverge across agencies. OECD and related reviews find that scores often track disclosures and stated efforts more than outcomes, which is a greenwashing risk.</p>
+      <p><strong>Lesson for the Floor.</strong> Publish independent, quantitative outcomes. A single self-reported score in the style of an ESG rating is weak proof of virtue.</p>
+      <p class="sources"><strong>Sources.</strong> <a href="https://academic.oup.com/rof/article/26/6/1315/6590670">Berg et al., Aggregate Confusion</a> (automated check returned 403 on 9 November 2026) · <a href="https://www.oecd.org/content/dam/oecd/en/publications/reports/2025/02/behind-esg-ratings_4591b8bb/3f055f0c-en.pdf">OECD, Behind ESG ratings (PDF)</a>.</p>
+    </article>
+  </section>
+
+  <section id="sources" aria-labelledby="sources-heading">
+    <h2 id="sources-heading">Sources and disputed figures</h2>
+    <p>Every URL below is the citation used above. A link check on 9 November 2026 is noted where the automated fetch failed. A failed fetch is a reachability note. The citation stays on the page.</p>
+    <ul class="sources">
+      <li>WIR, 2003 tables: <a href="http://www.jimstodder.com/WIR_Update2.pdf">http://www.jimstodder.com/WIR_Update2.pdf</a></li>
+      <li>WIR, 2013 trade figure: <a href="https://patternsofcommoning.org/wir-currency-reinventing-social-exchange/">https://patternsofcommoning.org/wir-currency-reinventing-social-exchange/</a></li>
+      <li>WIR directory path, 404 on 9 November 2026: <a href="https://community-currency.info/wir-bank/">https://community-currency.info/wir-bank/</a></li>
+      <li>Sardex: <a href="https://researchonline.lse.ac.uk/id/eprint/67135/7/Dini_From%20complimentary%20currency.pdf">LSE PDF</a> · <a href="https://www.tandfonline.com/doi/full/10.1080/23311886.2019.1646625">Taylor &amp; Francis</a> (403 on automated fetch) · <a href="https://opencredit.network/2019/10/01/lessons-from-sardinia-a-conversation-with-giuseppe-littera-of-sardex/">Open Credit Network</a></li>
+      <li>Banco Palmas: <a href="https://mais.opovo.com.br/jornal/reportagem/2023/01/19/em-25-anos-moeda-social-criada-no-ceara-beneficia-10-mil-pessoas-e-movimenta-rs-35-milhoes.html">O Povo (2023)</a> · <a href="https://www.iss.nl/sites/corporate/files/Fare_Meyer_de_Freitas.pdf">ISS PDF</a> · <a href="https://www.scielo.br/j/inter/a/R4GKj3p5vTctvpJ73sN9fGJ/?lang=">SciELO</a> (403 on automated fetch). G1 2026 is cited in the research note without a URL.</li>
+      <li>BerkShares and Bristol: <a href="https://newstartmag.co.uk/articles/do-local-currencies-work/">New Start</a> · <a href="https://eprints.whiterose.ac.uk/id/eprint/125484/1/Marshall%20and%20O/Neill%202018%20%5BThe%20Bristol%20Pound%20-%20A%20tool%20for%20localisation%5D%20AAM%20Version.pdf">Marshall and O’Neill AAM</a> · <a href="https://www.ijccr.net/article/view/8851">IJCCR</a> · <a href="https://www.wired.com/story/local-currencies-dead/">Wired</a></li>
+      <li>Brixton: <a href="https://goodmoneylab.org/2025/03/brixton-pound-report_en/">Good Money Lab</a> · <a href="https://www.wired.com/story/local-currencies-dead/">Wired</a></li>
+      <li>Sarafu: <a href="https://www.nature.com/articles/s41597-022-01539-4">Nature Scientific Data</a> · <a href="https://www.frontiersin.org/journals/blockchain/articles/10.3389/fbloc.2021.739751/full">Frontiers (2021)</a> · <a href="https://grassrootseconomics.org/2021-recap">2021 recap</a> · <a href="https://grassecon.substack.com/p/impacts-2024html">2024 impacts</a></li>
+      <li>Time banks: <a href="https://hourworld.org/train/K_Surveys_and_Results/TimeBank_Outcome_Study_Executive_Summary.pdf">hOurworld PDF</a> · <a href="http://www.transitsocialinnovation.eu/content/original/Book%20covers/Local%20PDFs/253%20Time%20Banks%20-%20Case%20study%20report%20Time%20Banks-2017.pdf">TRANSIT PDF</a> · <a href="https://www.ijccr.net/article/view/9081">IJCCR</a></li>
+      <li>Fureai Kippu: <a href="https://www.ijccr.net/article/view/9150">IJCCR</a> · <a href="https://mopact.sites.sheffield.ac.uk/research-fields/social-support-and-long-term-care/innovations/fureai-kippu-ticket-for-a-caring-relationship">MoPAct</a> · <a href="https://bernard-lietaer.org/wp-content/uploads/2022/07/2004-Complementary-currencies-in-Japan-today-History-originality-and-relevance-Lietaer-annotated.pdf">Lietaer PDF</a></li>
+      <li>Stockton SEED: <a href="https://www.stocktondemonstration.org/press-landing/guaranteed-income-increases-employment-improves-financial-and-physical-health">press page</a> · <a href="https://assets.ctfassets.net/thownz9vc5w0/1fEFnafA2gyxp5IRbkHHmu/3f21c03813360b1022035e23e25d5dee/SEED_Preliminary_Analysis-SEEDs_First_Year_Final_Report_Individual_Pages_.pdf">year-1 PDF</a></li>
+      <li>Finland: <a href="https://valtioneuvosto.fi/en/-/1271139/perustulokokeilun-tulokset-tyollisyysvaikutukset-vahaisia-toimeentulo-ja-psyykkinen-terveys-koettiin-paremmaksi">valtioneuvosto</a> · <a href="https://stm.fi/en/-/perustulokokeilun-tulokset-tyollisyysvaikutukset-vahaisia-toimeentulo-ja-psyykkinen-terveys-koettiin-paremmaksi">STM</a> (both 403 on automated fetch)</li>
+      <li>OpenResearch: <a href="https://www.openresearchlab.org/findings/key-findings-employment-and-income">findings</a> · <a href="https://www.nber.org/papers/w32719">NBER w32719</a></li>
+      <li>GiveDirectly: <a href="https://www.givedirectly.org/longer-term-impacts-of-givedirectly-transfers-first-evidence">GiveDirectly</a> · <a href="https://www.povertyactionlab.org/case-study/giving-directly-support-poor-households">J-PAL</a></li>
+      <li>Alaska: <a href="https://www.aeaweb.org/articles?id=10.1257%2Fpol.20190299">AEA</a> · <a href="https://scholarworks.alaska.edu/cgi/viewcontent.cgi?article=1410&amp;context=uaa_iser_reports">ISER PDF</a> (403 on automated fetch)</li>
+      <li>Circles and Encointer: <a href="https://www.frontiersin.org/journals/blockchain/articles/10.3389/fbloc.2024.1362939/full">Frontiers (2024)</a> · <a href="https://whitepaper.aboutcircles.com/">Circles whitepaper</a> · <a href="https://encointer.org/">encointer.org</a> · <a href="https://nextbillion.net/creating-local-means-of-exchange-for-african-entrepreneurs-how-blockchain-based-community-currency-gained-traction-tanzania/">NextBillion</a></li>
+      <li>Gitcoin: <a href="https://gitcoin.co/case-studies/gg21-community-led-round-results-retrospective">GG21</a> · <a href="https://gitcoin.co/blog/gg22-results-recap">GG22</a> (502 on 9 November 2026) · <a href="https://gov.gitcoin.co/t/gg23-oss-program-quadratic-funding-results/20334">GG23</a></li>
+      <li>ESG: <a href="https://academic.oup.com/rof/article/26/6/1315/6590670">Aggregate Confusion</a> (403 on automated fetch) · <a href="https://www.oecd.org/content/dam/oecd/en/publications/reports/2025/02/behind-esg-ratings_4591b8bb/3f055f0c-en.pdf">OECD PDF</a></li>
+    </ul>
+    <h3>Figures this page refuses to collapse</h3>
+    <ul>
+      <li>WIR membership and turnover disagree by year. Cite 2003 (about 77,000 members, about CHF 1.65 billion turnover), 2013 (about 50,000 SMEs, CHF 1.43 billion trade), or the undated summary class (about 60,000 users, about CHF 1.5 billion). Do not merge them into one “current” number.</li>
+      <li>Bristol and Brixton ending dates disagree. Wired in 2020 still described local currencies as partly ongoing. The later Good Money Lab report says Brixton halted. Both stay.</li>
+      <li>The Encointer 240% multiplier is project-reported and press-reported. This note leaves it outside the independent-trial evidence, and it has no study year here.</li>
+      <li>CLPR is to be verified. No authoritative public specification was confirmed for this page.</li>
+      <li>Stockton’s “more than twice” line is a press summary. The year-1 PDF figures are 28% to 40% for recipients and 32% to 37% for the control group.</li>
+      <li>TimeBanks membership on this page stops at the dated hOurworld and academic figures through late 2014.</li>
+    </ul>
+  </section>
+
+  <p class="muted"><a href="/">Desk</a> · <a href="/disclosures">Disclosures</a> · <a href="/spp">Protocol archive</a> · Not an offer. Not an investment.</p>
+  <script src="/js/register-sw.js"></script>
+</body>
+</html>
