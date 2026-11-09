@@ -3,7 +3,7 @@
  * Sample data only. This module never fetches, never publishes, and never calls a wallet.
  */
 
-export const STORAGE_KEY = 'lgme.my-picture.demo.v1';
+export const STORAGE_KEY = 'lgme.my-picture.demo.v2';
 
 export const CONSENT_COPY = 'Allow on-device AI to learn your patterns and suggest unexpected matches? Your data never leaves this device.';
 
@@ -13,21 +13,24 @@ export const GUARDRAILS = [
   'No personal data on the public Tape'
 ];
 
-export const TIMELINE_STEPS = [
-  { id: 'offered', label: 'Offered' },
-  { id: 'matched', label: 'Matched' },
-  { id: 'done', label: 'Done' },
-  { id: 'confirmed', label: 'IdidIt confirmed' }
+export const PILLARS = [
+  { id: 'want', name: 'WANT', detail: 'Needs & Supplies Sought', tone: 'want' },
+  { id: 'did', name: 'DID', detail: 'Verified Work Proofs', tone: 'did' },
+  { id: 'sell', name: 'SELL', detail: 'Active Surplus & Skills', tone: 'sell' },
+  { id: 'wish', name: 'WISH', detail: 'Aspirational & Civic Dreams', tone: 'wish' },
+  { id: 'duty', name: 'DUTY', detail: 'Mutual Clearing & Pledges', tone: 'duty' }
 ];
 
 export const QUICK_FILL = {
-  did: { title: 'Add a confirmed deed', partner: 'Who was with you?' },
-  offer: { title: 'Add a listing', partner: 'Who is this for?' },
-  wish: { title: 'Add a request', partner: 'Who would you like?' },
-  duty: { title: 'Add a commitment', partner: 'Who is it owed to?' }
+  want: { title: 'Log a need', partner: 'Who would you like?' },
+  did: { title: 'Attest verified work', partner: 'Who was with you?' },
+  sell: { title: 'List surplus', partner: 'Who is this for?' },
+  wish: { title: 'Name a wish', partner: 'Who shares it?' },
+  duty: { title: 'Pledge a duty', partner: 'Who is it owed to?' }
 };
 
 const SAMPLE = {
+  version: 2,
   label: 'sample',
   consent: null,
   serendipity: false,
@@ -36,69 +39,77 @@ const SAMPLE = {
   dismissedIds: [],
   acceptedIds: [],
   localSeq: 1,
+  profile: {
+    name: 'Kaelen Vance',
+    role: 'Sovereign Node',
+    initials: 'LG',
+    peer: 'sample:0x8f2a…d31c'
+  },
   summary: {
+    balance: 142.5,
+    cycleDelta: 14.5,
+    trust: 99.4,
+    proofs: 38,
+    openLoops: 3,
+    dualSigns: 1,
+    dutyPledgesComplete: 2,
     campusCredit: 12,
     creditLimit: 40,
     debitLimit: -20,
-    weeklyCap: 10,
-    wallet: 'not-connected'
+    weeklyCap: 10
   },
   history: {
-    lastCategory: 'Tutoring',
+    lastCategory: 'Garden',
     usualHours: 2,
-    location: 'Campus tool library',
-    partners: ['Jordan', 'Priya', 'Alex', 'Campus desk']
+    location: 'Oak Ridge commons',
+    partners: ['Elena Voss', 'Marcus Hale', 'Clara Shepherd', 'Civic Commons']
   },
-  categories: ['Tutoring', 'Repair', 'Garden', 'Desk shift', 'Bookshelf'],
+  categories: ['Garden', 'Timber', 'Surplus', 'Civic', 'Tools'],
   hoursOptions: [1, 1.5, 2, 3],
-  locations: ['Campus tool library', 'Garden beds', 'Study hall', 'North dorm'],
+  locations: ['Oak Ridge commons', 'Oak Ridge trail', 'Solar shed', 'Mill shed'],
   didGoal: 5,
   did: [
-    { id: 'did-calc', title: 'Tutored calculus', category: 'Tutoring', hours: 2, partner: 'Jordan', location: 'Study hall', when: 'Monday', hash: 'sample:9f3ac21e' },
-    { id: 'did-tools', title: 'Tool library shift', category: 'Desk shift', hours: 1.5, partner: 'Campus desk', location: 'Campus tool library', when: 'Wednesday', hash: 'sample:14ab88d0' },
-    { id: 'did-garden', title: 'Garden beds', category: 'Garden', hours: 3, partner: 'Priya', location: 'Garden beds', when: 'Friday', hash: 'sample:c77e01aa' }
+    { id: 'did-timber', title: 'Timber Framing for Greenhouse', category: 'Timber', hours: 2, partner: 'Clara Shepherd', location: 'Oak Ridge commons', when: 'Today, 08:30', hash: 'sample:0x7d2f' },
+    { id: 'did-garden', title: 'Garden bed prep', category: 'Garden', hours: 2, partner: 'Elena Voss', location: 'Oak Ridge commons', when: 'Yesterday', hash: 'sample:0x11aa' },
+    { id: 'did-tool', title: 'Tool bench hour', category: 'Tools', hours: 1.5, partner: 'Devon Miller', location: 'Mill shed', when: 'Nov 5', hash: 'sample:0x4a8c' }
   ],
-  offers: [
-    { id: 'off-bike', title: 'Bike repair clinic', category: 'Repair', hours: 2, partner: 'Alex', location: 'Campus tool library', status: 'matched', expiresInDays: 2, hash: 'sample:b10e44aa' },
-    { id: 'off-drill', title: 'Spare drill', category: 'Repair', hours: 1, partner: null, location: 'North dorm', status: 'viewed', expiresInDays: 6, hash: 'sample:88d21f03' },
-    { id: 'off-notes', title: 'Calculus notes', category: 'Tutoring', hours: 2, partner: null, location: 'Study hall', status: 'new', expiresInDays: 9, hash: 'sample:01cc9e77' },
-    { id: 'off-compost', title: 'Weekend compost pickup', category: 'Garden', hours: 1.5, partner: null, location: 'Garden beds', status: 'new', expiresInDays: 1, hash: 'sample:e4a019c2' }
+  wants: [
+    { id: 'want-cedar', title: 'Cedar boards', category: 'Timber', hours: 2, partner: null, location: 'Mill shed', status: 'open', hash: 'sample:0xa101' },
+    { id: 'want-glass', title: 'Glazing sheets', category: 'Garden', hours: 1, partner: null, location: 'Oak Ridge commons', status: 'open', hash: 'sample:0xa102' },
+    { id: 'want-gloves', title: 'Work gloves', category: 'Tools', hours: 1, partner: null, location: 'Mill shed', status: 'open', hash: 'sample:0xa103' },
+    { id: 'want-gravel', title: 'Trail gravel', category: 'Civic', hours: 2, partner: null, location: 'Oak Ridge trail', status: 'open', hash: 'sample:0xa104' }
+  ],
+  sells: [
+    { id: 'sell-seeds', title: 'Surplus Heirloom Seeds ⇄ Solar kWh', category: 'Garden', hours: 2, partner: 'Marcus Hale', location: 'Solar shed', status: 'new', expiresInDays: 1, hash: 'sample:0xb201' },
+    { id: 'sell-mallet', title: 'Hand-turned oak mallet', category: 'Tools', hours: 1, partner: null, location: 'Mill shed', status: 'viewed', expiresInDays: 2, hash: 'sample:0xb202' },
+    { id: 'sell-offcut', title: 'Greenhouse framing offcut', category: 'Timber', hours: 2, partner: null, location: 'Oak Ridge commons', status: 'new', expiresInDays: 8, hash: 'sample:0xb203' },
+    { id: 'sell-compost', title: 'Compost crates', category: 'Garden', hours: 1.5, partner: null, location: 'Oak Ridge commons', status: 'matched', expiresInDays: 6, hash: 'sample:0xb204' },
+    { id: 'sell-battery', title: 'Battery bank hour', category: 'Surplus', hours: 2, partner: 'Marcus Hale', location: 'Solar shed', status: 'new', expiresInDays: 9, hash: 'sample:0xb205' },
+    { id: 'sell-markers', title: 'Trail marker kit', category: 'Civic', hours: 1, partner: null, location: 'Oak Ridge trail', status: 'viewed', expiresInDays: 5, hash: 'sample:0xb206' },
+    { id: 'sell-trays', title: 'Seedling trays', category: 'Garden', hours: 2, partner: 'Elena Voss', location: 'Oak Ridge commons', status: 'new', expiresInDays: 4, hash: 'sample:0xb207' }
   ],
   wishes: [
-    { id: 'wish-ride', title: 'Ride to the tool library', category: 'Desk shift', hours: 1, partner: null, location: 'Campus tool library', status: 'open', hash: 'sample:77aa10b3' },
-    { id: 'wish-spanish', title: 'Spanish conversation partner', category: 'Tutoring', hours: 2, partner: 'Alex', location: 'Study hall', status: 'matched', hash: 'sample:d90c55e1' },
-    { id: 'wish-shelf', title: 'Help moving a bookshelf', category: 'Repair', hours: 2, partner: null, location: 'North dorm', status: 'open', hash: 'sample:ab3310de' }
+    { id: 'wish-glass', title: 'Community greenhouse glass', category: 'Garden', hours: 2, partner: null, location: 'Oak Ridge commons', status: 'open', hash: 'sample:0xc301' },
+    { id: 'wish-shade', title: 'Civic shade pavilion', category: 'Civic', hours: 2, partner: 'Clara Shepherd', location: 'Oak Ridge commons', status: 'matched', hash: 'sample:0xc302' },
+    { id: 'wish-market', title: 'Night market stall', category: 'Surplus', hours: 1, partner: null, location: 'Solar shed', status: 'open', hash: 'sample:0xc303' }
   ],
   duties: [
-    { id: 'duty-drill', title: 'Return the drill to Jordan', category: 'Repair', hours: 0.5, partner: 'Jordan', location: 'North dorm', dueInDays: 1, hash: 'sample:55f0c18a' },
-    { id: 'duty-desk', title: 'Cover the Saturday desk shift', category: 'Desk shift', hours: 2, partner: 'Campus desk', location: 'Campus tool library', dueInDays: 3, hash: 'sample:c0ffee01' },
-    { id: 'duty-garden', title: 'Garden-bed follow-up', category: 'Garden', hours: 1, partner: 'Priya', location: 'Garden beds', dueInDays: 6, hash: 'sample:0a11b22c' }
+    { id: 'duty-terrace', title: 'Elena needs Garden Bed Terracing', category: 'Garden', hours: 2, partner: 'Elena Voss', location: 'Oak Ridge commons', dueInDays: 1, hash: 'sample:0xd401' },
+    { id: 'duty-culvert', title: 'Oak Ridge Trail Culvert Clearing', category: 'Civic', hours: 2, partner: 'Civic Commons', location: 'Oak Ridge trail', dueInDays: 3, hash: 'sample:0x3c5d' }
   ],
-  timeline: [
-    { id: 'tl-calc', title: 'Tutored calculus', stage: 'confirmed', hash: 'sample:9f3ac21e' },
-    { id: 'tl-bike', title: 'Bike repair clinic', stage: 'matched', hash: 'sample:b10e44aa' }
+  feed: [
+    { id: 'feed-timber', title: 'Timber Framing for Greenhouse', who: 'clara_shepherd', when: 'Today, 08:30', amount: '+3.50 HRS', hash: 'sample:0x7d2f', tone: 'did' },
+    { id: 'feed-culvert', title: 'Oak Ridge Trail Culvert Clearing', who: 'civic_commons', when: 'Yesterday', amount: '2.00 HRS PLEDGE', hash: 'sample:0x3c5d', tone: 'duty' },
+    { id: 'feed-tool', title: 'Sold: Hand-Turned Oak Tool', who: 'devon_miller', when: 'Nov 5', amount: '+1.80 HRS', hash: 'sample:0x4a8c', tone: 'sell' }
+  ],
+  ledgerHistory: [
+    { id: 'hist-open', title: 'Sample opening balance', when: 'Sample', delta: '+142.50 HRS' },
+    { id: 'hist-timber', title: 'Timber Framing for Greenhouse', when: 'Today, 08:30', delta: '+3.50 HRS' },
+    { id: 'hist-tool', title: 'Sold: Hand-Turned Oak Tool', when: 'Nov 5', delta: '+1.80 HRS' }
   ],
   notifications: {
-    urgent: [
-      { id: 'n-duty', title: 'Return the drill to Jordan', detail: 'Due in 1 day' },
-      { id: 'n-expire', title: 'Weekend compost pickup expires tomorrow', detail: 'This listing leaves the board in 1 day' }
-    ],
-    digest: [
-      {
-        day: 'Today',
-        items: [
-          { id: 'n-view', text: 'Jordan viewed your spare drill listing.' },
-          { id: 'n-match', text: 'Alex matched your Spanish conversation request.' }
-        ]
-      },
-      {
-        day: 'Yesterday',
-        items: [
-          { id: 'n-garden', text: 'Priya confirmed the garden-beds deed.' },
-          { id: 'n-shift', text: 'Campus desk marked your shift done.' }
-        ]
-      }
-    ]
+    urgent: [],
+    digest: [{ day: 'Today', items: [{ id: 'n0', text: 'Sample feed is on this device. Nothing was published.' }] }]
   }
 };
 
@@ -108,10 +119,11 @@ export function createSampleState() {
 
 export function normalizeState(parsed) {
   const base = createSampleState();
-  if (!parsed || parsed.label !== 'sample') return base;
+  if (!parsed || parsed.label !== 'sample' || parsed.version !== 2) return base;
   return {
     ...base,
     ...parsed,
+    profile: { ...base.profile, ...(parsed.profile || {}) },
     summary: { ...base.summary, ...(parsed.summary || {}) },
     history: {
       ...base.history,
@@ -119,11 +131,13 @@ export function normalizeState(parsed) {
       partners: parsed.history && Array.isArray(parsed.history.partners) ? parsed.history.partners : base.history.partners
     },
     did: Array.isArray(parsed.did) ? parsed.did : base.did,
-    offers: Array.isArray(parsed.offers) ? parsed.offers : base.offers,
+    wants: Array.isArray(parsed.wants) ? parsed.wants : base.wants,
+    sells: Array.isArray(parsed.sells) ? parsed.sells : base.sells,
     wishes: Array.isArray(parsed.wishes) ? parsed.wishes : base.wishes,
     duties: Array.isArray(parsed.duties) ? parsed.duties : base.duties,
-    timeline: Array.isArray(parsed.timeline) ? parsed.timeline : base.timeline,
-    notifications: parsed.notifications && Array.isArray(parsed.notifications.urgent) ? parsed.notifications : base.notifications,
+    feed: Array.isArray(parsed.feed) ? parsed.feed : base.feed,
+    ledgerHistory: Array.isArray(parsed.ledgerHistory) ? parsed.ledgerHistory : base.ledgerHistory,
+    notifications: parsed.notifications && Array.isArray(parsed.notifications.digest) ? parsed.notifications : base.notifications,
     categories: Array.isArray(parsed.categories) ? parsed.categories : base.categories,
     hoursOptions: Array.isArray(parsed.hoursOptions) ? parsed.hoursOptions : base.hoursOptions,
     locations: Array.isArray(parsed.locations) ? parsed.locations : base.locations,
@@ -167,13 +181,27 @@ export function creditGauge(summary) {
   const span = max - min;
   const ratio = span === 0 ? 0 : (value - min) / span;
   const zero = span === 0 ? 0 : (0 - min) / span;
-  return {
-    min,
-    max,
-    value,
-    ratio: clamp(ratio, 0, 1),
-    zero: clamp(zero, 0, 1)
+  return { min, max, value, ratio: clamp(ratio, 0, 1), zero: clamp(zero, 0, 1) };
+}
+
+export function pillarMetrics(state) {
+  const balance = Number(state.summary.balance).toFixed(2);
+  const metrics = {
+    want: `${state.wants.length} items active`,
+    did: `${balance} verified hrs`,
+    sell: `${state.sells.length} offers live`,
+    wish: `${state.wishes.length} intentions`,
+    duty: `${state.duties.length} commitments`
   };
+  return PILLARS.map((pillar) => ({ ...pillar, metric: metrics[pillar.id] }));
+}
+
+export function proofToast(hours) {
+  return `Proof Committed — Ledger balance updated +${Number(hours).toFixed(2)} HRS`;
+}
+
+export function noticeCount(state) {
+  return (state.feed || []).length;
 }
 
 function clamp(value, min, max) {
@@ -191,12 +219,21 @@ function dayLabel(days) {
 }
 
 function dutySuggestion(duty, primary) {
+  const match = primary && duty.dueInDays <= 2 ? 96 : 90;
   return {
     id: `duty:${duty.id}`,
     kind: 'duty',
+    tone: 'duty',
     essential: true,
+    match,
+    tag: 'DUTY CLEARING',
+    tagNote: `${match}% Pair Match`,
+    action: 'Claim Pledgework',
     title: duty.title,
     detail: `Due in ${dayLabel(duty.dueInDays)} · Duty · Sample`,
+    blurb: duty.id === 'duty-terrace'
+      ? 'Matches your 2.0 open duty clearing hours. Location: Oak Ridge commons.'
+      : `Due in ${dayLabel(duty.dueInDays)} at ${duty.location}. Sample pledge.`,
     why: primary && duty.dueInDays <= 2
       ? 'Duties due come first. This commitment is inside two days, so it is an essential.'
       : 'Another duty is still due this week. Duties stay ahead of open wishes.'
@@ -204,12 +241,21 @@ function dutySuggestion(duty, primary) {
 }
 
 function expiringSuggestion(offer) {
+  const triParty = offer.id === 'sell-seeds';
   return {
     id: `expiring:${offer.id}`,
     kind: 'expiring',
+    tone: 'sell',
     essential: true,
+    match: 91,
+    tag: 'SURPLUS EXCHANGE',
+    tagNote: triParty ? '91% · Circular Tri-Party' : '91% Pair Match',
+    action: 'Open Channel',
     title: offer.title,
     detail: `Expires in ${dayLabel(offer.expiresInDays)} · ${offer.status} listing · Sample`,
+    blurb: triParty
+      ? 'Trade 500g squash seeds with Marcus Hale for 50 kWh battery exchange credit to clear the sample ledger.'
+      : `This ${offer.status} listing expires in ${dayLabel(offer.expiresInDays)}. Sample only.`,
     why: 'Expiring listings are next. This offer leaves the board within two days.'
   };
 }
@@ -218,7 +264,7 @@ export function ruleSuggestions(state) {
   const duties = [...state.duties]
     .filter((duty) => duty.dueInDays <= 7 && !hidden(state, `duty:${duty.id}`))
     .sort((a, b) => a.dueInDays - b.dueInDays || a.title.localeCompare(b.title));
-  const expiring = [...state.offers]
+  const expiring = [...(state.sells || [])]
     .filter((offer) => offer.expiresInDays <= 2 && !hidden(state, `expiring:${offer.id}`))
     .sort((a, b) => a.expiresInDays - b.expiresInDays || a.title.localeCompare(b.title));
   const wishes = state.wishes.filter((wish) => wish.status === 'open');
@@ -235,9 +281,15 @@ export function ruleSuggestions(state) {
     push({
       id: `wish:${wish.id}`,
       kind: 'wish',
+      tone: 'wish',
       essential: false,
+      match: 80,
+      tag: 'OPEN WISH',
+      tagNote: '80% Pair Match',
+      action: 'Open Channel',
       title: wish.title,
       detail: 'Open request · Sample',
+      blurb: `${wish.location}. Sample wish, still unmatched.`,
       why: 'This request has no match yet. It waits until duties and expiring listings are covered.'
     });
   }
@@ -246,9 +298,15 @@ export function ruleSuggestions(state) {
     push({
       id: 'did:gap',
       kind: 'did',
+      tone: 'did',
       essential: false,
+      match: 70,
+      tag: 'WORK PROOF',
+      tagNote: 'Weekly ring',
+      action: 'Quick Log',
       title: `Confirm ${remaining} more deed${remaining === 1 ? '' : 's'} this week`,
-      detail: `${state.did.length} of ${state.didGoal} confirmed deeds are on the ring · Sample`,
+      detail: `${state.did.length} of ${state.didGoal} confirmed deeds · Sample`,
+      blurb: 'The verified-work count is still short of the sample weekly goal.',
       why: 'The Did ring is still short of the sample weekly goal. This sits behind duties and expiring listings.'
     });
   }
@@ -277,7 +335,7 @@ function topCount(values) {
 
 export function learnPatterns(state) {
   const forgotten = new Set(state.forgottenIds || []);
-  const records = [...state.did, ...state.offers, ...state.wishes, ...state.duties];
+  const records = [...state.did, ...(state.wants || []), ...(state.sells || []), ...state.wishes, ...state.duties];
   const category = topCount(records.map((record) => record.category));
   const hours = topCount(records.map((record) => String(record.hours)));
   const partnerCounts = new Map();
@@ -308,7 +366,7 @@ export function learnPatterns(state) {
     {
       id: 'learn-partner',
       label: `${partner.value} shows up often`,
-      source: `Most frequent partner in the sample`
+      source: 'Most frequent partner in the sample'
     },
     {
       id: 'learn-place',
@@ -317,10 +375,9 @@ export function learnPatterns(state) {
     }
   ];
   if (crossWish) {
-    const duty = state.duties.find((item) => item.partner === partner.value && item.location === crossWish.location);
     items.push({
       id: 'learn-cross',
-      label: `Bookshelf wish lines up with ${partner.value}`,
+      label: `${crossWish.title} lines up with ${partner.value}`,
       source: `Same place as a duty owed to ${partner.value}`,
       title: `Ask ${partner.value} about “${crossWish.title}” at ${crossWish.location}`,
       detail: `Serendipity · ${crossWish.location} · Sample pattern`
@@ -337,9 +394,15 @@ export function serendipitySuggestion(state) {
     return {
       id: 'serendipity:cross',
       kind: 'serendipity',
+      tone: 'serendipity',
       essential: false,
+      match: 84,
+      tag: 'SERENDIPITY',
+      tagNote: '84% · On device',
+      action: 'Open Channel',
       title: cross.title,
       detail: cross.detail,
+      blurb: 'An unexpected sample pairing. It stays off the essential list.',
       why: 'On-device pattern only: the same person, the same kind of help, and the same place show up together in the sample. This was not on the essential list. AI suggests, you decide.'
     };
   }
@@ -349,9 +412,15 @@ export function serendipitySuggestion(state) {
     return {
       id: 'serendipity:category',
       kind: 'serendipity',
+      tone: 'serendipity',
       essential: false,
+      match: 78,
+      tag: 'SERENDIPITY',
+      tagNote: '78% · On device',
+      action: 'Open Channel',
       title: `Leave room for another ${name} block`,
       detail: 'Serendipity · Sample pattern',
+      blurb: `${name} is the category that shows up most in the sample.`,
       why: `On-device pattern only: ${name} is the category that shows up most in the sample. AI suggests, you decide.`
     };
   }
@@ -366,22 +435,21 @@ export function suggestionsFor(state) {
 
 export function suggestionsMarkup(state) {
   const items = suggestionsFor(state);
-  if (!items.length) {
-    return '<p class="empty">No sample suggestions left. Reset demo to restore them.</p>';
-  }
-  return items.map((item, index) => {
-    const rank = item.kind === 'serendipity' ? 'Serendipity' : (item.essential ? 'Essential' : 'Next');
+  if (!items.length) return '<p class="empty">No sample moves left. Reset State to restore them.</p>';
+  return items.map((item) => {
     const whyId = `why-${item.id.replace(/[^a-z0-9-]/gi, '')}`;
-    return `<article class="suggestion${item.kind === 'serendipity' ? ' is-serendipity' : ''}" data-suggestion="${escapeHtml(item.id)}">
-      <p class="rank"><span class="num">${index + 1}</span> ${escapeHtml(rank)}</p>
-      <h3>${escapeHtml(item.title)}</h3>
-      <p class="fine">${escapeHtml(item.detail)}</p>
-      <button type="button" class="quiet why" data-why aria-expanded="false" aria-controls="${whyId}">Why this?</button>
-      <p class="why-panel" id="${whyId}" hidden>${escapeHtml(item.why)}</p>
-      <div class="suggestion-actions">
-        <button type="button" class="primary" data-accept="${escapeHtml(item.id)}">Accept</button>
-        <button type="button" data-dismiss="${escapeHtml(item.id)}">Dismiss</button>
+    return `<article class="move" data-suggestion="${escapeHtml(item.id)}" data-tone="${escapeHtml(item.tone || item.kind)}">
+      <div class="move-top">
+        <p class="tag">${escapeHtml(item.tag || 'NEXT')} <span>${escapeHtml(item.tagNote || '')}</span></p>
+        <button type="button" class="claim" data-accept="${escapeHtml(item.id)}">${escapeHtml(item.action || 'Accept')}</button>
       </div>
+      <h3>${escapeHtml(item.title)}</h3>
+      <p class="blurb">${escapeHtml(item.blurb || item.detail)}</p>
+      <div class="move-actions">
+        <button type="button" class="why" data-why aria-expanded="false" aria-controls="${whyId}">Why this?</button>
+        <button type="button" class="text-btn" data-dismiss="${escapeHtml(item.id)}">Dismiss</button>
+      </div>
+      <p class="why-panel" id="${whyId}" hidden>${escapeHtml(item.why)}</p>
     </article>`;
   }).join('');
 }
@@ -398,7 +466,7 @@ export function commitQuickFill(state, draft) {
     hours,
     partner: draft.partner,
     location: draft.location,
-    status: draft.kind === 'wish' ? 'open' : 'new',
+    status: draft.kind === 'wish' || draft.kind === 'want' ? 'open' : 'new',
     dueInDays: 7,
     expiresInDays: 7,
     when: 'Added on this device',
@@ -406,10 +474,24 @@ export function commitQuickFill(state, draft) {
     addedOnDevice: true,
     sample: true
   };
-  if (draft.kind === 'did') next.did.push(record);
-  if (draft.kind === 'offer') next.offers.push(record);
-  if (draft.kind === 'wish') next.wishes.push(record);
-  if (draft.kind === 'duty') next.duties.push(record);
+  const list = { want: 'wants', did: 'did', sell: 'sells', wish: 'wishes', duty: 'duties' }[draft.kind];
+  if (list) next[list].push(record);
+  if (draft.kind === 'did') {
+    next.summary.balance = Math.round((Number(next.summary.balance) + hours) * 100) / 100;
+    next.summary.cycleDelta = Math.round((Number(next.summary.cycleDelta) + hours) * 100) / 100;
+    next.summary.proofs += 1;
+    const amount = `+${hours.toFixed(2)} HRS`;
+    next.feed.unshift({
+      id: `feed-local-${seq}`,
+      title: record.title,
+      who: 'you',
+      when: 'Just now',
+      amount,
+      hash: record.hash,
+      tone: 'did'
+    });
+    next.ledgerHistory.unshift({ id: `hist-local-${seq}`, title: record.title, when: 'Just now', delta: amount });
+  }
   next.history.lastCategory = draft.category;
   next.history.usualHours = hours;
   next.history.location = draft.location;
@@ -423,8 +505,9 @@ export function commitQuickFill(state, draft) {
 
 function draftTitle(kind, draft) {
   if (kind === 'did') return `${draft.category} with ${draft.partner}`;
-  if (kind === 'offer') return `${draft.category} offer for ${draft.partner}`;
-  if (kind === 'wish') return `${draft.category} request with ${draft.partner}`;
+  if (kind === 'sell') return `${draft.category} offer for ${draft.partner}`;
+  if (kind === 'want') return `${draft.category} need with ${draft.partner}`;
+  if (kind === 'wish') return `${draft.category} wish with ${draft.partner}`;
   return `${draft.category} owed to ${draft.partner}`;
 }
 
@@ -475,170 +558,18 @@ export function escapeHtml(value) {
     .replace(/"/g, '&quot;');
 }
 
-function statusLabel(status) {
-  if (status === 'new') return 'New';
-  if (status === 'viewed') return 'Viewed';
-  if (status === 'matched') return 'Matched';
-  if (status === 'open') return 'Open';
-  return status;
-}
-
-function ringMarkup(ratio, label, valueText, tone) {
-  const radius = 42;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference * (1 - clamp(ratio, 0, 1));
-  return `<div class="ring tone-${tone}" role="img" aria-label="${escapeHtml(label)}">
-    <svg viewBox="0 0 120 120" aria-hidden="true">
-      <circle class="ring-track" cx="60" cy="60" r="${radius}"></circle>
-      <circle class="ring-value" cx="60" cy="60" r="${radius}" stroke-dasharray="${circumference.toFixed(2)}" stroke-dashoffset="${offset.toFixed(2)}"></circle>
-    </svg>
-    <span class="ring-figure" aria-hidden="true">${valueText}</span>
-  </div>`;
-}
-
-function tapeButton(record) {
-  return `<button type="button" class="tape" data-tape="${escapeHtml(record.hash)}" data-tape-title="${escapeHtml(record.title)}" aria-label="Public proof for ${escapeHtml(record.title)}, sample hash">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"></rect><circle cx="8" cy="12" r="2" fill="none" stroke="currentColor" stroke-width="1.6"></circle><circle cx="16" cy="12" r="2" fill="none" stroke="currentColor" stroke-width="1.6"></circle></svg>
-    <span>Tape</span>
-  </button>`;
-}
-
-function plusButton(kind, label) {
-  return `<button type="button" class="plus" data-add="${kind}" aria-label="${escapeHtml(label)}">+</button>`;
-}
-
-export function summaryMarkup(state) {
-  const gauge = creditGauge(state.summary);
-  const hours = weeklyHours(state);
-  const cap = state.summary.weeklyCap;
-  const hourRatio = cap === 0 ? 0 : Math.min(1, hours / cap);
-  const creditText = `${gauge.value} Campus Credit, sample, between debit limit ${gauge.min} and credit limit ${gauge.max}`;
-  return `<section class="tile tile-credit" aria-labelledby="credit-heading">
-      <p class="kicker">Sample</p>
-      <h2 id="credit-heading">Campus Credit</h2>
-      <p class="big"><span class="figure">+${escapeHtml(gauge.value)}</span> balance</p>
-      <div class="gauge" role="meter" aria-label="Campus Credit balance, sample" aria-valuemin="${gauge.min}" aria-valuemax="${gauge.max}" aria-valuenow="${gauge.value}" aria-valuetext="${escapeHtml(creditText)}">
-        <div class="gauge-track" aria-hidden="true">
-          <span class="gauge-zero" style="left:${(gauge.zero * 100).toFixed(2)}%"></span>
-          <span class="gauge-fill" style="width:${(gauge.ratio * 100).toFixed(2)}%"></span>
-          <span class="gauge-marker" style="left:${(gauge.ratio * 100).toFixed(2)}%"></span>
-        </div>
-        <div class="gauge-ends" aria-hidden="true"><span>Debit limit ${gauge.min}</span><span>Credit limit +${gauge.max}</span></div>
-      </div>
-    </section>
-    <section class="tile" aria-labelledby="wallet-heading">
-      <p class="kicker">Sample</p>
-      <h2 id="wallet-heading">$lgme wallet</h2>
-      <p class="big">Not connected</p>
-      <button type="button" class="soon" data-soon="wallet" aria-disabled="true">Wallet placeholder</button>
-      <p class="fine">This prototype does not connect a wallet.</p>
-    </section>
-    <section class="tile" aria-labelledby="hours-heading">
-      <p class="kicker">Sample</p>
-      <h2 id="hours-heading">Weekly hours</h2>
-      <p class="big"><span class="figure">${escapeHtml(hours)}</span> of ${escapeHtml(cap)}</p>
-      <div class="hours" role="meter" aria-label="Weekly hours versus cap, sample" aria-valuemin="0" aria-valuemax="${cap}" aria-valuenow="${Math.min(hours, cap)}" aria-valuetext="${hours} of ${cap} weekly hours, sample">
-        <span class="hours-fill" style="width:${(hourRatio * 100).toFixed(2)}%"></span>
-      </div>
-      <p class="fine">Hours versus the sample weekly cap.</p>
-    </section>`;
-}
-
-export function cardsMarkup(state) {
-  const did = didProgress(state);
-  const matchedOffers = state.offers.filter((offer) => offer.status === 'matched').length;
-  const matchedWishes = state.wishes.filter((wish) => wish.status === 'matched').length;
-  const soonDuties = state.duties.filter((duty) => duty.dueInDays <= 2).length;
-  const duties = [...state.duties].sort((a, b) => a.dueInDays - b.dueInDays);
-  const didRows = state.did.map((deed) => `<li class="record">
-      <div><p class="item-title">${escapeHtml(deed.title)}</p><p class="fine">${escapeHtml(deed.when)} · ${escapeHtml(deed.hours)}h · ${escapeHtml(deed.partner)} · ${escapeHtml(deed.location)} · Sample</p></div>
-      ${tapeButton(deed)}
-    </li>`).join('');
-  const offerRows = state.offers.map((offer) => `<li class="record">
-      <div><p class="item-title">${escapeHtml(offer.title)}</p><p class="fine">Expires in ${escapeHtml(dayLabel(offer.expiresInDays))} · ${escapeHtml(offer.location)} · Sample</p></div>
-      <span class="status status-${escapeHtml(offer.status)}">${escapeHtml(statusLabel(offer.status))}</span>
-      ${tapeButton(offer)}
-    </li>`).join('');
-  const wishRows = state.wishes.map((wish) => `<li class="record">
-      <div><p class="item-title">${escapeHtml(wish.title)}</p><p class="fine">${escapeHtml(wish.partner || 'No partner yet')} · ${escapeHtml(wish.location)} · Sample</p></div>
-      <span class="status status-${escapeHtml(wish.status)}">${escapeHtml(statusLabel(wish.status))}</span>
-      ${tapeButton(wish)}
-    </li>`).join('');
-  const dutyRows = duties.map((duty) => `<li class="countdown-item">
-      <div class="record">
-        <div><p class="item-title">${escapeHtml(duty.title)}</p><p class="fine">Due in ${escapeHtml(dayLabel(duty.dueInDays))} · ${escapeHtml(duty.partner)} · ${escapeHtml(duty.location)} · Sample</p></div>
-        ${tapeButton(duty)}
-      </div>
-    </li>`).join('');
-  return `<article class="card" aria-labelledby="did-heading">
-      <div class="card-head">
-        <div><p class="kicker">Confirmed this week · Sample</p><h2 id="did-heading">Did</h2></div>
-        ${ringMarkup(did.ratio, `${did.done} of ${did.goal} confirmed deeds this week, sample`, `${did.done}/${did.goal}`, 'gold')}
-        ${plusButton('did', 'Add a confirmed deed')}
-      </div>
-      <ul class="records">${didRows}</ul>
-    </article>
-    <article class="card" aria-labelledby="offer-heading">
-      <div class="card-head">
-        <div><p class="kicker">Active listings · Sample</p><h2 id="offer-heading">Sell/Offer</h2></div>
-        ${ringMarkup(state.offers.length ? matchedOffers / state.offers.length : 0, `${matchedOffers} of ${state.offers.length} sample listings matched`, `${matchedOffers}/${state.offers.length}`, 'cream')}
-        ${plusButton('offer', 'Add a listing')}
-      </div>
-      <ul class="records">${offerRows}</ul>
-    </article>
-    <article class="card" aria-labelledby="wish-heading">
-      <div class="card-head">
-        <div><p class="kicker">Open requests · Sample</p><h2 id="wish-heading">Wish/Need</h2></div>
-        ${ringMarkup(state.wishes.length ? matchedWishes / state.wishes.length : 0, `${matchedWishes} of ${state.wishes.length} sample requests matched`, `${matchedWishes}/${state.wishes.length}`, 'green')}
-        ${plusButton('wish', 'Add a request')}
-      </div>
-      <ul class="records">${wishRows}</ul>
-    </article>
-    <article class="card" aria-labelledby="duty-heading">
-      <div class="card-head">
-        <div><p class="kicker">Upcoming · Sample</p><h2 id="duty-heading">Duty/Owe</h2></div>
-        ${ringMarkup(state.duties.length ? soonDuties / state.duties.length : 0, `${soonDuties} of ${state.duties.length} sample commitments due inside two days`, `${soonDuties}/${state.duties.length}`, 'gold')}
-        ${plusButton('duty', 'Add a commitment')}
-      </div>
-      <ol class="countdown">${dutyRows}</ol>
-    </article>`;
-}
-
-export function timelineMarkup(state) {
-  return state.timeline.map((deed) => {
-    const index = TIMELINE_STEPS.findIndex((step) => step.id === deed.stage);
-    const steps = TIMELINE_STEPS.map((step, stepIndex) => {
-      const current = stepIndex === index;
-      const done = stepIndex < index;
-      return `<li class="${done ? 'done' : ''}"${current ? ' aria-current="step"' : ''}><span class="dot" aria-hidden="true"></span><span>${escapeHtml(step.label)}${current ? ' <span class="now">Current</span>' : ''}</span></li>`;
-    }).join('');
-    return `<article class="deed" aria-labelledby="tl-${escapeHtml(deed.id)}">
-      <div class="record">
-        <div><p class="kicker">Sample</p><h3 id="tl-${escapeHtml(deed.id)}">${escapeHtml(deed.title)}</h3></div>
-        ${tapeButton(deed)}
-      </div>
-      <ol class="stages" aria-label="Progress for ${escapeHtml(deed.title)}">${steps}</ol>
-    </article>`;
-  }).join('');
-}
-
-export function noticesMarkup(state) {
-  const urgent = state.notifications.urgent.map((item) => `<li><p class="item-title">${escapeHtml(item.title)}</p><p class="fine">${escapeHtml(item.detail)} · Sample</p></li>`).join('');
-  const digest = state.notifications.digest.map((group) => `<section aria-labelledby="day-${escapeHtml(group.day)}"><h4 id="day-${escapeHtml(group.day)}">${escapeHtml(group.day)}</h4><ul>${group.items.map((item) => `<li>${escapeHtml(item.text)}</li>`).join('')}</ul></section>`).join('');
-  return `<section aria-labelledby="urgent-heading"><h3 id="urgent-heading">Urgent</h3><ul class="urgent-list">${urgent}</ul></section>
-    <section aria-labelledby="digest-heading"><h3 id="digest-heading">Daily digest</h3>${digest}</section>`;
-}
-
 export function learnedMarkup(state) {
   if (!state.learned.length) {
-    return '<p class="empty">Nothing learned yet. Turn serendipity on and this device will list patterns it can describe from the sample.</p>';
+    return '<p class="empty">Nothing learned yet. Allow serendipity and this device will list patterns from the sample.</p>';
   }
   return `<ul class="learned-list">${state.learned.map((item) => `<li>
-      <div class="learned-row">
-        <p class="item-title">${escapeHtml(item.label)}</p>
-        <button type="button" data-forget="${escapeHtml(item.id)}" aria-label="Forget: ${escapeHtml(item.label)}">Forget</button>
+      <div>
+        <div class="learned-row">
+          <p class="item-title">${escapeHtml(item.label)}</p>
+          <button type="button" data-forget="${escapeHtml(item.id)}" aria-label="Forget: ${escapeHtml(item.label)}">Forget</button>
+        </div>
+        <p class="fine">${escapeHtml(item.source)}. Sample, on this device.</p>
       </div>
-      <p class="fine">${escapeHtml(item.source)}. Sample, on this device.</p>
     </li>`).join('')}</ul>`;
 }
 
@@ -648,9 +579,146 @@ export function learnedNote(state) {
   return 'Serendipity is off. Turn it on to let this device describe patterns in the sample. Your data never leaves this device.';
 }
 
-export function noticeCount(state) {
-  const digest = state.notifications.digest.reduce((sum, group) => sum + group.items.length, 0);
-  return state.notifications.urgent.length + digest;
+function pillarButton(pillar, label) {
+  return `<button type="button" class="pillar tone-${pillar.tone}" data-add="${pillar.id}" aria-label="${escapeHtml(pillar.name)}, ${escapeHtml(pillar.detail)}, ${escapeHtml(pillar.metric)}. Open pre-filled smart attestation">
+    <span class="accent" aria-hidden="true"></span>
+    <span><span class="name">${escapeHtml(pillar.name)}</span><span class="sub">${escapeHtml(pillar.detail)}</span></span>
+    <span class="metric">${escapeHtml(pillar.metric)}</span>
+  </button>`;
+}
+
+function feedList(items) {
+  return `<ul class="feed">${items.map((item) => `<li>
+      <span class="feed-dot tone-${escapeHtml(item.tone || 'did')}" aria-hidden="true"></span>
+      <div class="feed-main">
+        <p class="feed-title">${escapeHtml(item.title)}</p>
+        <p class="fine">${escapeHtml(item.who || 'sample')} · ${escapeHtml(item.when)}</p>
+      </div>
+      <div class="feed-end">
+        <p class="delta${String(item.amount).includes('PLEDGE') ? ' pledge' : ''}">${escapeHtml(item.amount)}</p>
+        <button type="button" class="tape" data-tape="${escapeHtml(item.hash)}" data-tape-title="${escapeHtml(item.title)}" aria-label="Public proof for ${escapeHtml(item.title)}, sample hash">${escapeHtml(item.hash)}</button>
+      </div>
+    </li>`).join('')}</ul>`;
+}
+
+function heroMarkup(state) {
+  const summary = state.summary;
+  return `<section class="card hero" aria-labelledby="ledger-heading">
+    <div class="hero-top">
+      <p class="mono-label" id="ledger-heading">Sovereign Mutual Credit Ledger</p>
+      <p class="trust">Trust Quotient<strong>${Number(summary.trust).toFixed(1)}%</strong><span class="fine">${summary.proofs} Proofs Verified</span></p>
+    </div>
+    <p class="balance">+${Number(summary.balance).toFixed(2)} <span>HRS / LCU</span></p>
+    <p class="cycle">↑ +${Number(summary.cycleDelta).toFixed(1)} this cycle · Zero-debt mutual parity</p>
+    <div class="counters">
+      <div><p>Open Barter Loops</p><strong class="good">${summary.openLoops} Active</strong></div>
+      <div><p>Dual-Signs Req</p><strong class="pending">${summary.dualSigns} Pending</strong></div>
+      <div><p>Duty Pledges</p><strong class="ok">${summary.dutyPledgesComplete} Complete</strong></div>
+    </div>
+  </section>`;
+}
+
+function statusMarkup(state) {
+  const on = Boolean(state.serendipity);
+  return `<div class="status">
+      <time id="clock" datetime="">--:--</time>
+      <span class="enclave"><span class="enclave-dot" aria-hidden="true"></span> SLM Enclave: Idle</span>
+      <span class="signal" aria-hidden="true">▮▮▮ ▭</span>
+    </div>
+    <div class="identity">
+      <span class="avatar" aria-hidden="true">${escapeHtml(state.profile.initials)}</span>
+      <div class="who">
+        <p class="name">${escapeHtml(state.profile.name)} <span class="badge">${escapeHtml(state.profile.role)}</span></p>
+        <p class="peer">peer: ${escapeHtml(state.profile.peer)}</p>
+      </div>
+      <button type="button" class="edge${on ? ' on' : ''}" data-view="serendipity" aria-pressed="${on ? 'true' : 'false'}">Edge AI: ${on ? 'ON' : 'OFF'}</button>
+    </div>`;
+}
+
+export function bigMarkup(state) {
+  const pillars = pillarMetrics(state).map((pillar) => pillarButton(pillar)).join('');
+  const active = state.serendipity ? 'Active' : 'Inactive';
+  return `${heroMarkup(state)}
+    <section class="card pillars" aria-labelledby="pillars-heading">
+      <div class="section-head">
+        <h2 id="pillars-heading">5-Pillar Sovereign Balance</h2>
+        <button type="button" class="quick-link" data-view="quick">+ Quick Log</button>
+      </div>
+      <div class="log-list">${pillars}</div>
+      <p class="hint">Tap any pillar to open pre-filled smart attestation.</p>
+    </section>
+    <section class="edge-card" aria-labelledby="edge-heading">
+      <h2 id="edge-heading">On-Device Edge Serendipity <span class="privacy">0-Cloud Privacy</span></h2>
+      <p>Allow local pairing of surplus and duties with nearby sample peers. Raw ledger data stays on this device.</p>
+      <p class="enclave-line">Local Enclave: <strong>${active}</strong></p>
+      <button type="button" class="permit" id="configure-permission">Configure Permission</button>
+    </section>
+    <section class="moves" aria-labelledby="moves-heading">
+      <div class="section-head">
+        <h2 id="moves-heading">Recommended Next Moves</h2>
+      </div>
+      <p class="fine">Inferred from ledger parity. Essentials first. Sample.</p>
+      ${suggestionsMarkup(state)}
+    </section>
+    <section class="card feed-card" aria-labelledby="feed-heading">
+      <div class="section-head">
+        <h2 id="feed-heading">Live Attestation Feed</h2>
+        <button type="button" class="linkish" data-view="ledger">View All →</button>
+      </div>
+      ${feedList(state.feed.slice(0, 3))}
+    </section>`;
+}
+
+export function quickMarkup(state) {
+  const pillars = pillarMetrics(state).map((pillar) => pillarButton(pillar)).join('');
+  return `<section class="panel" aria-labelledby="quick-heading">
+      <p class="mono-label">Smart attestation</p>
+      <h2 id="quick-heading">Quick Log</h2>
+      <p class="hint">Tap any pillar to open pre-filled smart attestation. Chips start from the sample history.</p>
+      <div class="log-list">${pillars}</div>
+    </section>`;
+}
+
+export function serendipityMarkup(state) {
+  const active = state.serendipity ? 'Active' : 'Inactive';
+  return `<section class="edge-card" aria-labelledby="serendipity-heading">
+      <h2 id="serendipity-heading">On-Device Edge Serendipity <span class="privacy">0-Cloud Privacy</span></h2>
+      <p>Allow local pairing of surplus and duties with nearby sample peers. Raw ledger data stays on this device.</p>
+      <p class="enclave-line">Local Enclave: <strong>${active}</strong></p>
+      <button type="button" class="permit" id="configure-permission">Configure Permission</button>
+      <p class="fine">${escapeHtml(learnedNote(state))}</p>
+      <label class="master" for="serendipity-master">
+        <input id="serendipity-master" type="checkbox" ${state.serendipity ? 'checked' : ''} />
+        <span>Serendipity mode</span>
+      </label>
+      <div id="learned-list">${learnedMarkup(state)}</div>
+    </section>
+    <section class="moves" aria-labelledby="edge-moves">
+      <h2 id="edge-moves">Moves from this device</h2>
+      ${suggestionsMarkup(state)}
+    </section>`;
+}
+
+export function ledgerMarkup(state) {
+  const history = state.ledgerHistory.map((row) => `<li class="history-row">
+      <div><p class="item-title">${escapeHtml(row.title)}</p><p class="fine">${escapeHtml(row.when)} · Sample</p></div>
+      <p class="delta">${escapeHtml(row.delta)}</p>
+    </li>`).join('');
+  const balance = Number(state.summary.balance).toFixed(2);
+  return `<section class="card hero" aria-labelledby="ledger-balance">
+      <p class="mono-label" id="ledger-balance">Sovereign Mutual Credit Ledger</p>
+      <p class="balance">+${balance} <span>HRS / LCU</span></p>
+      <p class="cycle">Sample book. Nothing here was published.</p>
+    </section>
+    <section class="card panel" aria-labelledby="history-heading">
+      <h2 id="history-heading">Balance history</h2>
+      <p class="fine">Offered, matched, done, then IdidIt confirmed. Sample deltas only.</p>
+      <ul class="history">${history}</ul>
+    </section>
+    <section class="card feed-card" aria-labelledby="full-feed">
+      <h2 id="full-feed">Live Attestation Feed</h2>
+      ${feedList(state.feed)}
+    </section>`;
 }
 
 function stepDefinitions(state, kind) {
@@ -665,7 +733,9 @@ function stepDefinitions(state, kind) {
 
 export function boot(doc = document, storage = globalThis.localStorage) {
   let state = loadState(storage);
+  let view = 'big';
   let draft = null;
+  let toastTimer = 0;
   const $ = (id) => doc.getElementById(id);
 
   function announce(message) {
@@ -673,27 +743,42 @@ export function boot(doc = document, storage = globalThis.localStorage) {
     if (live) live.textContent = message;
   }
 
+  function showToast(message) {
+    const toast = $('toast');
+    if (!toast) return;
+    toast.hidden = false;
+    toast.textContent = message;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { toast.hidden = true; }, 4200);
+  }
+
   function persist() {
-    try {
-      saveState(storage, state);
-    } catch {
-      announce('Could not save on this device.');
-    }
+    try { saveState(storage, state); }
+    catch { announce('Could not save on this device.'); }
+  }
+
+  function paintClock() {
+    const clock = $('clock');
+    if (!clock) return;
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    clock.textContent = `${hh}:${mm}`;
+    clock.dateTime = now.toISOString();
   }
 
   function render() {
-    $('summary').innerHTML = summaryMarkup(state);
-    $('suggestions').innerHTML = suggestionsMarkup(state);
-    $('cards').innerHTML = cardsMarkup(state);
-    $('timeline').innerHTML = timelineMarkup(state);
-    $('notice-body').innerHTML = noticesMarkup(state);
-    $('learned-list').innerHTML = learnedMarkup(state);
-    $('learned-note').textContent = learnedNote(state);
-    const master = $('serendipity-master');
-    master.checked = Boolean(state.serendipity);
-    const count = noticeCount(state);
-    $('bell-count').textContent = String(count);
-    $('bell').setAttribute('aria-label', `Notifications, ${count} sample items`);
+    const mount = $('status-mount');
+    const panel = $('view');
+    if (!mount || !panel) return;
+    mount.innerHTML = statusMarkup(state);
+    const pages = { big: bigMarkup, quick: quickMarkup, serendipity: serendipityMarkup, ledger: ledgerMarkup };
+    panel.innerHTML = (pages[view] || bigMarkup)(state);
+    for (const button of doc.querySelectorAll('.tabbar [data-view]')) {
+      if (button.dataset.view === view) button.setAttribute('aria-current', 'page');
+      else button.removeAttribute('aria-current');
+    }
+    paintClock();
   }
 
   function renderStep() {
@@ -718,9 +803,9 @@ export function boot(doc = document, storage = globalThis.localStorage) {
       $('stepper-title').textContent = step.prompt;
       $('stepper-progress').textContent = `Question ${draft.step + 1} of ${steps.length}`;
       const selected = String(draft.answers[step.key]);
-      const chips = step.options.map((option, index) => {
+      const chips = step.options.map((option) => {
         const checked = option === selected;
-        return `<button type="button" role="radio" aria-checked="${checked ? 'true' : 'false'}" tabindex="${checked ? '0' : '-1'}" data-option="${escapeHtml(option)}" ${index === 0 ? 'id="stepper-first-chip"' : ''}>${escapeHtml(step.label(option))}</button>`;
+        return `<button type="button" role="radio" aria-checked="${checked ? 'true' : 'false'}" tabindex="${checked ? '0' : '-1'}" data-option="${escapeHtml(option)}">${escapeHtml(step.label(option))}</button>`;
       }).join('');
       $('stepper-body').innerHTML = `<p class="fine">Pre-filled from sample history. Change any chip.</p>
         <div class="chips" role="radiogroup" aria-label="${escapeHtml(step.prompt)}">${chips}</div>`;
@@ -765,10 +850,19 @@ export function boot(doc = document, storage = globalThis.localStorage) {
     const soon = target.closest('[data-soon]');
     if (soon) {
       event.preventDefault();
-      const kind = soon.dataset.soon;
-      if (kind === 'wallet') announce('This prototype does not connect a wallet.');
-      else if (kind === 'voice') announce('Voice is coming soon.');
-      else announce('Photo is coming soon.');
+      announce(soon.dataset.soon === 'voice' ? 'Voice is coming soon.' : soon.dataset.soon === 'photo' ? 'Photo is coming soon.' : 'Coming soon.');
+      return;
+    }
+    if (target.closest('#configure-permission')) {
+      const dialog = $('consent-dialog');
+      if (!dialog.open) dialog.showModal();
+      return;
+    }
+    const changeView = target.closest('[data-view]');
+    if (changeView && !target.closest('dialog')) {
+      view = changeView.dataset.view;
+      render();
+      $('view').focus();
       return;
     }
     const add = target.closest('[data-add]');
@@ -794,7 +888,7 @@ export function boot(doc = document, storage = globalThis.localStorage) {
       const panel = doc.getElementById(why.getAttribute('aria-controls'));
       const open = why.getAttribute('aria-expanded') === 'true';
       why.setAttribute('aria-expanded', open ? 'false' : 'true');
-      panel.hidden = open;
+      if (panel) panel.hidden = open;
       return;
     }
     const accept = target.closest('[data-accept]');
@@ -805,20 +899,15 @@ export function boot(doc = document, storage = globalThis.localStorage) {
       persist();
       render();
       announce(item ? `Accepted “${item.title}”. Saved on this device. Nothing was published.` : 'Accepted. Nothing was published.');
-      const next = $('suggestions').querySelector('[data-accept]');
-      if (next) next.focus();
       return;
     }
     const dismiss = target.closest('[data-dismiss]');
     if (dismiss) {
       const id = dismiss.dataset.dismiss;
-      const item = suggestionsFor(state).find((suggestion) => suggestion.id === id);
       state = dismissSuggestion(state, id);
       persist();
       render();
-      announce(item ? `Dismissed “${item.title}”.` : 'Dismissed.');
-      const next = $('suggestions').querySelector('[data-dismiss]') || $('suggestions-heading');
-      if (next) next.focus();
+      announce('Dismissed. Nothing was published.');
       return;
     }
     const forget = target.closest('[data-forget]');
@@ -827,9 +916,19 @@ export function boot(doc = document, storage = globalThis.localStorage) {
       persist();
       render();
       announce('Forgot that pattern on this device.');
-      const next = $('learned-dialog').querySelector('[data-forget]') || $('serendipity-master');
-      if (next) next.focus();
     }
+  });
+
+  doc.body.addEventListener('change', (event) => {
+    const target = event.target;
+    if (!(target instanceof Element) || target.id !== 'serendipity-master') return;
+    const on = target.checked;
+    state = setSerendipity(state, on);
+    persist();
+    render();
+    announce(on
+      ? 'Serendipity is on. Patterns stay on this device.'
+      : 'Serendipity is off. Learned items stay until you forget them.');
   });
 
   doc.body.addEventListener('keydown', (event) => {
@@ -861,13 +960,22 @@ export function boot(doc = document, storage = globalThis.localStorage) {
       focusTarget.focus();
       return;
     }
-    state = commitQuickFill(state, { kind: draft.kind, ...draft.answers });
+    const hours = Number(draft.answers.hours);
+    const kind = draft.kind;
+    state = commitQuickFill(state, { kind, ...draft.answers });
     if (state.serendipity) state.learned = learnPatterns(state);
     persist();
     draft = null;
     $('stepper-dialog').close();
     render();
-    announce('Saved on this device. Nothing was published.');
+    if (kind === 'did') {
+      const message = proofToast(hours);
+      showToast(message);
+      announce(message);
+    } else {
+      announce('Saved on this device. Nothing was published.');
+      showToast('Saved on this device. Nothing was published.');
+    }
   });
 
   $('stepper-back').addEventListener('click', () => {
@@ -879,13 +987,9 @@ export function boot(doc = document, storage = globalThis.localStorage) {
     }
     draft.step -= 1;
     renderStep();
-    const focusTarget = $('stepper-dialog').querySelector('[role="radio"][aria-checked="true"]') || $('stepper-back');
-    focusTarget.focus();
   });
 
-  $('stepper-dialog').addEventListener('close', () => {
-    draft = null;
-  });
+  $('stepper-dialog').addEventListener('close', () => { draft = null; });
 
   $('consent-allow').addEventListener('click', () => {
     state = setSerendipity(state, true);
@@ -908,46 +1012,27 @@ export function boot(doc = document, storage = globalThis.localStorage) {
     $('consent-later').click();
   });
 
-  $('serendipity-master').addEventListener('change', () => {
-    const on = $('serendipity-master').checked;
-    state = setSerendipity(state, on);
-    persist();
-    render();
-    announce(on
-      ? 'Serendipity is on. Patterns stay on this device.'
-      : 'Serendipity is off. Learned items stay until you forget them.');
-  });
-
-  $('learned-open').addEventListener('click', () => {
-    render();
-    const dialog = $('learned-dialog');
-    if (!dialog.open) dialog.showModal();
-  });
-  $('learned-close').addEventListener('click', () => $('learned-dialog').close());
-
-  $('bell').addEventListener('click', () => {
-    const dialog = $('notice-dialog');
-    if (!dialog.open) dialog.showModal();
-  });
-  $('notice-close').addEventListener('click', () => $('notice-dialog').close());
-
   $('tape-close').addEventListener('click', () => $('tape-dialog').close());
-
   $('reset-open').addEventListener('click', () => {
     const dialog = $('reset-dialog');
     if (!dialog.open) dialog.showModal();
   });
   $('reset-cancel').addEventListener('click', () => $('reset-dialog').close());
   $('reset-confirm').addEventListener('click', () => {
-    try {
-      storage.removeItem(STORAGE_KEY);
-    } catch {
-      /* reload still restores the sample */
-    }
+    try { storage.removeItem(STORAGE_KEY); } catch { /* reload restores the sample */ }
     globalThis.location.reload();
   });
 
+  const frame = $('frame-toggle');
+  frame.addEventListener('click', () => {
+    const compact = frame.getAttribute('aria-pressed') !== 'true';
+    frame.setAttribute('aria-pressed', compact ? 'true' : 'false');
+    frame.textContent = compact ? 'Compact Phone View' : 'Full Width View';
+    $('stage').classList.toggle('is-wide', !compact);
+  });
+
   render();
+  setInterval(paintClock, 30000);
   if (state.consent == null && !$('consent-dialog').open) $('consent-dialog').showModal();
 }
 

@@ -18,6 +18,8 @@ import {
   learnPatterns,
   loadState,
   noticeCount,
+  pillarMetrics,
+  proofToast,
   ruleSuggestions,
   saveState,
   setSerendipity,
@@ -43,12 +45,12 @@ const UNTOUCHED = {
 
 test('the my-picture route exists as its own page', () => {
   const page = text('my-picture.html');
-  assert.equal(page.includes('<title>My Picture · lgme</title>'), true);
+  assert.equal(page.includes('<title>LGME.APP · My Picture</title>'), true);
   assert.equal(page.includes('Prototype'), true);
   assert.equal(page.includes('href="/css/my-picture.css"'), true);
   assert.equal(page.includes('src="/js/my-picture.mjs"'), true);
   assert.equal(page.includes('id="my-picture-app"'), true);
-  assert.equal(text('css/my-picture.css').includes('--bg: #0c100c'), true);
+  assert.equal(text('css/my-picture.css').includes('--stage: #05060c'), true);
   assert.equal(text('vercel.json').includes('"cleanUrls": true'), true);
   assert.equal(text('vercel.json').includes('my-picture'), false);
   assert.equal(text('sitemap.xml').includes('my-picture'), false);
@@ -72,13 +74,15 @@ test('rule-based suggestions are exactly three and essentials come first', () =>
   assert.equal(items.length, 3);
   assert.equal(items[0].kind, 'duty');
   assert.equal(items[0].essential, true);
-  assert.equal(items[0].title, 'Return the drill to Jordan');
+  assert.equal(items[0].title, 'Elena needs Garden Bed Terracing');
+  assert.equal(items[0].action, 'Claim Pledgework');
   assert.match(items[0].why, /Duties due come first/);
   assert.equal(items[1].kind, 'expiring');
-  assert.equal(items[1].title, 'Weekend compost pickup');
+  assert.equal(items[1].title, 'Surplus Heirloom Seeds ⇄ Solar kWh');
+  assert.equal(items[1].action, 'Open Channel');
   assert.match(items[1].why, /Expiring listings are next/);
   assert.equal(items[2].kind, 'duty');
-  assert.equal(items[2].title, 'Cover the Saturday desk shift');
+  assert.equal(items[2].title, 'Oak Ridge Trail Culvert Clearing');
   assert.equal(items.some((item) => item.kind === 'serendipity'), false);
   assert.equal(suggestionsFor(state).length, 3);
   assert.equal((suggestionsMarkup(state).match(/data-suggestion=/g) || []).length, 3);
@@ -94,15 +98,15 @@ test('serendipity adds a fourth suggestion only after it is allowed', () => {
   assert.equal(allowed.serendipity, true);
   const learned = allowed.learned.map((item) => item.id);
   assert.deepEqual(learned, ['learn-category', 'learn-hours', 'learn-partner', 'learn-place', 'learn-cross']);
-  assert.match(allowed.learned[0].label, /Repair/);
+  assert.match(allowed.learned[0].label, /Garden/);
   assert.match(allowed.learned[1].label, /2 hours/);
-  assert.match(allowed.learned[2].label, /Jordan/);
-  assert.match(allowed.learned[3].label, /Campus tool library/);
-  assert.match(learnPatterns(sample)[4].label, /bookshelf/i);
+  assert.match(allowed.learned[2].label, /Elena/);
+  assert.match(allowed.learned[3].label, /Oak Ridge/);
+  assert.match(learnPatterns(sample)[4].label, /greenhouse/i);
   const shown = suggestionsFor(allowed);
   assert.equal(shown.length, 4);
   assert.equal(shown[3].kind, 'serendipity');
-  assert.match(shown[3].title, /Jordan/);
+  assert.match(shown[3].title, /Elena/);
   assert.match(shown[3].why, /AI suggests, you decide/);
   assert.equal((suggestionsMarkup(allowed).match(/data-suggestion=/g) || []).length, 4);
   const off = setSerendipity(allowed, false);
@@ -166,12 +170,26 @@ test('quick fill writes sample records on the device store only', () => {
   const loaded = loadState(storage);
   assert.equal(loaded.label, 'sample');
   assert.equal(loaded.did.length, 4);
-  assert.equal(weeklyHours(loaded), 7.5);
+  assert.equal(weeklyHours(loaded), 6.5);
   assert.equal(didProgress(createSampleState()).ratio, 0.6);
   assert.equal(creditGauge(createSampleState().summary).value, 12);
   assert.ok(Math.abs(creditGauge(createSampleState().summary).ratio - (32 / 60)) < 1e-9);
-  assert.equal(noticeCount(createSampleState()), 6);
+  assert.equal(noticeCount(createSampleState()), 3);
+  assert.equal(proofToast(2), 'Proof Committed — Ledger balance updated +2.00 HRS');
+  assert.deepEqual(pillarMetrics(createSampleState()).map((pillar) => pillar.name), ['WANT', 'DID', 'SELL', 'WISH', 'DUTY']);
   assert.equal(loadState({ getItem() { return '{'; } }).label, 'sample');
+});
+
+test('the phone names five pillars, the bottom nav, and the consent control', () => {
+  const page = text('my-picture.html');
+  const script = text('js/my-picture.mjs');
+  for (const label of ['Big Picture', 'Quick Log', 'Serendipity', 'Ledger', 'Compact Phone View', 'Reset State']) {
+    assert.equal(page.includes(label), true, label);
+  }
+  for (const label of ['WANT', 'DID', 'SELL', 'WISH', 'DUTY', '5-Pillar Sovereign Balance', 'Configure Permission', 'Live Attestation Feed', 'Recommended Next Moves']) {
+    assert.equal(script.includes(label), true, label);
+  }
+  assert.equal(page.includes(CONSENT_COPY), true);
 });
 
 test('my picture is not in the main nav', () => {

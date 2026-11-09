@@ -4,65 +4,60 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex" />
-  <meta name="description" content="Prototype. Sample My Picture for deeds, offers, wishes, and duties. Data stays on this device." />
-  <meta name="theme-color" content="#0c100c" />
-  <title>My Picture · lgme</title>
+  <meta name="description" content="Prototype. Sample LGME.APP phone for sovereign mutual clearing. Data stays on this device." />
+  <meta name="theme-color" content="#05060c" />
+  <title>LGME.APP · My Picture</title>
   <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;1,6..72,500&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" />
   <link rel="stylesheet" href="/css/my-picture.css" />
 </head>
 <body id="my-picture-app">
-  <a class="skip" href="#content">Skip to My Picture</a>
-  <p class="prototype-banner" role="note"><strong>Prototype</strong><span>Sample data on this device. Not in the main nav.</span></p>
-  <header class="page-head">
-    <div>
-      <p class="kicker">lgme</p>
-      <h1>My Picture</h1>
-      <p class="lede">A sample week on this device: deeds you did, offers up, wishes open, and duties coming due.</p>
-    </div>
-    <div class="head-actions">
-      <button type="button" id="bell" aria-haspopup="dialog" aria-controls="notice-dialog" aria-label="Notifications, sample">
-        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6 9a6 6 0 1 1 12 0c0 7 3 7 3 7H3s3 0 3-7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path><path d="M10 19a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.8"></path></svg>
-        <span id="bell-count">0</span>
-      </button>
-      <button type="button" id="learned-open" aria-haspopup="dialog" aria-controls="learned-dialog">What it learned</button>
+  <a class="skip" href="#view">Skip to the phone</a>
+  <header class="stage-bar">
+    <p class="prototype-banner" role="note"><strong>Prototype</strong><span>Sample data on this device. Not in the main nav.</span></p>
+    <div class="stage-row">
+      <h1><span class="live-dot" aria-hidden="true"></span> LGME.APP <span class="sep">|</span> Sovereign Mutual Clearing &amp; Work Attestation Engine</h1>
+      <div class="stage-actions">
+        <button type="button" id="frame-toggle" aria-pressed="true">Compact Phone View</button>
+        <button type="button" id="reset-open" class="reset">Reset State</button>
+      </div>
     </div>
   </header>
-  <ul class="guardrails">
-    <li>AI suggests, you decide</li>
-    <li>Nothing is published without your tap</li>
-    <li>No personal data on the public Tape</li>
-  </ul>
-  <main id="content">
-    <h2 class="visually-hidden">This week</h2>
-    <div id="summary" class="summary"></div>
-    <div class="section-head">
-      <h2 id="suggestions-heading">Suggested for you</h2>
-      <p class="fine">Three rule-based next steps, essentials first. A fourth appears only if you allow on-device serendipity. Sample.</p>
+  <div class="stage" id="stage">
+    <div class="phone" id="phone">
+      <div class="phone-screen">
+        <div id="status-mount"></div>
+        <div id="view" class="view" tabindex="-1"></div>
+        <p class="guardrails">AI suggests, you decide. Nothing is published without your tap. No personal data on the public Tape.</p>
+        <nav class="tabbar" aria-label="Phone sections">
+          <button type="button" data-view="big" aria-current="page">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20H4Z" fill="none" stroke="currentColor" stroke-width="1.7"></path></svg>
+            Big Picture
+          </button>
+          <button type="button" data-view="quick">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="1.7"></circle><path d="M12 9v6M9 12h6" stroke="currentColor" stroke-width="1.7"></path></svg>
+            Quick Log
+          </button>
+          <button type="button" data-view="serendipity">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 14 9l6 .5-4.5 4 1.5 6L12 16l-5 3.5 1.5-6L4 9.5 10 9Z" fill="none" stroke="currentColor" stroke-width="1.6"></path></svg>
+            Serendipity
+          </button>
+          <button type="button" data-view="ledger">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h12v16H6Z" fill="none" stroke="currentColor" stroke-width="1.7"></path><path d="M9 8h6M9 12h6M9 16h4" stroke="currentColor" stroke-width="1.7"></path></svg>
+            Ledger
+          </button>
+        </nav>
+        <div id="toast" class="toast" role="status" hidden></div>
+      </div>
     </div>
-    <div id="suggestions" class="suggestions" aria-labelledby="suggestions-heading"></div>
-    <div class="section-head">
-      <h2>The week</h2>
-      <p class="fine">Every card is sample data. The plus opens a private quick fill.</p>
-    </div>
-    <div id="cards" class="cards"></div>
-    <div class="section-head">
-      <h2>Deed timeline</h2>
-      <p class="fine">Offered, matched, done, then IdidIt confirmed. Sample records only.</p>
-    </div>
-    <div id="timeline" class="timeline"></div>
-  </main>
-  <footer class="page-foot">
-    <button type="button" id="reset-open">Reset demo</button>
-    <a href="/">lgme desk</a>
-  </footer>
+  </div>
   <div id="status-live" class="visually-hidden" aria-live="polite"></div>
 
   <dialog id="consent-dialog" aria-labelledby="consent-title" aria-describedby="consent-copy">
-    <p class="kicker">Serendipity mode</p>
-    <h2 id="consent-title">On-device suggestions</h2>
+    <p class="kicker">0-Cloud Privacy</p>
+    <h2 id="consent-title">On-Device Edge Serendipity</h2>
     <p id="consent-copy">Allow on-device AI to learn your patterns and suggest unexpected matches? Your data never leaves this device.</p>
-    <p class="fine">If you choose Not now, the three rule-based suggestions still work. Sample data only.</p>
+    <p class="fine">If you choose Not now, the three rule-based moves still work. Sample data only.</p>
     <div class="dialog-actions">
       <button type="button" class="primary" id="consent-allow">Allow</button>
       <button type="button" id="consent-later">Not now</button>
@@ -70,7 +65,7 @@
   </dialog>
 
   <dialog id="stepper-dialog" aria-labelledby="stepper-title">
-    <p class="kicker" id="stepper-kicker">Quick fill</p>
+    <p class="kicker" id="stepper-kicker">Smart attestation</p>
     <h2 id="stepper-title">Add</h2>
     <p id="stepper-progress" aria-live="polite"></p>
     <div id="stepper-body"></div>
@@ -81,16 +76,6 @@
     <div class="dialog-actions">
       <button type="button" id="stepper-back">Close</button>
       <button type="button" class="primary" id="stepper-next">Next</button>
-    </div>
-  </dialog>
-
-  <dialog id="notice-dialog" aria-labelledby="notice-title">
-    <p class="kicker">Sample</p>
-    <h2 id="notice-title">Notifications</h2>
-    <p class="fine">Urgent items sit above the daily digest. Nothing here was sent to a server.</p>
-    <div id="notice-body"></div>
-    <div class="dialog-actions">
-      <button type="button" class="primary" id="notice-close">Close</button>
     </div>
   </dialog>
 
@@ -107,25 +92,11 @@
     </div>
   </dialog>
 
-  <dialog id="learned-dialog" aria-labelledby="learned-title">
-    <p class="kicker">On this device</p>
-    <h2 id="learned-title">What it learned</h2>
-    <p id="learned-note"></p>
-    <label class="master" for="serendipity-master">
-      <input id="serendipity-master" type="checkbox" />
-      <span>Serendipity mode</span>
-    </label>
-    <div id="learned-list"></div>
-    <div class="dialog-actions">
-      <button type="button" class="primary" id="learned-close">Close</button>
-    </div>
-  </dialog>
-
   <dialog id="reset-dialog" aria-labelledby="reset-heading">
-    <h2 id="reset-heading">Reset demo</h2>
+    <h2 id="reset-heading">Reset State</h2>
     <p>Clear the sample saved on this device and show the consent question again?</p>
     <div class="dialog-actions">
-      <button type="button" class="primary" id="reset-confirm">Reset demo</button>
+      <button type="button" class="primary" id="reset-confirm">Reset State</button>
       <button type="button" id="reset-cancel">Cancel</button>
     </div>
   </dialog>
