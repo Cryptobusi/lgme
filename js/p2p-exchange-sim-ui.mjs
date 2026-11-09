@@ -564,13 +564,14 @@ function printReceipt(receipt) {
   const view = window.open('', 'lgme-receipt');
   if (!view) { setStatus('Allow a window to print the receipt. Beta.', 'bad'); return; }
   const doc = view.document;
-  doc.title = 'soBeIT receipt';
+  doc.title = 'IdidIt (verified receipt)';
   const add = (tag, text) => {
     const node = doc.createElement(tag);
     node.textContent = text;
     doc.body.append(node);
   };
-  add('h1', receipt.thanks);
+  add('h1', 'IdidIt (verified receipt)');
+  add('p', receipt.thanks);
   add('p', `${receipt.method} ${receipt.amount} on ${receipt.paidAt}`);
   add('p', receipt.confirmation ? `Confirmation ${receipt.confirmation}` : 'No Zelle confirmation on this receipt.');
   add('p', receipt.proofHash ? `Proof fingerprint ${receipt.proofHash}` : 'No file fingerprint on this receipt.');
@@ -1514,7 +1515,7 @@ async function renderBooks(peers, seat) {
     const token = pendingInvoice;
     pendingInvoice = '';
     const saved = await sim.acceptInvoice(store, seat, token);
-    setStatus(saved.ok ? 'Invoice recorded on this book. The balance did not move. Beta.' : saved.error, saved.ok ? 'ok' : 'bad');
+    setStatus(saved.ok ? 'IdidIt (verified receipt) recorded on this book. The balance did not move. Beta.' : saved.error, saved.ok ? 'ok' : 'bad');
   }
   const panel = document.getElementById('panel');
   const peer = await store.get(seat);
@@ -1525,7 +1526,7 @@ async function renderBooks(peers, seat) {
   const finger = (await sim.sha256(sim.canonicalJSON(peer.publicKeyJwk))).slice(0, 16);
   const search = h('input', { type: 'search', placeholder: 'Filter by work, type, or hash' });
   const typeNames = ['all', 'genesis', 'ididit', 'INVOICE', 'INVOICE_PAID', 'INVOICE_REFUSED', 'REWARD', 'proposal', 'countersign', 'refusal', 'block', 'settlement', 'transfer', 'iou', 'attested', 'THIRD_SEAT_VETO', 'WINDOW_OPEN', 'WINDOW_CLOSE', 'NETTING', 'PRICE_LOCK'];
-  const typeLabels = { all: 'All types', ididit: 'Legacy receipt' };
+  const typeLabels = { all: 'All types', ididit: 'Legacy receipt', INVOICE: 'IdidIt (verified receipt)', INVOICE_PAID: 'IdidIt (verified receipt)' };
   const type = h('select', {}, typeNames.map((name, index) => option(name, typeLabels[name] || name, index === 0)));
   const list = h('div', {});
   const rows = view.rows.slice().reverse();
@@ -1596,7 +1597,7 @@ async function renderBooks(peers, seat) {
         mediaHashes: hashes
       });
       if (!created.ok) { setStatus(created.error, 'bad'); return; }
-      setStatus('Invoice signed. The balance did not move. Open SMS from the ledger to remind. Beta.', 'ok');
+      setStatus('IdidIt (verified receipt) signed. The balance did not move. Open SMS from the ledger to remind. Beta.', 'ok');
       await render();
     } finally {
       busy = false;
@@ -1675,7 +1676,7 @@ async function renderBooks(peers, seat) {
       } }, ['Refuse']));
     }
     return h('article', { class: 'card', id: row.role === 'AR' ? 'invoice-ar' : 'invoice-ap' }, [
-      h('h3', {}, [`${row.role} · ${row.status} · ${row.amount} $lgme`]),
+      h('h3', {}, [`IdidIt (verified receipt) · ${row.role} · ${row.status} · ${row.amount} $lgme`]),
       h('p', { class: 'muted' }, [`Paid ${row.paid}. Remaining ${row.remaining}. Bucket ${row.bucket}. Due ${String(row.dueAt).slice(0, 10)}. Phone ${row.payerPhone}. Hash ${String(row.payerKycHash || '').slice(0, 12)}.`]),
       h('p', { class: 'legend' }, [`Day root ${dayRoot.slice(0, 16)}. Not written to Hedera.`]),
       row.thanks ? h('p', { class: 'legend' }, [row.thanks]) : null,
@@ -1722,11 +1723,11 @@ async function renderBooks(peers, seat) {
       h('h3', {}, ['Receivable and payable']),
       h('p', { class: 'muted' }, [`Open, due, and overdue stay off the balance until a coded payment. Ageing ${buckets['0-30']} in 0-30, ${buckets['31-60']} in 31-60, ${buckets['60+']} in 60+.`]),
       ...invoiceCards,
-      invoices.length ? null : h('p', { class: 'empty' }, ['No invoices on this book.']),
+      invoices.length ? null : h('p', { class: 'empty' }, ['No IdidIt (verified receipt) on this book.']),
       h('div', { class: 'actions' }, [h('button', { type: 'button', onClick: () => download(`${peer.id}-ar-ap.csv`, sim.invoicesToCsv(peer, now), 'text/csv') }, ['Export AR/AP'])])
     ]),
-    h('h3', {}, ['Send an invoice']),
-    h('p', { class: 'legend' }, ['An invoice names the amount in US$. It does not change the balance until it is paid.']),
+    h('h3', {}, ['Send an IdidIt (verified receipt)']),
+    h('p', { class: 'legend' }, ['An IdidIt (verified receipt) names the amount in US$. It does not change the balance until it is paid.']),
     receiptForm,
     h('h3', {}, ['Clearing window']),
     h('p', { class: 'legend' }, ['Open IOUs accrue until the window closes. Close nets them, locks one US$ price when a quote is available, and rolls what is left or turns it into pay-in-terms. The payer chooses.']),
@@ -4086,7 +4087,7 @@ function renderHelp() {
     ['Another device', 'There is no server. Sign a proposal, countersign, refusal, transfer, attestation, or handoff, then carry the lgme1. code by copy, by a link whose data sits in the URL fragment, by a QR, or by a .json file. On the other device, verification runs before anything is appended. A QR is for an in-person handoff. To text or email a draft, the page opens sms: or mailto: so you send it from your own app. The outbox and inbox are a local log of that.'],
     ['Phone chat', 'A text is signed here, then Open SMS hands it to your phone’s own messages app. The link or the pasted token is checked for the sender’s signature and the member hash. A call button opens tel: on your phone. The tape records the start, the end, the other member’s hash, and a note you type. No audio is stored. Match sends the chat root by SMS and says Matched, or names the first message that differs. This page does not send the text and does not place the call. The other person’s signup details stay on their phone. You keep the phone number and the hash.'],
     ['Photos and video', 'The camera and the gallery stay on this phone. Photos are compressed and video is kept short. The file is encrypted in this browser. The tape stores only the signed hash, the type, the size, and the length. Share hands the file to your own apps. The signed text carries the hash. A file that does not match says Not authentic. Nothing is uploaded.'],
-    ['Invoices', 'An invoice in US$ is optional on a work receipt. An unpaid invoice does not change a balance. A reminder opens your own SMS app. The payer pays with the 6-digit code when the wallet is locked. Floors still hold. A refusal is recorded and carries no penalty. A paid receipt can earn a small reward, capped each period. Unpaid and refused receipts earn none.'],
+    ['IdidIt (verified receipt)', 'An IdidIt (verified receipt) in US$ is optional on a work record. An unpaid receipt does not change a balance. A reminder opens your own SMS app. The payer pays with the 6-digit code when the wallet is locked. Floors still hold. A refusal is recorded and carries no penalty. A paid receipt can earn a small reward, capped each period. Unpaid and refused receipts earn none.'],
     ['Market', 'Listings are signed with the peer key. The origin hash names the listing. A photo stays on this device. Offer, counter, and Accept & Sign create a pending hold. Final balances move only when the seller countersigns the buyer’s single-use handoff. A refusal is recorded and carries no penalty. Peer standing is read from the local book.']
   ];
   const install = h('div', { class: 'card' }, [

@@ -416,8 +416,8 @@ export function entryDetail(entry, names = {}) {
   if (entry.type === 'CHAT') return `Chat ${payload.seq} ${payload.senderKycHash ? String(payload.senderKycHash).slice(0, 12) : ''}`.trim();
   if (entry.type === 'CHAT_MATCHED') return `Chat matched ${payload.root ? String(payload.root).slice(0, 12) : ''}`.trim();
   if (entry.type === 'CALL') return `Call ${payload.start || ''} → ${payload.end || ''}`.trim();
-  if (entry.type === 'INVOICE') return `Invoice US$ ${payload.amount} due ${payload.dueAt || ''}`.trim();
-  if (entry.type === 'INVOICE_PAID') return `Invoice paid US$ ${payload.amount}`.trim();
+  if (entry.type === 'INVOICE') return `IdidIt (verified receipt) US$ ${payload.amount} due ${payload.dueAt || ''}`.trim();
+  if (entry.type === 'INVOICE_PAID') return `IdidIt (verified receipt) paid US$ ${payload.amount}`.trim();
   if (entry.type === 'PRICE_LOCK') return `Price lock US$ ${payload.usdAmount} · ${payload.lgmeAmount} $lgme`.trim();
   if (entry.type === 'PRICE_SEEN') return `Saw price lock ${payload.lockId ? String(payload.lockId).slice(0, 12) : ''}`.trim();
   if (entry.type === 'PRICE_REQUEST') return `Wallet request ${payload.lgmeAmount} $lgme`.trim();
