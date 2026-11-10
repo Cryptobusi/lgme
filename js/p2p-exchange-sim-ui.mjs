@@ -3702,7 +3702,10 @@ function exerciseCard(peer, books = [], file = { excerpts: [] }) {
   function confirmSolo() {
     if (!suggested) showRate();
     const scored = scoreSolo({ minutes: duration.value, note: note.value });
-    const result = soloCredit({ confidence: scored.confidence, amount: suggested.author, prior: [] });
+    let prior = [];
+    try { prior = JSON.parse(localStorage.getItem('lgme.solo.credits') || '[]'); } catch { prior = []; }
+    const result = soloCredit({ confidence: scored.confidence, amount: suggested.author, prior });
+    if (result.credit > 0) localStorage.setItem('lgme.solo.credits', JSON.stringify([...prior, Date.now()]));
     arbiter.textContent = result.text || result.error;
   }
   const terms = h('input', { maxlength: '160', value: 'Contribution or barter', placeholder: 'Support terms' });
