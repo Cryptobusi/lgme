@@ -4,6 +4,7 @@ import { buildLinks, capPicks, customSite, detectLocalAi, dueRequests, matchCrit
 import { createIndexedDbVault, deviceKeyForMigration, importNonExtractable, openJson, sealJson } from './p2p-sim-guard.mjs';
 import { PASSKEY_COPY, PASSKEY_FALLBACK, enrollPasskey, passkeySupported, readCredentialId, unlockWithPasskey } from './passkey-unlock.mjs';
 import { mountEmailCheck } from './email-check.mjs';
+import { mountHederaAnchor } from './hedera-anchor.mjs';
 import { REFERENCE_LABEL, optionLabel, referenceLine } from './dc-reference.mjs';
 import { DONATION_ADDRESS, MINT, buildTransferRequest, createReference, findReferencePayment, isValidPublicKey, readTokenBalance } from './solana-pay.mjs';
 import { fetchLgmePrice as quoteLgme } from './lgme-price.mjs';
@@ -1065,6 +1066,14 @@ async function goodDeedPanel(peers, me) {
   ]);
 }
 
+function hederaHost(peer) {
+  const day = new Date().toISOString().slice(0, 10);
+  const leaves = (peer.tape || []).filter((entry) => String(entry.at || '').slice(0, 10) === day).map((entry) => entry.hash);
+  const host = h('div', { id: 'hedera-anchor' });
+  queueMicrotask(() => { mountHederaAnchor(host, { leaves, day }); });
+  return host;
+}
+
 function emailHost() {
   const host = h('div', { id: 'email-check' });
   queueMicrotask(() => { mountEmailCheck(host); });
@@ -1705,6 +1714,7 @@ async function renderBooks(peers, seat) {
     h('h2', {}, [`${peer.name}'s book`]),
     windowBanner(),
     h('p', { class: 'legend' }, [`Today's tape root ${dayRoot.slice(0, 16)}. A future Hedera anchor would publish this root. Not written to Hedera.`]),
+    hederaHost(peer),
     h('p', { class: 'muted' }, [`Tape · public ledger. Every line below is on this peer’s book. Credits and debits come only from settlements, payments, and rewards. The running balance is a replay. Key ${finger}. Limit ${rule.creditLimit}.`]),
     h('div', { class: 'nums' }, [
       h('div', {}, [coinMark(), h('strong', {}, [String(view.balance)]), 'Balance']),

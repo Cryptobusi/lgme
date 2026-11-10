@@ -1,0 +1,8 @@
+{
+  "name": "lgme",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@hashgraph/sdk": "2.71.0"
+  }
+}
