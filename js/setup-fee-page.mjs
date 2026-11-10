@@ -1,5 +1,5 @@
 import { createReference } from './solana-pay.mjs';
-import { PRICE_UNAVAILABLE, SAMPLE_MS, averagePrice, fetchSpotPrice, lgmeForUsd, lockOpen, lockPayQuote } from './lgme-price.mjs';
+import { PRICE_UNAVAILABLE, SAMPLE_MS, fetchSpotBoard, lockOpen, lockPayQuote, pegQuote, pushSpot } from './lgme-price.mjs';
 import { ensureDeviceKey, signDevice } from './device-sign.mjs';
 import { feePreset } from './health-invite.mjs';
 import { mountPoolUse } from './membership-pool-page.mjs';
@@ -51,7 +51,8 @@ export async function renderSetupFee({ storage, go, mine, invite } = {}) {
   let sent = null;
   let sampling = false;
   const amountLine = el('p', { id: 'setup-lgme' }, [PRICE_UNAVAILABLE]);
-  const priceLine = el('p', { id: 'setup-price', class: 'muted' }, ['At current price (3-sec avg).']);
+  const priceLine = el('p', { id: 'setup-price', class: 'muted' }, ['Up to $20 uses the 3-second average.']);
+  let board = [];
   const wallet = el('a', { id: 'setup-wallet', href: '#' }, ['Pay with my wallet']);
   const reference = createReference();
   const status = el('p', { id: 'setup-status', role: 'status' });
@@ -60,19 +61,19 @@ export async function renderSetupFee({ storage, go, mine, invite } = {}) {
   function paintQuote() {
     const now = Date.now();
     if (lock && !lockOpen(lock, now)) lock = null;
-    const quote = lockOpen(lock, now) ? lock : averagePrice(samples, now);
-    latest = quote.ok ? quote : { ok: false, error: PRICE_UNAVAILABLE };
+    const quote = lockOpen(lock, now) ? lock : pegQuote({ usd: 1, samples, quotes: board, now });
+    latest = quote.ok ? quote : { ok: false, error: quote.error || PRICE_UNAVAILABLE, unsettled: quote.unsettled === true };
     if (!latest.ok) {
-      amountLine.textContent = PRICE_UNAVAILABLE;
-      priceLine.textContent = 'At current price (3-sec avg).';
+      amountLine.textContent = latest.error;
+      priceLine.textContent = '';
       wallet.setAttribute('href', '#');
       return;
     }
-    const amount = lockOpen(lock, now) ? lock.lgmeAmount : lgmeForUsd(1, latest.price);
-    const price = lockOpen(lock, now) ? lock.price : latest.price;
-    amountLine.textContent = `At current price (3-sec avg): ${amount} $lgme for US$1.`;
+    const amount = latest.lgmeAmount;
+    const price = latest.price;
+    amountLine.textContent = `${amount} $lgme for US$1.`;
     const when = lockOpen(lock, now) ? `Locked until ${new Date(lock.expiresAt).toISOString()}.` : 'Updating.';
-    priceLine.textContent = `${latest.source} · ${latest.timestamp} · ${when}`;
+    priceLine.textContent = `${latest.plain || 'Up to $20 uses the 3-second average.'} ${latest.source || ''} · ${latest.timestamp || ''} · ${when}`.trim();
     const link = payNowQuote(price, reference);
     if (link.ok) wallet.setAttribute('href', link.url);
   }
@@ -81,9 +82,9 @@ export async function renderSetupFee({ storage, go, mine, invite } = {}) {
     if (sampling) return;
     sampling = true;
     try {
-      const spot = await fetchSpotPrice();
-      if (spot.ok) samples.push({ t: Date.now(), price: spot.price, source: spot.source });
-      while (samples.length > 6) samples.shift();
+      const spot = await fetchSpotBoard();
+      board = spot.quotes || [];
+      pushSpot(samples, spot);
       paintQuote();
     } finally {
       sampling = false;
@@ -92,7 +93,7 @@ export async function renderSetupFee({ storage, go, mine, invite } = {}) {
 
   function holdQuote() {
     const now = Date.now();
-    if (!lockOpen(lock, now)) lock = lockPayQuote(averagePrice(samples, now), 1, now);
+    if (!lockOpen(lock, now)) lock = lockPayQuote(pegQuote({ usd: 1, samples, quotes: board, now }), 1, now);
     if (lock?.ok) sent = lock;
     paintQuote();
     return lock;
@@ -102,13 +103,13 @@ export async function renderSetupFee({ storage, go, mine, invite } = {}) {
     const held = holdQuote();
     if (!held?.ok) {
       event.preventDefault();
-      status.textContent = PRICE_UNAVAILABLE;
+      status.textContent = held?.error || PRICE_UNAVAILABLE;
     }
   });
 
   function showPayNow() {
     const held = holdQuote();
-    if (!held?.ok) { status.textContent = PRICE_UNAVAILABLE; return; }
+    if (!held?.ok) { status.textContent = held?.error || PRICE_UNAVAILABLE; return; }
     const link = payNowQuote(held.price, reference);
     if (!link.ok) { status.textContent = PRICE_UNAVAILABLE; return; }
     const qr = el('div', { id: 'setup-qr' });
@@ -150,7 +151,7 @@ export async function renderSetupFee({ storage, go, mine, invite } = {}) {
 
   async function showPayLater() {
     const held = holdQuote();
-    if (!held?.ok) { status.textContent = PRICE_UNAVAILABLE; return; }
+    if (!held?.ok) { status.textContent = held?.error || PRICE_UNAVAILABLE; return; }
     const built = receivableRecord({ handle, price: held.price, at: new Date().toISOString() });
     if (!built.ok) { status.textContent = built.error; return; }
     built.item.reference = reference;

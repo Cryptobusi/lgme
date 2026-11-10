@@ -5,6 +5,12 @@ export const AVERAGE_COUNT = 3;
 export const PAY_LOCK_MS = 60000;
 export const PEG_TOLERANCE = 0.02;
 export const PRICE_UNAVAILABLE = 'price unavailable, try again';
+export const PRICE_UNSETTLED = 'price unsettled, try again shortly';
+export const SMALL_USD = 20;
+export const FIVE_MIN_MS = 5 * 60 * 1000;
+export const MINUTE_MS = 60 * 1000;
+export const SOURCE_GAP = 0.05;
+export const MOVE_GAP = 0.10;
 export const PRICE_TIMEOUT_MS = 8000;
 export const DEFAULT_CLAMP_BAND = 0.05;
 export const PEG_LABEL = 'Pegged to US$ at time of transaction. $lgme is not a stablecoin.';
@@ -300,10 +306,12 @@ export function averagePrice(samples, now = Date.now()) {
 }
 
 export function lockPayQuote(average, usdAmount = 1, now = Date.now()) {
-  if (!average?.ok || !(average.price > 0)) return { ok: false, error: PRICE_UNAVAILABLE };
-  const lgmeAmount = lgmeForUsd(usdAmount, average.price);
+  if (!average?.ok || !(average.price > 0)) {
+    return { ok: false, unsettled: average?.unsettled === true, error: average?.error || PRICE_UNAVAILABLE };
+  }
   const usd = Math.round((Number(usdAmount) + Number.EPSILON) * 100) / 100;
-  if (!(lgmeAmount > 0) || !(usd > 0)) return { ok: false, error: PRICE_UNAVAILABLE };
+  const named = Number(average.lgmeAmount) > 0 && Number(average.usdAmount) === usd ? Number(average.lgmeAmount) : lgmeForUsd(usd, average.price);
+  if (!(named > 0) || !(usd > 0)) return { ok: false, error: PRICE_UNAVAILABLE };
   return {
     ok: true,
     locked: true,
@@ -311,10 +319,128 @@ export function lockPayQuote(average, usdAmount = 1, now = Date.now()) {
     source: average.source,
     timestamp: average.timestamp,
     usdAmount: usd,
-    lgmeAmount,
+    lgmeAmount: named,
+    rule: average.rule || '',
+    plain: average.plain || '',
     lockedAt: now,
     expiresAt: now + PAY_LOCK_MS
   };
+}
+
+function pricedRows(samples) {
+  return (samples || [])
+    .filter((row) => row && Number(row.price) > 0 && Number.isFinite(Number(row.t)))
+    .map((row) => ({ t: Number(row.t), price: Number(row.price), source: String(row.source || ''), quotes: row.quotes || [] }))
+    .sort((a, b) => a.t - b.t);
+}
+
+export function sourceGap(quotes) {
+  const prices = (quotes || []).map((row) => Number(row?.price)).filter((price) => price > 0);
+  if (prices.length < 2) return { unsettled: false, gap: 0 };
+  const high = Math.max(...prices);
+  const low = Math.min(...prices);
+  const gap = (high - low) / low;
+  return { unsettled: gap > SOURCE_GAP + 1e-12, gap };
+}
+
+export function minuteJump(samples, now = Date.now()) {
+  const rows = pricedRows(samples);
+  const newest = rows[rows.length - 1];
+  if (!newest || now - newest.t > SAMPLE_MS * 2) return { known: false, unsettled: false, gap: 0 };
+  const target = now - MINUTE_MS;
+  let past = null;
+  let distance = Infinity;
+  for (const row of rows) {
+    const away = Math.abs(row.t - target);
+    if (away < distance) {
+      past = row;
+      distance = away;
+    }
+  }
+  if (!past || distance > 5000) return { known: false, unsettled: false, gap: 0 };
+  const gap = Math.abs(newest.price - past.price) / past.price;
+  return { known: true, gap, unsettled: gap > MOVE_GAP + 1e-12 };
+}
+
+export function fiveMinuteAverage(samples, now = Date.now()) {
+  const rows = pricedRows(samples).filter((row) => row.t <= now && now - row.t <= FIVE_MIN_MS);
+  if (rows.length < AVERAGE_COUNT) return { ok: false, stale: true, error: PRICE_UNAVAILABLE };
+  const newest = rows[rows.length - 1].t;
+  const oldest = rows[0].t;
+  if (now - newest > SAMPLE_MS * 2) return { ok: false, stale: true, error: PRICE_UNAVAILABLE };
+  if (newest - oldest < FIVE_MIN_MS - SAMPLE_MS * 2) return { ok: false, stale: true, error: PRICE_UNAVAILABLE };
+  const price = roundPrice(rows.reduce((sum, row) => sum + row.price, 0) / rows.length);
+  if (!(price > 0)) return { ok: false, stale: true, error: PRICE_UNAVAILABLE };
+  return {
+    ok: true,
+    price,
+    source: rows[rows.length - 1].source,
+    timestamp: new Date(newest).toISOString(),
+    samples: rows.length
+  };
+}
+
+function samePrice(left, right) {
+  const a = Number(left);
+  const b = Number(right);
+  if (!(a > 0) || !(b > 0)) return false;
+  return Math.abs(a - b) <= a * 1e-9;
+}
+
+export function pegQuote({ usd, samples, quotes, now = Date.now() } = {}) {
+  const dollars = Math.round((Number(usd) + Number.EPSILON) * 100) / 100;
+  if (!(dollars > 0)) return { ok: false, error: PRICE_UNAVAILABLE };
+  const board = sourceGap(quotes);
+  if (board.unsettled) return { ok: false, unsettled: true, error: PRICE_UNSETTLED };
+  const jump = minuteJump(samples, now);
+  if (jump.unsettled) return { ok: false, unsettled: true, error: PRICE_UNSETTLED };
+  const short = averagePrice(samples, now);
+  if (!short.ok) return short;
+  if (dollars <= SMALL_USD) {
+    return {
+      ok: true,
+      price: short.price,
+      lgmeAmount: lgmeForUsd(dollars, short.price),
+      usdAmount: dollars,
+      source: short.source,
+      timestamp: short.timestamp,
+      rule: '3-second average',
+      plain: 'Up to $20 uses the 3-second average.'
+    };
+  }
+  const long = fiveMinuteAverage(samples, now);
+  if (!long.ok) return long;
+  const useShort = short.price <= long.price;
+  const picked = useShort ? short : long;
+  const plain = samePrice(short.price, long.price)
+    ? 'Over $20. The 3-second and 5-minute averages match.'
+    : useShort
+      ? 'Over $20. The 3-second average asked for more $lgme, so that price was used.'
+      : 'Over $20. The 5-minute average asked for more $lgme, so that price was used.';
+  return {
+    ok: true,
+    price: picked.price,
+    lgmeAmount: lgmeForUsd(dollars, picked.price),
+    usdAmount: dollars,
+    source: picked.source,
+    timestamp: picked.timestamp,
+    rule: useShort ? '3-second average' : '5-minute average',
+    plain
+  };
+}
+
+export function pushSpot(samples, spot, now = Date.now()) {
+  if (spot?.ok && Number(spot.price) > 0 && spot.unsettled !== true) {
+    samples.push({
+      t: now,
+      price: Number(spot.price),
+      source: String(spot.source || ''),
+      quotes: Array.isArray(spot.quotes) ? spot.quotes : []
+    });
+  }
+  const cutoff = now - FIVE_MIN_MS - MINUTE_MS;
+  while (samples.length && Number(samples[0]?.t) < cutoff) samples.shift();
+  return samples;
 }
 
 export function lockOpen(lock, now = Date.now()) {
@@ -423,18 +549,36 @@ export async function fetchLgmePrice({ fetchImpl = globalThis.fetch, timeoutMs =
   };
 }
 
-export async function fetchSpotPrice({ fetchImpl = globalThis.fetch, timeoutMs = 2500, mint = MINT, now = () => new Date().toISOString() } = {}) {
-  const sources = [
+function spotSources(mint) {
+  return [
     { id: 'pump', url: `https://frontend-api-v3.pump.fun/coins/${mint}`, parse: parsePumpCoin },
     { id: 'dexscreener', url: `https://api.dexscreener.com/latest/dex/tokens/${mint}`, parse: parseDexPairs },
     { id: 'jupiter', url: `https://lite-api.jup.ag/price/v3?ids=${mint}`, parse: (body) => parseJupiterPrice(body, mint) },
     { id: 'birdeye', url: `https://public-api.birdeye.so/defi/price?address=${mint}`, parse: parseBirdeyePrice },
     { id: 'geckoterminal', url: `https://api.geckoterminal.com/api/v2/networks/solana/tokens/${mint}/pools?page=1`, parse: parseGeckoPools }
   ];
-  for (const source of sources) {
+}
+
+export async function fetchSpotPrice({ fetchImpl = globalThis.fetch, timeoutMs = 2500, mint = MINT, now = () => new Date().toISOString() } = {}) {
+  for (const source of spotSources(mint)) {
     const body = await readJson(fetchImpl, source.url, timeoutMs);
     const price = body ? source.parse(body) : 0;
     if (price > 0) return { ok: true, price, source: source.id, timestamp: now(), mint };
   }
   return { ok: false, stale: true, error: PRICE_UNAVAILABLE };
+}
+
+export async function fetchSpotBoard({ fetchImpl = globalThis.fetch, timeoutMs = 2500, mint = MINT, now = () => new Date().toISOString() } = {}) {
+  const found = await Promise.all(spotSources(mint).map(async (source) => {
+    const body = await readJson(fetchImpl, source.url, timeoutMs);
+    const price = body ? source.parse(body) : 0;
+    return price > 0 ? { source: source.id, price } : null;
+  }));
+  const quotes = found.filter(Boolean);
+  if (!quotes.length) return { ok: false, stale: true, error: PRICE_UNAVAILABLE, quotes: [] };
+  const gap = sourceGap(quotes);
+  if (gap.unsettled) return { ok: false, unsettled: true, error: PRICE_UNSETTLED, quotes, timestamp: now(), mint };
+  const ordered = [...quotes].sort((a, b) => a.price - b.price);
+  const mid = ordered[Math.floor(ordered.length / 2)];
+  return { ok: true, price: mid.price, source: mid.source, quotes, timestamp: now(), mint };
 }

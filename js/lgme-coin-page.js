@@ -32,6 +32,7 @@
     var amount = document.getElementById('gift-amount');
     var pay = document.getElementById('solana-pay');
     var samples = [];
+    var board = [];
     var lock = null;
     var reference = '';
     function paintGift(url) {
@@ -44,32 +45,30 @@
       var clock = document.getElementById('quote-countdown');
       var now = Date.now();
       if (lock && !mod.lockOpen(lock, now)) lock = null;
-      var average = mod.lockOpen(lock, now) ? lock : mod.averagePrice(samples, now);
+      var quote = mod.lockOpen(lock, now) ? lock : mod.pegQuote({ usd: usd, samples: samples, quotes: board, now: now });
       if (!(usd > 0)) {
         if (eq) eq.textContent = 'Enter a US$ amount.';
         paintGift(payUrl('', reference));
         return;
       }
-      if (!average.ok) {
-        if (eq) eq.textContent = mod.PRICE_UNAVAILABLE;
+      if (!quote.ok) {
+        if (eq) eq.textContent = quote.error || mod.PRICE_UNAVAILABLE;
         if (clock) clock.textContent = '';
         paintGift(payUrl('', reference));
         return;
       }
-      var price = mod.lockOpen(lock, now) ? lock.price : average.price;
-      var lgme = mod.lgmeForUsd(usd, price);
-      if (eq) eq.textContent = 'At current price (3-sec avg): ' + lgme + ' $lgme for US$' + usd + '.';
+      if (eq) eq.textContent = quote.plain + ' ' + quote.lgmeAmount + ' $lgme for US$' + usd + '.';
       if (clock) {
         clock.textContent = mod.lockOpen(lock, now)
           ? 'Locked until ' + new Date(lock.expiresAt).toISOString() + '.'
-          : average.source + ' · ' + average.timestamp;
+          : (quote.source || '') + ' · ' + (quote.timestamp || '');
       }
-      paintGift(payUrl(String(lgme), reference));
+      paintGift(payUrl(String(quote.lgmeAmount), reference));
     }
     function holdGift(mod) {
       var usd = Number(amount && amount.value);
       if (!(usd > 0)) return null;
-      if (!mod.lockOpen(lock)) lock = mod.lockPayQuote(mod.averagePrice(samples), usd);
+      if (!mod.lockOpen(lock)) lock = mod.lockPayQuote(mod.pegQuote({ usd: usd, samples: samples, quotes: board, now: Date.now() }), usd);
       paintQuote(mod);
       return lock && lock.ok ? lock : null;
     }
@@ -79,9 +78,9 @@
       var fee = mods[2];
       reference = payMod.createReference();
       function sample() {
-        return mod.fetchSpotPrice().then(function (spot) {
-          if (spot.ok) samples.push({ t: Date.now(), price: spot.price, source: spot.source });
-          while (samples.length > 6) samples.shift();
+        return mod.fetchSpotBoard().then(function (spot) {
+          board = spot.quotes || [];
+          mod.pushSpot(samples, spot);
           paintQuote(mod);
         }).catch(function () { paintQuote(mod); });
       }
@@ -93,7 +92,7 @@
       if (check) check.addEventListener('click', function () {
         var out = document.getElementById('tx-out');
         var held = holdGift(mod);
-        if (!held) { if (out) out.textContent = mod.PRICE_UNAVAILABLE; return; }
+        if (!held) { if (out) out.textContent = (lock && lock.error) || mod.PRICE_UNAVAILABLE; return; }
         fee.findSetupPayment(reference, { amount: held.lgmeAmount, tolerance: 0.02 }).then(function (found) {
           if (!out) return;
           out.textContent = found.ok ? 'The reference payment matched the locked quote.' : found.error;

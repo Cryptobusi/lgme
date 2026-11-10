@@ -1,5 +1,5 @@
 import { createReference } from './solana-pay.mjs';
-import { PRICE_UNAVAILABLE, SAMPLE_MS, averagePrice, fetchSpotPrice, lockOpen, lockPayQuote } from './lgme-price.mjs';
+import { PRICE_UNAVAILABLE, SAMPLE_MS, fetchSpotBoard, lockOpen, lockPayQuote, pegQuote, pushSpot } from './lgme-price.mjs';
 import { ensureDeviceKey, signDevice } from './device-sign.mjs';
 import { memberStats } from './gym-charts.mjs';
 import { feePreset } from './health-invite.mjs';
@@ -61,6 +61,8 @@ export async function renderMembershipPool(host, handle) {
   const creditButton = el('button', { type: 'button', id: 'pool-donate-credit' }, ['Donate credit']);
   const sponsor = el('button', { type: 'button', id: 'pool-sponsor' }, ['Help the next member']);
   const samples = [];
+  let board = [];
+  const rule = el('p', { id: 'pool-rule', class: 'muted' }, ['']);
   let lock = null;
   let sampling = false;
   const reference = createReference();
@@ -73,12 +75,13 @@ export async function renderMembershipPool(host, handle) {
   function paint() {
     const now = Date.now();
     if (lock && !lockOpen(lock, now)) lock = null;
-    const quote = lockOpen(lock, now) ? lock : averagePrice(samples, now);
+    const quote = lockOpen(lock, now) ? lock : pegQuote({ usd: POOL_USD, samples, quotes: board, now });
+    rule.textContent = quote.ok ? (quote.plain || '') : (quote.error || PRICE_UNAVAILABLE);
     if (!quote.ok) {
       wallet.setAttribute('href', '#');
       return;
     }
-    const price = lockOpen(lock, now) ? lock.price : quote.price;
+    const price = quote.price;
     const link = poolPayLink(price, POOL_USD, reference);
     if (link.ok) wallet.setAttribute('href', link.url);
   }
@@ -87,9 +90,9 @@ export async function renderMembershipPool(host, handle) {
     if (sampling) return;
     sampling = true;
     try {
-      const spot = await fetchSpotPrice();
-      if (spot.ok) samples.push({ t: Date.now(), price: spot.price, source: spot.source });
-      while (samples.length > 6) samples.shift();
+      const spot = await fetchSpotBoard();
+      board = spot.quotes || [];
+      pushSpot(samples, spot);
       paint();
     } finally {
       sampling = false;
@@ -98,11 +101,11 @@ export async function renderMembershipPool(host, handle) {
 
   wallet.addEventListener('click', (event) => {
     const now = Date.now();
-    if (!lockOpen(lock, now)) lock = lockPayQuote(averagePrice(samples, now), POOL_USD, now);
+    if (!lockOpen(lock, now)) lock = lockPayQuote(pegQuote({ usd: POOL_USD, samples, quotes: board, now }), POOL_USD, now);
     paint();
     if (!lock?.ok) {
       event.preventDefault();
-      status.textContent = PRICE_UNAVAILABLE;
+      status.textContent = lock?.error || PRICE_UNAVAILABLE;
     }
   });
 
@@ -159,6 +162,7 @@ export async function renderMembershipPool(host, handle) {
     el('p', { id: 'pool-address', class: 'hash', style: 'overflow-wrap:anywhere' }, [POOL_ADDRESS]),
     el('p', { id: 'pool-mint', class: 'hash', style: 'overflow-wrap:anywhere' }, [POOL_MINT]),
     el('p', { class: 'muted' }, [`Memo: ${POOL_MEMO}. The coins stay at that address. A draw records that the fee is covered.`]),
+    rule,
     wallet,
     check,
     creditButton,

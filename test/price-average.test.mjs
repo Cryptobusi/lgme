@@ -117,7 +117,7 @@ test('a 3-second average converts the peg and a stale feed is not guessed', asyn
   assert.equal(coin.includes('tx-id'), false);
   assert.equal(coin.includes('Paste the signature'), false);
   assert.equal(coin.includes('id="gift-check"'), true);
-  assert.equal(coinPage.includes('averagePrice'), true);
+  assert.equal(coinPage.includes('pegQuote'), true);
   assert.equal(coinPage.includes('findSetupPayment'), true);
   const response = await fetch(`https://api.geckoterminal.com/api/v2/networks/solana/tokens/${MINT}/pools?page=1`);
   const body = await response.json();
