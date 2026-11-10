@@ -2486,10 +2486,22 @@ export async function exportBackup(peer, passphrase) {
   const weak = passphraseReason(passphrase);
   if (weak) return fail(weak);
   if (!peer?.privateKeyJwk) return fail('Unlock the wallet before export.');
+  const healthPage = peer.healthPage && typeof peer.healthPage === 'object'
+    ? {
+      ...peer.healthPage,
+      hedera: false,
+      images: Object.fromEntries(Object.entries(peer.healthPage.images || {}).map(([id, choice]) => [id, {
+        source: choice?.source || '',
+        builtin: choice?.builtin || '',
+        note: choice?.note || ''
+      }]))
+    }
+    : undefined;
   const sealed = await encryptJson(String(passphrase), {
     id: peer.id,
     publicKeyJwk: peer.publicKeyJwk,
-    privateKeyJwk: peer.privateKeyJwk
+    privateKeyJwk: peer.privateKeyJwk,
+    ...(healthPage ? { healthPage } : {})
   }, 2000);
   return { ok: true, backup: { simulated: true, kind: 'backup', sealed } };
 }
@@ -2504,6 +2516,7 @@ export async function importBackup(store, backup, passphrase) {
   const peer = await store.get(plain.id);
   if (!peer) return fail('Unknown peer.');
   peer.privateKeyJwk = plain.privateKeyJwk;
+  if (plain.healthPage && plain.healthPage.hedera !== true) peer.healthPage = plain.healthPage;
   await store.set(peer.id, peer);
   return { ok: true, id: peer.id };
 }

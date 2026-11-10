@@ -1,6 +1,7 @@
 import { ensureDeviceKey, signDevice } from './device-sign.mjs';
 import { draftExchangeListing, UNCLAIMED } from './exchange-listing.mjs';
 import { saveTilePhoto } from './health-tile-photo.mjs';
+import { loadPersonalImages, resolveImage, slotForListing, viewerId } from './personal-images.mjs';
 import { POOL_ID } from './membership-pool.mjs';
 import { renderMembershipPool } from './membership-pool-page.mjs';
 
@@ -48,6 +49,8 @@ export async function mountExchangeTest(host) {
   async function refresh() {
     const response = await fetch('/api/hedera/listings');
     const body = await response.json().catch(() => ({}));
+    const viewer = viewerId(localStorage);
+    const saved = viewer ? await loadPersonalImages(viewer, localStorage) : null;
     const rows = body.listings || [];
     rows.sort((a, b) => (b.item?.pinned === true) - (a.item?.pinned === true));
     list.replaceChildren(...(rows.length ? rows.map((row) => {
@@ -68,7 +71,11 @@ export async function mountExchangeTest(host) {
         'ex-repair': ['/assets/img/repair-extraordinaire.webp', 'Person exercising on a treadmill: The Repair Extraordinaire, equipment repair'],
         [POOL_ID]: ['/images/photos/volunteers-640.webp', 'Neighbors working together outdoors']
       };
-      const thumb = thumbs[item.id] || (String(item.title || '').includes('Repair') ? ['/assets/img/repair-extraordinaire.webp', 'Person exercising on a treadmill: The Repair Extraordinaire, equipment repair'] : null);
+      const slot = slotForListing(item);
+      const mine = slot && saved ? resolveImage(slot, saved.images, saved.memberId, viewer) : null;
+      const thumb = mine?.custom
+        ? [mine.src, mine.alt]
+        : (thumbs[item.id] || (String(item.title || '').includes('Repair') ? ['/assets/img/repair-extraordinaire.webp', 'Person exercising on a treadmill: The Repair Extraordinaire, equipment repair'] : null));
       const poolLine = item.id === POOL_ID
         ? `In US$${Number(item.inUsd || 0).toFixed(2)}. Out US$${Number(item.outUsd || 0).toFixed(2)}. Covers ${item.covers || 0}.`
         : `${item.status}. ${item.service}. ${item.durationMin || 0} min.`;

@@ -285,7 +285,7 @@
     <p class="beta-banner" role="status">Health is the live category. Exchange listings are open on Hedera testnet. The other categories are view only.</p>
     <h2>Categories</h2>
     <div class="entry-grid">
-      <div class="entry-tile health has-photo" id="health-tile">
+      <div class="entry-tile health has-photo" id="health-tile" data-image-slot="tile-health">
         <a class="health-open" data-entry="health" href="/gym"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 5.6-7 10-7 10z"/></svg><span class="badge">Live</span><span class="tile-name">Health</span></a>
         <p class="tile-note">Local AI is available. <a href="/helper">AI helper</a> · <a href="/ai-help">AI help</a></p>
         <p class="tile-note"><a class="cta" id="start-health" href="/gym#/start">Start Health</a></p>
@@ -296,16 +296,17 @@
         </div>
         <p id="health-photo-status" class="photo-status" role="status"></p>
       </div>
-      <a class="entry-tile preview has-photo" data-entry="campus" href="/campus"><span class="badge">View only, coming next</span><span class="tile-name">Campus</span></a>
-      <a class="entry-tile preview has-photo" data-entry="neighbor" href="/neighbors"><span class="badge">View only, coming next</span><span class="tile-name">Neighbor help</span></a>
-      <a class="entry-tile preview has-photo" data-entry="hosts" href="/hosts"><span class="badge">View only, coming next</span><span class="tile-name">Hosts</span></a>
-      <a class="entry-tile preview has-photo" data-entry="circles" href="/circles"><span class="badge">View only, coming next</span><span class="tile-name">Circles</span></a>
-      <a class="entry-tile preview has-photo" data-entry="stories" href="/stories"><span class="badge">View only, coming next</span><span class="tile-name">Stories</span></a>
-      <a class="entry-tile has-photo" data-entry="exchange" href="/exchange"><span class="badge">Testnet</span><span class="tile-name">Exchange</span></a>
+      <a class="entry-tile preview has-photo" data-entry="campus" data-image-slot="tile-campus" href="/campus"><span class="badge">View only, coming next</span><span class="tile-name">Campus</span></a>
+      <a class="entry-tile preview has-photo" data-entry="neighbor" data-image-slot="tile-neighbor" href="/neighbors"><span class="badge">View only, coming next</span><span class="tile-name">Neighbor help</span></a>
+      <a class="entry-tile preview has-photo" data-entry="hosts" data-image-slot="tile-hosts" href="/hosts"><span class="badge">View only, coming next</span><span class="tile-name">Hosts</span></a>
+      <a class="entry-tile preview has-photo" data-entry="circles" data-image-slot="tile-circles" href="/circles"><span class="badge">View only, coming next</span><span class="tile-name">Circles</span></a>
+      <a class="entry-tile preview has-photo" data-entry="stories" data-image-slot="tile-stories" href="/stories"><span class="badge">View only, coming next</span><span class="tile-name">Stories</span></a>
+      <a class="entry-tile has-photo" data-entry="exchange" data-image-slot="tile-exchange" href="/exchange"><span class="badge">Testnet</span><span class="tile-name">Exchange</span></a>
     </div>
     <p><a href="/milestones">Next milestones</a></p>
   </section>
   <script type="module" src="/js/health-tile-photo.mjs"></script>
+  <script type="module" src="/js/personal-images-apply.mjs"></script>
   <p class="launch-bar"><a class="install-launch" data-install-launch href="/exchange">Install &amp; launch</a></p>
   <p class="give-banner" role="note"><span>Real donations &amp; grants accepted</span> <a href="/lgme-coin#give">Give via soBeIT</a> <a href="/lgme-coin#give">How to give</a> <a href="/grants">Grants</a></p>
   <p class="kicker" style="margin:0 0 0.35rem;"><a href="/lgme-coin">$lgme on pump.fun</a></p>
@@ -399,7 +400,7 @@
   </div>
   <header class="hero" id="home-hero">
     <figure class="hero-photo">
-      <img src="/images/photos/jogger-640.webp" srcset="/images/photos/jogger-640.webp 640w, /images/photos/jogger-1200.webp 1200w" sizes="(max-width: 800px) 100vw, 720px" width="1200" height="800" alt="A person jogging away along a tree-lined park path" />
+      <img data-image-slot="banner" src="/images/photos/jogger-640.webp" srcset="/images/photos/jogger-640.webp 640w, /images/photos/jogger-1200.webp 1200w" sizes="(max-width: 800px) 100vw, 720px" width="1200" height="800" alt="A person jogging away along a tree-lined park path" />
     </figure>
     <p class="kicker">lgme</p>
     <h1>Prove what you did. Keep what you earn. Build trust that lasts.</h1>

@@ -2,6 +2,7 @@ import { ensureDeviceKey, signDevice } from './device-sign.mjs';
 import { equipmentReferral, gatherEquipment } from './equipment-referral.mjs';
 import { OFFER_ID } from './repair-follow.mjs';
 import { preparePhoto, saveTilePhoto } from './health-tile-photo.mjs';
+import { loadPersonalImages, resolveImage, viewerId } from './personal-images.mjs';
 
 const PHOTO_KEY = 'equipment-referral';
 
@@ -101,7 +102,7 @@ export function mountEquipmentCard(host, card, { onStatus } = {}) {
     onStatus?.(body.ok ? 'Requested. The Exchange item is linked. Nothing was emailed.' : (body.error || 'The request stayed on this phone.'));
   } }, ['Request this']);
   host.replaceChildren(el('article', { class: 'card', id: 'equipment-referral' }, [
-    el('img', { src: '/assets/img/repair-extraordinaire.webp', alt: 'Person exercising on a treadmill: The Repair Extraordinaire, equipment repair', width: '356', height: '480', loading: 'lazy', style: 'width:100%;height:180px;object-fit:contain;border-radius:10px;background:#efe8dc' }),
+    el('img', { id: 'repair-card-image', src: '/assets/img/repair-extraordinaire.webp', alt: 'Person exercising on a treadmill: The Repair Extraordinaire, equipment repair', width: '356', height: '480', loading: 'lazy', style: 'width:100%;height:180px;object-fit:contain;border-radius:10px;background:#efe8dc' }),
     el('p', { class: 'kicker' }, ['Referral']),
     el('h3', {}, [card.name]),
     el('p', { id: 'equipment-copy' }, [card.text]),
@@ -117,4 +118,13 @@ export function mountEquipmentCard(host, card, { onStatus } = {}) {
     el('label', { class: 'check' }, [share, 'Share these details on the Exchange request']),
     request
   ]));
+  const viewer = viewerId(localStorage);
+  if (!viewer) return;
+  loadPersonalImages(viewer, localStorage).then((saved) => {
+    const shown = resolveImage('header-repair', saved.images, saved.memberId, viewer);
+    const image = host.querySelector('#repair-card-image');
+    if (!shown.custom || !image) return;
+    image.src = shown.src;
+    image.alt = shown.alt;
+  }).catch(() => {});
 }

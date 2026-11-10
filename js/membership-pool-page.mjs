@@ -5,6 +5,7 @@ import { memberStats } from './gym-charts.mjs';
 import { feePreset } from './health-invite.mjs';
 import { POOL_ADDRESS, POOL_MEMO, POOL_MINT, POOL_TITLE, POOL_USD, poolPayLink } from './membership-pool.mjs';
 import { SETUP_TITLE, readSetup, writeSetup } from './setup-fee.mjs';
+import { loadPersonalImages, resolveImage, viewerId } from './personal-images.mjs';
 
 function el(tag, attrs = {}, children = []) {
   const node = document.createElement(tag);
@@ -156,7 +157,7 @@ export async function renderMembershipPool(host, handle) {
   }
 
   host.replaceChildren(
-    el('img', { src: '/images/photos/volunteers-640.webp', alt: 'Neighbors working together outdoors', width: '640', height: '420', loading: 'lazy', style: 'width:100%;height:160px;object-fit:cover;border-radius:10px' }),
+    el('img', { id: 'pool-card-image', src: '/images/photos/volunteers-640.webp', alt: 'Neighbors working together outdoors', width: '640', height: '420', loading: 'lazy', style: 'width:100%;height:160px;object-fit:cover;border-radius:10px' }),
     el('h2', {}, [POOL_TITLE]),
     el('p', {}, ['Anyone can donate $lgme. Members can donate deed credit or cover the next member. Donors are anonymous.']),
     balance,
@@ -171,6 +172,16 @@ export async function renderMembershipPool(host, handle) {
     status
   );
   await refresh();
+  const viewer = viewerId(localStorage);
+  if (viewer) {
+    const saved = await loadPersonalImages(viewer, localStorage).catch(() => null);
+    const shown = saved ? resolveImage('header-pool', saved.images, saved.memberId, viewer) : null;
+    const image = host.querySelector('#pool-card-image');
+    if (shown?.custom && image) {
+      image.src = shown.src;
+      image.alt = shown.alt;
+    }
+  }
   await sample();
   if (globalThis.__lgmePoolPrice) clearInterval(globalThis.__lgmePoolPrice);
   globalThis.__lgmePoolPrice = setInterval(() => { sample().catch(() => paint()); }, SAMPLE_MS);

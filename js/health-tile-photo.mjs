@@ -101,7 +101,7 @@ function say(text) {
 
 async function showStored(tile) {
   const blob = await loadTilePhoto();
-  if (!blob) return;
+  if (!blob || tile.dataset.personalImage === '1') return;
   paint(tile, URL.createObjectURL(blob));
 }
 

@@ -12,6 +12,7 @@ import { mountHederaAnchor } from './hedera-anchor.mjs';
 import { REFERENCE_LABEL, optionLabel, referenceLine } from './dc-reference.mjs';
 import { DONATION_ADDRESS, MINT, buildTransferRequest, createReference, findReferencePayment, isValidPublicKey, readTokenBalance } from './solana-pay.mjs';
 import { confirmServiceCredit, recommendRate, scoreSolo, soloCredit } from './exercise-arbiter.mjs';
+import { loadPersonalImages, resolveImage, slotForListing, viewerId } from './personal-images.mjs';
 import { fetchLgmePrice as quoteLgme } from './lgme-price.mjs';
 import { ensureDeviceKey, signDevice } from './device-sign.mjs';
 import { REPAIR_STATUSES } from './repair-follow.mjs';
@@ -3501,13 +3502,21 @@ async function renderMarket(peers, seat) {
     chip('All', !marketQuery.category, () => { marketQuery.category = ''; render(); }),
     ...CATEGORIES.map((item) => chip(item, marketQuery.category === item, () => { marketQuery.category = item; render(); }))
   ]);
+  const viewer = viewerId(localStorage);
+  const personal = viewer ? await loadPersonalImages(viewer, localStorage) : null;
+  function myThumb(card, fallback) {
+    const slot = slotForListing(card);
+    if (!slot || !personal) return fallback;
+    const shown = resolveImage(slot, personal.images, personal.memberId, viewer);
+    return shown.custom ? shown.src : fallback;
+  }
   const grid = h('div', { class: 'market-grid', id: 'market-grid' }, feed.map((card) => h('button', {
     type: 'button',
     class: 'card market-card',
     id: card.title === sim.STANDING_DONATION.title ? 'donation-card' : card.title === sim.STANDING_WANTED.title ? 'wanted-card' : card.title === sim.STANDING_REPAIR.title ? 'repair-card' : card.title === sim.STANDING_REPAIR_PRO.title ? 'repair-pro-card' : undefined,
     onClick: () => { openListingId = card.id; render(); }
   }, [
-    h('img', { alt: card.title === sim.STANDING_REPAIR_PRO.title ? 'Person exercising on a treadmill: The Repair Extraordinaire, equipment repair' : '', src: card.title === sim.STANDING_REPAIR_PRO.title ? '/assets/img/repair-extraordinaire.webp' : (card.photo || ''), width: '224', height: '224', loading: 'lazy' }),
+    h('img', { alt: card.title === sim.STANDING_REPAIR_PRO.title ? 'Person exercising on a treadmill: The Repair Extraordinaire, equipment repair' : '', src: myThumb(card, card.title === sim.STANDING_REPAIR_PRO.title ? '/assets/img/repair-extraordinaire.webp' : (card.photo || '')), width: '224', height: '224', loading: 'lazy' }),
     h('h3', {}, [card.title]),
     card.pinned ? h('p', { class: 'muted' }, [card.description]) : h('div', { class: 'price' }, [`${card.amount} $lgme`]),
     card.title === sim.STANDING_WANTED.title || card.title === sim.STANDING_REPAIR.title ? h('p', { class: 'legend' }, [(card.title === sim.STANDING_REPAIR.title ? sim.STANDING_REPAIR : sim.STANDING_WANTED).payments.join(' · ')]) : null,

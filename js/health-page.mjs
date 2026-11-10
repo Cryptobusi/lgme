@@ -5,6 +5,8 @@ import { HEALTH_PLANS, PLAN_ORDER } from './health-plan.mjs';
 import { fallbackLayout, layoutFromText, recommendId } from './health-layout.mjs';
 import { ENCOURAGEMENTS, inQuietHours, timeProposal, unreadCount } from './health-presence.mjs';
 import { loadTilePhoto, preparePhoto, saveTilePhoto } from './health-tile-photo.mjs';
+import { resolveImage, slimImages } from './personal-images.mjs';
+import { mountImageSlots } from './personal-images-ui.mjs';
 import { CONTACT_NOTICE, contactLinks, makeContactKey, openContact, sealContact } from './health-contact.mjs';
 
 const SEEN_KEY = 'lgme.health.seen';
@@ -16,6 +18,7 @@ export function pageKey(memberId) {
 
 export function rememberPage(storage, record) {
   const copy = { ...record, hedera: false, confirmed: true };
+  if (record.images) copy.images = slimImages(record.images);
   storage.setItem(pageKey(copy.memberId), JSON.stringify(copy));
   return copy;
 }
@@ -60,8 +63,9 @@ export async function loadPageDb(memberId) {
 }
 
 export async function rememberConfirmed(storage, record, peerStore) {
+  const fullImages = record.images || {};
   const copy = rememberPage(storage, record);
-  try { await savePageDb(copy); } catch { /* localStorage already has the copy */ }
+  try { await savePageDb({ ...copy, images: fullImages }); } catch { /* localStorage already has the copy */ }
   if (peerStore && copy.memberId && copy.memberId !== 'this-phone') {
     const peer = await peerStore.get(copy.memberId);
     if (peer) {
@@ -69,13 +73,16 @@ export async function rememberConfirmed(storage, record, peerStore) {
       await peerStore.set(copy.memberId, peer);
     }
   }
-  return copy;
+  return { ...copy, images: fullImages };
 }
 
 export async function recallConfirmed(storage, memberId) {
   const local = recallPage(storage, memberId);
-  if (local) return local;
-  try { return await loadPageDb(memberId); } catch { return null; }
+  let saved = null;
+  try { saved = await loadPageDb(memberId); } catch { saved = null; }
+  if (!local && !saved) return null;
+  const base = local || saved;
+  return { ...base, images: saved?.images || base.images || {} };
 }
 
 function el(tag, attrs = {}, children = []) {
@@ -181,7 +188,7 @@ export async function personalizeView({ storage, status, go, goals, memberId, pe
     const layout = JSON.parse(card?.dataset.layout || 'null');
     if (!layout?.layout) { status('Generate a page first.'); return; }
     const prompt = document.getElementById(`plan-note-${chosen}`)?.value || HEALTH_PLANS[chosen].prompt;
-    const prior = recallPage(storage, memberId) || {};
+    const prior = await recallConfirmed(storage, memberId) || {};
     await rememberConfirmed(storage, {
       memberId: memberId || 'this-phone',
       confirmedAt: new Date().toISOString(),
@@ -192,6 +199,7 @@ export async function personalizeView({ storage, status, go, goals, memberId, pe
       quiet: prior.quiet || null,
       mute: prior.mute === true,
       background: prior.background || '',
+      images: prior.images || {},
       connect: ''
     }, peerStore);
     status('Saved on this phone. Nothing was sent.');
@@ -255,6 +263,7 @@ export async function personalPageView({ storage, status, go, mine, signedGym, p
   const customNote = el('input', { id: 'encourage-custom', maxlength: '80', placeholder: 'Or write a short note' });
   root.append(el('section', { class: 'card', id: 'customize-panel' }, [
     el('h3', {}, ['Customize']),
+    el('div', { id: 'image-slots' }),
     el('label', {}, ['Background image, on this phone', file]),
     photoStatus,
     el('h3', {}, ['Reminder']),
@@ -534,8 +543,18 @@ export async function personalPageView({ storage, status, go, mine, signedGym, p
     );
   }
   const planId = saved?.layout?.layout?.id || 'easy';
-  paintPage(root, (HEALTH_PLANS[planId] || HEALTH_PLANS.easy).image);
-  const blob = await loadTilePhoto(saved?.background || `${PHOTO_KEY}:${mine?.id || 'this-phone'}`).catch(() => null);
+  const background = resolveImage('background', saved?.images, mine?.id, mine?.id);
+  paintPage(root, background.custom ? background.src : (HEALTH_PLANS[planId] || HEALTH_PLANS.easy).image);
+  const imageHost = root.querySelector('#image-slots');
+  if (imageHost) {
+    mountImageSlots(imageHost, {
+      memberId: mine?.id || 'this-phone',
+      images: saved?.images || {},
+      status,
+      save: async (images) => keep({ images })
+    });
+  }
+  const blob = background.custom ? null : await loadTilePhoto(saved?.background || `${PHOTO_KEY}:${mine?.id || 'this-phone'}`).catch(() => null);
   if (blob) paintPage(root, URL.createObjectURL(blob));
   await refresh();
   if (globalThis.__lgmePresence) clearInterval(globalThis.__lgmePresence);
