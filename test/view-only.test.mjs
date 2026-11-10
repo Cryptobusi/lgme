@@ -34,5 +34,5 @@ test('only Health stays writable and every opening tile has a name', () => {
   assert.equal(text('api/hedera/topic.mjs').includes('VIEW_ONLY_MESSAGE'), true);
   assert.equal(text('api/hedera/queue.mjs').includes('healthWrite'), true);
   assert.equal(text('api/gym/dispute.mjs').includes('VIEW_ONLY_MESSAGE'), false);
-  assert.equal(text('sw.js').includes('lgme-v119'), true);
+  assert.equal(text('sw.js').includes('lgme-v120'), true);
 });

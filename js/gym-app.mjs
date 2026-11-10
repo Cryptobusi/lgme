@@ -873,11 +873,12 @@ function inviteActions(draft) {
     try { await navigator.clipboard.writeText(shares.copy); status('Link copied.'); }
     catch { status(shares.copy); }
   } }, ['Copy link']);
+  const linkStyle = 'display:inline-block;padding:0.7rem 0.9rem;margin:0.35rem 0.35rem 0.35rem 0;border:1px solid #2c352b;border-radius:12px';
   return el('div', { id: 'invite-draft' }, [
     el('p', { id: 'invite-link' }, [draft.url]),
     el('p', { id: 'invite-note' }, [draft.note]),
-    el('a', { id: 'invite-email', href: shares.email }, ['Email']),
-    el('a', { id: 'invite-text', href: shares.text }, ['Text']),
+    el('a', { id: 'invite-email', href: shares.email, style: linkStyle }, ['Email']),
+    el('a', { id: 'invite-text', href: shares.text, style: linkStyle }, ['Text']),
     share,
     copy,
     el('p', { class: 'muted' }, ['Your email or text app sends this. Contacts stay on your phone. Nothing is uploaded.'])
