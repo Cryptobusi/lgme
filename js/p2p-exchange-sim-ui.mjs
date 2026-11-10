@@ -11,6 +11,7 @@ import { allowMotion, captureFrame, readGps } from './exercise-sensors.mjs';
 import { mountHederaAnchor } from './hedera-anchor.mjs';
 import { REFERENCE_LABEL, optionLabel, referenceLine } from './dc-reference.mjs';
 import { DONATION_ADDRESS, MINT, buildTransferRequest, createReference, findReferencePayment, isValidPublicKey, readTokenBalance } from './solana-pay.mjs';
+import { confirmServiceCredit, recommendRate, scoreSolo, soloCredit } from './exercise-arbiter.mjs';
 import { fetchLgmePrice as quoteLgme } from './lgme-price.mjs';
 import { ensureDeviceKey, signDevice } from './device-sign.mjs';
 import { REPAIR_STATUSES } from './repair-follow.mjs';
@@ -3680,6 +3681,30 @@ function exerciseCard(peer, books = [], file = { excerpts: [] }) {
     option('mobility', 'Mobility', false),
     option('mixed', 'Mixed', false)
   ]);
+  const exerciseKind = h('select', { id: 'exercise-kind' }, [
+    option('physical', 'Physical', true),
+    option('mental', 'Mental', false)
+  ]);
+  const duration = h('input', { id: 'exercise-minutes', type: 'number', min: '15', max: '240', value: '30' });
+  const arbiter = h('p', { id: 'exercise-arbiter' }, ['The suggestion appears here. It is not recorded until both people confirm.']);
+  const giverBox = h('input', { id: 'arbiter-giver', type: 'checkbox' });
+  const receiverBox = h('input', { id: 'arbiter-receiver', type: 'checkbox' });
+  let suggested = null;
+  function showRate() {
+    suggested = recommendRate({ kind: exerciseKind.value, minutes: duration.value });
+    arbiter.textContent = suggested.text;
+  }
+  function confirmBoth() {
+    if (!suggested) showRate();
+    const result = confirmServiceCredit({ giver: giverBox.checked === true, receiver: receiverBox.checked === true, amount: suggested.author });
+    arbiter.textContent = result.text || result.error;
+  }
+  function confirmSolo() {
+    if (!suggested) showRate();
+    const scored = scoreSolo({ minutes: duration.value, note: note.value });
+    const result = soloCredit({ confidence: scored.confidence, amount: suggested.author, prior: [] });
+    arbiter.textContent = result.text || result.error;
+  }
   const terms = h('input', { maxlength: '160', value: 'Contribution or barter', placeholder: 'Support terms' });
   const note = h('input', { maxlength: '160', placeholder: 'Private note, stays on this device' });
   const groupCode = h('input', { maxlength: '24', placeholder: 'Invite code, optional' });
@@ -3710,6 +3735,16 @@ function exerciseCard(peer, books = [], file = { excerpts: [] }) {
     h('p', {}, [line.text]),
     h('p', { class: 'legend' }, [line.source || '']),
     field('Category', category),
+    field('Physical or mental', exerciseKind),
+    field('Minutes', duration),
+    arbiter,
+    h('label', {}, [giverBox, ' I confirm this rate']),
+    h('label', {}, [receiverBox, ' The other member confirms this rate']),
+    h('div', { class: 'actions' }, [
+      h('button', { type: 'button', id: 'show-arbiter', onClick: () => showRate() }, ['Show the suggested rate']),
+      h('button', { type: 'button', id: 'confirm-arbiter', onClick: () => confirmBoth() }, ['Confirm both']),
+      h('button', { type: 'button', id: 'confirm-solo', onClick: () => confirmSolo() }, ['Confirm solo credit'])
+    ]),
     field('Support terms', terms),
     field('Private note', note),
     field('Club or crew name', clubName),
