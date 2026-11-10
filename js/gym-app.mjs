@@ -10,6 +10,7 @@ import { DEMO_CLUB, DEMO_NAME, MODE_KEY, chatKey, demoStore, realStore, seedDemo
 import { LOCAL_CHAT_NOTE, chatStatus, publicChatMessage } from './gym-sync.mjs';
 import { BOARD_NOTE, PROGRESS_KINDS, boardCards, chooseProgress, manualEntry, progressRows, sharePreview } from './gym-progress.mjs';
 import { communityFeed } from './gym-feed.mjs';
+import { OPT_IN_COPY, answerLocal, deleteDownloadedModel, detectEngine, isOn, setOn, unloadLocalModel } from './local-ai.mjs';
 
 let mode = localStorage.getItem(MODE_KEY) === 'demo' ? 'demo' : 'real';
 let store = mode === 'demo' ? demoStore() : realStore();
@@ -573,11 +574,54 @@ async function renderGroups() {
   ]);
 }
 
+function progressLines(peer) {
+  if (!peer) return [];
+  return progressRows(peer).map((row) => `${row.label} ${row.current} ${row.unit} this week, change ${row.change}.`);
+}
+
+function localAiCard(peer) {
+  const host = el('section', { class: 'card', id: 'local-ai' });
+  function draw() {
+    const on = isOn(localStorage);
+    const lines = [
+      el('h3', {}, [`Local AI assistant: ${on ? 'On' : 'Off'}`])
+    ];
+    if (!on) {
+      lines.push(el('button', { type: 'button', onClick: () => {
+        const note = el('p', {}, [OPT_IN_COPY]);
+        const turn = el('button', { type: 'button', class: 'primary', onClick: () => { setOn(localStorage, true); draw(); } }, ['Turn on']);
+        host.append(note, turn);
+      } }, ['Show what turning on means']));
+    } else {
+      const engine = detectEngine();
+      lines.push(el('p', {}, [`Engine: ${engine.label}.`]));
+      if (engine.id === 'rules') lines.push(el('p', { class: 'muted' }, ['No model was downloaded.']));
+      const question = el('textarea', { maxlength: '400', placeholder: 'Ask, or ask for a draft' });
+      const out = el('p', {});
+      lines.push(question);
+      lines.push(el('button', { type: 'button', class: 'primary', onClick: async () => {
+        out.textContent = 'Working on this phone…';
+        const result = await answerLocal({ question: question.value, progressLines: progressLines(peer) });
+        out.textContent = `${result.text} Engine: ${result.label}. Not sent.`;
+      } }, ['Ask']));
+      lines.push(el('p', { class: 'muted' }, ['A draft is not sent. Nothing here mints credit or posts.']));
+      lines.push(out);
+      lines.push(el('button', { type: 'button', onClick: async () => { await unloadLocalModel(); setOn(localStorage, false); draw(); } }, ['Turn off']));
+      lines.push(el('button', { type: 'button', onClick: async () => { await deleteDownloadedModel(); out.textContent = 'Downloaded model deleted.'; } }, ['Delete downloaded model']));
+    }
+    host.replaceChildren(...lines);
+  }
+  draw();
+  return host;
+}
+
 async function renderMore() {
   const email = el('div', { id: 'gym-email' });
   const passkey = el('p', {}, [passkeySupported() ? PASSKEY_COPY : PASSKEY_FALLBACK]);
   queueMicrotask(() => mountEmailCheck(email));
   return el('div', {}, [
+    el('h2', {}, ['Settings']),
+    localAiCard(null),
     el('h2', {}, ['More']),
     todayLine(),
     el('p', {}, [el('a', { href: '/wisdom' }, ['Open Wisdom'])]),
@@ -697,6 +741,7 @@ async function renderDashboard() {
   const view = el('div', {}, [
     el('p', {}, [el('a', { href: '/?picker=1' }, ['All categories'])]),
     await renderProgress(mine, true),
+    localAiCard(mine),
     el('h2', {}, ['Your groups']),
     groups.length ? el('div', {}, groups.map((group) => el('p', {}, [group.name]))) : el('p', { class: 'muted' }, ['No group yet.']),
     el('button', { type: 'button', class: 'primary', onClick: () => go('/train') }, ['Start']),
