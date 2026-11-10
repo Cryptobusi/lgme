@@ -3,6 +3,7 @@ import { ARTICLES } from './p2p-resources.mjs';
 import { buildLinks, capPicks, customSite, detectLocalAi, dueRequests, matchCriteria, presetsFor, SOURCE_KEY, SOURCE_SITES, suggestSites } from './sourcing.mjs';
 import { createIndexedDbVault, deviceKeyForMigration, importNonExtractable, openJson, sealJson } from './p2p-sim-guard.mjs';
 import { PASSKEY_COPY, PASSKEY_FALLBACK, enrollPasskey, passkeySupported, readCredentialId, unlockWithPasskey } from './passkey-unlock.mjs';
+import { mountEmailCheck } from './email-check.mjs';
 import { REFERENCE_LABEL, optionLabel, referenceLine } from './dc-reference.mjs';
 import { DONATION_ADDRESS, MINT, buildTransferRequest, createReference, findReferencePayment, isValidPublicKey, readTokenBalance } from './solana-pay.mjs';
 import { fetchLgmePrice as quoteLgme } from './lgme-price.mjs';
@@ -1064,6 +1065,12 @@ async function goodDeedPanel(peers, me) {
   ]);
 }
 
+function emailHost() {
+  const host = h('div', { id: 'email-check' });
+  queueMicrotask(() => { mountEmailCheck(host); });
+  return host;
+}
+
 function campusDeedPanel(peers, me, full) {
   const params = new URLSearchParams(location.search);
   const asked = (params.get('what') || '').toLowerCase();
@@ -1149,6 +1156,7 @@ function campusDeedPanel(peers, me, full) {
   return h('section', { id: 'campus-deed' }, [
     h('h3', {}, ['Campus deed']),
     h('p', { class: 'legend' }, [campusGroup() === 'campus' ? 'You are in the campus group. One verified deed is one campus credit. Not $lgme. Not on Hedera.' : 'Log a deed for the campus pilot. Join with the campus QR, or log here on this device.']),
+    emailHost(),
     form,
     h('p', { class: 'legend' }, ['Redeem inside the pilot']),
     redeemOffer,

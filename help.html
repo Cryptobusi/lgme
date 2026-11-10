@@ -42,7 +42,7 @@
     <li>Log a campus deed with a handle. No coin is required for the deed.</li>
     <li>The other person attests. Then it is an IdidIt (verified receipt).</li>
   </ol>
-  <p class="muted">Google and email sign-in: later.</p>
+  <p class="muted">Google sign-in: later.</p>
 </div>
 <div class="card">
   <h2>FAQ</h2>
@@ -55,7 +55,8 @@
   <p class="status live">Live</p>
   <p>The exchange, the campus deed log, the tape, daily Merkle roots, category subfloors, and the plain pages are on the site.</p>
   <p id="status-invoice">Exchange invoices and receipts use the label IdidIt (verified receipt). /ididit still redirects to the exchange.</p>
-  <p id="status-passkey">A passkey on the exchange uses this device. The browser stores only the credential id. It does not hold a key or a seed, and it sends nothing. The passphrase still locks the book. If the browser has no passkey, use the passphrase and the 6-digit code. Google and email: later.</p>
+  <p id="status-passkey">A passkey on the exchange uses this device. The browser stores only the credential id. It does not hold a key or a seed, and it sends nothing. The passphrase still locks the book. If the browser has no passkey, use the passphrase and the 6-digit code. Google sign-in: later.</p>
+  <p id="status-email">Email sign-in: built, waiting on email provider key. The campus check needs RESEND_API_KEY, EMAIL_FROM, EMAIL_CODE_PEPPER, UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN, and EMAIL_CHECK=on. KYC: email check only; full KYC not started.</p>
   <p id="status-price">A $lgme quote asks the public GeckoTerminal pool list, then DexScreener. No API key. The lock lasts 15 seconds and stays within 5% of the prior lock, the 24-hour price, the 7-day price, and the 30-day price. The tightest band applies. A day move past 5% holds that cap for 7 days. If history is missing, only the 15-second rule applies. The tape stores the real price, the capped price, and which cap. There is no hand-typed price. If no quote settles, the desk offers pay-in-terms or barter. DexScreener currently has no pair for this mint, so GeckoTerminal is the source that answers.</p>
   <p class="status plan">Not started</p>
   <p id="status-hedera">Public Hedera anchoring: coming. Not written to Hedera today.</p>
