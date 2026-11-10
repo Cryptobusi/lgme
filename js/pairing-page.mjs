@@ -177,7 +177,7 @@ function drawStories() {
     el('label', { class: 'check' }, [consent, 'I consent to this story']),
     el('label', { class: 'check' }, [other, 'The other person also consents to be named']),
     el('button', { type: 'button', class: 'primary', id: 'publish-story', onClick: () => {
-      const circle = book.circles.find((row) => row.privacy === 'high') || book.circles[0];
+      const circle = audience.value === 'circle' ? book.circles.find((row) => row.privacy === 'high') || book.circles[0] : null;
       const result = publishStory(book, { text: text.value, audience: audience.value, circleId: circle?.id || '', consent: consent.checked, otherConsent: other.checked });
       const note = document.getElementById('story-status');
       if (!result.ok) { if (note) note.textContent = result.error; return; }
