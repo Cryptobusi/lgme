@@ -3,6 +3,7 @@ import { json, readBody, readEnv } from '../lib/http.mjs';
 import { VIEW_ONLY_MESSAGE } from '../../js/view-only-api.mjs';
 import { verifyDevice } from '../../js/device-sign.mjs';
 import { HOUR_LIMIT, LISTINGS_OPERATOR, LISTINGS_TOPIC, publicExchangeListing } from '../../js/exchange-listing.mjs';
+import { interestRecord } from '../../js/community-interest.mjs';
 import { submitPaidListing } from '../../js/hedera-submit.mjs';
 import { SETUP_ADDRESS, SETUP_MINT, confirmSetupTransfer, findSetupPayment, publicSetupReceivable } from '../../js/setup-fee.mjs';
 import { applyPoolAction, emptyPool, poolView, publicPoolMessage } from '../../js/membership-pool.mjs';
@@ -10,6 +11,11 @@ import { rpc } from '../../js/solana-pay.mjs';
 import { redisRest } from '../../js/redis-env.mjs';
 import { upstashStore } from '../lib/upstash.mjs';
 import { allowRate } from '../../js/gym-kv.mjs';
+
+function adminSee(req, env) {
+  const token = String(env.INTEREST_ADMIN || '');
+  return Boolean(token) && String(req.headers?.['x-lgme-admin'] || '') === token;
+}
 
 const hits = new Map();
 const memoryStamps = new Map();
@@ -96,7 +102,8 @@ export default async function handler(req, res) {
       listings,
       posted: book.posted,
       pool,
-      rules: OPERATOR_RULES
+      rules: OPERATOR_RULES,
+      ...(adminSee(req, env) ? { privateInterests: book.private || [] } : {})
     });
   }
   if (req.method !== 'POST') return json(res, 405, { ok: false, error: 'Use GET or POST.' });
@@ -162,6 +169,45 @@ export default async function handler(req, res) {
       note: applied.note || '',
       personal: false
     });
+  }
+  if (payload.action === 'interest') {
+    if (String(payload.category || '').toLowerCase() !== 'exchange') {
+      return json(res, 403, { ok: false, viewOnly: true, error: VIEW_ONLY_MESSAGE });
+    }
+    const signed = await verifyDevice(body.publicJwk, payload, body.sig);
+    if (!signed || payload.handle !== body.handle) return json(res, 401, { ok: false, error: 'The device signature was refused.' });
+    if (!enabled) return json(res, 503, { ok: false, enabled: false, error: 'Shared listings are not on.' });
+    const built = await interestRecord(payload);
+    if (!built.ok) return json(res, 400, { ok: false, error: built.error });
+    const book = await bookOf(store);
+    const now = Date.now();
+    const prior = store ? (book.stamps[payload.handle] || []) : (memoryStamps.get(payload.handle) || []);
+    const gate = withinRate(prior, now, HOUR_LIMIT);
+    if (!gate.ok) return json(res, 429, { ok: false, error: 'At most 10 listing messages an hour for each author.' });
+    let submitted;
+    try {
+      submitted = await submitPaidListing(env, built.body);
+    } catch (error) {
+      return json(res, 502, { ok: false, error: error.public ? error.message : 'The testnet topic did not accept the listing.' });
+    }
+    if (!submitted.ok) return json(res, 503, submitted);
+    const stamps = [...gate.recent, now].slice(-HOUR_LIMIT);
+    memoryStamps.set(payload.handle, stamps);
+    book.stamps[payload.handle] = stamps;
+    book.private = [...(book.private || []), built.privateRecord].slice(-80);
+    book.posted = [...book.posted, {
+      id: built.body.id,
+      kind: built.body.kind,
+      title: built.body.title,
+      status: built.body.status,
+      transactionId: submitted.transactionId || '',
+      sequenceNumber: submitted.sequenceNumber || '',
+      hashscan: submitted.hashscan || '',
+      payer: LISTINGS_OPERATOR,
+      topicId: LISTINGS_TOPIC
+    }].slice(-40);
+    if (store) await store.set(BOOK, book);
+    return json(res, 200, { ok: true, ...submitted, item: built.body, stored: true, personal: false });
   }
   if (payload.action === 'receivable-paid' && payload.reference) {
     const found = await findSetupPayment(payload.reference, { recipient: SETUP_ADDRESS, mint: SETUP_MINT, amount: payload.lgmeAmount, tolerance: 0.02 });

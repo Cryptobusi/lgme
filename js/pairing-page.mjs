@@ -1,4 +1,6 @@
 import { EXCLUDED_NOTE, HOST_KINDS, NEIGHBOR_DEEDS, addMatchingHour, catalogFor, checkIn, createCircle, createHost, draftStory, hostSteward, joinHost, postDeed, publicCounts, publicStories, publishStory, readBook, verifyDeed, withdrawStory, writeBook } from './pairing.mjs';
+import { EXPLAINER, EXPLAINER_TITLE, ROLES, interestRecord } from './community-interest.mjs';
+import { ensureDeviceKey, signDevice } from './device-sign.mjs';
 
 const page = document.body.dataset.page;
 const root = document.getElementById('pair');
@@ -17,6 +19,82 @@ function el(tag, attrs = {}, children = []) {
 }
 
 function save() { writeBook(book); draw(); }
+
+function explainer() {
+  return el('article', { class: 'card', id: 'upcoming-communities' }, [
+    el('h2', {}, [EXPLAINER_TITLE]),
+    el('p', {}, [EXPLAINER]),
+    el('p', {}, [el('a', { href: '/disclaimer' }, ['Disclaimer'])])
+  ]);
+}
+
+function interestForm(kind) {
+  const prefix = kind === 'host' ? 'host-interest' : 'dev-interest';
+  const title = kind === 'host' ? 'Host a community' : 'Join the developer team';
+  const handle = el('input', { id: `${prefix}-handle`, 'data-view-ok': '1', maxlength: '32', placeholder: 'Name or handle' });
+  const contact = el('input', { id: `${prefix}-contact`, 'data-view-ok': '1', maxlength: '120', placeholder: 'Email or another contact' });
+  const notes = el('textarea', { id: `${prefix}-notes`, 'data-view-ok': '1', maxlength: '280', placeholder: 'Optional notes' });
+  const store = el('input', { id: `${prefix}-store`, type: 'checkbox', 'data-view-ok': '1' });
+  const share = el('input', { id: `${prefix}-share`, type: 'checkbox', 'data-view-ok': '1' });
+  const test = el('input', { id: `${prefix}-test`, type: 'checkbox', 'data-view-ok': '1' });
+  const status = el('p', { id: `${prefix}-status`, role: 'status' }, []);
+  const roles = ROLES.map(([id, label]) => el('label', { class: 'check' }, [
+    el('input', { id: `${prefix}-role-${id}`, type: 'checkbox', 'data-view-ok': '1', value: id }),
+    label
+  ]));
+  return el('article', { class: 'card', id: prefix }, [
+    el('h2', {}, [title]),
+    el('p', {}, ['Nothing is stored until you check store it. Nothing is shown on the public listing until you also check share it. The contact stays off Hedera.']),
+    el('label', {}, ['Name or handle', handle]),
+    el('label', {}, ['Contact you choose', contact]),
+    el('p', {}, ['Skills or roles']),
+    ...roles,
+    el('label', {}, ['Notes, optional', notes]),
+    el('label', { class: 'check' }, [store, 'Store it on this Exchange book']),
+    el('label', { class: 'check' }, [share, 'Share the handle and roles in the public listing']),
+    el('label', { class: 'check' }, [test, 'Mark this as a test']),
+    el('button', { type: 'button', class: 'primary', id: `${prefix}-send`, 'data-view-ok': '1', onClick: () => sendInterest(kind, prefix, status) }, ['Sign up']),
+    status,
+    el('p', {}, [el('a', { href: '/disclaimer' }, ['Disclaimer'])])
+  ]);
+}
+
+async function sendInterest(kind, prefix, status) {
+  const roles = ROLES.map(([id]) => document.getElementById(`${prefix}-role-${id}`)).filter((node) => node?.checked).map((node) => node.value);
+  const built = await interestRecord({
+    kind,
+    handle: document.getElementById(`${prefix}-handle`)?.value,
+    contact: document.getElementById(`${prefix}-contact`)?.value,
+    roles,
+    notes: document.getElementById(`${prefix}-notes`)?.value,
+    store: document.getElementById(`${prefix}-store`)?.checked === true,
+    share: document.getElementById(`${prefix}-share`)?.checked === true,
+    test: document.getElementById(`${prefix}-test`)?.checked === true
+  });
+  if (!built.ok) { status.textContent = built.error; return; }
+  const key = await ensureDeviceKey(localStorage);
+  const payload = {
+    action: 'interest',
+    category: 'exchange',
+    handle: built.privateRecord.handle,
+    kind: built.privateRecord.kind,
+    contact: built.privateRecord.contact,
+    roles: built.privateRecord.roles,
+    notes: built.privateRecord.notes,
+    store: true,
+    share: built.privateRecord.share,
+    test: built.privateRecord.test
+  };
+  const response = await fetch('/api/hedera/listings', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ handle: payload.handle, publicJwk: key.publicJwk, payload, sig: await signDevice(key.privateJwk, payload) })
+  });
+  const body = await response.json().catch(() => ({}));
+  status.textContent = body.ok
+    ? `Listed on testnet as ${body.item?.status || 'pending review'}. Message ${body.sequenceNumber || 'queued'}.${body.item?.test ? ' Marked as a test.' : ''} The contact was not written to the topic.`
+    : (body.error || 'The sign-up stayed on this phone.');
+}
 
 function draw() {
   book = readBook();
@@ -64,6 +142,9 @@ function drawHosts() {
   const view = el('div', {}, [
     el('p', { class: 'kicker' }, ['Hosts']),
     el('h1', {}, ['Host a circle']),
+    explainer(),
+    interestForm('developer'),
+    interestForm('host'),
     el('label', {}, ['Name', name]),
     el('label', {}, ['Kind', kind]),
     el('button', { type: 'button', class: 'primary', id: 'create-host', onClick: () => {
@@ -136,6 +217,9 @@ function drawCircles() {
   const view = el('div', {}, [
     el('p', { class: 'kicker' }, ['Circles']),
     el('h1', {}, ['A circle']),
+    explainer(),
+    interestForm('developer'),
+    interestForm('host'),
     el('p', {}, ['Open interest can be named in public counts. High-privacy is never on a public board, and its label never leaves the group.']),
     el('label', {}, ['Name', name]),
     el('label', {}, ['Privacy', privacy]),
