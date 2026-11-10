@@ -15,7 +15,7 @@ function memory() {
 test('the email check stays off until the provider and store are named', () => {
   const ready = emailReadiness({});
   assert.equal(ready.enabled, false);
-  for (const name of ['EMAIL_CHECK=on', 'RESEND_API_KEY', 'EMAIL_FROM', 'EMAIL_CODE_PEPPER', 'UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN']) {
+  for (const name of ['EMAIL_CHECK', 'RESEND_API_KEY', 'EMAIL_FROM', 'EMAIL_CODE_PEPPER', 'KV_REST_API_URL', 'KV_REST_API_TOKEN']) {
     assert.equal(ready.missing.includes(name), true, name);
   }
   assert.equal(emailReadiness({
@@ -23,9 +23,16 @@ test('the email check stays off until the provider and store are named', () => {
     RESEND_API_KEY: 'k',
     EMAIL_FROM: 'desk@lgme.app',
     EMAIL_CODE_PEPPER: 'pepper',
-    UPSTASH_REDIS_REST_URL: 'https://example.upstash.io',
-    UPSTASH_REDIS_REST_TOKEN: 't'
+    KV_REST_API_URL: 'https://example.upstash.io',
+    KV_REST_API_TOKEN: 't'
   }).enabled, true);
+  assert.equal(emailReadiness({
+    RESEND_API_KEY: 'k',
+    EMAIL_FROM: 'desk@lgme.app',
+    EMAIL_CODE_PEPPER: 'pepper',
+    KV_REST_API_URL: 'https://example.upstash.io',
+    KV_REST_API_TOKEN: 't'
+  }).missing.join(','), 'EMAIL_CHECK');
 });
 
 test('a campus address is marked once and the code is stored only as a hash', async () => {

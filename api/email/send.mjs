@@ -1,6 +1,7 @@
 import { emailReadiness, clientIp, allowlistFrom } from '../../js/email-check-core.mjs';
 import { requestCode } from '../lib/email-flow.mjs';
 import { headerMap, json, readBody, readEnv } from '../lib/http.mjs';
+import { redisRest } from '../../js/redis-env.mjs';
 import { upstashStore } from '../lib/upstash.mjs';
 
 async function sendWithResend(env, email, code) {
@@ -26,7 +27,8 @@ export default async function handler(req, res) {
   const ready = emailReadiness(env);
   if (!ready.enabled) return json(res, 503, { ok: false, enabled: false, waiting: 'built, waiting on email provider key', missing: ready.missing });
   const body = await readBody(req);
-  const result = await requestCode(upstashStore(env.UPSTASH_REDIS_REST_URL, env.UPSTASH_REDIS_REST_TOKEN), {
+  const redis = redisRest(env);
+  const result = await requestCode(upstashStore(redis.url, redis.token), {
     email: body.email,
     now: Date.now(),
     ip: clientIp(headerMap(req)),

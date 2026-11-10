@@ -32,7 +32,7 @@ test('the gym beta is a separate installable page', () => {
   assert.equal(text('sitemap.xml').includes('https://lgme.app/gym'), true);
   assert.equal(text('help.html').includes('Chat text is not written to Hedera.'), true);
   assert.equal(text('glossary.html').includes('App development fund'), true);
-  assert.equal(worker.includes('lgme-v81'), true);
+  assert.equal(worker.includes('lgme-v82'), true);
   assert.equal(worker.includes('key.startsWith("lgme-v")'), true);
   assert.equal(gymWorker.includes("key.startsWith('lgme-gym-')"), true);
   assert.equal(gymWorker.includes('lgme-v80'), false);
@@ -60,6 +60,7 @@ test('demo club stays off the real book and the share card hides health details'
   assert.equal(await real.get('jordan'), null);
   assert.equal(gymChatReady({}).enabled, false);
   assert.equal(gymChatReady({ GYM_CHAT_SYNC: 'on', UPSTASH_REDIS_REST_URL: 'https://example.upstash.io', UPSTASH_REDIS_REST_TOKEN: 'token' }).enabled, true);
+  assert.equal(gymChatReady({ GYM_CHAT_SYNC: 'on', KV_REST_API_URL: 'https://example.upstash.io', KV_REST_API_TOKEN: 'token' }).enabled, true);
   assert.equal(publicChatMessage({ text: 'latitude 38', handle: 'Sam', code: 'demo-club' }).ok, false);
   assert.equal(publicChatMessage({ text: 'See you at the desk', handle: 'Sam', code: 'demo-club' }).ok, true);
 });

@@ -1,3 +1,5 @@
+import { redisRest } from './redis-env.mjs';
+
 export const LOCAL_CHAT_NOTE = 'This chat is on this phone only. It is not shared with other phones yet. Chat text is not written to Hedera.';
 
 const PRIVATE = /@|https?:|\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b|\blatitude\b|\blongitude\b/i;
@@ -5,8 +7,7 @@ const PRIVATE = /@|https?:|\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b|\blatitude\b|\blong
 export function gymChatReady(env = {}) {
   const missing = [];
   if (env.GYM_CHAT_SYNC !== 'on') missing.push('GYM_CHAT_SYNC=on');
-  if (!env.UPSTASH_REDIS_REST_URL) missing.push('UPSTASH_REDIS_REST_URL');
-  if (!env.UPSTASH_REDIS_REST_TOKEN) missing.push('UPSTASH_REDIS_REST_TOKEN');
+  missing.push(...redisRest(env).missing);
   return { enabled: missing.length === 0, missing, hedera: false, shared: missing.length === 0 };
 }
 

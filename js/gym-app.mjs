@@ -222,10 +222,36 @@ function markCheer(card) {
   if (!cheered(card)) localStorage.setItem('lgme-gym.cheers', JSON.stringify([...prior, cheerKey(card)]));
 }
 
+async function syncCard(preview, remove) {
+  const sync = await chatStatus();
+  if (!sync.shared || !preview) return;
+  await fetch('/api/gym/progress', {
+    method: remove ? 'DELETE' : 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(preview)
+  });
+}
+
 async function renderBoard() {
   const sync = await chatStatus();
   const rows = await books();
-  const cards = boardCards(rows).filter((card) => card.example || sync.shared);
+  let remote = [];
+  if (sync.shared) {
+    try {
+      const response = await fetch('/api/gym/progress');
+      const body = await response.json();
+      remote = Array.isArray(body.cards) ? body.cards : [];
+    } catch { remote = []; }
+  }
+  const local = boardCards(rows).filter((card) => card.example || sync.shared);
+  const seen = new Set();
+  const cards = [];
+  for (const card of [...local, ...remote]) {
+    const key = `${card.handle}:${card.week}:${card.category}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    cards.push(card);
+  }
   const host = el('section', {}, [
     el('h2', {}, ['Shared board']),
     el('p', {}, [sync.shared ? 'These cards left this phone. They are not written to Hedera.' : BOARD_NOTE]),
@@ -385,6 +411,8 @@ function shareControls(peer, row) {
     const fresh = await store.get(peer.id);
     fresh.gymProgress.share = { ...(fresh.gymProgress.share || {}), [row.id]: level.value };
     await store.set(peer.id, fresh);
+    if (level.value === 'board') await syncCard(sharePreview(fresh, { ...row, share: 'board' }), false);
+    if (level.value === 'me' && row.share === 'board') await syncCard(preview, true);
     status(level.value === 'me' ? 'Sharing stopped.' : 'Shared. You can stop it in one tap.');
     render();
   } }, [level.value === 'me' && row.share !== 'me' ? 'Stop sharing' : 'Save sharing']));
@@ -393,6 +421,7 @@ function shareControls(peer, row) {
       const fresh = await store.get(peer.id);
       fresh.gymProgress.share = { ...(fresh.gymProgress.share || {}), [row.id]: 'me' };
       await store.set(peer.id, fresh);
+      if (row.share === 'board') await syncCard(preview, true);
       render();
     } }, ['Stop sharing']));
   }

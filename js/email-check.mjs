@@ -1,4 +1,4 @@
-const WAITING = 'Email sign-in is built, waiting on an email provider key. Nothing is sent until RESEND_API_KEY, EMAIL_FROM, EMAIL_CODE_PEPPER, UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN, and EMAIL_CHECK=on are set. Google sign-in: later.';
+const WAITING = 'Email sign-in is built, waiting on an email provider key. The code store can be Upstash or Vercel KV. Nothing is sent until RESEND_API_KEY, EMAIL_FROM, EMAIL_CODE_PEPPER, and EMAIL_CHECK=on are set. Google sign-in: later.';
 
 function line(text) {
   const p = document.createElement('p');

@@ -1,6 +1,7 @@
 import { allowlistFrom, emailReadiness } from '../../js/email-check-core.mjs';
 import { confirmCode } from '../lib/email-flow.mjs';
 import { json, readBody, readEnv } from '../lib/http.mjs';
+import { redisRest } from '../../js/redis-env.mjs';
 import { upstashStore } from '../lib/upstash.mjs';
 
 export default async function handler(req, res) {
@@ -9,7 +10,8 @@ export default async function handler(req, res) {
   const ready = emailReadiness(env);
   if (!ready.enabled) return json(res, 503, { ok: false, enabled: false, waiting: 'built, waiting on email provider key', missing: ready.missing });
   const body = await readBody(req);
-  const result = await confirmCode(upstashStore(env.UPSTASH_REDIS_REST_URL, env.UPSTASH_REDIS_REST_TOKEN), {
+  const redis = redisRest(env);
+  const result = await confirmCode(upstashStore(redis.url, redis.token), {
     email: body.email,
     code: body.code,
     now: Date.now(),

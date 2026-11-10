@@ -1,3 +1,5 @@
+import { redisRest } from './redis-env.mjs';
+
 export const CODE_TTL_MS = 10 * 60 * 1000;
 export const MAX_ATTEMPTS = 5;
 export const SEND_GAP_MS = 60 * 1000;
@@ -8,18 +10,17 @@ export const EMAIL_ENV = Object.freeze([
   'EMAIL_CHECK',
   'RESEND_API_KEY',
   'EMAIL_FROM',
-  'EMAIL_CODE_PEPPER',
-  'UPSTASH_REDIS_REST_URL',
-  'UPSTASH_REDIS_REST_TOKEN'
+  'EMAIL_CODE_PEPPER'
 ]);
 
 export function emailReadiness(env = {}) {
   const missing = [];
-  if (env.EMAIL_CHECK !== 'on') missing.push('EMAIL_CHECK=on');
+  if (env.EMAIL_CHECK !== 'on') missing.push('EMAIL_CHECK');
   for (const name of EMAIL_ENV) {
     if (name === 'EMAIL_CHECK') continue;
     if (!String(env[name] || '').trim()) missing.push(name);
   }
+  missing.push(...redisRest(env).missing);
   return { enabled: missing.length === 0, missing };
 }
 
