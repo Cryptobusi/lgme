@@ -65,15 +65,15 @@ export async function mountExchangeTest(host) {
         'ex-bike': ['/images/photos/neighborhood-640.webp', 'A neighborhood path for a ride'],
         'ex-loan': ['/images/photos/dumbbells-640.webp', 'Dumbbells ready to borrow'],
         'ex-walk': ['/images/photos/jogger-640.webp', 'A person out for a walk or jog'],
-        'ex-repair': ['/images/photos/tools-bench-640.webp', 'A hand beside a workshop tool'],
+        'ex-repair': ['/assets/img/repair-extraordinaire.webp', 'Person exercising on a treadmill: The Repair Extraordinaire, equipment repair'],
         [POOL_ID]: ['/images/photos/volunteers-640.webp', 'Neighbors working together outdoors']
       };
-      const thumb = thumbs[item.id] || (String(item.title || '').includes('Repair') ? ['/images/photos/tools-bench-640.webp', 'Workshop tools'] : null);
+      const thumb = thumbs[item.id] || (String(item.title || '').includes('Repair') ? ['/assets/img/repair-extraordinaire.webp', 'Person exercising on a treadmill: The Repair Extraordinaire, equipment repair'] : null);
       const poolLine = item.id === POOL_ID
         ? `In US$${Number(item.inUsd || 0).toFixed(2)}. Out US$${Number(item.outUsd || 0).toFixed(2)}. Covers ${item.covers || 0}.`
         : `${item.status}. ${item.service}. ${item.durationMin || 0} min.`;
       return el('article', { class: 'card', id: `mirror-${item.id}` }, [
-        thumb ? el('img', { src: thumb[0], alt: thumb[1], width: '640', height: '420', loading: 'lazy', style: 'width:100%;height:140px;object-fit:cover;border-radius:10px' }) : null,
+        thumb ? el('img', { src: thumb[0], alt: thumb[1], width: '356', height: '480', loading: 'lazy', style: thumb[0].includes('repair-extraordinaire') ? 'width:100%;height:180px;object-fit:contain;background:#efe8dc;border-radius:10px' : 'width:100%;height:140px;object-fit:cover;border-radius:10px' }) : null,
         el('h3', {}, [item.title || item.id]),
         el('p', {}, [poolLine]),
         el('p', { class: 'muted' }, [item.rate ? `Suggested credit ${item.rate.author}. ${item.rate.note || ''}` : '']),

@@ -18,7 +18,7 @@ test('self-hosted photos stay small, credited, and off the script policy', () =>
   }
   const credits = text('credits.html');
   const attribution = text('ATTRIBUTION.md');
-  for (const name of ['jogger', 'stretch', 'neighborhood', 'shop-street', 'volunteers', 'dumbbells', 'tools-bench']) {
+  for (const name of ['jogger', 'stretch', 'neighborhood', 'shop-street', 'volunteers', 'dumbbells']) {
     assert.equal(credits.includes(name), true, name);
     assert.equal(attribution.includes(name), true, name);
     assert.match(attribution, new RegExp(`${name}[\\s\\S]{0,400}https://commons\\.wikimedia\\.org/`));
@@ -33,4 +33,7 @@ test('self-hosted photos stay small, credited, and off the script policy', () =>
   assert.equal(text('js/health-plan.mjs').includes('/images/photos/'), true);
   assert.equal(text('help.html').includes('page-hero'), true);
   assert.equal(text('disclaimer.html').includes('page-hero'), true);
+  assert.equal(credits.includes('Provided by the owner'), true);
+  assert.equal(credits.includes('/assets/img/repair-extraordinaire.webp'), true);
+  assert.equal(text('js/equipment-card.mjs').includes('/assets/img/repair-extraordinaire.webp'), true);
 });

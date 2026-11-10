@@ -83,7 +83,7 @@ export const STANDING_REPAIR_PRO = Object.freeze({
   href: 'https://www.thumbtack.com/search?query=The%20Repair%20Extraordinaire',
   action: 'Service offer',
   kinds: Object.freeze(['ihavIT']),
-  photo: '/icons/icon-512.png',
+  photo: '/assets/img/repair-extraordinaire.webp',
   category: 'Services',
   circle: 'soBeIT'
 });

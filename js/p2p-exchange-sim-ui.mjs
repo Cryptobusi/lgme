@@ -3320,7 +3320,7 @@ async function repairFollowSection() {
   } catch { body = { items: [] }; }
   const items = Array.isArray(body.items) ? body.items : [];
   if (!items.length) host.append(h('div', { id: 'repair-follow-empty' }, [
-    h('img', { src: '/images/photos/tools-bench-640.webp', alt: 'Workshop tools, ready when a repair is requested', width: '640', height: '420', loading: 'lazy', style: 'width:100%;max-height:120px;object-fit:cover;border-radius:10px' }),
+    h('img', { src: '/assets/img/repair-extraordinaire.webp', alt: 'Person exercising on a treadmill: The Repair Extraordinaire, equipment repair', width: '356', height: '480', loading: 'lazy', style: 'width:100%;max-height:180px;object-fit:contain;border-radius:10px' }),
     h('p', { class: 'muted' }, ['No Health repair request yet.'])
   ]));
   for (const item of items) {
@@ -3507,7 +3507,7 @@ async function renderMarket(peers, seat) {
     id: card.title === sim.STANDING_DONATION.title ? 'donation-card' : card.title === sim.STANDING_WANTED.title ? 'wanted-card' : card.title === sim.STANDING_REPAIR.title ? 'repair-card' : card.title === sim.STANDING_REPAIR_PRO.title ? 'repair-pro-card' : undefined,
     onClick: () => { openListingId = card.id; render(); }
   }, [
-    h('img', { alt: '', src: card.photo || '', width: '224', height: '224', loading: 'lazy' }),
+    h('img', { alt: card.title === sim.STANDING_REPAIR_PRO.title ? 'Person exercising on a treadmill: The Repair Extraordinaire, equipment repair' : '', src: card.title === sim.STANDING_REPAIR_PRO.title ? '/assets/img/repair-extraordinaire.webp' : (card.photo || ''), width: '224', height: '224', loading: 'lazy' }),
     h('h3', {}, [card.title]),
     card.pinned ? h('p', { class: 'muted' }, [card.description]) : h('div', { class: 'price' }, [`${card.amount} $lgme`]),
     card.title === sim.STANDING_WANTED.title || card.title === sim.STANDING_REPAIR.title ? h('p', { class: 'legend' }, [(card.title === sim.STANDING_REPAIR.title ? sim.STANDING_REPAIR : sim.STANDING_WANTED).payments.join(' · ')]) : null,
@@ -3517,6 +3517,7 @@ async function renderMarket(peers, seat) {
   ])));
   if (!feed.some((card) => card.title === sim.STANDING_REPAIR_PRO.title)) {
     grid.prepend(h('article', { class: 'card market-card', id: 'repair-pro-card' }, [
+      h('img', { src: '/assets/img/repair-extraordinaire.webp', alt: 'Person exercising on a treadmill: The Repair Extraordinaire, equipment repair', width: '356', height: '480', loading: 'lazy' }),
       h('h3', {}, [sim.STANDING_REPAIR_PRO.title]),
       h('p', { class: 'muted' }, [sim.STANDING_REPAIR_PRO.description]),
       h('span', { class: 'badge badge-verified' }, ['Service offer'])
