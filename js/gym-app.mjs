@@ -9,9 +9,11 @@ import { barsSvg, memberStats, publicCard } from './gym-charts.mjs';
 import { DEMO_CLUB, DEMO_NAME, MODE_KEY, chatKey, demoStore, realStore, seedDemoChat, seedDemoClub } from './gym-demo.mjs';
 import { LOCAL_CHAT_NOTE, chatStatus, publicChatMessage } from './gym-sync.mjs';
 import { BOARD_NOTE, PROGRESS_KINDS, boardCards, chooseProgress, manualEntry, progressRows, sharePreview } from './gym-progress.mjs';
+import { communityFeed } from './gym-feed.mjs';
 
-const mode = localStorage.getItem(MODE_KEY) === 'real' ? 'real' : 'demo';
-const store = mode === 'demo' ? demoStore() : realStore();
+let mode = localStorage.getItem(MODE_KEY) === 'demo' ? 'demo' : 'real';
+let store = mode === 'demo' ? demoStore() : realStore();
+let registered = null;
 const seatKey = 'lgme-gym.seat';
 const workout = { startedAt: '', points: [], photos: [], samples: 0, stop: null };
 
@@ -594,6 +596,126 @@ async function renderMore() {
   ]);
 }
 
+const signup = { step: 1, name: '', kinds: [] };
+
+async function finishSignup(group) {
+  if (group?.name && !/^[a-z0-9-]{4,24}$/.test(group.invite || '')) {
+    status('Use a group name of 4 to 24 letters.');
+    return;
+  }
+  const id = signup.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 24);
+  const created = await sim.createPeer(store, { id, name: signup.name, balance: 0, floor: 0, creditLimit: 0, at: new Date().toISOString() });
+  if (!created.ok) { status(created.error); return; }
+  const chosen = chooseProgress({ kinds: signup.kinds });
+  if (!chosen.ok) { status(chosen.error); return; }
+  const peer = await store.get(id);
+  peer.example = false;
+  peer.gymRole = 'member';
+  peer.gymProfile = { journey: 'My better tomorrow.', healthNote: '', public: { journey: true, sessions: false, minutes: false, supports: false, credits: false } };
+  peer.gymProgress = chosen.progress;
+  await store.set(id, peer);
+  if (group?.invite && group?.name) {
+    await sim.createClubGroup(store, id, { name: group.name, invite: group.invite });
+  } else if (group?.invite) {
+    await sim.joinClubGroup(store, id, { invite: group.invite });
+  }
+  localStorage.setItem(MODE_KEY, 'real');
+  localStorage.setItem('lgme.entry.category', 'health');
+  registered = await store.get(id);
+  setSeat(id);
+  go('/me');
+}
+
+async function renderRegister() {
+  const box = el('section', {}, [
+    el('p', { class: 'kicker' }, [`Step ${signup.step} of 3`]),
+    el('h2', {}, ['Join Health'])
+  ]);
+  if (signup.step === 1) {
+    const name = el('input', { maxlength: '40', placeholder: 'Your name' });
+    name.value = signup.name;
+    box.append(el('label', {}, ['Name', name]));
+    box.append(el('button', { type: 'button', class: 'primary', onClick: () => {
+      const clean = name.value.trim();
+      if (clean.length < 2) { status('Add your name.'); return; }
+      signup.name = clean;
+      signup.step = 2;
+      render();
+    } }, ['Next']));
+  } else if (signup.step === 2) {
+    const boxes = PROGRESS_KINDS.map((kind) => {
+      const input = el('input', { type: 'checkbox', value: kind.id });
+      input.checked = signup.kinds.includes(kind.id);
+      return el('label', { class: 'check' }, [input, kind.label]);
+    });
+    box.append(el('p', {}, ['Pick 3 to 5. Health meter is self-reported, not medical. Sharing stays off.']));
+    box.append(...boxes);
+    box.append(el('button', { type: 'button', class: 'primary', onClick: () => {
+      signup.kinds = boxes.map((label) => label.querySelector('input')).filter((input) => input.checked).map((input) => input.value);
+      const chosen = chooseProgress({ kinds: signup.kinds });
+      if (!chosen.ok) { status(chosen.error); return; }
+      signup.step = 3;
+      render();
+    } }, ['Next']));
+  } else {
+    const invite = el('input', { maxlength: '24', placeholder: 'Invite code' });
+    const groupName = el('input', { maxlength: '40', placeholder: 'New group name' });
+    box.append(el('p', {}, ['Join a group, create one, or skip.']));
+    box.append(el('label', {}, ['Invite code', invite]));
+    box.append(el('button', { type: 'button', onClick: () => finishSignup({ invite: invite.value.trim().toLowerCase() }) }, ['Join']));
+    box.append(el('label', {}, ['Group name', groupName]));
+    box.append(el('button', { type: 'button', onClick: () => finishSignup({ name: groupName.value.trim(), invite: groupName.value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 24) }) }, ['Create group']));
+    box.append(el('button', { type: 'button', class: 'primary', onClick: () => finishSignup({}) }, ['Skip']));
+  }
+  box.append(el('p', { id: 'gym-status', role: 'status' }, []));
+  box.append(el('p', {}, [el('a', { href: '/?picker=1' }, ['All categories'])]));
+  return box;
+}
+
+async function renderDashboard() {
+  const mine = await seat();
+  if (!mine) return renderRegister();
+  const sync = await chatStatus();
+  let remote = [];
+  if (sync.shared) {
+    try {
+      const response = await fetch('/api/gym/progress');
+      const body = await response.json();
+      remote = Array.isArray(body.cards) ? body.cards : [];
+    } catch { remote = []; }
+  }
+  const locals = await books();
+  let feedPeers = locals;
+  if (!sync.shared) {
+    const examples = demoStore();
+    await seedDemoClub(examples);
+    const demoRows = await listBooks(examples);
+    feedPeers = [...locals, ...demoRows];
+  }
+  const feed = communityFeed({ peers: feedPeers, viewer: mine, remoteCards: remote });
+  const groups = Object.values(mine.clubGroups || {});
+  const view = el('div', {}, [
+    el('p', {}, [el('a', { href: '/?picker=1' }, ['All categories'])]),
+    await renderProgress(mine, true),
+    el('h2', {}, ['Your groups']),
+    groups.length ? el('div', {}, groups.map((group) => el('p', {}, [group.name]))) : el('p', { class: 'muted' }, ['No group yet.']),
+    el('button', { type: 'button', class: 'primary', onClick: () => go('/train') }, ['Start']),
+    el('button', { type: 'button', onClick: () => go('/train') }, ['Finish']),
+    el('h2', {}, ['Community updates']),
+    el('p', { class: 'muted' }, [sync.shared ? 'Shared updates from other phones. Not written to Hedera.' : 'Shared board starts when sync is on. Example cards stay labeled example.'])
+  ]);
+  if (!feed.length) view.append(el('p', {}, ['Nothing shared yet.']));
+  for (const item of feed) {
+    view.append(el('article', { class: 'card' }, [
+      el('div', { class: 'avatar', 'aria-hidden': 'true' }, [(item.handle || '?').slice(0, 1)]),
+      item.example ? el('p', { class: 'kicker' }, ['Example']) : null,
+      el('p', { class: 'muted' }, [item.group]),
+      el('p', {}, [item.text])
+    ]));
+  }
+  return view;
+}
+
 async function render() {
   const path = route();
   const panel = document.getElementById('gym-panel');
@@ -605,15 +727,40 @@ async function render() {
   else if (path === '/train') view = await renderTrain();
   else if (path === '/groups') view = await renderGroups();
   else if (path === '/more') view = await renderMore();
+  else if (path === '/register' || (!registered && mode !== 'demo' && path === '/')) view = await renderRegister();
+  else if (registered && (path === '/' || path === '/me')) view = await renderDashboard();
   else view = await renderClub();
   panel.replaceChildren(view);
   document.querySelectorAll('nav button').forEach((button) => {
-    button.setAttribute('aria-current', button.dataset.route === path || (path === '/' && button.dataset.route === '/') ? 'page' : 'false');
+    const home = path === '/' || path === '/me' || path === '/register';
+    button.setAttribute('aria-current', button.dataset.route === path || (home && button.dataset.route === '/') ? 'page' : 'false');
   });
 }
 
+async function findRegistered(book) {
+  for (const peer of await listBooks(book)) {
+    if (peer.example !== true && peer.gymProgress?.chosen?.length >= 3) return peer;
+  }
+  return null;
+}
+
+async function listBooks(book) {
+  const rows = [];
+  for (const id of await book.listIds()) {
+    const row = await book.get(id);
+    if (row) rows.push(row);
+  }
+  return rows;
+}
+
 async function boot() {
-  if (mode === 'demo') {
+  const real = realStore();
+  registered = await findRegistered(real);
+  if (registered && mode !== 'demo') {
+    store = real;
+    mode = 'real';
+    setSeat(registered.id);
+  } else if (mode === 'demo') {
     await seedDemoClub(store);
     seedDemoChat(localStorage);
     if (!seatId()) setSeat('jordan');
