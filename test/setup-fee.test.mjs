@@ -56,6 +56,10 @@ test('pay now quotes one dollar and pay later settles only a verified transfer',
   assert.equal(other.status, 403);
   const verified = confirmSetupTransfer(txFor(50), { amount: 50, signature: SIGNATURE });
   assert.equal(verified.ok, true, verified.error);
+  const near = confirmSetupTransfer(txFor(50.8), { amount: 50, tolerance: 0.02, signature: SIGNATURE });
+  assert.equal(near.ok, true, near.error);
+  const far = confirmSetupTransfer(txFor(52), { amount: 50, tolerance: 0.02, signature: SIGNATURE });
+  assert.equal(far.ok, false);
   assert.equal(verified.cluster, 'mainnet-beta');
   const wrong = confirmSetupTransfer(txFor(50, '11111111111111111111111111111111'), { amount: 50, recipient: SETUP_ADDRESS });
   assert.equal(wrong.ok, false);

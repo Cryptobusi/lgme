@@ -1,4 +1,5 @@
 import { canonicalDevice, verifyDevice } from './device-sign.mjs';
+import { PRICE_UNAVAILABLE, averagePrice } from './lgme-price.mjs';
 
 export const ATTESTATION_THRESHOLD = 100;
 export const ATTESTATION_NOTE = 'Needs 3 attestations (over $100)';
@@ -9,12 +10,17 @@ export function pairKey(fromId, toId) {
   return [String(fromId || ''), String(toId || '')].sort().join('|');
 }
 
-export function usdOf({ kind, amount, price } = {}) {
+export function usdOf({ kind, amount, price, samples, now } = {}) {
   const figure = Number(amount);
   if (!Number.isFinite(figure) || figure <= 0) return 0;
   if (kind === 'usd' || kind === 'credit') return Math.round(figure * 100) / 100;
   if (kind === 'lgme') {
-    const rate = Number(price);
+    let rate = Number(price);
+    if (samples) {
+      const avg = averagePrice(samples, Number.isFinite(Number(now)) ? Number(now) : Date.now());
+      if (!avg.ok) return null;
+      rate = avg.price;
+    }
     if (!(rate > 0)) return null;
     return Math.round(figure * rate * 100) / 100;
   }
@@ -35,7 +41,9 @@ export function windowTotal(rows, pair, at) {
 
 export function evaluateHold(rows, entry) {
   const usd = usdOf(entry);
-  if (usd == null) return { ok: false, error: 'Store the GeckoTerminal price for this $lgme entry.' };
+  if (usd == null) {
+    return { ok: false, error: entry.samples ? PRICE_UNAVAILABLE : 'Store the GeckoTerminal price for this $lgme entry.' };
+  }
   const pair = pairKey(entry.fromId, entry.toId);
   const priorRows = (rows || []).filter((row) => row.id !== entry.id);
   const total = windowTotal(priorRows, pair, entry.at) + usd;

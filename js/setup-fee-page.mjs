@@ -1,5 +1,5 @@
 import { createReference } from './solana-pay.mjs';
-import { fetchLgmePrice } from './lgme-price.mjs';
+import { PRICE_UNAVAILABLE, SAMPLE_MS, averagePrice, fetchSpotPrice, lgmeForUsd, lockOpen, lockPayQuote } from './lgme-price.mjs';
 import { ensureDeviceKey, signDevice } from './device-sign.mjs';
 import {
   PUMP_URL,
@@ -7,7 +7,6 @@ import {
   SETUP_COPY,
   SETUP_OWED_TO,
   SETUP_TITLE,
-  lgmeForUsd,
   markReceivablePaid,
   payNowQuote,
   readSetup,
@@ -42,55 +41,89 @@ async function postExchange(payload) {
 export async function renderSetupFee({ storage, go, mine }) {
   const handle = mine?.id || 'member';
   const saved = readSetup(storage, handle);
-  const mock = Number(storage.getItem('lgme.setup.mockPrice'));
-  let price = mock > 0 ? mock : 0;
-  let priceNote = mock > 0 ? 'Example price for this screen.' : '';
-  if (!(price > 0)) {
-    const live = await fetchLgmePrice();
-    if (live.ok) {
-      price = live.price;
-      priceNote = `Live price ${live.price}.`;
-    } else priceNote = 'The live price is not available yet. The address is still shown.';
-  }
-  const quote = price > 0 ? lgmeForUsd(1, price) : { ok: false, amount: null };
-  const reference = createReference();
-  const pay = quote.ok ? payNowQuote(price, reference) : null;
+  const samples = [];
+  let latest = { ok: false, error: PRICE_UNAVAILABLE };
+  let lock = null;
+  let sampling = false;
+  const amountLine = el('p', { id: 'setup-lgme' }, [PRICE_UNAVAILABLE]);
+  const priceLine = el('p', { id: 'setup-price', class: 'muted' }, ['3-second average.']);
   const status = el('p', { id: 'setup-status', role: 'status' });
   const panel = el('div', { id: 'setup-choice' });
-  const host = el('section', { class: 'card', id: 'setup-fee' }, [
-    el('h2', {}, ['Setup fee: $1 (helps cover running costs)']),
-    el('p', {}, [SETUP_COPY]),
-    el('p', {}, [el('a', { href: '/disclaimer' }, ['Disclaimer'])]),
-    el('p', { class: 'muted' }, ['You sign in your own wallet. This app never holds funds or keys.']),
-    el('p', { id: 'setup-price', class: 'muted' }, [priceNote]),
-    el('button', { type: 'button', class: 'primary', id: 'pay-now', onClick: () => showPayNow() }, ['Pay now in $lgme']),
-    el('button', { type: 'button', id: 'pay-later', onClick: () => showPayLater() }, ['Pay later']),
-    panel,
-    el('button', { type: 'button', id: 'setup-continue', onClick: () => go('/personalize') }, ['Continue to Health']),
-    status
-  ]);
+
+  function paintQuote() {
+    const now = Date.now();
+    if (lock && !lockOpen(lock, now)) lock = null;
+    const quote = lockOpen(lock, now) ? lock : averagePrice(samples, now);
+    latest = quote.ok ? quote : { ok: false, error: PRICE_UNAVAILABLE };
+    if (!latest.ok) {
+      amountLine.textContent = PRICE_UNAVAILABLE;
+      priceLine.textContent = '3-second average.';
+      return;
+    }
+    const amount = lockOpen(lock, now) ? lock.lgmeAmount : lgmeForUsd(1, latest.price);
+    amountLine.textContent = `${amount} $lgme, equal to US$1.`;
+    const when = lockOpen(lock, now) ? `Locked until ${new Date(lock.expiresAt).toISOString()}.` : 'Updating.';
+    priceLine.textContent = `${latest.source} · ${latest.timestamp} · 3-second average. ${when}`;
+  }
+
+  async function sample() {
+    if (sampling) return;
+    sampling = true;
+    try {
+      const spot = await fetchSpotPrice();
+      if (spot.ok) samples.push({ t: Date.now(), price: spot.price, source: spot.source });
+      while (samples.length > 6) samples.shift();
+      paintQuote();
+    } finally {
+      sampling = false;
+    }
+  }
 
   function showPayNow() {
-    if (!pay?.ok) { status.textContent = 'The live price is not available yet. You can continue to Health.'; return; }
+    const now = Date.now();
+    if (!lockOpen(lock, now)) {
+      const avg = averagePrice(samples, now);
+      lock = lockPayQuote(avg, 1, now);
+    }
+    paintQuote();
+    if (!lock?.ok) { status.textContent = PRICE_UNAVAILABLE; return; }
+    const link = payNowQuote(lock.price, createReference());
+    if (!link.ok) { status.textContent = PRICE_UNAVAILABLE; return; }
     const qr = el('div', { id: 'setup-qr' });
-    const address = el('p', { id: 'setup-address' }, [SETUP_ADDRESS]);
     panel.replaceChildren(
-      el('p', { id: 'setup-lgme' }, [`${pay.amount} $lgme at this price, equal to US$1.`]),
-      address,
+      el('p', { id: 'setup-address' }, [SETUP_ADDRESS]),
       el('button', { type: 'button', id: 'copy-setup-address', onClick: async () => {
         try { await navigator.clipboard.writeText(SETUP_ADDRESS); status.textContent = 'Address copied.'; }
         catch { status.textContent = SETUP_ADDRESS; }
       } }, ['Copy address']),
       qr,
       el('p', {}, [el('a', { id: 'setup-pump', href: PUMP_URL }, [`Buy $lgme on pump.fun (creator @${SETUP_OWED_TO})`])]),
-      el('p', {}, [el('a', { id: 'setup-wallet', href: pay.url }, ['Pay with my wallet'])]),
-      el('p', { class: 'muted' }, ['The wallet link is a Solana Pay request. Your wallet signs it. Nothing is taken from this app.'])
+      el('p', {}, [el('a', { id: 'setup-wallet', href: link.url }, ['Pay with my wallet'])]),
+      el('p', { class: 'muted' }, ['The quote is locked for 60 seconds. Your wallet signs the payment. Nothing is taken from this app.'])
     );
-    queueMicrotask(() => { if (globalThis.QRCode) new globalThis.QRCode(qr, { text: pay.url, width: 180, height: 180 }); });
+    queueMicrotask(() => { if (globalThis.QRCode) new globalThis.QRCode(qr, { text: link.url, width: 180, height: 180 }); });
+    status.textContent = `Locked ${lock.lgmeAmount} $lgme until ${new Date(lock.expiresAt).toISOString()}.`;
   }
 
+  const host = el('section', { class: 'card', id: 'setup-fee' }, [
+    el('h2', {}, ['Setup fee: $1 (helps cover running costs)']),
+    el('p', {}, [SETUP_COPY]),
+    el('p', {}, [el('a', { href: '/disclaimer' }, ['Disclaimer'])]),
+    el('p', { class: 'muted' }, ['You sign in your own wallet. This app never holds funds or keys.']),
+    amountLine,
+    priceLine,
+    el('button', { type: 'button', class: 'primary', id: 'pay-now', onClick: () => showPayNow() }, ['Pay']),
+    el('button', { type: 'button', id: 'pay-later', onClick: () => showPayLater() }, ['Pay later']),
+    panel,
+    el('button', { type: 'button', id: 'setup-continue', onClick: () => go('/personalize') }, ['Continue to Health']),
+    status
+  ]);
+
   async function showPayLater() {
-    const built = receivableRecord({ handle, price: price || 0, at: new Date().toISOString() });
+    const now = Date.now();
+    const quote = lockOpen(lock, now) ? lock : averagePrice(samples, now);
+    if (!quote.ok) { status.textContent = PRICE_UNAVAILABLE; return; }
+    const built = receivableRecord({ handle, price: quote.price, at: new Date().toISOString() });
     if (!built.ok) { status.textContent = built.error; return; }
     writeSetup(storage, built.item);
     const posted = await postExchange({
@@ -129,5 +162,8 @@ export async function renderSetupFee({ storage, go, mine }) {
 
   if (saved?.status === 'paid') status.textContent = 'The setup fee is already marked paid.';
   else if (saved?.status === 'due') status.textContent = 'A setup fee item is already open. Health stays open.';
+  if (globalThis.__lgmePrice) clearInterval(globalThis.__lgmePrice);
+  await sample();
+  globalThis.__lgmePrice = setInterval(() => { sample().catch(() => paintQuote()); }, SAMPLE_MS);
   return host;
 }

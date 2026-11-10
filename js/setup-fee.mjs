@@ -1,4 +1,5 @@
 import { DONATION_ADDRESS, MINT, buildTransferRequest, parseSplTransfer } from './solana-pay.mjs';
+import { withinPeg } from './lgme-price.mjs';
 import { VIEW_ONLY_MESSAGE } from './view-only-api.mjs';
 import { LISTINGS_OPERATOR, LISTINGS_TOPIC } from './exchange-listing.mjs';
 
@@ -121,10 +122,40 @@ export function publicSetupReceivable(spec = {}) {
   return { ok: true, body };
 }
 
+function transferDelta(tx, recipient, mint) {
+  if (tx?.meta?.err) return { ok: false, error: 'The transaction failed on Solana.' };
+  const post = (tx?.meta?.postTokenBalances || []).find((row) => row.mint === mint && row.owner === recipient);
+  if (!post?.uiTokenAmount?.amount) return { ok: false, error: 'The recipient did not receive this mint.' };
+  const before = (tx?.meta?.preTokenBalances || []).find((row) => row.accountIndex === post.accountIndex);
+  const decimals = Number(post.uiTokenAmount.decimals ?? before?.uiTokenAmount?.decimals ?? 6);
+  const scale = 10 ** decimals;
+  const preRaw = before?.uiTokenAmount?.amount != null ? BigInt(before.uiTokenAmount.amount) : 0n;
+  const delta = Number(BigInt(post.uiTokenAmount.amount) - preRaw) / scale;
+  return delta > 0 ? { ok: true, delta } : { ok: false, error: 'The recipient did not receive this mint.' };
+}
+
 export function confirmSetupTransfer(tx, expected = {}) {
+  const recipient = expected.recipient || SETUP_ADDRESS;
+  const mint = expected.mint || SETUP_MINT;
+  const tolerance = Number(expected.tolerance) || 0;
+  if (tolerance > 0) {
+    const got = transferDelta(tx, recipient, mint);
+    if (!got.ok) return got;
+    if (!withinPeg(got.delta, expected.amount, tolerance)) {
+      return { ok: false, error: 'The amount is outside the locked quote.' };
+    }
+    const signature = tx?.transaction?.signatures?.[0] || '';
+    if (expected.signature && signature !== expected.signature) {
+      return { ok: false, error: 'The signature does not match this transaction.' };
+    }
+    if (expected.recipient && expected.recipient !== SETUP_ADDRESS) {
+      return { ok: false, error: 'The payment did not go to the setup address.' };
+    }
+    return { ok: true, signature, delta: got.delta, cluster: 'mainnet-beta' };
+  }
   const parsed = parseSplTransfer(tx, {
-    recipient: expected.recipient || SETUP_ADDRESS,
-    mint: expected.mint || SETUP_MINT,
+    recipient,
+    mint,
     amount: expected.amount
   });
   if (!parsed.ok) return parsed;

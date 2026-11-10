@@ -1,5 +1,10 @@
 export const MINT = '7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump';
 export const QUOTE_MS = 15000;
+export const SAMPLE_MS = 1000;
+export const AVERAGE_COUNT = 3;
+export const PAY_LOCK_MS = 60000;
+export const PEG_TOLERANCE = 0.02;
+export const PRICE_UNAVAILABLE = 'price unavailable, try again';
 export const PRICE_TIMEOUT_MS = 8000;
 export const DEFAULT_CLAMP_BAND = 0.05;
 export const PEG_LABEL = 'Pegged to US$ at time of transaction. $lgme is not a stablecoin.';
@@ -264,6 +269,76 @@ export function parseGeckoOhlcv(body) {
   }).filter((row) => row.t > 0 && row.close > 0);
 }
 
+export function withinPeg(paid, quote, tolerance = PEG_TOLERANCE) {
+  const got = Number(paid);
+  const locked = Number(quote);
+  const band = Number(tolerance);
+  if (!(got > 0) || !(locked > 0) || !(band >= 0)) return false;
+  return Math.abs(got - locked) <= locked * band + locked * 1e-9;
+}
+
+export function averagePrice(samples, now = Date.now()) {
+  const rows = (samples || [])
+    .filter((row) => row && Number(row.price) > 0 && Number.isFinite(Number(row.t)))
+    .map((row) => ({ t: Number(row.t), price: Number(row.price), source: String(row.source || '') }))
+    .sort((a, b) => a.t - b.t);
+  const last = rows.slice(-AVERAGE_COUNT);
+  if (last.length < AVERAGE_COUNT) return { ok: false, stale: true, error: PRICE_UNAVAILABLE };
+  const newest = last[last.length - 1].t;
+  const oldest = last[0].t;
+  if (now - newest > SAMPLE_MS * 2) return { ok: false, stale: true, error: PRICE_UNAVAILABLE };
+  if (newest - oldest > SAMPLE_MS * (AVERAGE_COUNT + 1)) return { ok: false, stale: true, error: PRICE_UNAVAILABLE };
+  const price = roundPrice(last.reduce((sum, row) => sum + row.price, 0) / AVERAGE_COUNT);
+  if (!(price > 0)) return { ok: false, stale: true, error: PRICE_UNAVAILABLE };
+  return {
+    ok: true,
+    price,
+    source: last[last.length - 1].source,
+    timestamp: new Date(newest).toISOString(),
+    samples: AVERAGE_COUNT
+  };
+}
+
+export function lockPayQuote(average, usdAmount = 1, now = Date.now()) {
+  if (!average?.ok || !(average.price > 0)) return { ok: false, error: PRICE_UNAVAILABLE };
+  const lgmeAmount = lgmeForUsd(usdAmount, average.price);
+  const usd = Math.round((Number(usdAmount) + Number.EPSILON) * 100) / 100;
+  if (!(lgmeAmount > 0) || !(usd > 0)) return { ok: false, error: PRICE_UNAVAILABLE };
+  return {
+    ok: true,
+    locked: true,
+    price: average.price,
+    source: average.source,
+    timestamp: average.timestamp,
+    usdAmount: usd,
+    lgmeAmount,
+    lockedAt: now,
+    expiresAt: now + PAY_LOCK_MS
+  };
+}
+
+export function lockOpen(lock, now = Date.now()) {
+  return Boolean(lock?.ok && Number.isFinite(Number(lock.expiresAt)) && now <= Number(lock.expiresAt));
+}
+
+export function parsePumpCoin(body) {
+  const cap = Number(body?.usd_market_cap);
+  if (cap > 0) return cap / 1e9;
+  const price = Number(body?.usd_price || body?.price);
+  return price > 0 ? price : 0;
+}
+
+export function parseJupiterPrice(body, mint) {
+  const row = body?.data?.[mint] || body?.[mint];
+  const price = Number(row?.usdPrice || row?.price);
+  return price > 0 ? price : 0;
+}
+
+export function parseBirdeyePrice(body) {
+  const price = Number(body?.data?.value ?? body?.data?.price);
+  return price > 0 ? price : 0;
+}
+
 export function parseDexPairs(body) {
   return bestPositive(body?.pairs || [], (pair) => ({
     price: Number(pair?.priceUsd),
@@ -342,4 +417,20 @@ export async function fetchLgmePrice({ fetchImpl = globalThis.fetch, timeoutMs =
     history: history.history,
     historySource: history.source || ''
   };
+}
+
+export async function fetchSpotPrice({ fetchImpl = globalThis.fetch, timeoutMs = 2500, mint = MINT, now = () => new Date().toISOString() } = {}) {
+  const sources = [
+    { id: 'pump', url: `https://frontend-api-v3.pump.fun/coins/${mint}`, parse: parsePumpCoin },
+    { id: 'dexscreener', url: `https://api.dexscreener.com/latest/dex/tokens/${mint}`, parse: parseDexPairs },
+    { id: 'jupiter', url: `https://lite-api.jup.ag/price/v3?ids=${mint}`, parse: (body) => parseJupiterPrice(body, mint) },
+    { id: 'birdeye', url: `https://public-api.birdeye.so/defi/price?address=${mint}`, parse: parseBirdeyePrice },
+    { id: 'geckoterminal', url: `https://api.geckoterminal.com/api/v2/networks/solana/tokens/${mint}/pools?page=1`, parse: parseGeckoPools }
+  ];
+  for (const source of sources) {
+    const body = await readJson(fetchImpl, source.url, timeoutMs);
+    const price = body ? source.parse(body) : 0;
+    if (price > 0) return { ok: true, price, source: source.id, timestamp: now(), mint };
+  }
+  return { ok: false, stale: true, error: PRICE_UNAVAILABLE };
 }

@@ -82,7 +82,7 @@ export default async function handler(req, res) {
   if (payload.action === 'receivable-paid') {
     const tx = await rpc('mainnet-beta', 'getTransaction', [payload.signature, { encoding: 'jsonParsed', maxSupportedTransactionVersion: 0, commitment: 'finalized' }]);
     const confirmed = tx.ok && tx.result
-      ? confirmSetupTransfer(tx.result, { recipient: SETUP_ADDRESS, mint: SETUP_MINT, amount: built.body.lgmeAmount, signature: payload.signature })
+      ? confirmSetupTransfer(tx.result, { recipient: SETUP_ADDRESS, mint: SETUP_MINT, amount: built.body.lgmeAmount, signature: payload.signature, tolerance: 0.02 })
       : { ok: false, error: tx.error || 'The payment was not confirmed on Solana mainnet.' };
     if (!confirmed.ok) return json(res, 400, { ok: false, error: confirmed.error });
   }
