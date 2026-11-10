@@ -1,6 +1,6 @@
 // Gym beta shell. Scope is /gym only, so the main lgme service worker keeps the rest of the site.
-const CACHE_NAME = 'lgme-gym-v5';
-const SHELL = ['/gym', '/gym.html', '/gym-manifest.webmanifest', '/icons/gym-192.png', '/js/gym-app.mjs', '/js/gym-progress.mjs', '/js/gym-feed.mjs'];
+const CACHE_NAME = 'lgme-gym-v6';
+const SHELL = ['/gym', '/gym.html', '/gym-manifest.webmanifest', '/icons/gym-192.png', '/js/gym-app.mjs', '/js/gym-progress.mjs', '/js/gym-feed.mjs', '/js/local-agents.mjs'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => Promise.all(SHELL.map((url) => fetch(url).then((response) => {
@@ -11,6 +11,22 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key.startsWith('lgme-gym-') && key !== CACHE_NAME).map((key) => caches.delete(key)))).then(() => self.clients.claim()));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+    if (clients[0]) return clients[0].focus();
+    return self.clients.openWindow('/gym');
+  }));
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type !== 'agent-reminder') return;
+  event.waitUntil(self.registration.showNotification(event.data.title || 'Reminder', {
+    body: event.data.body || '',
+    tag: event.data.id || 'lgme-agent'
+  }));
 });
 
 self.addEventListener('fetch', (event) => {

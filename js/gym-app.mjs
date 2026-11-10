@@ -11,6 +11,7 @@ import { LOCAL_CHAT_NOTE, chatStatus, publicChatMessage } from './gym-sync.mjs';
 import { BOARD_NOTE, PROGRESS_KINDS, boardCards, chooseProgress, manualEntry, progressRows, sharePreview } from './gym-progress.mjs';
 import { communityFeed } from './gym-feed.mjs';
 import { OPT_IN_COPY, answerLocal, deleteDownloadedModel, detectEngine, isOn, setOn, unloadLocalModel } from './local-ai.mjs';
+import { STARTERS, agentNotice, deleteAgent, dueAgents, editAgent, listAgents, markFired, needsPermission, pauseAgent, saveAgent, scheduleNote } from './local-agents.mjs';
 
 let mode = localStorage.getItem(MODE_KEY) === 'demo' ? 'demo' : 'real';
 let store = mode === 'demo' ? demoStore() : realStore();
@@ -579,6 +580,78 @@ function progressLines(peer) {
   return progressRows(peer).map((row) => `${row.label} ${row.current} ${row.unit} this week, change ${row.change}.`);
 }
 
+function helperSetup() {
+  const box = el('div', { id: 'agent-setup' });
+  box.append(el('h3', {}, ['Set up your own helper']));
+  box.append(el('p', { class: 'muted' }, [scheduleNote()]));
+  box.append(el('p', { class: 'muted' }, ['A helper can remind, notify, summarize, or draft. It never sends, posts, accepts, or spends.']));
+  STARTERS.forEach((prompt, index) => {
+    const field = el('textarea', { maxlength: '400' });
+    field.value = prompt;
+    box.append(field);
+    box.append(el('button', { type: 'button', onClick: () => keepAgent(field.value) }, [`Save helper ${index + 1}`]));
+  });
+  const list = el('div', { id: 'agent-list' });
+  box.append(list);
+  drawAgents(list);
+  return box;
+}
+
+async function keepAgent(text) {
+  const before = listAgents(localStorage).filter(needsPermission).length;
+  const saved = saveAgent(localStorage, text);
+  if (!saved.ok) { status(saved.error); return; }
+  if (needsPermission(saved.agent) && before === 0 && globalThis.Notification && Notification.permission === 'default') {
+    try { await Notification.requestPermission(); } catch { /* permission stays unset */ }
+  }
+  const note = document.createElement('p');
+  note.id = 'agent-schedule';
+  note.textContent = scheduleNote();
+  document.getElementById('agent-setup')?.append(note);
+  const list = document.getElementById('agent-list');
+  if (list) drawAgents(list);
+}
+
+function drawAgents(list) {
+  list.replaceChildren();
+  for (const agent of listAgents(localStorage)) {
+    const row = el('article', { class: 'card' }, [
+      el('p', {}, [`${agent.paused ? 'Paused. ' : ''}${agent.name}`]),
+      el('p', { class: 'muted' }, [agent.goal])
+    ]);
+    row.append(el('button', { type: 'button', onClick: () => { pauseAgent(localStorage, agent.id); drawAgents(list); } }, [agent.paused ? 'Resume' : 'Pause']));
+    const editor = el('textarea', { maxlength: '400' });
+    editor.value = agent.goal;
+    row.append(editor);
+    row.append(el('button', { type: 'button', onClick: () => { editAgent(localStorage, agent.id, editor.value); drawAgents(list); } }, ['Edit']));
+    row.append(el('button', { type: 'button', onClick: () => { deleteAgent(localStorage, agent.id); drawAgents(list); } }, ['Delete']));
+    list.append(row);
+  }
+}
+
+async function showAgent(agent) {
+  let box = document.getElementById('agent-due');
+  if (!box) {
+    box = document.createElement('p');
+    box.id = 'agent-due';
+    document.getElementById('gym-panel')?.prepend(box);
+  }
+  box.textContent = agentNotice(agent);
+  markFired(localStorage, agent.id);
+  if (needsPermission(agent) && globalThis.Notification?.permission === 'granted' && navigator.serviceWorker) {
+    const registration = await navigator.serviceWorker.getRegistration('/gym');
+    registration?.active?.postMessage({ type: 'agent-reminder', id: agent.id, title: agent.name, body: agentNotice(agent) });
+  }
+}
+
+function startAgentLoop() {
+  const tick = async () => {
+    for (const agent of dueAgents(listAgents(localStorage))) await showAgent(agent);
+  };
+  tick();
+  setInterval(tick, 5000);
+}
+
 function localAiCard(peer) {
   const host = el('section', { class: 'card', id: 'local-ai' });
   function draw() {
@@ -608,6 +681,7 @@ function localAiCard(peer) {
       lines.push(out);
       lines.push(el('button', { type: 'button', onClick: async () => { await unloadLocalModel(); setOn(localStorage, false); draw(); } }, ['Turn off']));
       lines.push(el('button', { type: 'button', onClick: async () => { await deleteDownloadedModel(); out.textContent = 'Downloaded model deleted.'; } }, ['Delete downloaded model']));
+      lines.push(helperSetup());
     }
     host.replaceChildren(...lines);
   }
@@ -811,6 +885,7 @@ async function boot() {
     if (!seatId()) setSeat('jordan');
   }
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw-gym.js', { scope: '/gym' }).catch(() => {});
+  startAgentLoop();
   window.addEventListener('hashchange', () => { render(); });
   document.querySelectorAll('nav button').forEach((button) => {
     button.addEventListener('click', () => go(button.dataset.route));
