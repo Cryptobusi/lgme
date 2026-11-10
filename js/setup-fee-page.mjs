@@ -1,6 +1,7 @@
 import { createReference } from './solana-pay.mjs';
 import { PRICE_UNAVAILABLE, SAMPLE_MS, averagePrice, fetchSpotPrice, lgmeForUsd, lockOpen, lockPayQuote } from './lgme-price.mjs';
 import { ensureDeviceKey, signDevice } from './device-sign.mjs';
+import { feePreset } from './health-invite.mjs';
 import { mountPoolUse } from './membership-pool-page.mjs';
 import {
   PUMP_URL,
@@ -41,7 +42,7 @@ async function postExchange(payload) {
   return response.json().catch(() => ({}));
 }
 
-export async function renderSetupFee({ storage, go, mine }) {
+export async function renderSetupFee({ storage, go, mine, invite } = {}) {
   const handle = mine?.id || 'member';
   const saved = readSetup(storage, handle);
   const samples = [];
@@ -126,6 +127,8 @@ export async function renderSetupFee({ storage, go, mine }) {
     status.textContent = `Locked ${held.lgmeAmount} $lgme until ${new Date(held.expiresAt).toISOString()}.`;
   }
 
+  const preset = feePreset(invite, {});
+  const inviteNote = el('p', { id: 'invite-fee' }, [preset.note || '']);
   const host = el('section', { class: 'card', id: 'setup-fee' }, [
     el('h2', {}, ['Setup fee: $1 (helps cover running costs)']),
     el('p', {}, [SETUP_COPY]),
@@ -136,9 +139,10 @@ export async function renderSetupFee({ storage, go, mine }) {
     el('p', { id: 'setup-address', class: 'hash' }, [SETUP_ADDRESS]),
     el('p', { id: 'setup-mint', class: 'hash' }, [SETUP_MINT]),
     wallet,
-    el('button', { type: 'button', class: 'primary', id: 'pay-now', onClick: () => showPayNow() }, ['Pay']),
+    invite ? inviteNote : null,
+    el('button', { type: 'button', class: preset.selected === 'pay-now' ? 'primary' : '', id: 'pay-now', onClick: () => showPayNow() }, ['Pay now']),
     el('button', { type: 'button', id: 'pay-later', onClick: () => showPayLater() }, ['Pay later']),
-    mountPoolUse({ handle, storage, status }),
+    mountPoolUse({ handle, storage, status, invite, note: invite ? inviteNote : null }),
     panel,
     el('button', { type: 'button', id: 'setup-continue', onClick: () => go('/personalize') }, ['Continue to Health']),
     status

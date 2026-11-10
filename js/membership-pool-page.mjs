@@ -2,6 +2,7 @@ import { createReference } from './solana-pay.mjs';
 import { PRICE_UNAVAILABLE, SAMPLE_MS, averagePrice, fetchSpotPrice, lockOpen, lockPayQuote } from './lgme-price.mjs';
 import { ensureDeviceKey, signDevice } from './device-sign.mjs';
 import { memberStats } from './gym-charts.mjs';
+import { feePreset } from './health-invite.mjs';
 import { POOL_ADDRESS, POOL_MEMO, POOL_MINT, POOL_TITLE, POOL_USD, poolPayLink } from './membership-pool.mjs';
 import { SETUP_TITLE, readSetup, writeSetup } from './setup-fee.mjs';
 
@@ -19,7 +20,7 @@ function el(tag, attrs = {}, children = []) {
   return node;
 }
 
-async function postPool(payload) {
+export async function sendPoolAction(payload) {
   const key = await ensureDeviceKey(localStorage);
   const response = await fetch('/api/hedera/listings', {
     method: 'POST',
@@ -110,7 +111,7 @@ export async function renderMembershipPool(host, handle) {
       status.textContent = PRICE_UNAVAILABLE;
       return;
     }
-    const body = await postPool({
+    const body = await sendPoolAction({
       handle,
       action: 'pool-lgme',
       category: 'exchange',
@@ -127,7 +128,7 @@ export async function renderMembershipPool(host, handle) {
   }
 
   async function giveCredit(action) {
-    const body = await postPool({
+    const body = await sendPoolAction({
       handle,
       action,
       category: 'exchange',
@@ -170,7 +171,7 @@ export async function renderMembershipPool(host, handle) {
   globalThis.__lgmePoolPrice = setInterval(() => { sample().catch(() => paint()); }, SAMPLE_MS);
 }
 
-export function mountPoolUse({ handle, storage, status }) {
+export function mountPoolUse({ handle, storage, status, invite, note }) {
   const button = el('button', { type: 'button', id: 'use-pool', hidden: true }, ['Use the pool']);
   const offer = el('button', { type: 'button', id: 'accept-cover', hidden: true }, ['Accept the next-member cover']);
   async function refresh() {
@@ -181,11 +182,18 @@ export function mountPoolUse({ handle, storage, status }) {
       return;
     }
     const pool = await fetchPool();
+    const preset = feePreset(invite, pool);
+    if (note) note.textContent = preset.note || '';
     button.hidden = !(pool.covers >= 1);
-    offer.hidden = !(pool.offers >= 1);
+    button.classList.toggle('primary', preset.selected === 'use-pool');
+    offer.hidden = !(pool.offers >= 1 || preset.selected === 'accept-cover');
+    offer.classList.toggle('primary', preset.selected === 'accept-cover');
+    if (preset.selected === 'accept-cover') offer.textContent = preset.label;
+    const pay = document.getElementById('pay-now');
+    if (pay) pay.classList.toggle('primary', preset.selected === 'pay-now');
   }
   async function take(action, done) {
-    const body = await postPool({ handle, action, category: 'exchange', ...stamp() });
+    const body = await sendPoolAction({ handle, action, category: 'exchange', ...stamp() });
     if (!body.ok) {
       status.textContent = body.error || 'The pool did not record that.';
       await refresh();

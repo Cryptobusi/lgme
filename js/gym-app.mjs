@@ -11,6 +11,8 @@ import { LOCAL_CHAT_NOTE, chatStatus, publicChatMessage } from './gym-sync.mjs';
 import { BOARD_NOTE, PROGRESS_KINDS, boardCards, chooseProgress, manualEntry, progressRows, sharePreview } from './gym-progress.mjs';
 import { communityFeed } from './gym-feed.mjs';
 import { OPT_IN_COPY, answerLocal, deleteDownloadedModel, detectEngine, isOn, setOn, unloadLocalModel } from './local-ai.mjs';
+import { draftHealthInvite, inviteShares, parseJoinSearch, readJoin, rememberJoin } from './health-invite.mjs';
+import { deedCreditOf, fetchPool, sendPoolAction } from './membership-pool-page.mjs';
 import { holdFromChat } from './equipment-referral.mjs';
 import { mountEquipmentCard } from './equipment-card.mjs';
 import { EMAIL_WAITING, joinEmailDone, saveEmailSession } from './health-email.mjs';
@@ -861,6 +863,27 @@ function startAgentLoop() {
   setInterval(tick, 5000);
 }
 
+function inviteActions(draft) {
+  const shares = inviteShares(draft);
+  const share = el('button', { type: 'button', id: 'invite-share', onClick: async () => {
+    if (typeof navigator.share !== 'function') { status('Share is not on this phone. Copy the link.'); return; }
+    try { await navigator.share(shares.share); } catch { /* the member closed the share sheet */ }
+  } }, ['Share']);
+  const copy = el('button', { type: 'button', id: 'invite-copy', onClick: async () => {
+    try { await navigator.clipboard.writeText(shares.copy); status('Link copied.'); }
+    catch { status(shares.copy); }
+  } }, ['Copy link']);
+  return el('div', { id: 'invite-draft' }, [
+    el('p', { id: 'invite-link' }, [draft.url]),
+    el('p', { id: 'invite-note' }, [draft.note]),
+    el('a', { id: 'invite-email', href: shares.email }, ['Email']),
+    el('a', { id: 'invite-text', href: shares.text }, ['Text']),
+    share,
+    copy,
+    el('p', { class: 'muted' }, ['Your email or text app sends this. Contacts stay on your phone. Nothing is uploaded.'])
+  ]);
+}
+
 function localAiCard(peer) {
   const host = el('section', { class: 'card', id: 'local-ai' });
   function draw() {
@@ -891,6 +914,26 @@ function localAiCard(peer) {
           return;
         }
         equip.replaceChildren();
+        const credit = deedCreditOf(peer?.id || '');
+        let covers = 0;
+        try { covers = Number((await fetchPool()).covers) || 0; } catch { covers = 0; }
+        const draft = draftHealthInvite({ question: question.value, inviter: peer?.id || '', credit, poolCovers: covers });
+        if (draft.ok) {
+          if (draft.reserve) {
+            const reserved = await sendPoolAction({
+              handle: draft.from,
+              action: 'pool-sponsor',
+              category: 'exchange',
+              credit,
+              at: new Date().toISOString(),
+              nonce: crypto.randomUUID()
+            });
+            if (!reserved.ok) { out.textContent = reserved.error || 'The cover was not reserved.'; return; }
+          }
+          out.replaceChildren(inviteActions(draft));
+          return;
+        }
+        if (/\binvite\b/i.test(question.value)) { out.textContent = draft.error || 'The invite stayed on this phone.'; return; }
         const result = await answerLocal({ question: question.value, progressLines: progressLines(peer) });
         out.textContent = `${result.text} Engine: ${result.label}. Not sent.`;
       } }, ['Ask']));
@@ -950,7 +993,7 @@ async function renderMore() {
     el('h2', {}, ['Settings']),
     mine && mine.example !== true ? healthSettings(mine) : null,
     el('p', {}, [el('a', { href: '/gym/health-data' }, ['Consumer health data']), ' · ', el('a', { href: '/gym/breach-plan' }, ['Breach plan']), ' · ', el('a', { href: '/help' }, ['Help'])]),
-    localAiCard(null),
+    localAiCard(mine),
     el('h2', {}, ['More']),
     todayLine(),
     el('p', {}, [el('a', { href: '/wisdom' }, ['Open Wisdom'])]),
@@ -1071,6 +1114,47 @@ async function finishSignup(group) {
   go('/setup');
 }
 
+async function finishInvite(handleName, invite) {
+  const consent = healthConsent({ adult: true, collect: signup.collect === true, share: signup.share === true });
+  if (!consent.ok) { status(consent.error); return; }
+  const clean = String(handleName || '').trim();
+  const id = clean.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 24);
+  if (id.length < 2) { status('Add a handle.'); return; }
+  const created = await sim.createPeer(store, { id, name: clean, balance: 0, floor: 0, creditLimit: 0, at: new Date().toISOString() });
+  if (!created.ok) { status(created.error); return; }
+  const chosen = chooseProgress({ kinds: ['minutes', 'sessions', 'health'] });
+  if (!chosen.ok) { status(chosen.error); return; }
+  const text = await covenantBody();
+  const peer = await store.get(id);
+  peer.example = false;
+  peer.gymRole = 'member';
+  peer.gymProfile = { journey: 'My better tomorrow.', healthNote: '', public: { journey: true, sessions: false, minutes: false, supports: false, credits: false } };
+  peer.gymProgress = chosen.progress;
+  peer.healthConsent = { ...consent.consent, shareName: signup.shareName === true };
+  peer.covenant = publicCovenant({
+    handle: id,
+    date: new Date().toISOString().slice(0, 10),
+    primary: 'Health',
+    secondary: 'A session',
+    sponsors: [],
+    hash: await covenantHash({ text, handle: id, date: new Date().toISOString().slice(0, 10), sponsors: [] }),
+    token: crypto.randomUUID(),
+    openedAt: new Date().toISOString(),
+    anchor: null,
+    reportAccess: true,
+    authorizeHealth: false
+  });
+  peer.intake = publicIntake({ handle: id, primary: 'Health', secondary: 'A session', status: 'Pending sponsors', reviews: [], notes: [] });
+  peer.joinInvite = invite?.invite || '';
+  await store.set(id, peer);
+  if (invite?.invite) await sim.joinClubGroup(store, id, { invite: invite.invite });
+  localStorage.setItem(MODE_KEY, 'real');
+  localStorage.setItem('lgme.entry.category', 'health');
+  registered = await store.get(id);
+  setSeat(id);
+  go('/setup');
+}
+
 async function publishCovenant(peer, text) {
   try {
     await signedGym('/api/gym/covenant', { handle: peer.id, action: 'request', ...publicCovenant(peer.covenant) });
@@ -1139,11 +1223,13 @@ function emailJoinCard() {
 }
 
 async function renderRegister() {
+  const invite = readJoin(sessionStorage);
   const box = el('section', { id: 'join-health' }, [
     el('p', { class: 'kicker' }, [signup.step === 0 ? 'New member' : `Step ${signup.step} of 5`]),
     el('h2', {}, ['Join Health']),
     el('p', {}, [el('a', { href: '/gym/covenant' }, ['Member Covenant']), ' · ', el('a', { href: '/gym/health-data' }, ['Consumer health data'])])
   ]);
+  if (invite) box.append(el('p', { id: 'join-invite' }, [`Invite ${invite.invite}.`]));
   if (!joinEmailDone(localStorage)) {
     signup.step = 0;
     box.append(emailJoinCard());
@@ -1153,7 +1239,7 @@ async function renderRegister() {
   }
   if (signup.step === 0) signup.step = 1;
   if (signup.step === 1 && signup.adult !== true) {
-    box.append(ageGateCard());
+    box.append(ageGateCard(invite));
     box.append(el('p', { id: 'gym-status', role: 'status' }, []));
     box.append(el('p', {}, [el('a', { href: '/?picker=1' }, ['All categories'])]));
     return box;
@@ -1288,27 +1374,31 @@ async function renderRegister() {
   return box;
 }
 
-function ageGateCard() {
+function ageGateCard(invite) {
   const adult = el('input', { type: 'checkbox', id: 'age-gate' });
   const collect = el('input', { type: 'checkbox', id: 'collect-health' });
   const share = el('input', { type: 'checkbox', id: 'share-health' });
   const shareName = el('input', { type: 'checkbox', id: 'share-name' });
+  const handle = invite ? el('input', { id: 'invite-handle', maxlength: '40', placeholder: 'Handle' }) : null;
   return el('section', { class: 'card', id: 'health-gate' }, [
     el('h3', {}, ['Before you enter anything']),
     el('p', {}, ['This is for adults. The form stays closed until you confirm.']),
+    invite ? el('p', { id: 'join-invite-code' }, [`Invite ${invite.invite}.`]) : null,
     el('label', { class: 'check' }, [adult, AGE_LABEL]),
     el('label', { class: 'check' }, [collect, COLLECT_LABEL]),
     el('label', { class: 'check' }, [share, SHARE_LABEL]),
     el('label', { class: 'check' }, [shareName, 'Send my name and track record to my sponsors']),
+    handle ? el('label', {}, ['Handle. Other members see this.', handle]) : null,
     el('p', { class: 'muted' }, ['Progress sharing and your name are separate. Both stay off unless you check them.']),
     el('p', {}, [el('a', { href: '/gym/health-data' }, ['Consumer health data notice'])]),
-    el('button', { type: 'button', class: 'primary', onClick: () => {
+    el('button', { type: 'button', class: 'primary', id: 'age-continue', onClick: () => {
       const saved = healthConsent({ adult: adult.checked === true, collect: collect.checked === true, share: share.checked === true });
       if (!saved.ok) { status(saved.error); return; }
       signup.adult = true;
       signup.collect = true;
       signup.share = saved.consent.share;
       signup.shareName = shareName.checked === true;
+      if (invite) { finishInvite(handle.value, invite); return; }
       render();
     } }, ['Continue'])
   ]);
@@ -1888,7 +1978,7 @@ async function render() {
   else if (path.startsWith('/sponsor/')) view = await renderSponsor(decodeURIComponent(path.slice('/sponsor/'.length)));
   else if (path === '/intake') view = await renderIntakeEdit();
   else if (path === '/dispute') view = await renderDispute();
-  else if (path === '/setup') view = await renderSetupFee({ storage: localStorage, go, mine: await seat() });
+  else if (path === '/setup') view = await renderSetupFee({ storage: localStorage, go, mine: await seat(), invite: readJoin(sessionStorage) });
   else if (path === '/personalize') {
     const mine = await seat();
     view = await personalizeView({ storage: localStorage, status, go, goals: goalsOfSeat(mine), memberId: mine?.id, peerStore: store });
@@ -1959,6 +2049,9 @@ async function boot() {
     seedDemoChat(localStorage);
     if (!seatId()) setSeat('jordan');
   }
+  const incoming = parseJoinSearch(location.search);
+  if (incoming.ok) rememberJoin(sessionStorage, incoming);
+  if (readJoin(sessionStorage) && !registered && (route() === '/' || route() === '')) location.hash = '/register';
   const seated = seatId() || registered?.id;
   if (seated && recallPage(localStorage, seated) && (route() === '/' || route() === '/me')) location.hash = '/page';
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw-gym.js', { scope: '/gym' }).catch(() => {});
