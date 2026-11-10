@@ -1,4 +1,5 @@
 import { OPERATOR_RULES, listingMessage, sharedListingsEnabled, withinRate } from '../../js/shared-listings.mjs';
+import { testnetOperatorKey } from '../../js/hedera-operator.mjs';
 import { json, readBody, readEnv } from '../lib/http.mjs';
 
 const stamps = new Map();
@@ -45,7 +46,13 @@ export default async function handler(req, res) {
   stamps.set(author, [...rate.recent, now]);
   const sdk = await import('@hashgraph/sdk');
   const client = sdk.Client.forTestnet();
-  client.setOperator(sdk.AccountId.fromString(env.HEDERA_TESTNET_OPERATOR_ID), sdk.PrivateKey.fromString(env.HEDERA_TESTNET_OPERATOR_KEY));
+  let operator;
+  try {
+    operator = await testnetOperatorKey(sdk, env);
+  } catch (error) {
+    return json(res, 400, { ok: false, error: error.public ? error.message : 'The testnet operator key could not be used.' });
+  }
+  client.setOperator(sdk.AccountId.fromString(env.HEDERA_TESTNET_OPERATOR_ID), operator);
   const submitted = await new sdk.TopicMessageSubmitTransaction({
     topicId: topic,
     message: JSON.stringify(built.body)

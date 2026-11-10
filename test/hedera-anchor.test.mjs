@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { merkleRootOf } from '../js/clearing.mjs';
 import { FORBIDDEN_TOPIC, HEDERA_COMING, anchorMessage, hederaReadiness, topicAllowed } from '../js/hedera-anchor-core.mjs';
+import { testnetOperatorKey } from '../js/hedera-operator.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -21,6 +22,8 @@ test('testnet anchoring stays off without an operator and refuses topic 0.0.4891
   const source = readFileSync(join(root, 'api/hedera/anchor.mjs'), 'utf8');
   assert.equal(source.includes('Client.forTestnet'), true);
   assert.equal(source.includes('forMainnet'), false);
+  assert.equal(source.includes('fromStringECDSA') || readFileSync(join(root, 'js/hedera-operator.mjs'), 'utf8').includes('fromStringECDSA'), true);
+  assert.equal(readFileSync(join(root, 'help.html'), 'utf8').includes('Not written to Hedera today.'), true);
   assert.equal(source.includes('0.0.489104'), false);
 });
 
@@ -31,4 +34,39 @@ test('the server message is the recomputed root, not a client claim', async () =
   assert.equal(JSON.parse(message).root, rootHash);
   assert.equal(JSON.parse(message).network, 'testnet');
   assert.equal(message.includes('OPERATOR'), false);
+});
+
+test('an ECDSA testnet account uses the ECDSA parser and the secret stays out of the error', async () => {
+  const secret = 'sample-operator-secret';
+  const sdk = {
+    PrivateKey: {
+      fromStringECDSA(value) {
+        if (value !== secret) throw new Error('unexpected');
+        return { publicKey: { toStringRaw: () => '02dd49cb' } };
+      },
+      fromString() {
+        return { publicKey: { toStringRaw: () => 'ed25519-other' } };
+      }
+    }
+  };
+  const fetchImpl = async () => ({
+    ok: true,
+    json: async () => ({ key: { _type: 'ECDSA_SECP256K1', key: '02dd49cb' } })
+  });
+  const key = await testnetOperatorKey(sdk, {
+    HEDERA_TESTNET_OPERATOR_ID: '0.0.11281203',
+    HEDERA_TESTNET_OPERATOR_KEY: secret
+  }, fetchImpl);
+  assert.equal(key.publicKey.toStringRaw(), '02dd49cb');
+  const mismatch = {
+    PrivateKey: {
+      fromStringECDSA() { return { publicKey: { toStringRaw: () => 'ffff' } }; },
+      fromStringDer() { throw new Error('not der'); },
+      fromString() { return { publicKey: { toStringRaw: () => 'eeee' } }; }
+    }
+  };
+  await assert.rejects(
+    () => testnetOperatorKey(mismatch, { HEDERA_TESTNET_OPERATOR_ID: '0.0.1', HEDERA_TESTNET_OPERATOR_KEY: secret }, fetchImpl),
+    (error) => error.public === true && !error.message.includes(secret)
+  );
 });
