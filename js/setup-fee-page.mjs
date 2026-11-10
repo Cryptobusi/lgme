@@ -111,7 +111,7 @@ export async function renderSetupFee({ storage, go, mine }) {
     if (!link.ok) { status.textContent = PRICE_UNAVAILABLE; return; }
     const qr = el('div', { id: 'setup-qr' });
     panel.replaceChildren(
-      el('p', { id: 'setup-address' }, [SETUP_ADDRESS]),
+      el('p', { id: 'setup-address', class: 'hash' }, [SETUP_ADDRESS]),
       el('button', { type: 'button', id: 'copy-setup-address', onClick: async () => {
         try { await navigator.clipboard.writeText(SETUP_ADDRESS); status.textContent = 'Address copied.'; }
         catch { status.textContent = SETUP_ADDRESS; }
@@ -132,8 +132,8 @@ export async function renderSetupFee({ storage, go, mine }) {
     el('p', { class: 'muted' }, ['You sign in your own wallet. This app never holds funds or keys.']),
     amountLine,
     priceLine,
-    el('p', { id: 'setup-address' }, [SETUP_ADDRESS]),
-    el('p', { id: 'setup-mint', class: 'muted' }, [SETUP_MINT]),
+    el('p', { id: 'setup-address', class: 'hash' }, [SETUP_ADDRESS]),
+    el('p', { id: 'setup-mint', class: 'hash' }, [SETUP_MINT]),
     wallet,
     el('button', { type: 'button', class: 'primary', id: 'pay-now', onClick: () => showPayNow() }, ['Pay']),
     el('button', { type: 'button', id: 'pay-later', onClick: () => showPayLater() }, ['Pay later']),
