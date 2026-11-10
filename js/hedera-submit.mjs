@@ -2,6 +2,7 @@ import { merkleRootOf } from './clearing.mjs';
 import { anchorMessage, hashscanMessage, hederaReadiness, topicAllowed } from './hedera-anchor-core.mjs';
 import { testnetOperatorKey } from './hedera-operator.mjs';
 import { LISTINGS_OPERATOR, LISTINGS_TOPIC } from './exchange-listing.mjs';
+import { MAINNET_CLOSED, mainnetPayloadAllowed, resolveHederaNetwork, spendGuard } from './hedera-network.mjs';
 
 const memory = [];
 
@@ -44,7 +45,24 @@ export async function markAnchored(store, hashes) {
   await store.set('hedera:queue', prior.filter((row) => !done.has(row.hash)));
 }
 
+function mainnetClosed(env, body) {
+  const picked = resolveHederaNetwork(env);
+  if (picked.network !== 'mainnet') return null;
+  const privacy = body ? mainnetPayloadAllowed(body) : { ok: true };
+  if (!privacy.ok) return { ok: false, error: privacy.error };
+  const guard = spendGuard({
+    network: 'mainnet',
+    spentTinybar: Number(env.HEDERA_MAINNET_SPENT_TINYBAR) || 0,
+    nextTinybar: 1,
+    capHbar: Number(env.HEDERA_MAINNET_DAILY_HBAR_CAP) || undefined
+  });
+  if (!guard.ok) return { ok: false, alert: guard.alert, error: guard.alert };
+  return { ok: false, error: MAINNET_CLOSED };
+}
+
 export async function submitLeaves(env, leaves, day) {
+  const closed = mainnetClosed(env);
+  if (closed) return closed;
   const ready = hederaReadiness(env);
   if (!ready.enabled) return { ok: false, enabled: false, wording: ready.wording };
   const clean = (leaves || []).map((leaf) => String(leaf || '').toLowerCase()).filter((leaf) => /^[0-9a-f]{64}$/.test(leaf));
@@ -74,6 +92,9 @@ export async function submitLeaves(env, leaves, day) {
 }
 
 export async function submitPaidListing(env, message) {
+  const parsed = typeof message === 'string' ? (() => { try { return JSON.parse(message); } catch { return { raw: message }; } })() : message;
+  const closed = mainnetClosed(env, parsed);
+  if (closed) return closed;
   const ready = hederaReadiness(env);
   if (!ready.enabled) return { ok: false, enabled: false, wording: ready.wording };
   const operatorId = String(env.HEDERA_TESTNET_OPERATOR_ID || '').trim();
