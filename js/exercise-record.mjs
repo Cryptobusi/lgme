@@ -1,9 +1,12 @@
+import { intentTitle } from './wisdom.mjs';
+
 export const EXERCISE_CATEGORIES = Object.freeze(['strength', 'cardio', 'mobility', 'mixed']);
 export const EVIDENCE_UNVERIFIED = 'phone-recorded (unverified)';
 export const EVIDENCE_VERIFIED = 'phone-recorded + verified by trainer/group member';
 export const EVIDENCE_LEVELS = Object.freeze([EVIDENCE_UNVERIFIED, EVIDENCE_VERIFIED]);
 export const SENSOR_NAMES = Object.freeze(['gps', 'camera', 'motion']);
-export const PUBLIC_FIELDS = Object.freeze(['completed', 'day', 'category', 'evidence', 'terms', 'durationSec', 'sensors', 'locationMatched']);
+
+export const PUBLIC_FIELDS = Object.freeze(['completed', 'day', 'category', 'evidence', 'terms', 'durationSec', 'sensors', 'locationMatched', 'intent']);
 
 export function publicExerciseItem(spec = {}) {
   const category = EXERCISE_CATEGORIES.includes(spec.category) ? spec.category : '';
@@ -18,10 +21,10 @@ export function publicExerciseItem(spec = {}) {
   if (/@|https?:|\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b/i.test(terms)) {
     return { ok: false, error: 'Support terms cannot include an email, a link, or a phone number.' };
   }
-  return {
-    ok: true,
-    item: { completed: true, day, category, evidence, terms, durationSec, sensors, locationMatched }
-  };
+  const intent = intentTitle(spec.intent, spec.allowedIntents);
+  const item = { completed: true, day, category, evidence, terms, durationSec, sensors, locationMatched };
+  if (intent) item.intent = intent;
+  return { ok: true, item };
 }
 
 export function haversineMeters(a, b) {

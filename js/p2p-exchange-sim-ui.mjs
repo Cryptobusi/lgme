@@ -6,6 +6,7 @@ import { PASSKEY_COPY, PASSKEY_FALLBACK, enrollPasskey, passkeySupported, readCr
 import { mountEmailCheck } from './email-check.mjs';
 import { mountSharedListingNote } from './shared-listings.mjs';
 import { EVIDENCE_UNVERIFIED, evidenceHash, locationMatched } from './exercise-record.mjs';
+import { MAXIMS, loadExcerpts, memberLines, rotationFor, visibleWisdom } from './wisdom.mjs';
 import { allowMotion, captureFrame, readGps } from './exercise-sensors.mjs';
 import { mountHederaAnchor } from './hedera-anchor.mjs';
 import { REFERENCE_LABEL, optionLabel, referenceLine } from './dc-reference.mjs';
@@ -3527,7 +3528,8 @@ async function exerciseBoard(seat) {
     const row = await store.get(id);
     if (row) books.push(row);
   }
-  return exerciseCard(peer, books);
+  const file = await loadExcerpts();
+  return exerciseCard(peer, books, file);
 }
 
 const workout = { startedAt: '', points: [], photos: [], samples: 0, stop: null };
@@ -3557,7 +3559,7 @@ async function beginWorkout(ui) {
     }
   }
   ui.sensorsNote.textContent = used.length ? `Started. Sensors so far: ${used.join(', ')}.` : 'Started. No sensor was used.';
-  setStatus('Session started. Tap Finish when you are done.', 'ok');
+  setStatus(`Session started. ${ui.lineTitle ? ui.lineTitle + '. ' : ''}Tap Finish when you are done.`, 'ok');
 }
 
 async function finishWorkout(peer, ui) {
@@ -3594,6 +3596,8 @@ async function finishWorkout(peer, ui) {
     durationSec,
     sensors,
     locationMatched: matched,
+    intent: ui.intent.value,
+    allowedIntents: ui.allowedIntents,
     privateNote: ui.note.value,
     evidenceHash: hash,
     bundle,
@@ -3603,11 +3607,12 @@ async function finishWorkout(peer, ui) {
     unixSeconds: Math.floor(Date.now() / 1000)
   });
   workout.startedAt = '';
-  setStatus(result.ok ? `IdidIt (verified receipt). ${EVIDENCE_UNVERIFIED}. No credit was minted. Location matched club: ${matched}.` : result.error, result.ok ? 'ok' : 'bad');
+  const intentNote = result.ok && result.publicItem?.intent ? ` Intent: ${result.publicItem.intent}.` : '';
+  setStatus(result.ok ? `IdidIt (verified receipt). ${EVIDENCE_UNVERIFIED}. No credit was minted. Location matched club: ${matched}.${intentNote}` : result.error, result.ok ? 'ok' : 'bad');
   if (result.ok) await render();
 }
 
-function exerciseCard(peer, books = []) {
+function exerciseCard(peer, books = [], file = { excerpts: [] }) {
   const category = h('select', {}, [
     option('strength', 'Strength', true),
     option('cardio', 'Cardio', false),
@@ -3627,12 +3632,22 @@ function exerciseCard(peer, books = []) {
   const pass = h('input', { type: 'password', autocomplete: 'current-password' });
   const code = h('input', { inputmode: 'numeric', maxlength: '8', autocomplete: 'one-time-code' });
   const sensorsNote = h('p', { class: 'legend' }, ['No sensors yet. Each one is optional.']);
+  const day = new Date().toISOString().slice(0, 10);
+  const published = memberLines(visibleWisdom(books, peer).filter((item) => item.status === 'published'));
+  const excerptLines = (file.excerpts || []).filter((row) => row.theme && row.text).map((row) => ({ kind: row.kind, title: row.theme, text: row.text, source: row.source || '' }));
+  const line = rotationFor(day, [...excerptLines, ...published]);
+  const allowedIntents = [...MAXIMS.map((maxim) => maxim.title), ...published.map((item) => item.title)];
+  const intent = h('select', {}, [option('', 'No intent on the receipt', true), ...allowedIntents.map((title) => option(title, title, false))]);
   const shared = h('div', { id: 'shared-listings' });
   queueMicrotask(() => { mountSharedListingNote(shared); });
-  const start = h('button', { type: 'button', onClick: () => beginWorkout({ useGps, useCamera, useMotion, sensorsNote }) }, ['Start']);
-  const finish = h('button', { type: 'button', class: 'primary', onClick: () => finishWorkout(peer, { category, terms, note, groupCode, useGps, useCamera, useMotion, fenceLat, fenceLon, fenceRadius, pass, code, sensorsNote }) }, ['Finish']);
+  const start = h('button', { type: 'button', onClick: () => beginWorkout({ useGps, useCamera, useMotion, sensorsNote, lineTitle: line.title }) }, ['Start']);
+  const finish = h('button', { type: 'button', class: 'primary', onClick: () => finishWorkout(peer, { category, terms, note, groupCode, useGps, useCamera, useMotion, fenceLat, fenceLon, fenceRadius, pass, code, sensorsNote, intent, allowedIntents }) }, ['Finish']);
   const form = h('form', { id: 'exercise-session', onSubmit: (event) => event.preventDefault() }, [
-    h('p', { class: 'legend' }, ['Exercise session (IdidIt / verified receipt). Start, then Finish. A workout alone mints no credit. Raw GPS, photos, and motion stay on this phone.']),
+    h('p', { class: 'legend' }, ['Exercise session (IdidIt / verified receipt). Start, then Finish. A workout alone mints no credit. Raw GPS, photos, and motion stay on this phone. Rewards come from another member or the front desk.']),
+    h('p', { class: 'legend' }, ["Today's line"]),
+    h('p', {}, [line.title]),
+    h('p', {}, [line.text]),
+    h('p', { class: 'legend' }, [line.source || '']),
     field('Category', category),
     field('Support terms', terms),
     field('Private note', note),
@@ -3644,6 +3659,7 @@ function exerciseCard(peer, books = []) {
     field('Club latitude, stays on this device', fenceLat),
     field('Club longitude, stays on this device', fenceLon),
     field('Club radius, meters', fenceRadius),
+    field('Intent on the receipt, optional', intent),
     sensorsNote,
     field('Passphrase', pass),
     field('6-digit code', code),
@@ -3680,7 +3696,7 @@ function exerciseCard(peer, books = []) {
       actions.push(h('button', { type: 'button', class: 'primary', onClick: () => answerExercise(peer, offer, true, pass, code) }, ['Accept']));
     }
     return h('article', { class: 'row' }, [
-      h('p', {}, [`Session completed · ${session.day} · ${session.category} · ${session.evidence} · ${session.durationSec || 0}s · location matched club: ${session.locationMatched || 'no'}`]),
+      h('p', {}, [`Session completed · ${session.day} · ${session.category} · ${session.evidence} · ${session.durationSec || 0}s · location matched club: ${session.locationMatched || 'no'}${session.intent ? ` · intent: ${session.intent}` : ''}`]),
       h('p', { class: 'legend' }, [`Terms: ${session.terms || 'Contribution or barter'}`]),
       actions.length ? h('div', { class: 'actions' }, actions) : null
     ]);

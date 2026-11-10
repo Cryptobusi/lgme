@@ -19,7 +19,8 @@ const POOL_TYPES = new Set([
   'ZERO_PRICE_SPLIT',
   'DEED_POST',
   'DEED_ATTESTED',
-  'THIRD_SEAT_VETO'
+  'THIRD_SEAT_VETO',
+  'WISDOM_SUPPORT'
 ]);
 
 export function round2(value) {
@@ -92,6 +93,10 @@ export function projectSubfloors(peers) {
   for (const entry of rows) {
     const payload = entry.payload || {};
     if (entry.type === 'THIRD_SEAT_VETO') continue;
+    if (entry.type === 'WISDOM_SUPPORT') {
+      if (payload.unit === '$lgme') floorReserve = round2(floorReserve + round2(payload.floorShare || 0));
+      continue;
+    }
     const cat = ensure(payload.category || 'tutoring');
     const amount = round2(payload.amount || 0);
     if (entry.type === 'SUBFLOOR_SKIM') {

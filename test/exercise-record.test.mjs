@@ -39,6 +39,7 @@ test('a workout records an IdidIt listing and mints no credit', async () => {
     sensors: ['gps', 'motion'],
     locationMatched: locationMatched(bundle.points, { lat: 38.9, lon: -77.0, radiusM: 150 }),
     privateNote: 'knee felt fine',
+    intent: 'End morning hygiene with 90–120 seconds of unheated water. No transitional warming.',
     evidenceHash: hash,
     bundle,
     passphrase: 'correct horse',
@@ -53,6 +54,8 @@ test('a workout records an IdidIt listing and mints no credit', async () => {
   const tape = JSON.stringify(alice.tape);
   assert.equal(tape.includes('knee felt fine'), false);
   assert.equal(tape.includes('38.9'), false);
+  assert.equal(tape.includes('unheated water'), false);
+  assert.equal(recorded.publicItem.intent, undefined);
   assert.equal(recorded.publicItem.locationMatched, 'yes');
   assert.equal(recorded.publicItem.evidence, EVIDENCE_UNVERIFIED);
   assert.equal(alice.exercisePrivate[recorded.sessionId].note, 'knee felt fine');
@@ -139,4 +142,22 @@ test('shared listings stay off and reject personal fields', () => {
   });
   assert.equal(good.ok, true);
   assert.equal(withinRate(Array.from({ length: 10 }, (_, index) => index), 10, 10).ok, false);
+});
+
+test('a receipt can carry a maxim title and nothing else from the maxim', async () => {
+  const store = await people();
+  const aliceCode = await codeFor(store, 'alice');
+  const recorded = await sim.recordExerciseSession(store, 'alice', {
+    day: '2026-11-10', category: 'mixed', evidence: EVIDENCE_UNVERIFIED, terms: 'Contribution or barter', durationSec: 30, sensors: [], locationMatched: 'no',
+    intent: 'Labor anchors the sleep',
+    allowedIntents: ['Labor anchors the sleep'],
+    evidenceHash: 'ab'.repeat(32),
+    passphrase: 'correct horse', code: aliceCode, unixSeconds: unix, at
+  });
+  assert.equal(recorded.ok, true, recorded.error);
+  assert.equal(recorded.publicItem.intent, 'Labor anchors the sleep');
+  const tape = JSON.stringify((await store.get('alice')).tape);
+  assert.equal(tape.includes('Labor anchors the sleep'), true);
+  assert.equal(tape.includes('compound lifts'), false);
+  assert.equal(recorded.creditMinted, false);
 });

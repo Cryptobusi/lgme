@@ -9,6 +9,7 @@ import { ALT_CHOICES, DEFAULT_CLAMP_BAND, HISTORY_UNAVAILABLE, NO_COIN, PEG_LABE
 import { bilateralNet, clearingRules, clearingWindow, cycleNetStub, dayEntries, merkleProofFor, merkleRootOf, nextWindow, verifyMerkleProof, windowEntries } from './clearing.mjs';
 import { DEED_CATEGORIES, DEED_POST_TYPES, RECEIPT_NAME, DEFAULT_SUBFLOOR_RULES, firstClaimCategory, floatedUnit, lockDeedUnit, paidAndHeldToday, planDeedPost, projectSubfloors, rankCategories, splitZeroProceeds } from './subfloor.mjs';
 import { publicExerciseItem } from './exercise-record.mjs';
+import { publicWisdom, wisdomSplit } from './wisdom.mjs';
 import { listingMessage } from './shared-listings.mjs';
 
 export { bilateralNet, clearingRules, clearingWindow, cycleNetStub, merkleProofFor, merkleRootOf, nextWindow, verifyMerkleProof };
@@ -405,7 +406,14 @@ export function entryDetail(entry, names = {}) {
   if (entry.type === 'SUBFLOOR_PAYOUT') return `Subfloor payout ${payload.amount} $lgme`.trim();
   if (entry.type === 'ZERO_PRICE_SPLIT') return `Zero-price split ${payload.subfloor} subfloor, ${payload.floor} main floor`.trim();
   if (entry.type === 'DEED_ATTESTED') return `${payload.receiptName || 'Deed'} ${payload.category || ''}`.trim();
-  if (entry.type === 'EXERCISE_SESSION') return `IdidIt (verified receipt) ${payload.day || ''} ${payload.category || ''} ${payload.evidence || ''}`.trim();
+  if (entry.type === 'EXERCISE_SESSION') return `IdidIt (verified receipt) ${payload.day || ''} ${payload.category || ''} ${payload.evidence || ''}${payload.intent ? ' · ' + payload.intent : ''}`.trim();
+  if (entry.type === 'WISDOM_SUBMISSION') return `Wisdom ${payload.status || 'pending'} ${payload.theme || ''}`.trim();
+  if (entry.type === 'WISDOM_CONCUR') return 'Wisdom concurrence. No credit minted.';
+  if (entry.type === 'WISDOM_NO') return 'No. Wisdom concurrence declined.';
+  if (entry.type === 'WISDOM_SUPPORT') {
+    if (payload.unit === 'barter') return 'Wisdom barter. 10% of the deed to the Floor, 90% to the author.';
+    return `Wisdom support ${payload.authorShare} to the author, ${payload.floorShare} to the Floor`.trim();
+  }
   if (entry.type === 'refusal') return payload.statement || 'REFUSAL';
   if (entry.type === 'block') return payload.message || FLOOR_BLOCK;
   if (entry.type === 'KYC_STARTED') return 'KYC started. Details stay on this device.';
@@ -3366,6 +3374,223 @@ export async function acceptExerciseSupport(store, authorId, supportId, spec = {
     movedLgme: offer.kind === 'contribute-lgme'
       ? replay(freshGiver).balance === round2(beforeGiver - offer.amount) && replay(freshAuthor).balance === round2(beforeAuthor + round2(offer.amount * 0.99))
       : replay(freshGiver).balance === beforeGiver && replay(freshAuthor).balance === beforeAuthor
+  };
+}
+
+async function findWisdom(store, submissionId, authorId) {
+  if (authorId) {
+    const author = await store.get(authorId);
+    if (author?.wisdomSubmissions?.[submissionId]) return author;
+  }
+  for (const id of await store.listIds()) {
+    const peer = await store.get(id);
+    if (peer?.wisdomSubmissions?.[submissionId]) return peer;
+  }
+  return null;
+}
+
+export async function submitWisdom(store, peerId, spec = {}) {
+  const peer = await store.get(peerId);
+  if (!peer) return fail('Unknown peer.');
+  const pub = publicWisdom(spec);
+  if (!pub.ok) return pub;
+  const keyed = await unlockDeed(peer, spec);
+  if (!keyed.ok) return keyed;
+  const at = spec.at || nowIso();
+  const submissionId = await sha256(canonicalJSON({ peerId, item: pub.item, at }));
+  const before = replay(peer).balance;
+  const item = {
+    submissionId,
+    ...pub.item,
+    authorId: peerId,
+    handle: pub.item.anonymous ? '' : String(peer.name || peerId),
+    status: 'pending',
+    concurrences: [],
+    declines: [],
+    creditMinted: false
+  };
+  peer.wisdomSubmissions = peer.wisdomSubmissions || {};
+  peer.wisdomSubmissions[submissionId] = item;
+  await appendEntry(peer, 'WISDOM_SUBMISSION', item, at);
+  releaseLockedKey(peer);
+  await store.set(peerId, peer);
+  const fresh = await store.get(peerId);
+  return { ok: true, submissionId, status: 'pending', creditMinted: false, unchanged: replay(fresh).balance === before };
+}
+
+export async function concurWisdom(store, memberId, submissionId, spec = {}) {
+  const member = await store.get(memberId);
+  const author = await findWisdom(store, submissionId, spec.authorId);
+  const item = author?.wisdomSubmissions?.[submissionId];
+  if (!member || !item) return fail('No wisdom submission on this book.');
+  if (memberId === author.id) return fail('You cannot concur on your own submission.');
+  if (item.concurrences.includes(memberId) || item.declines.includes(memberId)) return fail('One concurrence per member.');
+  if (item.groupCode && !member.clubGroups?.[item.groupCode]) return fail('A private group excerpt is concurred by a member of that group.');
+  const keyed = await unlockDeed(member, spec);
+  if (!keyed.ok) return keyed;
+  const at = spec.at || nowIso();
+  const before = replay(member).balance;
+  const vote = { submissionId, memberId, cosign: spec.passkey ? 'passkey' : 'key', creditMinted: false };
+  item.concurrences = [...item.concurrences, memberId];
+  if (item.concurrences.length >= 2) item.status = 'published';
+  author.wisdomSubmissions[submissionId] = item;
+  await appendEntry(member, 'WISDOM_CONCUR', vote, at);
+  if (author.privateKeyJwk || author.signingKey) await appendEntry(author, 'WISDOM_CONCUR', vote, at);
+  releaseLockedKey(member);
+  await store.set(memberId, member);
+  await store.set(author.id, author);
+  return { ok: true, status: item.status, count: item.concurrences.length, creditMinted: false, unchanged: replay(await store.get(memberId)).balance === before };
+}
+
+export async function declineWisdom(store, memberId, submissionId, spec = {}) {
+  const member = await store.get(memberId);
+  const author = await findWisdom(store, submissionId, spec.authorId);
+  const item = author?.wisdomSubmissions?.[submissionId];
+  if (!member || !item) return fail('No wisdom submission on this book.');
+  if (memberId === author.id) return fail('You cannot concur on your own submission.');
+  if (item.declines.includes(memberId)) return { ok: true, status: item.status, noop: true };
+  if (item.concurrences.includes(memberId)) return fail('You already concurred.');
+  if (item.groupCode && !member.clubGroups?.[item.groupCode]) return fail('A private group excerpt is answered by a member of that group.');
+  const keyed = await unlockDeed(member, spec);
+  if (!keyed.ok) return keyed;
+  const at = spec.at || nowIso();
+  const before = replay(member).balance;
+  item.declines = [...item.declines, memberId];
+  author.wisdomSubmissions[submissionId] = item;
+  const vote = { submissionId, memberId, creditMinted: false };
+  await appendEntry(member, 'WISDOM_NO', vote, at);
+  if (author.privateKeyJwk || author.signingKey) await appendEntry(author, 'WISDOM_NO', vote, at);
+  releaseLockedKey(member);
+  await store.set(memberId, member);
+  await store.set(author.id, author);
+  return { ok: true, status: item.status, creditMinted: false, unchanged: replay(await store.get(memberId)).balance === before };
+}
+
+export async function supportWisdom(store, supporterId, submissionId, spec = {}) {
+  const supporter = await store.get(supporterId);
+  const author = await findWisdom(store, submissionId, spec.authorId);
+  const item = author?.wisdomSubmissions?.[submissionId];
+  if (!supporter || !item) return fail('No wisdom submission on this book.');
+  if (item.status !== 'published') return fail('Wisdom is published only after two other members concur.');
+  if (supporterId === author.id) return fail('Someone else supports this wisdom.');
+  if (item.groupCode && !supporter.clubGroups?.[item.groupCode]) return fail('A private group excerpt is supported by a member of that group.');
+  const kind = String(spec.kind || '');
+  if (!['lgme', 'credit', 'usd', 'barter'].includes(kind)) return fail('Choose deed credit, $lgme, US$, or barter.');
+  const keyed = await unlockDeed(supporter, spec);
+  if (!keyed.ok) return keyed;
+  const at = spec.at || nowIso();
+  const beforeSupporter = replay(supporter).balance;
+  const beforeAuthor = replay(author).balance;
+  let unit = '$lgme';
+  let amount = 0;
+  let floorShare = 0;
+  let authorShare = 0;
+  let lgmeAmount = 0;
+  let fallback = '';
+  const barter = String(spec.barter || '').trim().slice(0, 80);
+  const terms = String(spec.terms || '').trim().slice(0, 80);
+  if (kind === 'barter') {
+    if (!barter) {
+      releaseLockedKey(supporter);
+      await store.set(supporterId, supporter);
+      return fail('Name the deed or item you offer.');
+    }
+    unit = 'barter';
+  } else if (kind === 'credit') {
+    const split = wisdomSplit(spec.amount);
+    if (!split.ok) {
+      releaseLockedKey(supporter);
+      await store.set(supporterId, supporter);
+      return split;
+    }
+    unit = 'deed-credit';
+    amount = split.amount;
+    floorShare = split.floor;
+    authorShare = split.author;
+  } else if (kind === 'usd' && !(Number(spec.lgmePrice) > 0)) {
+    const split = wisdomSplit(spec.amount);
+    if (!split.ok) {
+      releaseLockedKey(supporter);
+      await store.set(supporterId, supporter);
+      return split;
+    }
+    if (!terms && !barter) {
+      releaseLockedKey(supporter);
+      await store.set(supporterId, supporter);
+      return fail('No $lgme quote. Name the terms or the barter.');
+    }
+    unit = 'USD';
+    amount = split.amount;
+    floorShare = split.floor;
+    authorShare = split.author;
+    fallback = 'pay-in-terms';
+  } else {
+    const price = kind === 'usd' ? Number(spec.lgmePrice) : 1;
+    const usd = kind === 'usd' ? Number(spec.amount) : Number(spec.amount);
+    const lgme = kind === 'usd' ? round2(usd / price) : round2(usd);
+    const split = wisdomSplit(lgme);
+    if (!split.ok) {
+      releaseLockedKey(supporter);
+      await store.set(supporterId, supporter);
+      return split;
+    }
+    if (!(author.privateKeyJwk || author.signingKey)) {
+      releaseLockedKey(supporter);
+      await store.set(supporterId, supporter);
+      return fail('The author book is locked on this device.');
+    }
+    const blocked = floorBlockReason(supporter, round2(beforeSupporter - split.amount));
+    if (blocked) {
+      releaseLockedKey(supporter);
+      await store.set(supporterId, supporter);
+      return fail(blocked);
+    }
+    unit = '$lgme';
+    amount = split.amount;
+    floorShare = split.floor;
+    authorShare = split.author;
+    lgmeAmount = split.amount;
+  }
+  const supportId = await sha256(canonicalJSON({ supporterId, submissionId, kind, amount, at }));
+  const payload = {
+    entryId: `wisdom:${supportId}`,
+    supportId,
+    submissionId,
+    kind,
+    amount,
+    unit,
+    floorShare,
+    authorShare,
+    fromId: supporterId,
+    toId: author.id,
+    barter,
+    terms,
+    fallback,
+    usd: kind === 'usd' ? round2(Number(spec.amount)) : 0,
+    creditMinted: false
+  };
+  if (lgmeAmount > 0) {
+    await appendEntry(supporter, 'transfer', { fromId: supporter.id, toId: author.id, amount: lgmeAmount, unit: '$lgme', direction: 'out', note: 'Wisdom support' }, at);
+    await appendEntry(author, 'transfer', { fromId: supporter.id, toId: author.id, amount: authorShare, unit: '$lgme', direction: 'in', note: 'Wisdom support' }, at);
+  }
+  await appendEntry(supporter, 'WISDOM_SUPPORT', payload, at);
+  if (author.privateKeyJwk || author.signingKey) await appendEntry(author, 'WISDOM_SUPPORT', payload, at);
+  releaseLockedKey(supporter);
+  await store.set(supporterId, supporter);
+  await store.set(author.id, author);
+  const freshSupporter = await store.get(supporterId);
+  const freshAuthor = await store.get(author.id);
+  return {
+    ok: true,
+    supportId,
+    floorShare,
+    authorShare,
+    unit,
+    fallback,
+    creditMinted: false,
+    supporterBalance: replay(freshSupporter).balance,
+    authorBalance: replay(freshAuthor).balance,
+    unchanged: lgmeAmount === 0 && replay(freshSupporter).balance === beforeSupporter && replay(freshAuthor).balance === beforeAuthor
   };
 }
 
