@@ -977,7 +977,7 @@ export async function donateToSubfloor(store, peerId, spec = {}) {
   const peers = await allPeers(store);
   const snapshot = projectSubfloors(peers);
   const category = spec.category ? String(spec.category) : firstClaimCategory(snapshot);
-  if (!DEED_CATEGORIES.includes(category)) return fail('Choose tutoring, repair, cleanup, gear, or health and fitness.');
+  if (!DEED_CATEGORIES.includes(category)) return fail('Choose tutoring, repair, cleanup, gear, health and fitness, or AI help.');
   const keyed = await unlockDeed(peer, spec);
   if (!keyed.ok) return keyed;
   const next = round2(replay(peer).balance - amount);

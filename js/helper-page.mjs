@@ -50,7 +50,7 @@ function draw() {
   if (state.step === 2) view.append(youStep());
   if (state.step === 3) view.append(termsStep());
   if (state.step === 4) view.append(reviewStep());
-  view.append(el('p', {}, [el('a', { href: '/?picker=1' }, ['All categories'])]));
+  view.append(el('p', {}, [el('a', { href: '/ai-help' }, ['Ask for AI help']), ' · ', el('a', { href: '/?picker=1' }, ['All categories'])]));
   root.replaceChildren(view);
 }
 

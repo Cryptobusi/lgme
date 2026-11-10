@@ -1,5 +1,5 @@
 // Gym beta shell. Scope is /gym only, so the main lgme service worker keeps the rest of the site.
-const CACHE_NAME = 'lgme-gym-v15';
+const CACHE_NAME = 'lgme-gym-v16';
 const SHELL = ['/gym', '/gym.html', '/gym/index.html', '/gym/covenant', '/gym/covenant.html', '/gym/intake-protocol', '/gym/intake-protocol.html', '/data/member-covenant.txt', '/data/intake-protocol.txt', '/gym-manifest.webmanifest', '/icons/gym-192.png', '/js/gym-app.mjs', '/js/gym-progress.mjs', '/js/gym-feed.mjs', '/js/local-agents.mjs', '/js/covenant.mjs', '/js/covenant-page.mjs', '/js/intake.mjs', '/js/intake-view.mjs', '/js/intake-page.mjs', '/js/steward.mjs'];
 
 self.addEventListener('install', (event) => {

@@ -3,6 +3,6 @@
   "deedCapShare": 0.5,
   "dailyCapLgme": 20,
   "zeroSplit": { "subfloor": 0.5, "floor": 0.5 },
-  "categories": ["tutoring", "repair", "cleanup", "gear", "health-fitness"],
+  "categories": ["tutoring", "repair", "cleanup", "gear", "health-fitness", "ai-help"],
   "postTypes": ["IwantIT", "IhavIT", "IselIT", "soBeIT"]
 }

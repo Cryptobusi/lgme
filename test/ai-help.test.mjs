@@ -1,0 +1,34 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { contributedCount, draftOffer, draftRequest, helpDraft, settleAiHelp, shareExcerpt } from '../js/ai-help.mjs';
+import { planDeedPost } from '../js/subfloor.mjs';
+
+test('AI help shares only the chosen excerpt and records one count', () => {
+  const blocked = shareExcerpt('My legal name is Ada and my signature is here.', '');
+  assert.equal(blocked.ok, false);
+  const shared = shareExcerpt('Please turn these notes into two offerings. My health note stays back.', '');
+  assert.equal(shared.ok, true);
+  assert.equal(shared.excerpt.includes('health'), false);
+  const asked = draftRequest({ requester: 'river', task: 'Turn my notes into two intake offerings', excerpt: shared.excerpt });
+  assert.equal(asked.request.postType, 'IwantIT');
+  assert.equal(asked.request.category, 'ai-help');
+  const refused = draftOffer({ helper: 'sam', kind: 'IselIT', wantsCredit: true, pro: true, intakeTier: 'Tier-0' });
+  assert.equal(refused.ok, false);
+  const gift = draftOffer({ helper: 'sam', kind: 'IhavIT', wantsCredit: false, pro: false, intakeTier: 'Tier-0' });
+  assert.equal(gift.offer.price, 0);
+  const draft = helpDraft({ helper: 'sam', task: asked.request.title, excerpt: asked.request.excerpt });
+  assert.equal(draft.label, 'Drafted with help from @sam using AI');
+  const early = settleAiHelp({ helper: 'sam', requester: 'river', unit: 'draft', price: 0, edited: false });
+  assert.equal(early.ok, false);
+  const accepted = settleAiHelp({ helper: 'sam', requester: 'river', unit: 'draft', price: 0, edited: true });
+  assert.equal(accepted.receipt.name, 'IdidIt (verified receipt)');
+  assert.equal(accepted.receipt.verifier, 'river');
+  assert.equal(accepted.receipt.instant, true);
+  assert.equal(accepted.receipt.skim, 0);
+  const priced = settleAiHelp({ helper: 'sam', requester: 'river', unit: 'minutes', minutes: 20, price: 1, edited: true });
+  assert.equal(priced.receipt.skim, 0.01);
+  assert.equal(priced.receipt.unit, '20 minutes');
+  assert.equal(contributedCount(0, accepted.receipt), 1);
+  const planned = planDeedPost({ postType: 'IwantIT', category: 'ai-help', listUsd: 1, priceUsdPerLgme: 1, at: '2026-11-10T00:00:00.000Z' }, { available: 0 });
+  assert.equal(planned.ok, true);
+});

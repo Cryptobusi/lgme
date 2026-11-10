@@ -437,6 +437,10 @@ async function renderMember(id, shareOnly) {
   view.append(el('div', { class: 'avatar', 'aria-hidden': 'true' }, [(peer.name || '?').slice(0, 1)]));
   view.append(el('h2', {}, [card.handle]));
   if (isTrainer(peer)) view.append(el('p', { id: 'trainer-badge', class: 'kicker' }, ['Trainer']));
+  try {
+    const helped = JSON.parse(localStorage.getItem('lgme.aiHelp.count') || 'null');
+    if (helped && helped.handle === peer.id && helped.count > 0) view.append(el('p', { id: 'ai-help-badge' }, [`Contributed AI help: ${helped.count}`]));
+  } catch { /* the count stays off this page */ }
   view.append(el('p', { class: 'muted' }, [card.role]));
   if (!shareOnly || card.journey) view.append(el('p', {}, [shareOnly ? card.journey : (peer.gymProfile?.journey || '')]));
   if (!shareOnly || card.sessions != null) view.append(chartBlock('Sessions per week', stats.weeks, 'Sessions per week'));
