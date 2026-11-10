@@ -173,9 +173,11 @@ function supportControls(item) {
     }
     if (selected === 'credit') {
       preview.textContent = `${split.skim} deed credit skim to Health and fitness. ${split.author} to the author. No $lgme moves. Confirm to sign.`;
+      if (split.amount > 100) preview.textContent += ' Needs 3 attestations (over $100). Suggested third attester: group administrator.';
       ready = { kind: 'credit', amount: split.amount };
     } else if (selected === 'lgme') {
       preview.textContent = `${split.floor} $lgme to the Floor. ${split.app} $lgme to the App development fund. ${split.author} $lgme to the author. You pay ${split.amount}. Confirm to sign.`;
+      if (split.amount > 100) preview.textContent += ' Needs 3 attestations (over $100). Suggested third attester: group administrator.';
       ready = { kind: 'lgme', amount: split.amount };
     } else {
       let price = 0;

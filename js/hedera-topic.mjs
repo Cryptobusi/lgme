@@ -1,4 +1,5 @@
 export const LEGACY_TOPIC = '0.0.11397291';
+export const ATTESTATION_TOPIC = '0.0.11399829';
 
 export function topicAdminReady(env = {}) {
   if (env.HEDERA_TOPIC_ADMIN !== 'on') {
@@ -23,7 +24,7 @@ export function protectedTopicTransaction(sdk, operatorKey) {
 export function readableTopic(topic, env = {}) {
   const id = String(topic || '').trim();
   const current = String(env.HEDERA_TESTNET_TOPIC_ID || '').trim();
-  return id === LEGACY_TOPIC || (current && id === current);
+  return id === LEGACY_TOPIC || id === ATTESTATION_TOPIC || (current && id === current);
 }
 
 export function cronAllowed(headers = {}, env = {}) {

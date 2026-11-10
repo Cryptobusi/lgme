@@ -13,6 +13,7 @@ import { commonsSplit, deedCreditSplit } from './commons-split.mjs';
 import { publicWisdom, wisdomSplit } from './wisdom.mjs';
 import { listingMessage } from './shared-listings.mjs';
 import { circleGate } from './covenant.mjs';
+import { ATTESTATION_NOTE, addAttestation, evaluateHold, pendingCount, rememberRow, suggestThird, withdrawEntry } from './high-value.mjs';
 import { intakeCreditLimit } from './intake.mjs';
 
 export { bilateralNet, clearingRules, clearingWindow, cycleNetStub, merkleProofFor, merkleRootOf, nextWindow, verifyMerkleProof };
@@ -849,6 +850,62 @@ async function allPeers(store) {
   return peers;
 }
 
+function saveHigh(peer, row) {
+  if (!peer || !row) return;
+  peer.highValue = rememberRow(peer.highValue, row);
+}
+
+async function mirrorHigh(store, actor, row, otherId) {
+  saveHigh(actor, row);
+  if (!otherId || otherId === actor.id) return;
+  const other = await store.get(otherId);
+  if (!other) return;
+  saveHigh(other, row);
+  await store.set(other.id, other);
+}
+
+export async function attestHighValue(store, attesterId, entryId, spec = {}) {
+  const attester = await store.get(attesterId);
+  if (!attester) return fail('Unknown peer.');
+  let record = (attester.highValue || []).find((row) => row.id === entryId) || null;
+  if (!record) {
+    for (const id of await store.listIds()) {
+      const peer = await store.get(id);
+      record = (peer?.highValue || []).find((row) => row.id === entryId) || record;
+    }
+  }
+  if (!record) return fail('That entry is not pending.');
+  const added = await addAttestation(record, { ...spec, handle: attesterId });
+  if (!added.ok) return added;
+  await mirrorHigh(store, attester, added.record, added.record.fromId);
+  await mirrorHigh(store, attester, added.record, added.record.toId);
+  await store.set(attesterId, attester);
+  return {
+    ok: true,
+    ready: added.ready,
+    count: added.count,
+    note: ATTESTATION_NOTE,
+    hash: added.hash,
+    topic: added.topic,
+    pending: pendingCount(attester.highValue)
+  };
+}
+
+export async function withdrawHighValue(store, partyId, entryId) {
+  const party = await store.get(partyId);
+  const record = (party?.highValue || []).find((row) => row.id === entryId);
+  if (!record) return fail('That entry is not pending.');
+  const withdrawn = withdrawEntry(record, partyId);
+  if (!withdrawn.ok) return withdrawn;
+  await mirrorHigh(store, party, withdrawn.record, record.fromId === partyId ? record.toId : record.fromId);
+  await store.set(partyId, party);
+  return { ok: true, status: 'withdrawn', pending: pendingCount(party.highValue) };
+}
+
+export function suggestedAttester(members, fromId, toId) {
+  return suggestThird(members, { id: fromId, clubGroups: members.find((peer) => peer.id === fromId)?.clubGroups }, { id: toId, clubGroups: members.find((peer) => peer.id === toId)?.clubGroups });
+}
+
 async function writeDeed(store, actor, ids, type, payload, at) {
   const seen = new Set();
   for (const id of [actor.id, ...ids]) {
@@ -1082,6 +1139,26 @@ export async function attestDeedReceipt(store, peerId, postId, spec = {}) {
       return fail(blocked);
     }
   }
+  const usd = Number(post.unit?.valueUsd) || 0;
+  const hold = usd > 0 ? evaluateHold(actor.highValue || [], { id: postId, fromId: buyerId, toId: providerId, kind: 'usd', amount: usd, at }) : { ok: true, pending: false };
+  if (!hold.ok) {
+    releaseLockedKey(actor);
+    await store.set(peerId, actor);
+    return fail(hold.error);
+  }
+  if (hold.pending) {
+    const suggestion = suggestThird(spec.members || [], buyer, provider);
+    const record = { ...hold.record, suggestion: suggestion.text };
+    saveHigh(buyer, record);
+    saveHigh(provider, record);
+    for (const peer of [buyer, provider]) {
+      peer.deedPosts = peer.deedPosts || {};
+      peer.deedPosts[postId] = { ...post, status: 'pending-attestation', receiptName: RECEIPT_NAME, attestationNote: ATTESTATION_NOTE, attestationCount: hold.count || 0, suggestion: suggestion.text };
+      if (peer.wallet?.ciphertext) releaseLockedKey(peer);
+      await store.set(peer.id, peer);
+    }
+    return { ok: true, pending: true, note: ATTESTATION_NOTE, count: hold.count || 0, suggestion: suggestion.text, receiptName: RECEIPT_NAME };
+  }
   const attested = {
     entryId: `attest:${postId}`,
     postId,
@@ -1131,6 +1208,13 @@ export async function attestDeedReceipt(store, peerId, postId, spec = {}) {
     };
     await appendEntry(provider, 'SUBFLOOR_PAYOUT', payout, at);
     await appendEntry(buyer, 'SUBFLOOR_PAYOUT', payout, at);
+  }
+  if (usd > 0) {
+    const cleared = hold.record ? { ...hold.record, status: 'cleared' } : {
+      id: postId, pair: [buyerId, providerId].sort().join('|'), fromId: buyerId, toId: providerId, usd, kind: 'usd', amount: usd, price: Number(post.unit?.priceUsdPerLgme) || 0, at, status: 'cleared', attestations: []
+    };
+    saveHigh(buyer, cleared);
+    saveHigh(provider, cleared);
   }
   for (const peer of books) {
     if (peer.wallet?.ciphertext) releaseLockedKey(peer);
@@ -3343,6 +3427,31 @@ export async function acceptExerciseSupport(store, authorId, supportId, spec = {
   const at = spec.at || nowIso();
   const beforeAuthor = replay(author).balance;
   const beforeGiver = replay(giver).balance;
+  const priceUsd = Number(spec.priceUsd) || 0;
+  if (offer.kind === 'contribute-lgme' && !(priceUsd > 0) && offer.amount > 100) {
+    releaseLockedKey(author);
+    await store.set(authorId, author);
+    return fail('Store the GeckoTerminal price for this $lgme entry.');
+  }
+  if (offer.kind === 'contribute-credit' || (offer.kind === 'contribute-lgme' && priceUsd > 0)) {
+    const valueKind = offer.kind === 'contribute-credit' ? 'credit' : 'lgme';
+    const hold = evaluateHold(author.highValue || [], { id: supportId, fromId: giver.id, toId: author.id, kind: valueKind, amount: offer.amount, price: priceUsd, at });
+    if (!hold.ok) {
+      releaseLockedKey(author);
+      await store.set(authorId, author);
+      return fail(hold.error);
+    }
+    if (hold.pending) {
+      const suggestion = suggestThird(spec.members || [], giver, author);
+      const record = { ...hold.record, suggestion: suggestion.text, price: priceUsd };
+      saveHigh(author, record);
+      saveHigh(giver, record);
+      releaseLockedKey(author);
+      await store.set(authorId, author);
+      await store.set(giver.id, giver);
+      return { ok: true, pending: true, note: ATTESTATION_NOTE, count: hold.count || 0, suggestion: suggestion.text };
+    }
+  }
   if (offer.kind === 'contribute-lgme') {
     const blocked = floorBlockReason(giver, round2(beforeGiver - offer.amount));
     if (blocked) {
@@ -3373,6 +3482,18 @@ export async function acceptExerciseSupport(store, authorId, supportId, spec = {
   const accepted = { ...offer, status: 'accepted' };
   author.exerciseSupports[supportId] = accepted;
   giver.exerciseSupports[supportId] = accepted;
+  if (offer.kind === 'contribute-credit' || (offer.kind === 'contribute-lgme' && priceUsd > 0)) {
+    const valueKind = offer.kind === 'contribute-credit' ? 'credit' : 'lgme';
+    const usd = valueKind === 'credit' ? offer.amount : Math.round(offer.amount * priceUsd * 100) / 100;
+    const prior = (author.highValue || []).find((row) => row.id === supportId);
+    if (usd > 0) {
+      const cleared = prior ? { ...prior, status: 'cleared' } : {
+        id: supportId, pair: [giver.id, author.id].sort().join('|'), fromId: giver.id, toId: author.id, usd, kind: valueKind, amount: offer.amount, price: priceUsd, at, status: 'cleared', attestations: []
+      };
+      saveHigh(author, cleared);
+      saveHigh(giver, cleared);
+    }
+  }
   releaseLockedKey(author);
   await store.set(authorId, author);
   await store.set(giver.id, giver);
@@ -3569,6 +3690,32 @@ export async function supportWisdom(store, supporterId, submissionId, spec = {})
     authorShare = split.author;
     lgmeAmount = split.amount;
   }
+  const priceUsd = Number(spec.priceUsd) || (kind === 'lgme' ? Number(spec.lgmePrice) : 0);
+  const valueKind = kind === 'credit' ? 'credit' : kind === 'usd' && !(Number(spec.lgmePrice) > 0) ? 'usd' : kind === 'barter' ? '' : 'lgme';
+  const valueAmount = valueKind === 'lgme' ? (lgmeAmount || Number(spec.amount)) : Number(spec.amount);
+  if (valueKind === 'lgme' && !(priceUsd > 0) && valueAmount > 100) {
+    releaseLockedKey(supporter);
+    await store.set(supporterId, supporter);
+    return fail('Store the GeckoTerminal price for this $lgme entry.');
+  }
+  if (valueKind && !(valueKind === 'lgme' && !(priceUsd > 0))) {
+    const hold = evaluateHold(supporter.highValue || [], { id: `wisdom:${submissionId}:${at}`, fromId: supporterId, toId: author.id, kind: valueKind, amount: valueAmount, price: priceUsd, at });
+    if (!hold.ok) {
+      releaseLockedKey(supporter);
+      await store.set(supporterId, supporter);
+      return fail(hold.error);
+    }
+    if (hold.pending) {
+      const suggestion = suggestThird(spec.members || [], supporter, author);
+      const record = { ...hold.record, suggestion: suggestion.text, price: priceUsd };
+      saveHigh(supporter, record);
+      saveHigh(author, record);
+      releaseLockedKey(supporter);
+      await store.set(supporterId, supporter);
+      await store.set(author.id, author);
+      return { ok: true, pending: true, note: ATTESTATION_NOTE, count: hold.count || 0, suggestion: suggestion.text, creditMinted: false };
+    }
+  }
   const supportId = await sha256(canonicalJSON({ supporterId, submissionId, kind, amount, at }));
   const payload = {
     entryId: `wisdom:${supportId}`,
@@ -3595,6 +3742,17 @@ export async function supportWisdom(store, supporterId, submissionId, spec = {})
   }
   await appendEntry(supporter, 'WISDOM_SUPPORT', payload, at);
   if (author.privateKeyJwk || author.signingKey) await appendEntry(author, 'WISDOM_SUPPORT', payload, at);
+  if (valueKind) {
+    const holdId = `wisdom:${submissionId}:${at}`;
+    const prior = (supporter.highValue || []).find((row) => row.id === holdId);
+    const cleared = prior ? { ...prior, status: 'cleared', price: priceUsd } : {
+      id: holdId, pair: [supporterId, author.id].sort().join('|'), fromId: supporterId, toId: author.id, usd: valueKind === 'lgme' ? Math.round(valueAmount * priceUsd * 100) / 100 : valueAmount, kind: valueKind, amount: valueAmount, price: priceUsd, at, status: 'cleared', attestations: []
+    };
+    if (cleared.usd > 0) {
+      saveHigh(supporter, cleared);
+      saveHigh(author, cleared);
+    }
+  }
   releaseLockedKey(supporter);
   await store.set(supporterId, supporter);
   await store.set(author.id, author);
@@ -5268,6 +5426,21 @@ export async function payInvoice(store, payerId, invoiceId, spec = {}) {
   if (!online.ok) return fail(online.error);
   const beforePayer = replay(payer).balance;
   const beforeWorker = replay(worker).balance;
+  const priceUsd = Number(spec.priceUsd) || 0;
+  if (!(priceUsd > 0) && figure > 100) return fail('Store the GeckoTerminal price for this $lgme entry.');
+  if (priceUsd > 0) {
+    const hold = evaluateHold(payer.highValue || [], { id: invoiceId, fromId: payerId, toId: invoice.workerId, kind: 'lgme', amount: figure, price: priceUsd, at });
+    if (!hold.ok) return fail(hold.error);
+    if (hold.pending) {
+      const suggestion = suggestThird(spec.members || [], payer, worker);
+      const record = { ...hold.record, suggestion: suggestion.text, price: priceUsd };
+      saveHigh(payer, record);
+      saveHigh(worker, record);
+      await store.set(payerId, payer);
+      await store.set(worker.id, worker);
+      return { ok: true, pending: true, paid: false, note: ATTESTATION_NOTE, count: hold.count || 0, suggestion: suggestion.text };
+    }
+  }
   const paymentId = await sha256(canonicalJSON({ invoiceId, amount: figure, at }));
   const paid = {
     simulated: true,
@@ -5309,6 +5482,17 @@ export async function payInvoice(store, payerId, invoiceId, spec = {}) {
     receiptId: invoice.receiptId
   }, at);
   await appendEntry(freshWorker, 'INVOICE_PAID', paid, at);
+  if (priceUsd > 0) {
+    const usd = Math.round(figure * priceUsd * 100) / 100;
+    const prior = (payer.highValue || []).find((row) => row.id === invoiceId);
+    const cleared = prior ? { ...prior, status: 'cleared' } : {
+      id: invoiceId, pair: [payerId, invoice.workerId].sort().join('|'), fromId: payerId, toId: invoice.workerId, usd, kind: 'lgme', amount: figure, price: priceUsd, at, status: 'cleared', attestations: []
+    };
+    const persisted = await store.get(payerId);
+    saveHigh(persisted, cleared);
+    saveHigh(freshWorker, cleared);
+    await store.set(payerId, persisted);
+  }
   let reward = 0;
   const remaining = round2(invoice.remaining - figure);
   if (remaining <= 0) {
@@ -6303,6 +6487,24 @@ export async function attestOffchainPayment(store, payeeId, spec = {}) {
   if (source.payeeId && source.payeeId !== payeeId) return fail('This payment is for a different payee.');
   if (source.invoiceId && spec.invoiceId && source.invoiceId !== spec.invoiceId) return fail(OFFCHAIN_DOUBLE);
   const before = replay(payee).balance;
+  const usdAmount = Number(source.amount) || 0;
+  if (usdAmount > 0) {
+    const hold = evaluateHold(payee.highValue || [], { id: paymentId, fromId: source.payerId, toId: payeeId, kind: 'usd', amount: usdAmount, at });
+    if (!hold.ok) return fail(hold.error);
+    if (hold.pending) {
+      const payerPeer = await store.get(source.payerId);
+      const suggestion = suggestThird(spec.members || [], payerPeer || { id: source.payerId }, payee);
+      const record = { ...hold.record, suggestion: suggestion.text };
+      saveHigh(payee, record);
+      const payer = await store.get(source.payerId);
+      if (payer) {
+        saveHigh(payer, record);
+        await store.set(payer.id, payer);
+      }
+      await store.set(payeeId, payee);
+      return { ok: true, pending: true, status: 'pending-attestation', note: ATTESTATION_NOTE, count: hold.count || 0, suggestion: suggestion.text, unchanged: true };
+    }
+  }
   const payload = { ...source, status: 'pending-attestation', role: 'payee', payeeId, payerId: source.payerId, penalty: false };
   await appendEntry(payee, 'OFFCHAIN_TX', payload, at);
   if (payee.offchainPending) delete payee.offchainPending[paymentId];
@@ -6311,6 +6513,28 @@ export async function attestOffchainPayment(store, payeeId, spec = {}) {
   const status = offchainStatus(after, paymentId);
   if (status === 'settled') await finalizeOffchain(store, payload, at);
   const fresh = await store.get(payeeId);
+  if (status === 'settled' && usdAmount > 0) {
+    const cleared = {
+      id: paymentId,
+      pair: [payload.payerId, payeeId].sort().join('|'),
+      fromId: payload.payerId,
+      toId: payeeId,
+      usd: usdAmount,
+      kind: 'usd',
+      amount: usdAmount,
+      price: 0,
+      at,
+      status: 'cleared',
+      attestations: []
+    };
+    saveHigh(fresh, cleared);
+    await store.set(payeeId, fresh);
+    const payer = await store.get(payload.payerId);
+    if (payer) {
+      saveHigh(payer, cleared);
+      await store.set(payer.id, payer);
+    }
+  }
   const sealed = await sealMessage(fresh, 'offchain', { ...payload, status });
   return {
     ok: true,

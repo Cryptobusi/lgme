@@ -1311,6 +1311,8 @@ function covenantPanel(peer, members = []) {
   host.append(el('label', { class: 'check' }, [reports, 'Allow sponsor credit reports']));
   host.append(el('label', { class: 'check' }, [healthRows, 'Include health data in sponsor reports']));
   host.append(el('p', { class: 'muted' }, ['Health stays out unless you check it. It is never written to Hedera.']));
+  host.append(el('p', { id: 'attestation-rule' }, ['Needs 3 attestations (over $100). Suggested third attester: group administrator.']));
+  host.append(el('p', { id: 'attestation-count' }, [`Pending attestations: ${(peer.highValue || []).filter((row) => row.status === 'pending').length}.`]));
   host.append(el('button', { type: 'button', onClick: async () => {
     const result = await sim.createListing(store, peer.id, {});
     status(result.error || 'Listed.');

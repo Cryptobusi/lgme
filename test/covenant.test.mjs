@@ -36,7 +36,7 @@ test('the committed covenant file is the charter text', () => {
   assert.equal(sections.articles.includes('Article 12'), true);
   assert.equal(sections.section2.startsWith('Section 2:'), true);
   assert.equal(COVENANT_TITLE, 'How this applies in the Health community (draft clarifications, pending owner approval)');
-  assert.equal(CLARIFICATIONS.length, 12);
+  assert.equal(CLARIFICATIONS.length, 13);
   assert.equal(CLARIFICATIONS[8].startsWith('Fitness coaching/personal training'), true);
   assert.equal(CLARIFICATIONS[11], 'If only one offering passes, the member gets Tier-0 rather than rejection.');
   assert.equal(text.includes(COVENANT_TITLE), false);

@@ -567,6 +567,11 @@ function showOffchainPay(spec) {
   document.body.append(overlay);
 }
 
+function pendingCountFor(peer, id) {
+  const row = (peer?.highValue || []).find((item) => item.id === id && item.status === 'pending');
+  return row ? (row.attestations || []).length : (peer?.highValue || []).filter((item) => item.status === 'pending').length;
+}
+
 function printReceipt(receipt) {
   const view = window.open('', 'lgme-receipt');
   if (!view) { setStatus('Allow a window to print the receipt. Beta.', 'bad'); return; }
@@ -587,6 +592,7 @@ function printReceipt(receipt) {
   add('p', `Statutory fees / notes: ${receipt.statutoryFees || ''}`);
   add('p', sim.FIAT_FEE_NOTE);
   add('p', 'Zelle and cash are not reversible-protected. This app does not process them.');
+  if (Number(receipt.amount) > 100) add('p', 'Needs 3 attestations (over $100).');
   view.focus();
   view.print();
 }
@@ -1050,11 +1056,14 @@ async function goodDeedPanel(peers, me) {
       unixSeconds: Math.floor(Date.now() / 1000)
     });
     if (!result.ok) { setStatus(result.error, 'bad'); return; }
+    const over = Number(list.value) > 100;
     const note = result.donationRequest
       ? 'A zero price became a donation request for the locked unit.'
       : result.discountPaused
         ? 'Discount paused. The category pool is empty, so the main floor is not used.'
-        : 'Deed posted. The unit US$ is locked. A payout waits for both signatures.';
+        : over
+          ? 'Deed posted. Needs 3 attestations (over $100). Suggested third attester: group administrator. A payout waits for both parties and those three signatures.'
+          : 'Deed posted. The unit US$ is locked. A payout waits for both signatures.';
     setStatus(note, 'ok');
     await render();
   });
@@ -1063,6 +1072,7 @@ async function goodDeedPanel(peers, me) {
     : [h('p', { class: 'legend' }, ['No category pool yet. A sale skims 1%. Donations fill the rest.'])];
   return h('section', { id: 'good-deeds-desk' }, [
     h('h3', {}, ['Good deeds']),
+    h('p', { class: 'legend', id: 'attestation-rule' }, ['Needs 3 attestations (over $100). At or below that, both parties still confirm. Suggested third attester: group administrator. Pending attestations are counted, not ranked.']),
     h('p', { class: 'legend' }, ['Each deed locks its own US$ value. The buyer pays the price. The provider receives 99%. One percent fills that category’s pool, under the main floor. Not written to Hedera.']),
     h('p', {}, [h('a', { href: '/good-deeds' }, ['Every good deed deserves another'])]),
     ...rows,
@@ -1699,6 +1709,8 @@ async function renderBooks(peers, seat) {
     }
     return h('article', { class: 'card', id: row.role === 'AR' ? 'invoice-ar' : 'invoice-ap' }, [
       h('h3', {}, [`IdidIt (verified receipt) · ${row.role} · ${row.status} · ${row.amount} $lgme`]),
+      Number(row.amount) > 100 ? h('p', { id: 'attestation-count' }, [`Needs 3 attestations (over $100). Pending attestations: ${pendingCountFor(peer, row.invoiceId)}.`]) : null,
+      Number(row.amount) > 100 ? h('p', {}, ['Suggested third attester: group administrator']) : null,
       h('p', { class: 'muted' }, [`Paid ${row.paid}. Remaining ${row.remaining}. Bucket ${row.bucket}. Due ${String(row.dueAt).slice(0, 10)}. Phone ${row.payerPhone}. Hash ${String(row.payerKycHash || '').slice(0, 12)}.`]),
       h('p', { class: 'legend' }, [`Day root ${dayRoot.slice(0, 16)}. Not written to Hedera.`]),
       row.thanks ? h('p', { class: 'legend' }, [row.thanks]) : null,
