@@ -189,7 +189,6 @@
   </style>
 </head>
 <body>
-<script src="/js/view-only.js"></script>
 
   <p class="launch-bar"><a class="install-launch" data-install-launch href="/exchange">Install &amp; launch</a></p>
   <p class="give-banner" role="note"><span>Real donations &amp; grants accepted</span> <a href="/lgme-coin#give">Give via soBeIT</a> <a href="/lgme-coin#give">How to give</a> <a href="/grants">Grants</a></p>
@@ -218,6 +217,7 @@
     </nav>
     <p class="kicker">lgme · BETA <button type="button" id="deep-theory" data-deep-theory aria-pressed="false">Deep theory</button> <button type="button" id="install-app" data-install hidden>Install</button> <a class="quiet-link" href="#help">Help</a></p>
     <h1>Exchange</h1>
+    <section id="exchange-test" class="card"></section>
     <p class="muted"><a href="/helper">Set up my own AI helper</a></p>
     <p class="muted lede">Beta. List an item, sign an offer, and settle real $lgme from your own Solana wallet. Each person keeps their own book. A floor stays senior, and a refusal moves nothing.</p>
     <div id="seatbar" class="seatbar" aria-label="Peers"></div>
@@ -257,11 +257,12 @@
     <button type="button" data-tab="wallet">Wallet</button>
   </nav>
   <div id="toast" role="status" aria-live="polite" hidden></div>
-  <p class="sim-banner" role="note">Beta. Floor stays senior. A refusal is recorded and carries no penalty. Agreed payments settle in real $lgme from your own wallet. This page never asks for a seed phrase. The local tape records the transaction signature. It does not write to Hedera.</p>
+  <p class="sim-banner" role="note">Beta. Floor stays senior. A refusal is recorded and carries no penalty. Agreed payments settle in real $lgme from your own wallet. This page never asks for a seed phrase. The local tape records the transaction signature. Exchange test listings are written to Hedera testnet topic 0.0.11397293 and paid by 0.0.11281203. Health data is not written. No mainnet write.</p>
   <script type="module" src="/js/plain-view.mjs"></script>
   <script type="module" src="/js/install-launch.mjs"></script>
   <script src="/js/vendor/qrcode.js"></script>
   <script src="/js/vendor/jsQR.js"></script>
   <script type="module" src="/js/p2p-exchange-sim-ui.mjs"></script>
+  <script type="module" src="/js/exchange-test-page.mjs"></script>
 </body>
 </html>

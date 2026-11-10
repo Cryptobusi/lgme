@@ -1,6 +1,7 @@
 import { merkleRootOf } from './clearing.mjs';
 import { anchorMessage, hashscanMessage, hederaReadiness, topicAllowed } from './hedera-anchor-core.mjs';
 import { testnetOperatorKey } from './hedera-operator.mjs';
+import { LISTINGS_OPERATOR, LISTINGS_TOPIC } from './exchange-listing.mjs';
 
 const memory = [];
 
@@ -68,6 +69,36 @@ export async function submitLeaves(env, leaves, day) {
     sequenceNumber: sequence,
     consensusTimestamp: record.consensusTimestamp?.toString?.() || '',
     root,
+    hashscan: hashscanMessage(topic.topicId, sequence)
+  };
+}
+
+export async function submitPaidListing(env, message) {
+  const ready = hederaReadiness(env);
+  if (!ready.enabled) return { ok: false, enabled: false, wording: ready.wording };
+  const operatorId = String(env.HEDERA_TESTNET_OPERATOR_ID || '').trim();
+  if (operatorId !== LISTINGS_OPERATOR) return { ok: false, error: 'Listings are paid by the confirmed testnet operator.' };
+  const topic = topicAllowed(LISTINGS_TOPIC);
+  if (!topic.ok) return topic;
+  const sdk = await import('@hashgraph/sdk');
+  const client = sdk.Client.forTestnet();
+  const operator = await testnetOperatorKey(sdk, env);
+  client.setOperator(sdk.AccountId.fromString(operatorId), operator);
+  const submitted = await new sdk.TopicMessageSubmitTransaction({
+    topicId: topic.topicId,
+    message: typeof message === 'string' ? message : JSON.stringify(message)
+  }).execute(client);
+  const record = await submitted.getRecord(client);
+  const sequence = record.receipt.topicSequenceNumber.toString();
+  const transactionId = submitted.transactionId?.toString?.() || record.transactionId?.toString?.() || '';
+  return {
+    ok: true,
+    network: 'testnet',
+    topicId: topic.topicId,
+    payer: operatorId,
+    transactionId,
+    sequenceNumber: sequence,
+    consensusTimestamp: record.consensusTimestamp?.toString?.() || '',
     hashscan: hashscanMessage(topic.topicId, sequence)
   };
 }
