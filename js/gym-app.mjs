@@ -969,15 +969,18 @@ function covenantPanel(peer) {
   if (!peer?.covenant) return null;
   const host = el('section', { class: 'card', id: 'covenant-member' });
   host.append(el('p', { id: 'intake-status' }, [intakeStatusText(peer.intake?.status)]));
-  host.append(el('p', { id: 'sponsor-status' }, [sponsorStatus(peer.covenant)]));
+  const tierOpen = peer.intake?.status === 'Tier-0' || peer.intake?.status === 'Tier-1';
+  if (!tierOpen) host.append(el('p', { id: 'sponsor-status' }, [sponsorStatus(peer.covenant)]));
   if (peer.intake?.status === 'Revise') {
     host.append(el('p', {}, [(peer.intake.notes || []).join(' ')]));
     host.append(el('button', { type: 'button', onClick: () => go('/intake') }, ['Edit intake']));
   }
+  if (peer.intake?.status === 'Tier-1') host.append(el('p', {}, ['Negative line is -50.']));
+  if (peer.intake?.status === 'Tier-0') host.append(el('p', {}, ['No negative line until 25 units are earned.']));
   if (peer.intake?.status === 'paused') host.append(el('p', {}, [(peer.intake.notes || []).join(' ')]));
   if (peer.intake?.reviewHash) host.append(el('p', { class: 'muted' }, [`Review hash ${peer.intake.reviewHash}`]));
   if (peer.intake?.reviewAnchor?.hashscan) host.append(el('p', {}, [el('a', { href: peer.intake.reviewAnchor.hashscan, target: '_blank', rel: 'noopener noreferrer' }, ['HashScan testnet'])]));
-  if ((peer.covenant.sponsors || []).length < 2) {
+  if (!tierOpen && (peer.covenant.sponsors || []).length < 2) {
     const link = `${location.origin}/gym#/sponsor/${peer.covenant.token}`;
     host.append(el('p', {}, ['Request 2 sponsors. Share this link or QR. A sponsor confirms in the app.']));
     host.append(el('p', {}, [el('a', { id: 'sponsor-link', href: `#/sponsor/${peer.covenant.token}` }, [link])]));
