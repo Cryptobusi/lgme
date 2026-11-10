@@ -34,7 +34,7 @@ const text = (path) => readFileSync(join(root, path), 'utf8');
 const UNTOUCHED = {
   'exchange.html': '73f99d5bec0358613996645471955d033c48f650c5a3b6aaa06a33e8a074bfce',
   'js/p2p-exchange-sim.mjs': 'd3e6f42f71866809a44b9447d0540dc8f5df144939df6b520a16dc157b56bd9b',
-  'js/p2p-exchange-sim-ui.mjs': '49ab72673fe2df979ae8b9e63052d453ca5bcedf452e278c0d376513e2bdfe51',
+  'js/p2p-exchange-sim-ui.mjs': 'b739df5fd52380dd6b3c335147ef0a75b9cf1382b8039efaa25f52188a0a0bab',
   'js/solana-pay.mjs': '7c0a183c3e7f56667e3cd3b1f7482c13d3fab41b77078e0c30c3157277df7d94',
   'campus.html': '8d6c507276fb71393fd23538139a48e3399c5081f31f75df1f5f5cc12f1879e9',
   'js/campus-page.mjs': 'dfff943e00078fc8efc965d9f608b56c47d181d8fada9bd3060bb231566738ba',

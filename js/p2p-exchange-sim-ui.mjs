@@ -4514,7 +4514,7 @@ function showSplash() {
 }
 
 const WALK = [
-  ['Beta', 'This desk settles agreed $lgme from your own Solana wallet. It does not hold a seed phrase, write to Hedera, or send text or email. You send a draft yourself, from your own app, if you want to.'],
+  ['Beta', 'This desk settles agreed $lgme from your own Solana wallet. It does not hold a seed phrase or send email. Exchange test listings are written to Hedera testnet topic 0.0.11397293 and paid by 0.0.11281203. You confirm a draft before it is posted.'],
   ['Separate books', 'Alice, Bob, and Charlie each keep their own tape. On one device you switch seats. On two devices you carry a signed message. There is no central ledger.'],
   ['Floor · basic needs reserve', 'Food, shelter, and essentials secured prior to speculative spending. A line that would spend that reserve is blocked and the block stays on the tape.'],
   ['Third Seat · arbiter who can veto', 'The $lgme self-regulating nonprofit arbiter, a check on the State and Floor seats. In a deal the Third Seat is the arbiter who can veto. Nothing moves. There is no penalty.'],
