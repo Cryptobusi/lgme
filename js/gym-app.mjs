@@ -12,7 +12,7 @@ import { BOARD_NOTE, PROGRESS_KINDS, boardCards, chooseProgress, manualEntry, pr
 import { communityFeed } from './gym-feed.mjs';
 import { OPT_IN_COPY, answerLocal, deleteDownloadedModel, detectEngine, isOn, setOn, unloadLocalModel } from './local-ai.mjs';
 import { EMAIL_WAITING, joinEmailDone, saveEmailSession } from './health-email.mjs';
-import { FALLBACK_LABEL, HEALTH_PLANS, PLAN_ORDER, draftPlan, saveConfirmedPlan } from './health-plan.mjs';
+import { personalizeView, personalPageView, recallPage } from './health-page.mjs';
 import { STARTERS, agentNotice, deleteAgent, dueAgents, editAgent, listAgents, markFired, needsPermission, pauseAgent, saveAgent, scheduleNote } from './local-agents.mjs';
 import { CLARIFICATIONS, COVENANT_TITLE, FIELD_LABELS, covenantHash, covenantSections, covenantText, exitReceipt, openCommitments, publicCovenant, signSponsor, sponsorStatus, velocityNote } from './covenant.mjs';
 import { LEGACY_TOPIC, TESTNET_TOPIC, creditReport, mirrorMatch, sponsorshipReady } from './sponsor-report.mjs';
@@ -1852,53 +1852,6 @@ async function renderDispute() {
   ]);
 }
 
-async function launchPlan(id, note, host) {
-  host.replaceChildren(el('p', {}, ['Drafting on this phone…']));
-  const prompt = note.value.trim() || HEALTH_PLANS[id].prompt;
-  const custom = prompt !== HEALTH_PLANS[id].prompt;
-  let shown = draftPlan(id, custom ? 'your edited prompt' : '');
-  if (detectEngine(globalThis).id !== 'rules') {
-    try {
-      const result = await answerLocal({ question: `${prompt}\n\nDraft only. Do not send it.` });
-      if (result.engine !== 'rules' && result.text) {
-        shown = { ...shown, label: result.label, lines: result.text.split('\n').map((line) => line.trim()).filter(Boolean) };
-      }
-    } catch { /* the deterministic draft stays */ }
-  }
-  host.replaceChildren(
-    el('p', { class: 'kicker', id: `plan-label-${id}` }, [shown.label || FALLBACK_LABEL]),
-    el('h3', {}, [shown.title]),
-    ...shown.lines.map((line) => el('p', {}, [line])),
-    el('button', { type: 'button', id: `confirm-${id}`, onClick: () => {
-      saveConfirmedPlan(localStorage, { ...shown, note: note.value.trim() });
-      status('Confirmed on this phone. Nothing was sent.');
-    } }, ['Confirm this draft'])
-  );
-}
-
-async function renderPersonalize() {
-  const host = el('section', { id: 'personalize' }, [
-    el('h2', {}, ['Personalize my Health app']),
-    el('p', {}, ['Three drafts. The helper on this phone writes one. You confirm it. It only drafts and reminds. Nothing is sent. A workout still mints no credit.'])
-  ]);
-  for (const id of PLAN_ORDER) {
-    const plan = HEALTH_PLANS[id];
-    const note = el('textarea', { id: `plan-note-${id}`, maxlength: '400' });
-    note.value = plan.prompt;
-    const draft = el('article', { class: 'card', id: `plan-draft-${id}` });
-    host.append(el('section', { class: 'card', id: `plan-${id}` }, [
-      el('h3', {}, [plan.title]),
-      el('img', { id: `plan-image-${id}`, src: plan.image, alt: `${plan.title} personalized Health app`, width: '358' }),
-      el('pre', { id: `plan-prompt-${id}` }, [plan.prompt]),
-      el('label', {}, ['Prompt. You can edit it.', note]),
-      el('button', { type: 'button', class: 'primary', id: `use-${id}`, onClick: () => launchPlan(id, note, draft) }, ['Use this']),
-      draft
-    ]));
-  }
-  host.append(el('p', { id: 'gym-status', role: 'status' }, []));
-  return host;
-}
-
 async function render() {
   const path = route();
   const panel = document.getElementById('gym-panel');
@@ -1913,7 +1866,10 @@ async function render() {
   else if (path.startsWith('/sponsor/')) view = await renderSponsor(decodeURIComponent(path.slice('/sponsor/'.length)));
   else if (path === '/intake') view = await renderIntakeEdit();
   else if (path === '/dispute') view = await renderDispute();
-  else if (path === '/personalize') view = await renderPersonalize();
+  else if (path === '/personalize') {
+    const mine = await seat();
+    view = await personalizeView({ storage: localStorage, status, go, goals: goalsOfSeat(mine), memberId: mine?.id, peerStore: store });
+  } else if (path === '/page') view = await personalPageView({ storage: localStorage, status, go, mine: await seat(), signedGym, peerStore: store });
   else if (path === '/start' && registered && mode !== 'demo') view = await renderDashboard();
   else if (path === '/helper') view = await renderHelperHome();
   else if (path === '/register' || path === '/start' || (!registered && mode !== 'demo' && path === '/')) view = await renderRegister();
@@ -1945,6 +1901,10 @@ async function listBooks(book) {
   return rows;
 }
 
+function goalsOfSeat(peer) {
+  return [peer?.intake?.primary, peer?.intake?.secondary].filter(Boolean).join(' ');
+}
+
 async function boot() {
   const real = realStore();
   registered = await findRegistered(real);
@@ -1964,6 +1924,8 @@ async function boot() {
     seedDemoChat(localStorage);
     if (!seatId()) setSeat('jordan');
   }
+  const seated = seatId() || registered?.id;
+  if (seated && recallPage(localStorage, seated) && (route() === '/' || route() === '/me')) location.hash = '/page';
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw-gym.js', { scope: '/gym' }).catch(() => {});
   startAgentLoop();
   window.addEventListener('hashchange', () => { render(); });

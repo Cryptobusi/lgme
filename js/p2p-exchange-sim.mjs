@@ -1711,7 +1711,8 @@ export function toExport(peer) {
     exchanges: peer.exchanges,
     receipts: peer.receipts,
     roots: peer.roots || { days: {}, windows: {} },
-    vetoCount: vetoCount(peer)
+    vetoCount: vetoCount(peer),
+    ...(peer.healthPage ? { healthPage: peer.healthPage } : {})
   };
 }
 

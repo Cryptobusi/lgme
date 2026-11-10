@@ -47,20 +47,20 @@ function openDb() {
   });
 }
 
-export async function saveTilePhoto(blob) {
+export async function saveTilePhoto(blob, key = TILE_KEY) {
   const db = await openDb();
   await new Promise((resolve, reject) => {
-    const write = db.transaction(TILE_STORE, 'readwrite').objectStore(TILE_STORE).put(blob, TILE_KEY);
+    const write = db.transaction(TILE_STORE, 'readwrite').objectStore(TILE_STORE).put(blob, key);
     write.onsuccess = () => resolve();
     write.onerror = () => reject(write.error);
   });
   db.close();
 }
 
-export async function loadTilePhoto() {
+export async function loadTilePhoto(key = TILE_KEY) {
   const db = await openDb();
   const blob = await new Promise((resolve, reject) => {
-    const read = db.transaction(TILE_STORE).objectStore(TILE_STORE).get(TILE_KEY);
+    const read = db.transaction(TILE_STORE).objectStore(TILE_STORE).get(key);
     read.onsuccess = () => resolve(read.result || null);
     read.onerror = () => reject(read.error);
   });

@@ -38,6 +38,14 @@
     .progress-num { font-family:Newsreader,serif; font-size:2.6rem; line-height:1; margin:0.2rem 0; }
     .progress-card { border-color:var(--gold); }
     .covenant-scroll, .covenant-text { max-height:42vh; overflow:auto; white-space:pre-wrap; }
+    .plan-pick { display:flex; gap:0.7rem; overflow-x:auto; scroll-snap-type:x mandatory; }
+    .plan-card { min-width:86%; scroll-snap-align:start; }
+    .plan-card pre { white-space:pre-wrap; }
+    #personal-page.has-page-photo { background-size:cover; background-position:center; }
+    @media (min-width: 900px) {
+      .plan-pick { display:grid; grid-template-columns:1fr 1fr 1fr; overflow:visible; }
+      .plan-card { min-width:0; }
+    }
     input.short { width:12rem; display:inline-block; }
     .covenant-text input[type="checkbox"] { width:1.3rem; height:1.3rem; min-height:0; vertical-align:middle; }
     .table-wrap { overflow-x:auto; white-space:normal; }

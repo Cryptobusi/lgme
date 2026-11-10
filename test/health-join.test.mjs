@@ -94,5 +94,5 @@ test('the three Health drafts stay on the phone and do not rank anyone', () => {
   }
   assert.equal(EMAIL_WAITING.startsWith('Email sign-in is coming.'), true);
   for (const id of PLAN_ORDER) assert.equal(existsSync(join(root, `images/health-plan-${id}.png`)), true, id);
-  assert.equal(text('js/gym-app.mjs').includes('id: \'use-easy\'') || text('js/gym-app.mjs').includes('use-${id}'), true);
+  assert.equal(text('js/health-page.mjs').includes('use-${id}'), true);
 });
