@@ -12,6 +12,7 @@ import { publicExerciseItem } from './exercise-record.mjs';
 import { commonsSplit, deedCreditSplit } from './commons-split.mjs';
 import { publicWisdom, wisdomSplit } from './wisdom.mjs';
 import { listingMessage } from './shared-listings.mjs';
+import { circleGate } from './covenant.mjs';
 
 export { bilateralNet, clearingRules, clearingWindow, cycleNetStub, merkleProofFor, merkleRootOf, nextWindow, verifyMerkleProof };
 export { DEED_CATEGORIES, DEED_POST_TYPES, DEFAULT_SUBFLOOR_RULES, firstClaimCategory, floatedUnit, lockDeedUnit, planDeedPost, projectSubfloors, rankCategories, splitZeroProceeds };
@@ -860,6 +861,8 @@ async function writeDeed(store, actor, ids, type, payload, at) {
 export async function postDeed(store, peerId, spec = {}) {
   const peer = await store.get(peerId);
   if (!peer) return fail('Unknown peer.');
+  const gate = circleGate(peer, 'credit');
+  if (!gate.ok) return fail(gate.error);
   const rules = { ...DEFAULT_SUBFLOOR_RULES, ...(spec.rules || {}) };
   const category = String(spec.category || '').trim();
   const counterpartyId = String(spec.counterpartyId || '').trim();
@@ -3696,6 +3699,8 @@ function spendBlock(buyer, amount) {
 export async function createListing(store, sellerId, spec = {}) {
   const seller = await store.get(sellerId);
   if (!seller) return fail('Unknown peer.');
+  const gate = circleGate(seller, 'listing');
+  if (!gate.ok) return fail(gate.error);
   if (!seller.privateKeyJwk) return fail('Wallet is locked.');
   const photo = String(spec.photo || '');
   const photoHash = spec.photoHash || (photo ? await sha256(photo) : '');
@@ -5231,6 +5236,8 @@ function findInvoice(peer, invoiceId, at) {
 export async function payInvoice(store, payerId, invoiceId, spec = {}) {
   const payer = await store.get(payerId);
   if (!payer) return fail('Unknown peer.');
+  const gate = circleGate(payer, 'credit');
+  if (!gate.ok) return fail(gate.error);
   const at = spec.at || nowIso();
   const invoice = findInvoice(payer, invoiceId, at);
   if (!invoice) return fail('That invoice is not on this book.');
@@ -5254,8 +5261,8 @@ export async function payInvoice(store, payerId, invoiceId, spec = {}) {
   if (blocked) return fail(blocked);
   const worker = await store.get(invoice.workerId);
   if (!worker?.privateKeyJwk) return fail('The worker book is not on this device.');
-  const gate = assertOnline(spec.navigator);
-  if (!gate.ok) return fail(gate.error);
+  const online = assertOnline(spec.navigator);
+  if (!online.ok) return fail(online.error);
   const beforePayer = replay(payer).balance;
   const beforeWorker = replay(worker).balance;
   const paymentId = await sha256(canonicalJSON({ invoiceId, amount: figure, at }));

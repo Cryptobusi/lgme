@@ -1,5 +1,8 @@
 {
   "cleanUrls": true,
+  "rewrites": [
+    { "source": "/gym/covenant", "destination": "/gym-covenant.html" }
+  ],
   "redirects": [
     { "source": "/p2p-exchange-sim", "destination": "/exchange", "statusCode": 301 },
     { "source": "/p2p-exchange-sim.html", "destination": "/exchange", "statusCode": 301 },

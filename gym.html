@@ -37,14 +37,20 @@
     .chart svg { width:100%; height:auto; }
     .progress-num { font-family:Newsreader,serif; font-size:2.6rem; line-height:1; margin:0.2rem 0; }
     .progress-card { border-color:var(--gold); }
+    .covenant-scroll, .covenant-text { max-height:42vh; overflow:auto; white-space:pre-wrap; }
+    input.short { width:12rem; display:inline-block; }
+    .clarify { border-color:var(--gold); }
+    footer.gym-foot { padding:0 1rem 6rem; max-width:40rem; margin:0 auto; }
   </style>
 </head>
 <body>
 <header>
   <p class="kicker">lgme · Gym beta</p>
   <h1>Gym</h1>
+  <p class="muted"><a href="/gym/covenant">Member Covenant</a></p>
 </header>
 <main id="gym-panel"></main>
+<footer class="gym-foot"><a href="/gym/covenant">Member Covenant</a></footer>
 <nav aria-label="Gym">
   <button type="button" data-route="/">Club</button>
   <button type="button" data-route="/train">Train</button>
@@ -52,6 +58,7 @@
   <button type="button" data-route="/groups">Groups</button>
   <button type="button" data-route="/more">More</button>
 </nav>
+<script src="/js/vendor/qrcode.js"></script>
 <script type="module" src="/js/gym-app.mjs"></script>
 </body>
 </html>

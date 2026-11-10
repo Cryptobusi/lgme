@@ -12,6 +12,7 @@ import { BOARD_NOTE, PROGRESS_KINDS, boardCards, chooseProgress, manualEntry, pr
 import { communityFeed } from './gym-feed.mjs';
 import { OPT_IN_COPY, answerLocal, deleteDownloadedModel, detectEngine, isOn, setOn, unloadLocalModel } from './local-ai.mjs';
 import { STARTERS, agentNotice, deleteAgent, dueAgents, editAgent, listAgents, markFired, needsPermission, pauseAgent, saveAgent, scheduleNote } from './local-agents.mjs';
+import { CLARIFICATIONS, COVENANT_TITLE, FIELD_LABELS, circleGate, covenantHash, covenantSections, covenantText, exitReceipt, openCommitments, publicCovenant, signSponsor, sponsorStatus, velocityNote } from './covenant.mjs';
 
 let mode = localStorage.getItem(MODE_KEY) === 'demo' ? 'demo' : 'real';
 let store = mode === 'demo' ? demoStore() : realStore();
@@ -95,25 +96,7 @@ async function renderClub() {
   const panel = el('div', {}, [banner(), todayLine()]);
   panel.append(el('p', {}, ['A workout mints no credit. Support comes from another member, a barter, or the front desk. A $lgme gift keeps 5% for the Floor and 5% for the App development fund.']));
   if (!mine && mode === 'real') {
-    const name = el('input', { maxlength: '40', placeholder: 'Your name' });
-    const journey = el('input', { maxlength: '140', placeholder: 'My better tomorrow' });
-    panel.append(el('form', { onSubmit: async (event) => {
-      event.preventDefault();
-      const id = name.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 24);
-      const created = await sim.createPeer(store, { id, name: name.value.trim(), balance: 0, floor: 0, creditLimit: 0, at: new Date().toISOString() });
-      if (!created.ok) { status(created.error); return; }
-      const peer = await store.get(id);
-      peer.example = false;
-      peer.gymRole = 'member';
-      peer.gymProfile = { journey: journey.value.trim() || 'My better tomorrow.', healthNote: '', public: { journey: true, sessions: true, minutes: false, supports: false, credits: false } };
-      await store.set(id, peer);
-      setSeat(id);
-      go('/people/' + id);
-    } }, [
-      el('label', {}, ['Name', name]),
-      el('label', {}, ['My better tomorrow', journey]),
-      el('button', { type: 'submit', class: 'primary' }, ['Create my page'])
-    ]));
+    panel.append(el('p', {}, [el('a', { href: '#/register' }, ['Join Health'])]));
   } else if (mine) {
     panel.append(await renderBoard());
     panel.append(el('button', { type: 'button', class: 'primary', onClick: () => go('/train') }, ['Start a session']));
@@ -729,7 +712,48 @@ async function renderMore() {
   ]);
 }
 
-const signup = { step: 1, name: '', kinds: [] };
+const signup = { step: 1, name: '', kinds: [], agree: {}, primary: '', secondary: '', legalName: '', signature: '', date: new Date().toISOString().slice(0, 10) };
+let covenantRaw = '';
+
+async function covenantBody() {
+  if (!covenantRaw) {
+    const response = await fetch('/data/member-covenant.txt');
+    covenantRaw = await response.text();
+  }
+  return covenantText(covenantRaw);
+}
+
+function privateKey() {
+  return 'lgme.covenant.private';
+}
+
+function savePrivate(id, fields) {
+  const all = JSON.parse(localStorage.getItem(privateKey()) || '{}');
+  all[id] = { legalName: fields.legalName, signature: fields.signature };
+  localStorage.setItem(privateKey(), JSON.stringify(all));
+}
+
+function covenantFields(text) {
+  const host = el('div', { id: 'covenant-verbatim', class: 'covenant-text covenant-scroll' });
+  const parts = text.split('____');
+  const inputs = [];
+  parts.forEach((part, index) => {
+    host.append(document.createTextNode(part));
+    if (index >= parts.length - 1) return;
+    const field = el('input', { class: 'short', 'aria-label': FIELD_LABELS[index] || 'Field', autocomplete: 'off' });
+    if (index >= 5) field.disabled = true;
+    inputs.push(field);
+    host.append(field);
+  });
+  return { host, inputs };
+}
+
+function agreeBox(key, label) {
+  const input = el('input', { type: 'checkbox' });
+  input.checked = signup.agree[key] === true;
+  input.addEventListener('change', () => { signup.agree[key] = input.checked; });
+  return el('label', { class: 'check' }, [input, label]);
+}
 
 async function finishSignup(group) {
   if (group?.name && !/^[a-z0-9-]{4,24}$/.test(group.invite || '')) {
@@ -737,21 +761,27 @@ async function finishSignup(group) {
     return;
   }
   const id = signup.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 24);
-  const created = await sim.createPeer(store, { id, name: signup.name, balance: 0, floor: 0, creditLimit: 0, at: new Date().toISOString() });
+  const created = await sim.createPeer(store, { id, name: signup.name, balance: 0, floor: 0, creditLimit: -50, at: new Date().toISOString() });
   if (!created.ok) { status(created.error); return; }
   const chosen = chooseProgress({ kinds: signup.kinds });
   if (!chosen.ok) { status(chosen.error); return; }
+  const text = await covenantBody();
+  const token = crypto.randomUUID();
+  const hash = await covenantHash({ text, handle: id, date: signup.date, sponsors: [] });
   const peer = await store.get(id);
   peer.example = false;
   peer.gymRole = 'member';
   peer.gymProfile = { journey: 'My better tomorrow.', healthNote: '', public: { journey: true, sessions: false, minutes: false, supports: false, credits: false } };
   peer.gymProgress = chosen.progress;
+  peer.covenant = publicCovenant({ handle: id, date: signup.date, primary: signup.primary, secondary: signup.secondary, sponsors: [], hash, token, openedAt: new Date().toISOString(), anchor: null });
+  savePrivate(id, signup);
   await store.set(id, peer);
   if (group?.invite && group?.name) {
     await sim.createClubGroup(store, id, { name: group.name, invite: group.invite });
   } else if (group?.invite) {
     await sim.joinClubGroup(store, id, { invite: group.invite });
   }
+  await publishCovenant(await store.get(id), text);
   localStorage.setItem(MODE_KEY, 'real');
   localStorage.setItem('lgme.entry.category', 'health');
   registered = await store.get(id);
@@ -759,23 +789,108 @@ async function finishSignup(group) {
   go('/me');
 }
 
+async function publishCovenant(peer, text) {
+  try {
+    await fetch('/api/gym/covenant', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ action: 'request', ...publicCovenant(peer.covenant) })
+    });
+  } catch { /* the link still works on this phone */ }
+  try {
+    const statusResponse = await fetch('/api/hedera/status');
+    const ready = await statusResponse.json();
+    if (!ready.enabled) {
+      peer.covenant.anchor = { enabled: false, wording: 'Not written to Hedera today.' };
+      await store.set(peer.id, peer);
+      return;
+    }
+    const response = await fetch('/api/hedera/anchor', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ leaves: [peer.covenant.hash], day: peer.covenant.date, root: peer.covenant.hash })
+    });
+    const body = await response.json();
+    peer.covenant.anchor = body.ok ? { enabled: true, hashscan: body.hashscan, topicId: body.topicId, sequence: body.sequenceNumber } : { enabled: false, wording: body.wording || 'Not written to Hedera today.' };
+    await store.set(peer.id, peer);
+  } catch {
+    peer.covenant.anchor = { enabled: false, wording: 'Not written to Hedera today.' };
+  }
+  void text;
+}
+
 async function renderRegister() {
-  const box = el('section', {}, [
-    el('p', { class: 'kicker' }, [`Step ${signup.step} of 3`]),
-    el('h2', {}, ['Join Health'])
+  const box = el('section', { id: 'join-health' }, [
+    el('p', { class: 'kicker' }, [`Step ${signup.step} of 4`]),
+    el('h2', {}, ['Join Health']),
+    el('p', {}, [el('a', { href: '/gym/covenant' }, ['Member Covenant'])])
   ]);
   if (signup.step === 1) {
-    const name = el('input', { maxlength: '40', placeholder: 'Your name' });
-    name.value = signup.name;
-    box.append(el('label', {}, ['Name', name]));
+    const text = await covenantBody();
+    const sections = covenantSections(text);
+    if (!sections.ok) { box.append(el('p', {}, [sections.error])); return box; }
+    const fields = covenantFields(sections.section2);
+    const primary = fields.inputs[0];
+    const secondary = fields.inputs[1];
+    const legal = fields.inputs[2];
+    const signature = fields.inputs[3];
+    const date = fields.inputs[4];
+    primary.value = signup.primary;
+    secondary.value = signup.secondary;
+    legal.value = signup.legalName;
+    signature.value = signup.signature;
+    date.type = 'date';
+    date.value = signup.date;
+    box.append(el('section', { class: 'card' }, [
+      el('h3', {}, ['Preamble']),
+      el('div', { class: 'covenant-scroll' }, [sections.preamble]),
+      agreeBox('preamble', 'I agree to the Preamble')
+    ]));
+    box.append(el('section', { class: 'card' }, [
+      el('h3', {}, ['Articles 1–12']),
+      el('div', { class: 'covenant-scroll' }, [sections.articles]),
+      agreeBox('articles', 'I agree to Articles 1–12')
+    ]));
+    box.append(el('section', { class: 'card' }, [
+      el('h3', {}, ['Section 2']),
+      fields.host,
+      agreeBox('section2', 'I agree to Section 2')
+    ]));
+    const notes = el('section', { id: 'covenant-clarifications', class: 'card clarify' }, [
+      el('h3', {}, [COVENANT_TITLE]),
+      el('ol', {}, CLARIFICATIONS.map((point) => el('li', {}, [point]))),
+      agreeBox('health', 'I agree to the Health clarifications')
+    ]);
+    box.append(notes);
     box.append(el('button', { type: 'button', class: 'primary', onClick: () => {
-      const clean = name.value.trim();
-      if (clean.length < 2) { status('Add your name.'); return; }
-      signup.name = clean;
+      signup.primary = primary.value.trim();
+      signup.secondary = secondary.value.trim();
+      signup.legalName = legal.value.trim();
+      signup.signature = signature.value.trim();
+      signup.date = date.value;
+      if (!signup.agree.preamble || !signup.agree.articles || !signup.agree.section2 || !signup.agree.health) {
+        status('Agree to each section.');
+        return;
+      }
+      if (!signup.primary || !signup.legalName || !signup.signature || !signup.date) {
+        status('Add a primary offering, your legal name, a signature, and the date.');
+        return;
+      }
       signup.step = 2;
       render();
     } }, ['Next']));
   } else if (signup.step === 2) {
+    const name = el('input', { maxlength: '40', placeholder: 'Handle' });
+    name.value = signup.name;
+    box.append(el('label', {}, ['Handle. Other members see this. Your legal name stays on this phone.', name]));
+    box.append(el('button', { type: 'button', class: 'primary', onClick: () => {
+      const clean = name.value.trim();
+      if (clean.length < 2) { status('Add a handle.'); return; }
+      signup.name = clean;
+      signup.step = 3;
+      render();
+    } }, ['Next']));
+  } else if (signup.step === 3) {
     const boxes = PROGRESS_KINDS.map((kind) => {
       const input = el('input', { type: 'checkbox', value: kind.id });
       input.checked = signup.kinds.includes(kind.id);
@@ -787,7 +902,7 @@ async function renderRegister() {
       signup.kinds = boxes.map((label) => label.querySelector('input')).filter((input) => input.checked).map((input) => input.value);
       const chosen = chooseProgress({ kinds: signup.kinds });
       if (!chosen.ok) { status(chosen.error); return; }
-      signup.step = 3;
+      signup.step = 4;
       render();
     } }, ['Next']));
   } else {
@@ -803,6 +918,99 @@ async function renderRegister() {
   box.append(el('p', { id: 'gym-status', role: 'status' }, []));
   box.append(el('p', {}, [el('a', { href: '/?picker=1' }, ['All categories'])]));
   return box;
+}
+
+function covenantPanel(peer) {
+  if (!peer?.covenant) return null;
+  const host = el('section', { class: 'card', id: 'covenant-member' });
+  host.append(el('p', { id: 'sponsor-status' }, [sponsorStatus(peer.covenant)]));
+  if ((peer.covenant.sponsors || []).length < 2) {
+    const link = `${location.origin}/gym#/sponsor/${peer.covenant.token}`;
+    host.append(el('p', {}, ['Request 2 sponsors. Share this link or QR. A sponsor confirms in the app.']));
+    host.append(el('p', {}, [el('a', { id: 'sponsor-link', href: `#/sponsor/${peer.covenant.token}` }, [link])]));
+    const qr = el('div', { id: 'sponsor-qr' });
+    host.append(qr);
+    queueMicrotask(() => { if (globalThis.QRCode) new globalThis.QRCode(qr, { text: link, width: 160, height: 160 }); });
+    host.append(el('p', { class: 'muted' }, ['You can use private progress now. Listings and credit stay closed until 2 sponsors sign.']));
+  }
+  host.append(el('button', { type: 'button', onClick: async () => {
+    const result = await sim.createListing(store, peer.id, {});
+    status(result.error || 'Listed.');
+  } }, ['Post a listing']));
+  host.append(el('button', { type: 'button', onClick: async () => {
+    const result = await sim.postDeed(store, peer.id, {});
+    status(result.error || 'Posted.');
+  } }, ['Draw credit']));
+  host.append(el('p', { class: 'muted', id: 'covenant-hash' }, [`Covenant hash ${peer.covenant.hash}`]));
+  if (peer.covenant.anchor?.hashscan) host.append(el('p', {}, [el('a', { href: peer.covenant.anchor.hashscan, target: '_blank', rel: 'noopener noreferrer' }, ['HashScan testnet'])]));
+  else host.append(el('p', { class: 'muted' }, [peer.covenant.anchor?.wording || 'Not written to Hedera today.']));
+  const note = velocityNote(peer.balance, peer.covenant.openedAt);
+  if (note) {
+    host.append(el('p', {}, [note]));
+    host.append(el('button', { type: 'button', onClick: async () => {
+      peer.covenant.giftChoice = 'floor';
+      await store.set(peer.id, peer);
+      status('The gift choice is on this phone. The balance does not move by itself.');
+    } }, ['Gift surplus to the Floor']));
+  }
+  host.append(el('button', { type: 'button', onClick: () => {
+    const commitments = openCommitments(peer);
+    const receipt = exitReceipt({ handle: peer.id, balance: peer.balance, commitments, date: new Date().toISOString().slice(0, 10) });
+    host.append(el('pre', { id: 'exit-receipt' }, [`Balance ${Number(peer.balance || 0).toFixed(2)}. Open commitments: ${commitments.length ? commitments.join('; ') : 'none'}.\n${receipt}`]));
+  } }, ['Leave the Circle']));
+  host.append(el('p', { id: 'gym-status', role: 'status' }, []));
+  return host;
+}
+
+async function renderSponsor(token) {
+  const mine = await seat();
+  const peer = (await books()).find((row) => row.covenant?.token === token) || null;
+  if (!peer) {
+    let record = null;
+    try {
+      const response = await fetch(`/api/gym/covenant?token=${encodeURIComponent(token)}`);
+      const body = await response.json();
+      record = body.record || null;
+    } catch { record = null; }
+    if (!record) return el('p', {}, ['This sponsor link is not on this phone.']);
+    return el('section', {}, [
+      el('h2', {}, ['Sponsor a member']),
+      el('p', {}, [`${record.handle} asked for a sponsor on ${record.date}.`]),
+      el('p', { class: 'muted' }, ['The legal name stays on their phone.']),
+      el('button', { type: 'button', class: 'primary', onClick: () => signRemote(token, mine) }, ['Sign as sponsor']),
+      el('p', { id: 'gym-status', role: 'status' }, [])
+    ]);
+  }
+  return el('section', {}, [
+    el('h2', {}, ['Sponsor a member']),
+    el('p', {}, [`${peer.covenant.handle} asked for a sponsor on ${peer.covenant.date}.`]),
+    el('p', { class: 'muted' }, ['The legal name stays on their phone.']),
+    el('button', { type: 'button', class: 'primary', onClick: () => signLocal(peer) }, ['Sign as sponsor']),
+    el('p', { id: 'gym-status', role: 'status' }, [])
+  ]);
+}
+
+async function signLocal(peer) {
+  const mine = await seat();
+  if (!mine) { status('Join Health before you sponsor someone.'); return; }
+  const signed = signSponsor(peer.covenant, mine.id);
+  if (!signed.ok) { status(signed.error); return; }
+  const text = await covenantBody();
+  peer.covenant = { ...signed.record, hash: await covenantHash({ text, handle: peer.covenant.handle, date: peer.covenant.date, sponsors: signed.record.sponsors }) };
+  await store.set(peer.id, peer);
+  try {
+    await fetch('/api/gym/covenant', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'sign', token: peer.covenant.token, sponsorHandle: mine.id }) });
+  } catch { /* the signature stays on this phone */ }
+  if (peer.covenant.sponsors.length >= 2) publishCovenant(peer, text);
+  status(sponsorStatus(peer.covenant));
+  go('/me');
+}
+
+async function signRemote(token, mine) {
+  if (!mine) { status('Join Health before you sponsor someone.'); return; }
+  const response = await fetch('/api/gym/covenant', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'sign', token, sponsorHandle: mine.id }) });
+  const body = await response.json();
+  status(body.ok ? sponsorStatus(body.record) : (body.error || 'The sponsor signature was not saved.'));
 }
 
 async function renderDashboard() {
@@ -828,7 +1036,8 @@ async function renderDashboard() {
   const feed = communityFeed({ peers: feedPeers, viewer: mine, remoteCards: remote });
   const groups = Object.values(mine.clubGroups || {});
   const view = el('div', {}, [
-    el('p', {}, [el('a', { href: '/?picker=1' }, ['All categories'])]),
+    el('p', {}, [el('a', { href: '/?picker=1' }, ['All categories']), ' · ', el('a', { href: '/gym/covenant' }, ['Member Covenant'])]),
+    covenantPanel(mine),
     await renderProgress(mine, true),
     localAiCard(mine),
     el('h2', {}, ['Your groups']),
@@ -861,6 +1070,7 @@ async function render() {
   else if (path === '/train') view = await renderTrain();
   else if (path === '/groups') view = await renderGroups();
   else if (path === '/more') view = await renderMore();
+  else if (path.startsWith('/sponsor/')) view = await renderSponsor(decodeURIComponent(path.slice('/sponsor/'.length)));
   else if (path === '/register' || (!registered && mode !== 'demo' && path === '/')) view = await renderRegister();
   else if (registered && (path === '/' || path === '/me')) view = await renderDashboard();
   else view = await renderClub();
