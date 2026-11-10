@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0c100c" />
+  <title>Member Covenant</title>
+  <link rel="icon" href="/icons/gym-192.png" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600&family=Newsreader:opsz,wght@6..72,500&display=swap" />
+  <style>
+    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; --card:#151a15; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; font-size:1.05rem; line-height:1.45; }
+    header, main, footer { padding:1rem; max-width:40rem; margin:0 auto; }
+    h1,h2 { font-family:Newsreader,serif; font-weight:500; }
+    a { color:var(--fg); }
+    .kicker { margin:0; letter-spacing:0.14em; text-transform:uppercase; color:var(--gold); font-size:0.75rem; }
+    .covenant-text { white-space:pre-wrap; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:0.9rem 1rem; }
+    .covenant-text input.short { width:12rem; display:inline-block; min-height:44px; margin:0.2rem 0.2rem 0.2rem 0; font:inherit; color:var(--fg); background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:0.3rem 0.5rem; }
+    .clarify { margin-top:1.4rem; border:1px solid var(--gold); border-radius:14px; padding:0.9rem 1rem; background:#17140c; }
+    footer { padding-bottom:2rem; }
+  </style>
+</head>
+<body>
+<header>
+  <p class="kicker">lgme · Gym beta</p>
+  <h1>Member Covenant</h1>
+  <p><a href="/gym">Gym</a></p>
+</header>
+<main id="covenant-body"></main>
+<footer>
+  <a href="/gym/covenant">Member Covenant</a>
+</footer>
+<script type="module" src="/js/covenant-page.mjs"></script>
+</body>
+</html>
