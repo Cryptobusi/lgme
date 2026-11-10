@@ -4539,6 +4539,11 @@ function storeFlag(key) {
 function showSplash() {
   const splash = document.getElementById('splash');
   const video = document.getElementById('splash-video');
+  const installed = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  if (installed) {
+    if (splash) splash.hidden = true;
+    return Promise.resolve();
+  }
   if (!splash || storedFlag(SPLASH_SEEN)) {
     if (video) {
       video.pause();
@@ -4858,7 +4863,8 @@ bootVault().catch(() => {});
 
 Promise.all([loadReferences(), showSplash()]).then(async () => {
   await render();
-  if (!storedFlag(INTRO_SEEN)) showWalk(0);
+  const installedApp = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  if (!storedFlag(INTRO_SEEN) && !installedApp) showWalk(0);
 }).catch((error) => {
   setStatus(error && error.message ? error.message : 'The books did not open.', 'bad');
 });

@@ -30,6 +30,7 @@ import { deleteHelper, helperFile, loadHelper, saveHelper } from './helper-store
 import { ensureDeviceKey, intakeSharePayload, randomInvite, signDevice } from './device-sign.mjs';
 import { renderProtocol } from './intake-view.mjs';
 import { DISCLAIMER, SANDBOX_LABEL, confirmOutcome, failMediation, messageFromMirror, openDispute, publicDispute, rehearsalMembers, requestPanel, setShareConsent, signVerdict } from './dispute.mjs';
+import { mountDeviceCard } from './device-card.mjs';
 
 let mode = localStorage.getItem(MODE_KEY) === 'demo' ? 'demo' : 'real';
 let store = mode === 'demo' ? demoStore() : realStore();
@@ -2056,6 +2057,10 @@ async function boot() {
   const seated = seatId() || registered?.id;
   if (seated && recallPage(localStorage, seated) && (route() === '/' || route() === '/me')) location.hash = '/page';
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw-gym.js', { scope: '/gym' }).catch(() => {});
+  const deviceHost = document.createElement('div');
+  deviceHost.id = 'device-can-host';
+  document.querySelector('header')?.append(deviceHost);
+  mountDeviceCard(deviceHost).catch(() => {});
   startAgentLoop();
   window.addEventListener('hashchange', () => { render(); });
   document.querySelectorAll('nav button').forEach((button) => {

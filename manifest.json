@@ -3,9 +3,13 @@
   "short_name": "lgme",
   "description": "Public bookkeeping and visibility rules. The person is the third seat.",
   "id": "/",
-  "start_url": "/",
+  "start_url": "/gym",
   "scope": "/",
   "display": "standalone",
+  "shortcuts": [
+    { "name": "Health", "short_name": "Health", "url": "/gym", "description": "Open your Health page" },
+    { "name": "Exchange", "short_name": "Exchange", "url": "/exchange", "description": "Open the exchange" }
+  ],
   "background_color": "#10140f",
   "theme_color": "#39e36a",
   "icons": [
