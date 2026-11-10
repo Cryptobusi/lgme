@@ -8,7 +8,6 @@ export default function handler(req, res) {
     ok: ready.enabled,
     enabled: ready.enabled,
     network: 'testnet',
-    missing: ready.missing,
     wording: ready.wording,
     topicId: ready.topicId || ''
   });

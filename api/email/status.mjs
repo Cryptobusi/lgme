@@ -7,7 +7,6 @@ export default function handler(req, res) {
   return json(res, ready.enabled ? 200 : 503, {
     ok: ready.enabled,
     enabled: ready.enabled,
-    waiting: ready.enabled ? '' : 'built, waiting on email provider key',
-    missing: ready.missing
+    waiting: ready.enabled ? '' : 'Email sign-in is coming. Nothing is sent until that step is connected.'
   });
 }

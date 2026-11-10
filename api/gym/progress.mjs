@@ -16,7 +16,6 @@ export default async function handler(req, res) {
       enabled: false,
       shared: false,
       hedera: false,
-      missing: state.missing,
       message: 'Shared board starts when sync is on.'
     });
   }

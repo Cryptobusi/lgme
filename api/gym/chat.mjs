@@ -15,7 +15,6 @@ export default async function handler(req, res) {
       enabled: false,
       shared: false,
       hedera: false,
-      missing: state.missing,
       message: 'Chat stays on this phone. It is not shared with other phones yet.'
     });
   }

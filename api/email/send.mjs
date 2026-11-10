@@ -25,7 +25,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return json(res, 405, { ok: false, error: 'Use POST.' });
   const env = readEnv();
   const ready = emailReadiness(env);
-  if (!ready.enabled) return json(res, 503, { ok: false, enabled: false, waiting: 'built, waiting on email provider key', missing: ready.missing });
+  if (!ready.enabled) return json(res, 503, { ok: false, enabled: false, waiting: 'Email sign-in is coming. Nothing is sent until that step is connected.' });
   const body = await readBody(req);
   const redis = redisRest(env);
   const result = await requestCode(upstashStore(redis.url, redis.token), {
