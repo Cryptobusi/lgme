@@ -138,7 +138,7 @@ export function publicWisdom(spec = {}) {
   if (String(spec.text || '').trim().length > TEXT_MAX) return { ok: false, error: 'Keep the excerpt to 280 characters.' };
   if (!theme) return { ok: false, error: 'Add a theme.' };
   if (!kind) return { ok: false, error: 'Choose original or quote.' };
-  if (blocked(text) || blocked(theme) || blocked(source)) return { ok: false, error: 'Leave out emails, links, phone numbers, and $Trust.' };
+  if (blocked(text) || blocked(theme) || blocked(source)) return { ok: false, error: 'Leave out emails, links, phone numbers, and that token name.' };
   if (kind === 'quote') {
     if (!source) return { ok: false, error: 'A quote needs the author or source.' };
     if (!/^https:\/\/\S+$/i.test(sourceUrl)) return { ok: false, error: 'A quote needs an https source URL.' };

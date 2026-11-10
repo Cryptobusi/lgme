@@ -161,7 +161,7 @@ function supportControls(item) {
     ready = null;
     const selected = kind.value;
     if (selected === 'barter') {
-      preview.textContent = 'Barter moves no $lgme. The tape records 10% of the deed to the Floor and 90% to the author. Confirm to sign it.';
+      preview.textContent = 'Barter moves no $lgme. Deed credit keeps the 1% Health and fitness skim. The 10% split applies only to $lgme or US$ support. Confirm to sign it.';
       ready = { kind: 'barter', barter: terms.value };
       confirm.hidden = false;
       return;

@@ -1,4 +1,5 @@
 import { OPERATOR_RULES, listingMessage, sharedListingsEnabled, withinRate } from '../../js/shared-listings.mjs';
+import { cronAllowed } from '../../js/hedera-topic.mjs';
 import { testnetOperatorKey } from '../../js/hedera-operator.mjs';
 import { json, readBody, readEnv } from '../lib/http.mjs';
 
@@ -31,6 +32,7 @@ export default async function handler(req, res) {
     return json(res, 200, { ok: true, enabled: true, network: 'testnet', listings, rules: OPERATOR_RULES });
   }
   if (req.method !== 'POST') return json(res, 405, { ok: false, error: 'Use GET or POST.' });
+  if (!cronAllowed(req.headers || {}, env)) return json(res, 401, { ok: false, error: 'Listing posts are not open to the public.' });
   const body = await readBody(req);
   const built = listingMessage(body.message || body);
   if (!built.ok) return json(res, 400, built);

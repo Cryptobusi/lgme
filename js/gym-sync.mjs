@@ -15,7 +15,7 @@ export function publicChatMessage(spec = {}) {
   const text = String(spec.text || '').trim().replace(/\s+/g, ' ').slice(0, 280);
   const handle = String(spec.handle || '').trim().slice(0, 40);
   const code = String(spec.code || '').trim().toLowerCase();
-  if (!text || !handle || !/^[a-z0-9-]{4,24}$/.test(code)) {
+  if (!text || !handle || (code !== 'demo-club' && !/^[a-z2-7]{10,32}$/.test(code))) {
     return { ok: false, error: 'Add a short message, a handle, and an invite code.' };
   }
   if (PRIVATE.test(text) || text.includes('$Trust')) return { ok: false, error: 'Leave out emails, links, phone numbers, and location.' };

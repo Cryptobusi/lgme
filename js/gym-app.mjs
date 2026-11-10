@@ -18,6 +18,7 @@ import { AGE_LABEL, COLLECT_LABEL, SHARE_LABEL, healthConsent, mayCollect, maySh
 import { addReview, approveLimitRaise, breakSplit, intakeParts, intakeStatusText, publicIntake, requestLimitRaise, reviewHash } from './intake.mjs';
 import { changeSteward, groupSteward, isGroupAdmin, isTrainer, majoritySteward, queueFor, routeSteward, setTrainer, sponsorIds, stewardEligible, trainingOffer } from './steward.mjs';
 import { deleteHelper, helperFile, loadHelper, saveHelper } from './helper-store.mjs';
+import { ensureDeviceKey, intakeSharePayload, randomInvite, signDevice } from './device-sign.mjs';
 import { renderProtocol } from './intake-view.mjs';
 
 let mode = localStorage.getItem(MODE_KEY) === 'demo' ? 'demo' : 'real';
@@ -217,14 +218,16 @@ function markCheer(card) {
   if (!cheered(card)) localStorage.setItem('lgme-gym.cheers', JSON.stringify([...prior, cheerKey(card)]));
 }
 
+async function signedGym(url, payload, method = 'POST') {
+  const key = await ensureDeviceKey(localStorage);
+  const body = { handle: payload.handle, publicJwk: key.publicJwk, payload, sig: await signDevice(key.privateJwk, payload) };
+  return fetch(url, { method, headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+}
+
 async function syncCard(preview, remove) {
   const sync = await chatStatus();
-  if (!sync.shared || !preview) return;
-  await fetch('/api/gym/progress', {
-    method: remove ? 'DELETE' : 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(preview)
-  });
+  if (!sync.shared || !preview?.handle) return;
+  await signedGym('/api/gym/progress', { handle: preview.handle, action: 'progress', card: preview }, remove ? 'DELETE' : 'POST');
 }
 
 async function renderBoard() {
@@ -961,8 +964,8 @@ async function finishSignup(group) {
     render();
     return;
   }
-  if (group?.name && !/^[a-z0-9-]{4,24}$/.test(group.invite || '')) {
-    status('Use a group name of 4 to 24 letters.');
+  if (group?.name && (group.name.trim().length < 2 || !/^[a-z2-7]{10,32}$/.test(group.invite || ''))) {
+    status('Use a group name. The invite code comes from this phone.');
     return;
   }
   const id = signup.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 24);
@@ -1000,11 +1003,7 @@ async function finishSignup(group) {
 
 async function publishCovenant(peer, text) {
   try {
-    await fetch('/api/gym/covenant', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ action: 'request', ...publicCovenant(peer.covenant) })
-    });
+    await signedGym('/api/gym/covenant', { handle: peer.id, action: 'request', ...publicCovenant(peer.covenant) });
   } catch { /* the link still works on this phone */ }
   try {
     const statusResponse = await fetch('/api/hedera/status');
@@ -1148,13 +1147,15 @@ async function renderRegister() {
       render();
     } }, ['Next']));
   } else {
-    const invite = el('input', { maxlength: '24', placeholder: 'Invite code' });
+    const invite = el('input', { maxlength: '32', placeholder: '10 character invite code' });
     const groupName = el('input', { maxlength: '40', placeholder: 'New group name' });
+    const made = randomInvite();
     box.append(el('p', {}, ['Join a group, create one, or skip.']));
     box.append(el('label', {}, ['Invite code', invite]));
     box.append(el('button', { type: 'button', onClick: () => finishSignup({ invite: invite.value.trim().toLowerCase() }) }, ['Join']));
     box.append(el('label', {}, ['Group name', groupName]));
-    box.append(el('button', { type: 'button', onClick: () => finishSignup({ name: groupName.value.trim(), invite: groupName.value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 24) }) }, ['Create group']));
+    box.append(el('p', { id: 'new-invite' }, [`Invite code ${made}`]));
+    box.append(el('button', { type: 'button', onClick: () => finishSignup({ name: groupName.value.trim(), invite: made }) }, ['Create group']));
     box.append(el('button', { type: 'button', class: 'primary', onClick: () => finishSignup({}) }, ['Skip']));
   }
   box.append(el('p', { id: 'gym-status', role: 'status' }, []));
@@ -1361,9 +1362,9 @@ async function renderSponsor(token) {
   let priv = readPrivate(peer.id);
   if (!priv.applicantName && mine) {
     try {
-      const response = await fetch(`/api/gym/intake?token=${encodeURIComponent(token)}&viewer=${encodeURIComponent(mine.id)}`);
+      const response = await signedGym('/api/gym/intake', { handle: mine.id, action: 'read', token });
       const body = await response.json();
-      if (body.private) priv = body.private;
+      if (body.private?.applicantName) priv = { ...priv, ...body.private };
     } catch { /* the name stays on the applicant's phone */ }
   }
   const shared = el('div', { id: 'sponsor-private' });
@@ -1429,22 +1430,9 @@ async function shareIntake(peer) {
   const priv = readPrivate(peer.id);
   if (!peer?.covenant?.token || (!priv.applicantName && !priv.trackRecord)) return;
   try {
-    await fetch('/api/gym/intake', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        action: 'share',
-        token: peer.covenant.token,
-        applicantName: priv.applicantName || '',
-        trackRecord: priv.trackRecord || '',
-        sponsors: (peer.covenant.sponsors || []).map((row) => row.handle)
-      })
-    });
-    await fetch('/api/gym/intake', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ action: 'public', token: peer.covenant.token, intake: publicIntake(peer.intake || {}) })
-    });
+    const shared = await intakeSharePayload(peer, priv);
+    await signedGym('/api/gym/intake', shared);
+    await signedGym('/api/gym/intake', { handle: peer.id, action: 'public', token: peer.covenant.token, intake: publicIntake(peer.intake || {}) });
   } catch { /* sync is off */ }
 }
 
@@ -1479,7 +1467,7 @@ async function signLocal(peer) {
   peer.covenant = { ...signed.record, hash: await covenantHash({ text, handle: peer.covenant.handle, date: peer.covenant.date, sponsors: signed.record.sponsors }) };
   await store.set(peer.id, peer);
   try {
-    await fetch('/api/gym/covenant', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'sign', token: peer.covenant.token, sponsorHandle: mine.id }) });
+    await signedGym('/api/gym/covenant', { handle: mine.id, action: 'sign', token: peer.covenant.token, inGroup: sponsorSeatInGroup(peer, mine) });
   } catch { /* the signature stays on this phone */ }
   if (peer.covenant.sponsors.length >= 2) publishCovenant(peer, text);
   status(sponsorStatus(peer.covenant));
@@ -1488,7 +1476,7 @@ async function signLocal(peer) {
 
 async function signRemote(token, mine) {
   if (!mine) { status('Join Health before you sponsor someone.'); return; }
-  const response = await fetch('/api/gym/covenant', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'sign', token, sponsorHandle: mine.id }) });
+  const response = await signedGym('/api/gym/covenant', { handle: mine.id, action: 'sign', token });
   const body = await response.json();
   status(body.ok ? sponsorStatus(body.record) : (body.error || 'The sponsor signature was not saved.'));
 }

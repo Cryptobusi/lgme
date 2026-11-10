@@ -2,9 +2,11 @@ import { readBody, json, readEnv } from '../lib/http.mjs';
 import { upstashStore } from '../lib/upstash.mjs';
 import { redisRest } from '../../js/redis-env.mjs';
 import { gymChatReady } from '../../js/gym-sync.mjs';
-import { publicIntake, sharePrivate } from '../../js/intake.mjs';
+import { publicIntake } from '../../js/intake.mjs';
+import { allowRate, emptyGymKv, gymMutate } from '../../js/gym-kv.mjs';
 
 const KEY = 'gym:intake';
+const hits = new Map();
 
 export default async function handler(req, res) {
   const state = gymChatReady(readEnv());
@@ -18,30 +20,19 @@ export default async function handler(req, res) {
     const url = new URL(req.url, 'https://lgme.app');
     const token = String(url.searchParams.get('token') || '');
     const row = saved[token];
-    if (!row) return json(res, 200, { ok: true, record: null });
-    const shared = sharePrivate(row.private || {}, url.searchParams.get('viewer') || '');
-    return json(res, 200, { ok: true, record: publicIntake(row.public || {}), private: shared.ok ? shared.private : null });
+    return json(res, 200, { ok: true, record: row ? publicIntake(row.public || {}) : null, private: null });
   }
   if (req.method !== 'POST') return json(res, 405, { ok: false, error: 'Use GET or POST.' });
+  const ip = String(req.headers?.['x-forwarded-for'] || 'local').split(',')[0].trim();
+  const paced = allowRate(hits, ip);
+  if (!paced.ok) return json(res, 429, paced);
   const body = await readBody(req);
-  const token = String(body.token || '');
-  if (!/^[0-9a-f-]{16,80}$/i.test(token)) return json(res, 400, { ok: false, error: 'That intake link is not usable.' });
-  const prior = saved[token] || { public: {}, private: {} };
-  if (body.action === 'share') {
-    prior.private = {
-      applicantName: String(body.applicantName || ''),
-      trackRecord: String(body.trackRecord || ''),
-      sponsors: Array.isArray(body.sponsors) ? body.sponsors.map((item) => String(item || '').trim()).filter(Boolean) : []
-    };
-    saved[token] = prior;
-    await store.set(KEY, saved);
-    return json(res, 200, { ok: true });
-  }
-  if (body.action === 'public') {
-    prior.public = publicIntake(body.intake || {});
-    saved[token] = prior;
-    await store.set(KEY, saved);
-    return json(res, 200, { ok: true, record: prior.public });
-  }
-  return json(res, 400, { ok: false, error: 'Use public or share.' });
+  const book = emptyGymKv();
+  book.members = (await store.get('gym:members')) || {};
+  book.intakes = saved;
+  const result = await gymMutate(book, body);
+  if (!result.ok) return json(res, result.status || 400, result);
+  await store.set('gym:members', book.members);
+  await store.set(KEY, book.intakes);
+  return json(res, 200, result);
 }

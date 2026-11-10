@@ -3226,7 +3226,7 @@ export async function createClubGroup(store, peerId, spec = {}) {
   if (!peer) return fail('Unknown peer.');
   const name = String(spec.name || '').trim().slice(0, 60);
   const code = String(spec.invite || '').trim().toLowerCase();
-  if (!name || !/^[a-z0-9-]{4,24}$/.test(code)) return fail('Use a club name and a short invite code.');
+  if (!name || !/^[a-z2-7]{10,32}$/.test(code)) return fail('Use a club name and a 10 character invite code.');
   const keyed = await unlockDeed(peer, spec);
   if (!keyed.ok) return keyed;
   peer.clubGroups = peer.clubGroups || {};
@@ -3240,7 +3240,7 @@ export async function joinClubGroup(store, peerId, spec = {}) {
   const peer = await store.get(peerId);
   if (!peer) return fail('Unknown peer.');
   const code = String(spec.invite || '').trim().toLowerCase();
-  if (!/^[a-z0-9-]{4,24}$/.test(code)) return fail('That invite code is not usable.');
+  if (code !== 'demo-club' && !/^[a-z2-7]{10,32}$/.test(code)) return fail('That invite code is not usable.');
   let found = null;
   for (const id of await store.listIds()) {
     const other = await store.get(id);

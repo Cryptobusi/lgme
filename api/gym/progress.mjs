@@ -2,9 +2,10 @@ import { readBody, json, readEnv } from '../lib/http.mjs';
 import { upstashStore } from '../lib/upstash.mjs';
 import { redisRest } from '../../js/redis-env.mjs';
 import { gymChatReady } from '../../js/gym-sync.mjs';
-import { publicProgressCard } from '../../js/gym-progress.mjs';
+import { allowRate, emptyGymKv, gymMutate } from '../../js/gym-kv.mjs';
 
 const KEY = 'gym:progress';
+const hits = new Map();
 
 export default async function handler(req, res) {
   const env = readEnv();
@@ -25,17 +26,18 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     return json(res, 200, { ok: true, enabled: true, shared: true, hedera: false, cards: prior });
   }
+  if (req.method !== 'POST' && req.method !== 'DELETE') return json(res, 405, { ok: false, error: 'Use GET, POST, or DELETE.' });
+  const ip = String(req.headers?.['x-forwarded-for'] || 'local').split(',')[0].trim();
+  const paced = allowRate(hits, ip);
+  if (!paced.ok) return json(res, 429, paced);
   const body = await readBody(req);
-  const built = publicProgressCard(body);
-  if (!built.ok) return json(res, 400, built);
-  if (req.method === 'DELETE') {
-    const next = prior.filter((card) => !(card.handle === built.card.handle && card.week === built.card.week && card.category === built.card.category));
-    await store.set(KEY, next);
-    return json(res, 200, { ok: true, enabled: true, shared: true, hedera: false, cards: next });
-  }
-  if (req.method !== 'POST') return json(res, 405, { ok: false, error: 'Use GET, POST, or DELETE.' });
-  const rest = prior.filter((card) => !(card.handle === built.card.handle && card.week === built.card.week && card.category === built.card.category));
-  const next = [...rest, built.card].slice(-100);
-  await store.set(KEY, next);
-  return json(res, 200, { ok: true, enabled: true, shared: true, hedera: false, cards: next });
+  const book = emptyGymKv();
+  book.members = (await store.get('gym:members')) || {};
+  book.progress = prior;
+  if (body.payload) body.payload.op = req.method === 'DELETE' ? 'delete' : 'put';
+  const result = await gymMutate(book, body);
+  if (!result.ok) return json(res, result.status || 400, result);
+  await store.set('gym:members', book.members);
+  await store.set(KEY, book.progress);
+  return json(res, 200, { ok: true, enabled: true, shared: true, hedera: false, cards: book.progress });
 }

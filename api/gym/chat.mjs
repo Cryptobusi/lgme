@@ -1,7 +1,11 @@
 import { readBody, json, readEnv } from '../lib/http.mjs';
 import { upstashStore } from '../lib/upstash.mjs';
 import { redisRest } from '../../js/redis-env.mjs';
-import { gymChatReady, publicChatMessage } from '../../js/gym-sync.mjs';
+import { gymChatReady } from '../../js/gym-sync.mjs';
+import { acceptableInvite } from '../../js/device-sign.mjs';
+import { allowRate, emptyGymKv, gymMutate } from '../../js/gym-kv.mjs';
+
+const hits = new Map();
 
 export default async function handler(req, res) {
   const state = gymChatReady(readEnv());
@@ -23,26 +27,23 @@ export default async function handler(req, res) {
     if (!code) {
       return json(res, 200, { ok: true, enabled: true, shared: true, hedera: false, message: 'Chat can sync between phones.' });
     }
-    if (!/^[a-z0-9-]{4,24}$/.test(code)) return json(res, 400, { ok: false, error: 'That invite code is not usable.' });
+    if (!acceptableInvite(code, { example: true })) return json(res, 400, { ok: false, error: 'That invite code is not usable.' });
     const messages = (await store.get(`gym:chat:${code}`)) || [];
     return json(res, 200, { ok: true, enabled: true, shared: true, hedera: false, messages });
   }
-  if (req.method === 'DELETE') {
-    const body = await readBody(req);
-    const code = String(body.code || '').trim().toLowerCase();
-    if (!/^[a-z0-9-]{4,24}$/.test(code)) return json(res, 400, { ok: false, error: 'That invite code is not usable.' });
-    const prior = (await store.get(`gym:chat:${code}`)) || [];
-    const next = prior.filter((message) => !(message.handle === body.handle && message.text === body.text));
-    await store.set(`gym:chat:${code}`, next);
-    return json(res, 200, { ok: true, enabled: true, shared: true, hedera: false, messages: next });
-  }
-  if (req.method !== 'POST') return json(res, 405, { ok: false, error: 'Use GET, POST, or DELETE.' });
+  if (req.method !== 'POST' && req.method !== 'DELETE') return json(res, 405, { ok: false, error: 'Use GET, POST, or DELETE.' });
+  const ip = String(req.headers?.['x-forwarded-for'] || 'local').split(',')[0].trim();
+  const paced = allowRate(hits, ip);
+  if (!paced.ok) return json(res, 429, paced);
   const body = await readBody(req);
-  const built = publicChatMessage(body);
-  if (!built.ok) return json(res, 400, built);
-  const key = `gym:chat:${built.message.code}`;
-  const prior = (await store.get(key)) || [];
-  const next = [...prior, { ...built.message, at: built.message.at || new Date().toISOString() }].slice(-50);
-  await store.set(key, next);
-  return json(res, 200, { ok: true, enabled: true, shared: true, hedera: false, messages: next });
+  const code = String(body.payload?.code || '').trim().toLowerCase();
+  const book = emptyGymKv();
+  book.members = (await store.get('gym:members')) || {};
+  book.chats[code] = code ? ((await store.get(`gym:chat:${code}`)) || []) : [];
+  if (body.payload) body.payload.op = req.method === 'DELETE' ? 'delete' : 'post';
+  const result = await gymMutate(book, body);
+  if (!result.ok) return json(res, result.status || 400, result);
+  await store.set('gym:members', book.members);
+  if (code) await store.set(`gym:chat:${code}`, book.chats[code] || []);
+  return json(res, 200, { ok: true, enabled: true, shared: true, hedera: false, messages: book.chats[code] || [] });
 }
