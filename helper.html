@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Set up my own AI helper</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600&family=Newsreader:opsz,wght@6..72,500&display=swap" />
+  <style>
+    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; --card:#151a15; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; font-size:1.05rem; line-height:1.45; }
+    main { max-width:40rem; margin:0 auto; padding:1rem 1rem 2rem; }
+    h1,h2 { font-family:Newsreader,serif; font-weight:500; }
+    h1 { font-size:1.7rem; }
+    a { color:var(--fg); }
+    .kicker { letter-spacing:0.14em; text-transform:uppercase; color:var(--gold); font-size:0.75rem; }
+    .muted { color:var(--muted); }
+    .card, .choice { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:0.8rem; margin:0.5rem 0; }
+    button, input, select, textarea { font:inherit; color:var(--fg); background:var(--bg); border:1px solid var(--line); border-radius:12px; min-height:48px; }
+    textarea { width:100%; min-height:7rem; padding:0.6rem; }
+    button { padding:0.7rem 0.9rem; margin:0.35rem 0.35rem 0 0; }
+    button.primary { background:var(--gold); color:#1a1408; border-color:var(--gold); }
+    label.check { display:flex; gap:0.7rem; align-items:center; min-height:48px; }
+    .pair { display:grid; gap:0.4rem; }
+    .locked { border-color:var(--gold); }
+  </style>
+</head>
+<body>
+<main id="wizard"></main>
+<script type="module" src="/js/helper-page.mjs"></script>
+</body>
+</html>

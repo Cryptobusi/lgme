@@ -15,6 +15,7 @@ import { STARTERS, agentNotice, deleteAgent, dueAgents, editAgent, listAgents, m
 import { CLARIFICATIONS, COVENANT_TITLE, FIELD_LABELS, covenantHash, covenantSections, covenantText, exitReceipt, openCommitments, publicCovenant, signSponsor, sponsorStatus, velocityNote } from './covenant.mjs';
 import { addReview, approveLimitRaise, breakSplit, intakeParts, intakeStatusText, publicIntake, requestLimitRaise, reviewHash } from './intake.mjs';
 import { changeSteward, groupSteward, isGroupAdmin, isTrainer, majoritySteward, queueFor, routeSteward, setTrainer, sponsorIds, stewardEligible, trainingOffer } from './steward.mjs';
+import { deleteHelper, helperFile, loadHelper, saveHelper } from './helper-store.mjs';
 import { renderProtocol } from './intake-view.mjs';
 
 let mode = localStorage.getItem(MODE_KEY) === 'demo' ? 'demo' : 'real';
@@ -1359,6 +1360,26 @@ async function renderIntakeEdit() {
   ]);
 }
 
+async function renderHelperHome() {
+  const config = await loadHelper().catch(() => null);
+  if (!config) return el('section', { id: 'my-helper', class: 'card' }, [el('p', {}, ['No helper yet.']), el('a', { href: '/helper' }, ['Set up my own AI helper'])]);
+  return el('section', { id: 'my-helper', class: 'card' }, [
+    el('h2', {}, [config.name || 'Helper']),
+    el('p', {}, [config.paused ? 'Paused.' : 'On.']),
+    el('p', {}, [config.schedule || '']),
+    el('p', { class: 'muted' }, ['It never sends, posts, accepts, signs, spends, or mints credit.']),
+    el('button', { type: 'button', onClick: async () => { config.paused = !config.paused; await saveHelper(config); render(); } }, [config.paused ? 'Resume' : 'Pause']),
+    el('p', {}, [el('a', { href: '/helper' }, ['Edit'])]),
+    el('button', { type: 'button', onClick: () => { deleteHelper(); render(); } }, ['Delete']),
+    el('button', { id: 'export-helper', type: 'button', onClick: () => {
+      const blob = new Blob([helperFile(config)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = el('a', { href: url, download: 'my-helper.json' });
+      link.click();
+    } }, ['Export my helper'])
+  ]);
+}
+
 async function renderDashboard() {
   const mine = await seat();
   if (!mine) return renderRegister();
@@ -1418,6 +1439,7 @@ async function render() {
   else if (path === '/more') view = await renderMore();
   else if (path.startsWith('/sponsor/')) view = await renderSponsor(decodeURIComponent(path.slice('/sponsor/'.length)));
   else if (path === '/intake') view = await renderIntakeEdit();
+  else if (path === '/helper') view = await renderHelperHome();
   else if (path === '/register' || (!registered && mode !== 'demo' && path === '/')) view = await renderRegister();
   else if (registered && (path === '/' || path === '/me')) view = await renderDashboard();
   else view = await renderClub();
