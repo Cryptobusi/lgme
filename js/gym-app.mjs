@@ -14,7 +14,7 @@ import { OPT_IN_COPY, answerLocal, deleteDownloadedModel, detectEngine, isOn, se
 import { STARTERS, agentNotice, deleteAgent, dueAgents, editAgent, listAgents, markFired, needsPermission, pauseAgent, saveAgent, scheduleNote } from './local-agents.mjs';
 import { CLARIFICATIONS, COVENANT_TITLE, FIELD_LABELS, covenantHash, covenantSections, covenantText, exitReceipt, openCommitments, publicCovenant, signSponsor, sponsorStatus, velocityNote } from './covenant.mjs';
 import { addReview, approveLimitRaise, breakSplit, intakeParts, intakeStatusText, publicIntake, requestLimitRaise, reviewHash } from './intake.mjs';
-import { changeSteward, groupSteward, isGroupAdmin, majoritySteward, queueFor, routeSteward, sponsorIds, stewardEligible } from './steward.mjs';
+import { changeSteward, groupSteward, isGroupAdmin, isTrainer, majoritySteward, queueFor, routeSteward, setTrainer, sponsorIds, stewardEligible, trainingOffer } from './steward.mjs';
 import { renderProtocol } from './intake-view.mjs';
 
 let mode = localStorage.getItem(MODE_KEY) === 'demo' ? 'demo' : 'real';
@@ -435,6 +435,7 @@ async function renderMember(id, shareOnly) {
   if (peer.example) view.append(el('p', { class: 'kicker' }, ['Example']));
   view.append(el('div', { class: 'avatar', 'aria-hidden': 'true' }, [(peer.name || '?').slice(0, 1)]));
   view.append(el('h2', {}, [card.handle]));
+  if (isTrainer(peer)) view.append(el('p', { id: 'trainer-badge', class: 'kicker' }, ['Trainer']));
   view.append(el('p', { class: 'muted' }, [card.role]));
   if (!shareOnly || card.journey) view.append(el('p', {}, [shareOnly ? card.journey : (peer.gymProfile?.journey || '')]));
   if (!shareOnly || card.sessions != null) view.append(chartBlock('Sessions per week', stats.weeks, 'Sessions per week'));
@@ -458,6 +459,34 @@ async function renderMember(id, shareOnly) {
       sessionsBox.checked = peer.gymProfile?.public?.sessions !== false;
       const minutesBox = el('input', { type: 'checkbox' });
       minutesBox.checked = Boolean(peer.gymProfile?.public?.minutes);
+      const trainerBox = el('input', { id: 'trainer-toggle', type: 'checkbox' });
+      trainerBox.checked = isTrainer(peer);
+      view.append(el('label', { class: 'check' }, [trainerBox, "I'd like to be a trainer"]));
+      trainerBox.addEventListener('change', async () => {
+        const fresh = setTrainer(await store.get(peer.id), trainerBox.checked);
+        const before = sim.replay(fresh).balance;
+        await store.set(peer.id, fresh);
+        status(sim.replay(await store.get(peer.id)).balance === before ? (trainerBox.checked ? 'Trainer badge on. You can switch it off anytime.' : 'Trainer badge off.') : 'The balance changed.');
+        render();
+      });
+      if (isTrainer(peer)) {
+        const kind = el('select', { id: 'training-kind' }, [el('option', { value: 'IhavIT' }, ['IhavIT']), el('option', { value: 'IselIT' }, ['IselIT'])]);
+        const credit = el('input', { id: 'training-credit', type: 'checkbox' });
+        view.append(el('p', {}, ['List training. Credit uses the same 5-gate intake check. A session still mints nothing.']));
+        view.append(kind);
+        view.append(el('label', { class: 'check' }, [credit, 'I want credit for this']));
+        view.append(el('button', { id: 'list-training', type: 'button', onClick: async () => {
+          const fresh = await store.get(peer.id);
+          const before = sim.replay(fresh).balance;
+          const listed = trainingOffer(fresh, { kind: kind.value, credit: credit.checked });
+          if (!listed.ok) { status(listed.error); return; }
+          fresh.trainingOffer = listed.offer;
+          await store.set(peer.id, fresh);
+          status(`${listed.note} Balance ${sim.replay(await store.get(peer.id)).balance === before ? 'unchanged' : 'changed'}.`);
+          render();
+        } }, ['List training']));
+        if (peer.trainingOffer) view.append(el('p', { id: 'training-offer' }, [`${peer.trainingOffer.kind} · Training · ${peer.trainingOffer.gates === 'pending' ? '5 gates still required' : 'No credit drawn'}`]));
+      }
       view.append(el('h3', {}, ['What others can see']));
       view.append(el('p', { class: 'muted' }, ['Health details stay private.']));
       view.append(el('label', {}, ['My better tomorrow', journey]));
@@ -482,7 +511,7 @@ async function renderPeople() {
   const rows = await books();
   const list = el('div', {}, [el('h2', {}, ['Members']), el('p', { class: 'muted' }, ['Each person has a page. There is no ranking.'])]);
   for (const peer of rows) {
-    list.append(el('button', { type: 'button', onClick: () => { setSeat(peer.id); go('/people/' + peer.id); } }, [`${peer.name} · ${peer.gymRole || 'member'}${peer.example ? ' · example' : ''}`]));
+    list.append(el('button', { type: 'button', onClick: () => { setSeat(peer.id); go('/people/' + peer.id); } }, [`${peer.name} · ${isTrainer(peer) ? 'Trainer' : (peer.gymRole || 'member')}${peer.example ? ' · example' : ''}`]));
   }
   return list;
 }
@@ -511,6 +540,7 @@ function stewardCard(mine, members) {
     const stewardId = groupSteward(groupMembers, code);
     const steward = groupMembers.find((peer) => peer.id === stewardId);
     card.append(el('p', { id: 'steward-name' }, [`Steward: ${steward?.name || stewardId || 'not set'}`]));
+    card.append(el('p', { id: 'group-trainers' }, [groupMembers.map((person) => `${person.name}${isTrainer(person) ? ' · Trainer' : ''}`).join(', ')]));
     card.append(el('p', { class: 'muted' }, ['The steward receives no credit or perks for the role.']));
     const eligible = groupMembers.filter((peer) => stewardEligible(peer) && peer.id !== stewardId);
     const select = el('select', { id: 'steward-choice' });
@@ -658,7 +688,7 @@ async function renderGroups() {
       status(LOCAL_CHAT_NOTE);
     } }, ['Send']),
     el('h3', {}, ['Verify a session']),
-    el('p', { class: 'muted' }, ['One other person verifies. No is not needed here: leave the session unverified.']),
+    el('p', { class: 'muted' }, ['A trainer can verify a session. It still takes one other person. You cannot verify yourself.']),
     sessions,
     el('label', {}, ['Passphrase', pass]),
     el('label', {}, ['6-digit code', totp]),

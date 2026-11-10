@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CLARIFICATIONS } from '../js/covenant.mjs';
 import { approveLimitRaise, breakSplit, intakeCreditLimit, intakeOutcome } from '../js/intake.mjs';
-import { changeSteward, clearedOnce, groupSteward, majoritySteward, queueFor, routeSteward, stewardEligible } from '../js/steward.mjs';
+import { changeSteward, clearedOnce, groupSteward, majoritySteward, queueFor, routeSteward, setTrainer, stewardEligible, trainingOffer } from '../js/steward.mjs';
 import { replay } from '../js/p2p-exchange-sim.mjs';
 
 const pass = { status: 'PASS', gates: [true, true, true, true, true] };
@@ -21,11 +21,20 @@ function member(id, extra = {}) {
 }
 
 test('the steward defaults to the trainer and a conflict leaves that review', () => {
-  assert.equal(CLARIFICATIONS[10].startsWith('Admissions Steward:'), true);
+  assert.equal(CLARIFICATIONS[10].includes('any member may opt in as a trainer'), true);
+  assert.equal(CLARIFICATIONS[10].includes('earliest trainer to join'), true);
   assert.equal(CLARIFICATIONS[10].includes('receives no credit or perks'), true);
   const sam = member('sam', { role: 'trainer' });
   const jordan = member('jordan');
   assert.equal(groupSteward([jordan, sam], 'club'), 'sam');
+  const early = member('amy', { role: 'trainer' });
+  const late = member('zoe', { role: 'trainer' });
+  early.clubGroups.club.trainerAt = '2026-01-01T00:00:00.000Z';
+  late.clubGroups.club.trainerAt = '2026-06-01T00:00:00.000Z';
+  assert.equal(groupSteward([late, early, jordan], 'club'), 'amy');
+  const plain = member('ada', { creator: 'ada' });
+  const other = member('bo', { creator: 'ada' });
+  assert.equal(groupSteward([other, plain], 'club'), 'ada');
   const cleared = member('riley', {
     intake: { status: 'Tier-1' },
     tape: [
@@ -52,6 +61,14 @@ test('the steward defaults to the trainer and a conflict leaves that review', ()
   assert.equal(replay(applicant).balance, before);
   const raised = approveLimitRaise({ status: 'Tier-1', limitRequest: { to: -200, approved: false } }, 'sam', []);
   assert.equal(intakeCreditLimit(raised.intake, 0), -200);
+  const toggled = setTrainer(member('jordan'), true, '2026-11-10T00:00:00.000Z');
+  assert.equal(toggled.gymRole, 'trainer');
+  assert.equal(setTrainer(toggled, false).gymRole, 'member');
+  const offered = trainingOffer(toggled, { kind: 'IselIT', credit: true });
+  assert.equal(offered.creditOpen, false);
+  assert.equal(offered.note, 'Credit waits on the same 5-gate intake check.');
+  toggled.intake = { status: 'Tier-1' };
+  assert.equal(trainingOffer(toggled, { kind: 'IhavIT', credit: true }).offer.gates, 'passed');
   assert.equal(intakeOutcome([
     { primary: pass, secondary: pass },
     { primary: revise, secondary: pass }

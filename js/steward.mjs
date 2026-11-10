@@ -13,18 +13,55 @@ export function stewardEligible(peer) {
   return peer?.intake?.status === 'Tier-1' && clearedOnce(peer);
 }
 
+export function isTrainer(peer) {
+  return peer?.gymRole === 'trainer' || peer?.trainer === true;
+}
+
+export function setTrainer(peer, on, at = new Date().toISOString()) {
+  const next = { ...peer, gymRole: on ? 'trainer' : 'member', trainer: on === true, clubGroups: { ...(peer.clubGroups || {}) } };
+  if (on) next.trainerAt = peer.trainerAt || at;
+  for (const code of Object.keys(next.clubGroups)) {
+    const group = { ...next.clubGroups[code] };
+    if (on) group.trainerAt = group.trainerAt || next.trainerAt;
+    next.clubGroups[code] = group;
+  }
+  return next;
+}
+
+export function trainingOffer(peer, spec = {}) {
+  if (!isTrainer(peer)) return { ok: false, error: 'Turn on the trainer badge first.' };
+  const kind = spec.kind === 'IselIT' ? 'IselIT' : 'IhavIT';
+  const credit = spec.credit === true;
+  const offer = { kind, title: 'Training', credit };
+  if (credit && peer.intake?.status !== 'Tier-1') {
+    return { ok: true, creditOpen: false, offer: { ...offer, gates: 'pending' }, note: 'Credit waits on the same 5-gate intake check.' };
+  }
+  return { ok: true, creditOpen: credit, offer: { ...offer, gates: credit ? 'passed' : 'none' }, note: credit ? 'The 5 gates are passed. A session still mints no credit by itself.' : 'Listed. No credit is drawn.' };
+}
+
 export function isGroupAdmin(peer, code) {
   const group = peer?.clubGroups?.[code];
   if (!group) return false;
-  return group.role === 'trainer' || peer.gymRole === 'trainer' || group.creator === peer.id;
+  return group.creator === peer.id || group.role === 'trainer';
+}
+
+function trainerStamp(peer, code) {
+  return peer.clubGroups?.[code]?.trainerAt || peer.trainerAt || '';
 }
 
 export function groupSteward(members, code) {
   const rows = (members || []).filter((peer) => peer.clubGroups?.[code]);
   const assigned = rows.find((peer) => peer.clubGroups[code].stewardSet === 'assigned' && peer.clubGroups[code].steward);
   if (assigned) return assigned.clubGroups[code].steward;
-  const trainer = rows.find((peer) => peer.gymRole === 'trainer' || peer.clubGroups[code].role === 'trainer');
-  if (trainer) return trainer.id;
+  const trainers = rows.filter((peer) => isTrainer(peer)).sort((a, b) => {
+    const at = trainerStamp(a, code);
+    const bt = trainerStamp(b, code);
+    if (at && bt && at !== bt) return at < bt ? -1 : 1;
+    if (at && !bt) return -1;
+    if (!at && bt) return 1;
+    return a.id.localeCompare(b.id);
+  });
+  if (trainers.length) return trainers[0].id;
   return rows.map((peer) => peer.clubGroups[code].creator).find(Boolean) || '';
 }
 
