@@ -1,5 +1,5 @@
 // Gym beta shell. Scope is /gym only, so the main lgme service worker keeps the rest of the site.
-const CACHE_NAME = 'lgme-gym-v24';
+const CACHE_NAME = 'lgme-gym-v25';
 const SHELL = ['/gym', '/gym.html', '/gym/index.html', '/gym/covenant', '/gym/covenant.html', '/gym/intake-protocol', '/gym/intake-protocol.html', '/gym/health-data', '/gym/health-data.html', '/gym/breach-plan', '/gym/breach-plan.html', '/data/member-covenant.txt', '/data/intake-protocol.txt', '/gym-manifest.webmanifest', '/icons/gym-192.png', '/js/gym-app.mjs', '/js/health-page.mjs', '/js/health-layout.mjs', '/js/health-presence.mjs', '/js/health-contact.mjs', '/js/equipment-referral.mjs', '/js/equipment-card.mjs', '/js/repair-follow.mjs', '/js/setup-fee.mjs', '/js/setup-fee-page.mjs', '/js/health-plan.mjs', '/js/health-email.mjs', '/js/gym-progress.mjs', '/js/gym-feed.mjs', '/js/local-agents.mjs', '/js/covenant.mjs', '/js/covenant-page.mjs', '/js/intake.mjs', '/js/intake-view.mjs', '/js/intake-page.mjs', '/js/steward.mjs', '/js/health-safeguards.mjs', '/js/health-data-page.mjs', '/js/sponsor-report.mjs'];
 
 self.addEventListener('install', (event) => {

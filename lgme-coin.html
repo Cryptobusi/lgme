@@ -103,21 +103,20 @@
         <li>Enter an amount, then tap Send or scan the QR.</li>
         <li>In the wallet, check that the address starts with 6SYz and ends with okLY.</li>
         <li>Confirm. The transfer is irreversible.</li>
-        <li>Optional: paste the transaction id below. This page shows a receipt and a Solscan link. It does not send the gift.</li>
+        <li>This page matches the transfer from the wallet link. No receipt is pasted.</li>
       </ol>
       <p><label for="gift-amount">Amount in US$</label></p>
       <input id="gift-amount" inputmode="decimal" autocomplete="off" placeholder="For example 1" />
       <p id="lgme-equivalent"></p>
       <p id="quote-countdown"></p>
+      <p class="addr" id="gift-mint">7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump</p>
       <div class="actions">
         <button type="button" id="copy-donate">Copy address</button>
         <a class="btn primary" id="solana-pay" href="solana:6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY?spl-token=7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump&amp;label=soBeIT&amp;message=THANK+YOU+FOR+YOUR+SUPPORT.">Open in your wallet</a>
       </div>
       <div id="donate-qr" class="qr" aria-label="QR for the soBeIT gift"></div>
-      <p><label for="tx-id">Transaction id, optional</label></p>
-      <input id="tx-id" autocomplete="off" spellcheck="false" placeholder="Paste the signature from your wallet" />
       <div class="actions">
-        <button type="button" id="tx-receipt">Show receipt</button>
+        <button type="button" id="gift-check">Look for the payment</button>
       </div>
       <p id="tx-out" class="muted"></p>
     </div>

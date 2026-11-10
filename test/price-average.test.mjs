@@ -111,6 +111,14 @@ test('a 3-second average converts the peg and a stale feed is not guessed', asyn
   const page = readFileSync(join(root, 'js/setup-fee-page.mjs'), 'utf8');
   assert.equal(page.includes('At my purchase price'), false);
   assert.equal(page.includes('buy-signature'), false);
+  assert.equal(page.includes('createReference()'), true);
+  const coin = readFileSync(join(root, 'lgme-coin.html'), 'utf8');
+  const coinPage = readFileSync(join(root, 'js/lgme-coin-page.js'), 'utf8');
+  assert.equal(coin.includes('tx-id'), false);
+  assert.equal(coin.includes('Paste the signature'), false);
+  assert.equal(coin.includes('id="gift-check"'), true);
+  assert.equal(coinPage.includes('averagePrice'), true);
+  assert.equal(coinPage.includes('findSetupPayment'), true);
   const response = await fetch(`https://api.geckoterminal.com/api/v2/networks/solana/tokens/${MINT}/pools?page=1`);
   const body = await response.json();
   const livePrice = parseGeckoPools(body);

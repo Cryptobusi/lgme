@@ -356,7 +356,7 @@ function showSolanaPay(spec) {
         button.disabled = true;
         let found;
         try {
-          found = await findReferencePayment(cluster.value, reference, { mint: MINT, recipient: recipient.value.trim(), amount: lgmeAmount });
+          found = await findReferencePayment(cluster.value, reference, { mint: MINT, recipient: recipient.value.trim(), amount: lgmeAmount, tolerance: 0.02 });
         } finally {
           button.disabled = false;
         }

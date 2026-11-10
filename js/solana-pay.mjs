@@ -1,3 +1,5 @@
+import { withinPeg } from './lgme-price.mjs';
+
 export const MINT = '7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump';
 export const DONATION_ADDRESS = '6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY';
 export const RPC = Object.freeze({
@@ -95,6 +97,7 @@ export function parseSplTransfer(tx, expected = {}) {
   const before = (tx?.meta?.preTokenBalances || []).find((row) => row.accountIndex === post.accountIndex);
   const decimals = Number(post?.uiTokenAmount?.decimals ?? before?.uiTokenAmount?.decimals ?? 6);
   const wanted = Number(expected.amount);
+  const tolerance = Number(expected.tolerance) || 0;
   if (!Number.isFinite(wanted) || !Number.isInteger(decimals) || decimals < 0) {
     return { ok: false, error: 'The amount does not match.' };
   }
@@ -103,9 +106,13 @@ export function parseSplTransfer(tx, expected = {}) {
     const scale = 10 ** decimals;
     const preRaw = before?.uiTokenAmount?.amount != null ? BigInt(before.uiTokenAmount.amount) : 0n;
     const deltaRaw = BigInt(post.uiTokenAmount.amount) - preRaw;
-    const wantedRaw = BigInt(Math.round(wanted * scale));
-    if (deltaRaw !== wantedRaw) return { ok: false, error: 'The amount does not match.' };
     delta = Number(deltaRaw) / scale;
+    if (tolerance > 0) {
+      if (!withinPeg(delta, wanted, tolerance)) return { ok: false, error: 'The amount is outside the locked quote.' };
+    } else {
+      const wantedRaw = BigInt(Math.round(wanted * scale));
+      if (deltaRaw !== wantedRaw) return { ok: false, error: 'The amount does not match.' };
+    }
   } else {
     delta = Math.round((tokenAmount(post) - tokenAmount(before)) * 1e6) / 1e6;
     if (Math.round(delta * 1e6) !== Math.round(wanted * 1e6)) return { ok: false, error: 'The amount does not match.' };

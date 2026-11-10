@@ -1,9 +1,10 @@
-import { createReference, rpc } from './solana-pay.mjs';
+import { createReference } from './solana-pay.mjs';
 import { PRICE_UNAVAILABLE, SAMPLE_MS, averagePrice, fetchSpotPrice, lgmeForUsd, lockOpen, lockPayQuote } from './lgme-price.mjs';
 import { ensureDeviceKey, signDevice } from './device-sign.mjs';
 import {
   PUMP_URL,
   SETUP_ADDRESS,
+  SETUP_MINT,
   SETUP_COPY,
   SETUP_OWED_TO,
   SETUP_TITLE,
@@ -45,6 +46,7 @@ export async function renderSetupFee({ storage, go, mine }) {
   const samples = [];
   let latest = { ok: false, error: PRICE_UNAVAILABLE };
   let lock = null;
+  let sent = null;
   let sampling = false;
   const amountLine = el('p', { id: 'setup-lgme' }, [PRICE_UNAVAILABLE]);
   const priceLine = el('p', { id: 'setup-price', class: 'muted' }, ['At current price (3-sec avg).']);
@@ -86,12 +88,26 @@ export async function renderSetupFee({ storage, go, mine }) {
     }
   }
 
-  function showPayNow() {
+  function holdQuote() {
     const now = Date.now();
     if (!lockOpen(lock, now)) lock = lockPayQuote(averagePrice(samples, now), 1, now);
+    if (lock?.ok) sent = lock;
     paintQuote();
-    if (!lock?.ok) { status.textContent = PRICE_UNAVAILABLE; return; }
-    const link = payNowQuote(lock.price, createReference());
+    return lock;
+  }
+
+  wallet.addEventListener('click', (event) => {
+    const held = holdQuote();
+    if (!held?.ok) {
+      event.preventDefault();
+      status.textContent = PRICE_UNAVAILABLE;
+    }
+  });
+
+  function showPayNow() {
+    const held = holdQuote();
+    if (!held?.ok) { status.textContent = PRICE_UNAVAILABLE; return; }
+    const link = payNowQuote(held.price, reference);
     if (!link.ok) { status.textContent = PRICE_UNAVAILABLE; return; }
     const qr = el('div', { id: 'setup-qr' });
     panel.replaceChildren(
@@ -102,11 +118,11 @@ export async function renderSetupFee({ storage, go, mine }) {
       } }, ['Copy address']),
       qr,
       el('p', {}, [el('a', { id: 'setup-pump', href: PUMP_URL }, [`Buy $lgme on pump.fun (creator @${SETUP_OWED_TO})`])]),
-      el('p', {}, [el('a', { id: 'setup-wallet', href: link.url }, ['Pay with my wallet'])]),
+      el('p', {}, [el('a', { href: link.url }, ['Pay with my wallet'])]),
       el('p', { class: 'muted' }, ['The quote is locked for 60 seconds. Your wallet signs the payment. Nothing is taken from this app.'])
     );
     queueMicrotask(() => { if (globalThis.QRCode) new globalThis.QRCode(qr, { text: link.url, width: 180, height: 180 }); });
-    status.textContent = `Locked ${lock.lgmeAmount} $lgme until ${new Date(lock.expiresAt).toISOString()}.`;
+    status.textContent = `Locked ${held.lgmeAmount} $lgme until ${new Date(held.expiresAt).toISOString()}.`;
   }
 
   const host = el('section', { class: 'card', id: 'setup-fee' }, [
@@ -127,14 +143,12 @@ export async function renderSetupFee({ storage, go, mine }) {
   ]);
 
   async function showPayLater() {
-    const now = Date.now();
-    if (!lockOpen(lock, now)) lock = lockPayQuote(averagePrice(samples, now), 1, now);
-    paintQuote();
-    if (!lock?.ok) { status.textContent = PRICE_UNAVAILABLE; return; }
-    const built = receivableRecord({ handle, price: lock.price, at: new Date().toISOString() });
+    const held = holdQuote();
+    if (!held?.ok) { status.textContent = PRICE_UNAVAILABLE; return; }
+    const built = receivableRecord({ handle, price: held.price, at: new Date().toISOString() });
     if (!built.ok) { status.textContent = built.error; return; }
     built.item.reference = reference;
-    built.item.lgmeAmount = lock.lgmeAmount;
+    built.item.lgmeAmount = held.lgmeAmount;
     writeSetup(storage, built.item);
     const posted = await postExchange({
       handle,
@@ -142,12 +156,13 @@ export async function renderSetupFee({ storage, go, mine }) {
       category: 'exchange',
       title: SETUP_TITLE,
       owedTo: SETUP_OWED_TO,
-      lgmeAmount: lock.lgmeAmount,
+      lgmeAmount: held.lgmeAmount,
       reference,
       at: built.item.at
     });
     async function look() {
-      const found = await findSetupPayment(reference, { amount: lock.lgmeAmount, tolerance: 0.02 });
+      const quote = sent || held;
+      const found = await findSetupPayment(reference, { amount: quote.lgmeAmount, tolerance: 0.02 });
       if (!found.ok) { status.textContent = found.error; return; }
       const body = await postExchange({
         handle,
@@ -155,7 +170,7 @@ export async function renderSetupFee({ storage, go, mine }) {
         category: 'exchange',
         title: SETUP_TITLE,
         owedTo: SETUP_OWED_TO,
-        lgmeAmount: lock.lgmeAmount,
+        lgmeAmount: quote.lgmeAmount,
         reference,
         at: new Date().toISOString()
       });
