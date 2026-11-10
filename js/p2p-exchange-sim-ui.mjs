@@ -4,6 +4,7 @@ import { buildLinks, capPicks, customSite, detectLocalAi, dueRequests, matchCrit
 import { createIndexedDbVault, deviceKeyForMigration, importNonExtractable, openJson, sealJson } from './p2p-sim-guard.mjs';
 import { PASSKEY_COPY, PASSKEY_FALLBACK, enrollPasskey, passkeySupported, readCredentialId, unlockWithPasskey } from './passkey-unlock.mjs';
 import { mountEmailCheck } from './email-check.mjs';
+import { mountSharedListingNote } from './shared-listings.mjs';
 import { mountHederaAnchor } from './hedera-anchor.mjs';
 import { REFERENCE_LABEL, optionLabel, referenceLine } from './dc-reference.mjs';
 import { DONATION_ADDRESS, MINT, buildTransferRequest, createReference, findReferencePayment, isValidPublicKey, readTokenBalance } from './solana-pay.mjs';
@@ -1006,7 +1007,7 @@ async function goodDeedPanel(peers, me) {
     if (full) books.push(full);
   }
   const ranked = sim.rankCategories(sim.projectSubfloors(books));
-  const category = h('select', {}, ['tutoring', 'repair', 'cleanup', 'gear'].map((name, index) => option(name, name, index === 0)));
+  const category = h('select', {}, ['tutoring', 'repair', 'cleanup', 'gear', 'health-fitness'].map((name, index) => option(name, name === 'health-fitness' ? 'Health & fitness' : name, index === 0)));
   const postType = h('select', {}, [
     option('IwantIT', 'IwantIT · request', false),
     option('IhavIT', 'IhavIT · offer', false),
@@ -3492,6 +3493,124 @@ async function renderCircles() {
   );
 }
 
+async function supportExercise(peer, session, kind, pass, code) {
+  const amount = kind === 'contribute-credit' ? 1 : kind === 'barter' ? 0 : 1;
+  const barter = kind === 'barter' ? 'A deed in return' : '';
+  const result = await sim.offerExerciseSupport(store, peer.id, session.sessionId, {
+    authorId: session.authorId,
+    kind,
+    amount,
+    barter,
+    passphrase: pass.value,
+    code: code.value,
+    unixSeconds: Math.floor(Date.now() / 1000)
+  });
+  setStatus(result.ok ? 'Terms are on the record. Nothing moves until they accept. A no is one tap.' : result.error, result.ok ? 'ok' : 'bad');
+  if (result.ok) await render();
+}
+
+async function answerExercise(peer, offer, accept, pass, code) {
+  const spec = { passphrase: pass.value, code: code.value, unixSeconds: Math.floor(Date.now() / 1000) };
+  const result = accept
+    ? await sim.acceptExerciseSupport(store, peer.id, offer.supportId, spec)
+    : await sim.refuseExerciseSupport(store, peer.id, offer.supportId, spec);
+  setStatus(result.ok ? (accept ? 'Support accepted. The session itself minted no credit.' : 'No. Nothing moved.') : result.error, result.ok ? 'ok' : 'bad');
+  if (result.ok) await render();
+}
+
+async function exerciseBoard(seat) {
+  const peer = await store.get(seat);
+  const books = [];
+  for (const id of await store.listIds()) {
+    const row = await store.get(id);
+    if (row) books.push(row);
+  }
+  return exerciseCard(peer, books);
+}
+
+function exerciseCard(peer, books = []) {
+  const category = h('select', {}, [
+    option('strength', 'Strength', true),
+    option('cardio', 'Cardio', false),
+    option('mobility', 'Mobility', false),
+    option('mixed', 'Mixed', false)
+  ]);
+  const evidence = h('select', {}, [
+    option('self-reported', 'Self-reported', true),
+    option('witness', 'Witness co-signed', false),
+    option('device', 'Device log', false)
+  ]);
+  const day = h('input', { type: 'date', value: new Date().toISOString().slice(0, 10) });
+  const terms = h('input', { maxlength: '160', value: 'Contribution or barter', placeholder: 'Support terms' });
+  const note = h('input', { maxlength: '160', placeholder: 'Private note, stays on this device' });
+  const file = h('input', { type: 'file' });
+  const pass = h('input', { type: 'password', autocomplete: 'current-password' });
+  const code = h('input', { inputmode: 'numeric', maxlength: '8', autocomplete: 'one-time-code' });
+  const shared = h('div', { id: 'shared-listings' });
+  queueMicrotask(() => { mountSharedListingNote(shared); });
+  const form = h('form', { id: 'exercise-session' }, [
+    h('p', { class: 'legend' }, ['Exercise session (IdidIt / verified receipt). A workout alone mints no credit. Public fields are the day, the category, the evidence level, and the support terms.']),
+    field('Day', day),
+    field('Category', category),
+    field('Evidence', evidence),
+    field('Support terms', terms),
+    field('Private note', note),
+    field('Device log, stays on this device', file),
+    field('Passphrase', pass),
+    field('6-digit code', code),
+    h('div', { class: 'actions' }, [h('button', { class: 'primary', type: 'submit' }, ['Record session'])]),
+    shared
+  ]);
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    let deviceHash = '';
+    const chosen = file.files && file.files[0];
+    if (chosen) {
+      const bytes = new Uint8Array(await chosen.arrayBuffer());
+      const digest = await crypto.subtle.digest('SHA-256', bytes);
+      deviceHash = Array.from(new Uint8Array(digest)).map((item) => item.toString(16).padStart(2, '0')).join('');
+    }
+    const result = await sim.recordExerciseSession(store, peer.id, {
+      day: day.value,
+      category: category.value,
+      evidence: evidence.value,
+      terms: terms.value,
+      privateNote: note.value,
+      deviceHash,
+      passphrase: pass.value,
+      code: code.value,
+      unixSeconds: Math.floor(Date.now() / 1000)
+    });
+    setStatus(result.ok ? 'IdidIt (verified receipt) recorded. No credit was minted.' : result.error, result.ok ? 'ok' : 'bad');
+    if (result.ok) await render();
+  });
+  const sessions = books.flatMap((book) => Object.values(book.exerciseSessions || {}));
+  const rows = sessions.map((session) => {
+    const mine = session.authorId === peer.id;
+    const offers = Object.values((books.find((book) => book.id === session.authorId)?.exerciseSupports) || {}).filter((offer) => offer.sessionId === session.sessionId && offer.status === 'offered');
+    const actions = [];
+    if (!mine) {
+      actions.push(h('button', { type: 'button', onClick: () => supportExercise(peer, session, 'contribute-lgme', pass, code) }, ['Contribute']));
+      actions.push(h('button', { type: 'button', onClick: () => supportExercise(peer, session, 'contribute-credit', pass, code) }, ['Deed credit']));
+      actions.push(h('button', { type: 'button', onClick: () => supportExercise(peer, session, 'barter', pass, code) }, ['Barter']));
+    }
+    for (const offer of offers.filter(() => mine)) {
+      actions.push(h('button', { type: 'button', onClick: () => answerExercise(peer, offer, false, pass, code) }, ['No']));
+      actions.push(h('button', { type: 'button', class: 'primary', onClick: () => answerExercise(peer, offer, true, pass, code) }, ['Accept']));
+    }
+    return h('article', { class: 'row' }, [
+      h('p', {}, [`Session completed · ${session.day} · ${session.category} · ${session.evidence}`]),
+      h('p', { class: 'legend' }, [`Terms: ${session.terms || 'Contribution or barter'}`]),
+      actions.length ? h('div', { class: 'actions' }, actions) : null
+    ]);
+  });
+  return h('section', { id: 'exercise-record' }, [
+    h('h3', {}, ['Exercise session (IdidIt / verified receipt)']),
+    form,
+    ...rows
+  ]);
+}
+
 async function renderList(seat) {
   stopAnyCamera();
   const panel = document.getElementById('panel');
@@ -3519,6 +3638,7 @@ async function renderList(seat) {
     });
     panel.replaceChildren(
       h('h2', {}, ['List']),
+      await exerciseBoard(seat),
       steps,
       h('p', { class: 'muted' }, ['Take a photo or choose one. It is scaled down in this browser and kept on the listing locally.']),
       listDraft.photo ? h('img', { class: 'shot', alt: '', src: listDraft.photo, width: '224', height: '224', loading: 'lazy' }) : null,

@@ -8,6 +8,8 @@ import { ACK_MS, CO_SIGN_ABOVE, FORK, OFFLINE_SPEND, REPLAY, STALE_ACK, ackFresh
 import { ALT_CHOICES, DEFAULT_CLAMP_BAND, HISTORY_UNAVAILABLE, NO_COIN, PEG_LABEL, PEG_NOTE, QUOTE_MS, applyPegBands, buildPegQuote, clampBand, round6, withinLock } from './lgme-price.mjs';
 import { bilateralNet, clearingRules, clearingWindow, cycleNetStub, dayEntries, merkleProofFor, merkleRootOf, nextWindow, verifyMerkleProof, windowEntries } from './clearing.mjs';
 import { DEED_CATEGORIES, DEED_POST_TYPES, RECEIPT_NAME, DEFAULT_SUBFLOOR_RULES, firstClaimCategory, floatedUnit, lockDeedUnit, paidAndHeldToday, planDeedPost, projectSubfloors, rankCategories, splitZeroProceeds } from './subfloor.mjs';
+import { privateExerciseNote, publicExerciseItem } from './exercise-record.mjs';
+import { listingMessage } from './shared-listings.mjs';
 
 export { bilateralNet, clearingRules, clearingWindow, cycleNetStub, merkleProofFor, merkleRootOf, nextWindow, verifyMerkleProof };
 export { DEED_CATEGORIES, DEED_POST_TYPES, DEFAULT_SUBFLOOR_RULES, firstClaimCategory, floatedUnit, lockDeedUnit, planDeedPost, projectSubfloors, rankCategories, splitZeroProceeds };
@@ -403,6 +405,7 @@ export function entryDetail(entry, names = {}) {
   if (entry.type === 'SUBFLOOR_PAYOUT') return `Subfloor payout ${payload.amount} $lgme`.trim();
   if (entry.type === 'ZERO_PRICE_SPLIT') return `Zero-price split ${payload.subfloor} subfloor, ${payload.floor} main floor`.trim();
   if (entry.type === 'DEED_ATTESTED') return `${payload.receiptName || 'Deed'} ${payload.category || ''}`.trim();
+  if (entry.type === 'EXERCISE_SESSION') return `IdidIt (verified receipt) ${payload.day || ''} ${payload.category || ''} ${payload.evidence || ''}`.trim();
   if (entry.type === 'refusal') return payload.statement || 'REFUSAL';
   if (entry.type === 'block') return payload.message || FLOOR_BLOCK;
   if (entry.type === 'KYC_STARTED') return 'KYC started. Details stay on this device.';
@@ -958,7 +961,7 @@ export async function donateToSubfloor(store, peerId, spec = {}) {
   const peers = await allPeers(store);
   const snapshot = projectSubfloors(peers);
   const category = spec.category ? String(spec.category) : firstClaimCategory(snapshot);
-  if (!DEED_CATEGORIES.includes(category)) return fail('Choose tutoring, repair, cleanup, or gear.');
+  if (!DEED_CATEGORIES.includes(category)) return fail('Choose tutoring, repair, cleanup, gear, or health and fitness.');
   const keyed = await unlockDeed(peer, spec);
   if (!keyed.ok) return keyed;
   const next = round2(replay(peer).balance - amount);
@@ -3135,6 +3138,220 @@ export function listingCore(spec) {
 
 function addDays(iso, days) {
   return new Date(new Date(iso).getTime() + days * 86400000).toISOString();
+}
+
+export async function recordExerciseSession(store, peerId, spec = {}) {
+  const peer = await store.get(peerId);
+  if (!peer) return fail('Unknown peer.');
+  const pub = publicExerciseItem(spec);
+  if (!pub.ok) return pub;
+  if (spec.evidence === 'device' && !/^[0-9a-f]{64}$/i.test(String(spec.deviceHash || ''))) {
+    return fail('A device log needs a hash. The file stays on this device.');
+  }
+  const keyed = await unlockDeed(peer, spec);
+  if (!keyed.ok) return keyed;
+  const at = spec.at || nowIso();
+  const sessionId = await sha256(canonicalJSON({ peerId, item: pub.item, at }));
+  const payload = {
+    sessionId,
+    ...pub.item,
+    group: 'health-fitness',
+    receiptName: 'IdidIt (verified receipt)',
+    creditMinted: false,
+    authorId: peerId
+  };
+  const before = replay(peer).balance;
+  await appendEntry(peer, 'EXERCISE_SESSION', payload, at);
+  peer.exerciseSessions = peer.exerciseSessions || {};
+  peer.exerciseSessions[sessionId] = payload;
+  const kept = privateExerciseNote(spec);
+  if (kept.note || kept.deviceHash) {
+    peer.exercisePrivate = peer.exercisePrivate || {};
+    peer.exercisePrivate[sessionId] = kept;
+  }
+  releaseLockedKey(peer);
+  await store.set(peerId, peer);
+  const fresh = await store.get(peerId);
+  return {
+    ok: true,
+    sessionId,
+    publicItem: pub.item,
+    balance: replay(fresh).balance,
+    unchanged: replay(fresh).balance === before,
+    creditMinted: false
+  };
+}
+
+export async function witnessExercise(store, witnessId, sessionId, spec = {}) {
+  const witness = await store.get(witnessId);
+  const author = await store.get(spec.authorId || '');
+  if (!witness || !author?.exerciseSessions?.[sessionId]) return fail('No exercise session on this book.');
+  if (witnessId === author.id) return fail('A witness is the other person.');
+  const keyed = await unlockDeed(witness, spec);
+  if (!keyed.ok) return keyed;
+  const at = spec.at || nowIso();
+  const before = replay(author).balance;
+  const payload = { sessionId, evidence: 'witness', creditMinted: false };
+  author.exerciseSessions[sessionId] = { ...author.exerciseSessions[sessionId], evidence: 'witness' };
+  if (author.privateKeyJwk || author.signingKey) await appendEntry(author, 'EXERCISE_WITNESS', payload, at);
+  await appendEntry(witness, 'EXERCISE_WITNESS', payload, at);
+  releaseLockedKey(witness);
+  await store.set(witnessId, witness);
+  await store.set(author.id, author);
+  return { ok: true, evidence: 'witness', unchanged: replay(await store.get(author.id)).balance === before, creditMinted: false };
+}
+
+export async function offerExerciseSupport(store, giverId, sessionId, spec = {}) {
+  const giver = await store.get(giverId);
+  const author = await store.get(spec.authorId || '');
+  const session = author?.exerciseSessions?.[sessionId];
+  if (!giver || !session) return fail('No exercise session on this book.');
+  if (giverId === author.id) return fail('Someone else supports this session.');
+  const kind = String(spec.kind || '');
+  if (!['contribute-lgme', 'contribute-credit', 'barter'].includes(kind)) return fail('Choose a contribution or a barter.');
+  const terms = publicExerciseItem({ ...session, terms: spec.terms || session.terms });
+  if (!terms.ok) return terms;
+  const amount = kind === 'barter' ? 0 : round2(spec.amount || (kind === 'contribute-credit' ? 1 : 0));
+  if (kind !== 'barter' && !(amount > 0)) return fail('Enter an amount greater than zero.');
+  if (kind === 'contribute-lgme') {
+    const blocked = floorBlockReason(giver, round2(replay(giver).balance - amount));
+    if (blocked) return fail(blocked);
+  }
+  const keyed = await unlockDeed(giver, spec);
+  if (!keyed.ok) return keyed;
+  const at = spec.at || nowIso();
+  const supportId = await sha256(canonicalJSON({ giverId, sessionId, kind, amount, at }));
+  const offer = {
+    supportId,
+    sessionId,
+    kind,
+    amount,
+    barter: kind === 'barter' ? String(spec.barter || '').trim().slice(0, 80) : '',
+    fromId: giverId,
+    toId: author.id,
+    status: 'offered',
+    terms: session.terms,
+    group: 'health-fitness'
+  };
+  if (kind === 'barter' && !offer.barter) {
+    releaseLockedKey(giver);
+    await store.set(giverId, giver);
+    return fail('Name the deed or item you offer.');
+  }
+  const before = replay(giver).balance;
+  giver.exerciseSupports = giver.exerciseSupports || {};
+  giver.exerciseSupports[supportId] = offer;
+  author.exerciseSupports = author.exerciseSupports || {};
+  author.exerciseSupports[supportId] = offer;
+  await appendEntry(giver, 'EXERCISE_SUPPORT', offer, at);
+  if (author.privateKeyJwk || author.signingKey) await appendEntry(author, 'EXERCISE_SUPPORT', offer, at);
+  releaseLockedKey(giver);
+  await store.set(giverId, giver);
+  await store.set(author.id, author);
+  return { ok: true, supportId, unchanged: replay(await store.get(giverId)).balance === before };
+}
+
+export async function refuseExerciseSupport(store, authorId, supportId, spec = {}) {
+  const author = await store.get(authorId);
+  const offer = author?.exerciseSupports?.[supportId];
+  if (!offer || offer.toId !== authorId) return fail('No support offer on this book.');
+  if (offer.status === 'refused') return { ok: true, status: 'refused', noop: true };
+  if (offer.status === 'accepted') return fail('Already accepted. A no does not unwind it.');
+  const keyed = await unlockDeed(author, spec);
+  if (!keyed.ok) return keyed;
+  const at = spec.at || nowIso();
+  const before = replay(author).balance;
+  const next = { ...offer, status: 'refused' };
+  author.exerciseSupports[supportId] = next;
+  await appendEntry(author, 'EXERCISE_SUPPORT_NO', { supportId, sessionId: offer.sessionId }, at);
+  const giver = await store.get(offer.fromId);
+  if (giver) {
+    giver.exerciseSupports = giver.exerciseSupports || {};
+    giver.exerciseSupports[supportId] = next;
+    if (giver.privateKeyJwk || giver.signingKey) await appendEntry(giver, 'EXERCISE_SUPPORT_NO', { supportId, sessionId: offer.sessionId }, at);
+    await store.set(giver.id, giver);
+  }
+  releaseLockedKey(author);
+  await store.set(authorId, author);
+  return { ok: true, status: 'refused', unchanged: replay(await store.get(authorId)).balance === before };
+}
+
+export async function acceptExerciseSupport(store, authorId, supportId, spec = {}) {
+  const author = await store.get(authorId);
+  const offer = author?.exerciseSupports?.[supportId];
+  if (!offer || offer.toId !== authorId) return fail('No support offer on this book.');
+  if (offer.status !== 'offered') return fail('That support is no longer open.');
+  const giver = await store.get(offer.fromId);
+  if (!giver?.privateKeyJwk && !giver?.signingKey) return fail('The supporter book is locked on this device.');
+  const keyed = await unlockDeed(author, spec);
+  if (!keyed.ok) return keyed;
+  const at = spec.at || nowIso();
+  const beforeAuthor = replay(author).balance;
+  const beforeGiver = replay(giver).balance;
+  if (offer.kind === 'contribute-lgme') {
+    const blocked = floorBlockReason(giver, round2(beforeGiver - offer.amount));
+    if (blocked) {
+      releaseLockedKey(author);
+      await store.set(authorId, author);
+      return fail(blocked);
+    }
+    const skim = round2(offer.amount * 0.01);
+    const net = round2(offer.amount - skim);
+    await appendEntry(giver, 'transfer', { fromId: giver.id, toId: author.id, amount: offer.amount, unit: '$lgme', direction: 'out', note: 'Exercise support' }, at);
+    await appendEntry(author, 'transfer', { fromId: giver.id, toId: author.id, amount: net, unit: '$lgme', direction: 'in', note: 'Exercise support' }, at);
+    const skimPayload = { entryId: `skim:exercise:${supportId}`, postId: supportId, category: 'health-fitness', amount: skim, hedera: false };
+    await appendEntry(giver, 'SUBFLOOR_SKIM', skimPayload, at);
+    await appendEntry(author, 'SUBFLOOR_SKIM', skimPayload, at);
+  } else if (offer.kind === 'contribute-credit') {
+    await appendEntry(giver, 'EXERCISE_CREDIT', { supportId, amount: offer.amount, unit: 'campus-credit', lgme: false }, at);
+    await appendEntry(author, 'EXERCISE_CREDIT', { supportId, amount: offer.amount, unit: 'campus-credit', lgme: false }, at);
+  } else {
+    await appendEntry(giver, 'EXERCISE_BARTER', { supportId, barter: offer.barter, lgme: false }, at);
+    await appendEntry(author, 'EXERCISE_BARTER', { supportId, barter: offer.barter, lgme: false }, at);
+  }
+  const accepted = { ...offer, status: 'accepted' };
+  author.exerciseSupports[supportId] = accepted;
+  giver.exerciseSupports[supportId] = accepted;
+  releaseLockedKey(author);
+  await store.set(authorId, author);
+  await store.set(giver.id, giver);
+  const freshAuthor = await store.get(authorId);
+  const freshGiver = await store.get(giver.id);
+  const session = freshAuthor.exerciseSessions?.[offer.sessionId];
+  return {
+    ok: true,
+    status: 'accepted',
+    creditMinted: session?.creditMinted === true,
+    giverBalance: replay(freshGiver).balance,
+    authorBalance: replay(freshAuthor).balance,
+    movedLgme: offer.kind === 'contribute-lgme'
+      ? replay(freshGiver).balance === round2(beforeGiver - offer.amount) && replay(freshAuthor).balance === round2(beforeAuthor + round2(offer.amount * 0.99))
+      : replay(freshGiver).balance === beforeGiver && replay(freshAuthor).balance === beforeAuthor
+  };
+}
+
+export async function exerciseShareBody(store, peerId, sessionId) {
+  const peer = await store.get(peerId);
+  const session = peer?.exerciseSessions?.[sessionId];
+  if (!session) return fail('No exercise session on this book.');
+  const built = listingMessage({
+    id: sessionId,
+    author: peer.publicKeyJwk,
+    kind: 'listing',
+    status: 'open',
+    item: {
+      completed: true,
+      day: session.day,
+      category: session.category,
+      evidence: session.evidence,
+      terms: session.terms
+    }
+  });
+  if (!built.ok) return built;
+  if (!peer.privateKeyJwk && !peer.signingKey) return fail('Unlock the wallet before signing a shared listing.');
+  const hash = await sha256(canonicalJSON(built.body));
+  const sig = await signText(peer.privateKeyJwk || peer.signingKey, hash);
+  return { ok: true, message: { ...built.body, hash, sig }, published: false };
 }
 
 export function listingVisible(listing, at = nowIso()) {

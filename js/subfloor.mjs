@@ -1,5 +1,5 @@
 export const DEED_POST_TYPES = Object.freeze(['IwantIT', 'IhavIT', 'IselIT', 'soBeIT']);
-export const DEED_CATEGORIES = Object.freeze(['tutoring', 'repair', 'cleanup', 'gear']);
+export const DEED_CATEGORIES = Object.freeze(['tutoring', 'repair', 'cleanup', 'gear', 'health-fitness']);
 export const RECEIPT_NAME = 'IdidIt (verified receipt)';
 export const DEFAULT_SUBFLOOR_RULES = Object.freeze({
   skimRate: 0.01,
@@ -195,7 +195,7 @@ export function planDeedPost(spec, pool, rules = DEFAULT_SUBFLOOR_RULES) {
     };
   }
   if (!DEED_POST_TYPES.includes(spec.postType)) return { ok: false, error: 'Choose IwantIT, IhavIT, IselIT, or soBeIT.' };
-  if (!DEED_CATEGORIES.includes(spec.category)) return { ok: false, error: 'Choose tutoring, repair, cleanup, or gear.' };
+  if (!DEED_CATEGORIES.includes(spec.category)) return { ok: false, error: 'Choose tutoring, repair, cleanup, gear, or health and fitness.' };
   const unit = lockDeedUnit({ priceUsdPerLgme: spec.priceUsdPerLgme, valueUsd: listUsd, at: spec.at });
   if (!unit.ok) return unit;
   if (spec.postType === 'soBeIT') {
