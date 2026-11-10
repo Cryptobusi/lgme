@@ -1,6 +1,7 @@
 import { createReference } from './solana-pay.mjs';
 import { PRICE_UNAVAILABLE, SAMPLE_MS, averagePrice, fetchSpotPrice, lgmeForUsd, lockOpen, lockPayQuote } from './lgme-price.mjs';
 import { ensureDeviceKey, signDevice } from './device-sign.mjs';
+import { mountPoolUse } from './membership-pool-page.mjs';
 import {
   PUMP_URL,
   SETUP_ADDRESS,
@@ -137,6 +138,7 @@ export async function renderSetupFee({ storage, go, mine }) {
     wallet,
     el('button', { type: 'button', class: 'primary', id: 'pay-now', onClick: () => showPayNow() }, ['Pay']),
     el('button', { type: 'button', id: 'pay-later', onClick: () => showPayLater() }, ['Pay later']),
+    mountPoolUse({ handle, storage, status }),
     panel,
     el('button', { type: 'button', id: 'setup-continue', onClick: () => go('/personalize') }, ['Continue to Health']),
     status

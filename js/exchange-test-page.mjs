@@ -1,6 +1,8 @@
 import { ensureDeviceKey, signDevice } from './device-sign.mjs';
 import { draftExchangeListing, UNCLAIMED } from './exchange-listing.mjs';
 import { saveTilePhoto } from './health-tile-photo.mjs';
+import { POOL_ID } from './membership-pool.mjs';
+import { renderMembershipPool } from './membership-pool-page.mjs';
 
 function el(tag, attrs = {}, children = []) {
   const node = document.createElement(tag);
@@ -47,14 +49,18 @@ export async function mountExchangeTest(host) {
     const response = await fetch('/api/hedera/listings');
     const body = await response.json().catch(() => ({}));
     const rows = body.listings || [];
+    rows.sort((a, b) => (b.item?.pinned === true) - (a.item?.pinned === true));
     list.replaceChildren(...(rows.length ? rows.map((row) => {
       const item = row.item || {};
       const claim = item.status === UNCLAIMED
         ? el('button', { type: 'button', id: `claim-${item.id}`, onClick: () => claimItem(item) }, ['Claim as provider'])
         : null;
+      const poolLine = item.id === POOL_ID
+        ? `In US$${Number(item.inUsd || 0).toFixed(2)}. Out US$${Number(item.outUsd || 0).toFixed(2)}. Covers ${item.covers || 0}.`
+        : `${item.status}. ${item.service}. ${item.durationMin || 0} min.`;
       return el('article', { class: 'card', id: `mirror-${item.id}` }, [
         el('h3', {}, [item.title || item.id]),
-        el('p', {}, [`${item.status}. ${item.service}. ${item.durationMin || 0} min.`]),
+        el('p', {}, [poolLine]),
         el('p', { class: 'muted' }, [item.rate ? `Suggested credit ${item.rate.author}. ${item.rate.note || ''}` : '']),
         el('p', {}, [
           el('a', { href: `https://hashscan.io/testnet/topic/${body.topicId}/message/${row.sequenceNumber}` }, [`Mirror message ${row.sequenceNumber}`])
@@ -142,7 +148,9 @@ export async function mountExchangeTest(host) {
     status.textContent = 'Photo saved on this phone. Only the hash can be posted.';
   });
 
+  const poolHost = el('div', { id: 'membership-pool', class: 'card' });
   host.replaceChildren(
+    poolHost,
     el('h2', {}, ['Testnet listings']),
     el('p', { class: 'muted' }, ['Exchange testing writes to Hedera testnet topic 0.0.11397293. Account 0.0.11281203 pays each message. The topic has no admin key, so no submit key was added. No email, phone, or photo bytes go on the topic.']),
     status,
@@ -161,6 +169,7 @@ export async function mountExchangeTest(host) {
     } }, ['Draft with the assistant']),
     draftHost
   );
+  await renderMembershipPool(poolHost, handleOf());
   await refresh();
 }
 
