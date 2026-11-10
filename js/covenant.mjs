@@ -11,7 +11,7 @@ export const CLARIFICATIONS = Object.freeze([
   'Not medical advice; members exercise at their own risk and may stop anytime.',
   "Fitness coaching/personal training delivered in person and measured in session-hours counts as direct professional labor, not 'speculative coaching'.",
   "Using club-owned equipment under the member's own paid-up membership counts as unencumbered access.",
-  "'Admissions stewards' are, until defined, the two sponsors.",
+  "Admissions Steward: by default, the club's designated trainer serves as steward for that Health circle/group. The steward can be changed: the group (or club admin) may reassign it to another Tier-1 member who has cleared their balance at least once, and an applicant may request a different steward if the default one sponsored them or has a conflict. Stewards apply the 5 gates consistently, break a split between sponsors, approve credit-limit raises toward -200, and handle mediation after bilateral resolution fails. A steward never reviews someone they sponsored and receives no credit or perks for the role.",
   'If only one offering passes, the member gets Tier-0 rather than rejection.'
 ]);
 

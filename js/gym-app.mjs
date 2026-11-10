@@ -13,7 +13,8 @@ import { communityFeed } from './gym-feed.mjs';
 import { OPT_IN_COPY, answerLocal, deleteDownloadedModel, detectEngine, isOn, setOn, unloadLocalModel } from './local-ai.mjs';
 import { STARTERS, agentNotice, deleteAgent, dueAgents, editAgent, listAgents, markFired, needsPermission, pauseAgent, saveAgent, scheduleNote } from './local-agents.mjs';
 import { CLARIFICATIONS, COVENANT_TITLE, FIELD_LABELS, covenantHash, covenantSections, covenantText, exitReceipt, openCommitments, publicCovenant, signSponsor, sponsorStatus, velocityNote } from './covenant.mjs';
-import { addReview, intakeParts, intakeStatusText, publicIntake, reviewHash } from './intake.mjs';
+import { addReview, approveLimitRaise, breakSplit, intakeParts, intakeStatusText, publicIntake, requestLimitRaise, reviewHash } from './intake.mjs';
+import { changeSteward, groupSteward, isGroupAdmin, majoritySteward, queueFor, routeSteward, sponsorIds, stewardEligible } from './steward.mjs';
 import { renderProtocol } from './intake-view.mjs';
 
 let mode = localStorage.getItem(MODE_KEY) === 'demo' ? 'demo' : 'real';
@@ -486,6 +487,109 @@ async function renderPeople() {
   return list;
 }
 
+function voteKey(code) {
+  return `lgme.stewardVotes.${code}`;
+}
+
+async function writeSteward(code, stewardId, members) {
+  for (const peer of members) {
+    if (!peer.clubGroups?.[code]) continue;
+    peer.clubGroups[code] = { ...peer.clubGroups[code], steward: stewardId, stewardSet: 'assigned' };
+    await store.set(peer.id, peer);
+  }
+}
+
+function stewardCard(mine, members) {
+  const card = el('section', { id: 'group-steward', class: 'card' });
+  const codes = Object.keys(mine.clubGroups || {});
+  if (!codes.length) {
+    card.append(el('p', { id: 'steward-name' }, ['Steward: none yet.']));
+    return card;
+  }
+  for (const code of codes) {
+    const groupMembers = members.filter((peer) => peer.clubGroups?.[code]);
+    const stewardId = groupSteward(groupMembers, code);
+    const steward = groupMembers.find((peer) => peer.id === stewardId);
+    card.append(el('p', { id: 'steward-name' }, [`Steward: ${steward?.name || stewardId || 'not set'}`]));
+    card.append(el('p', { class: 'muted' }, ['The steward receives no credit or perks for the role.']));
+    const eligible = groupMembers.filter((peer) => stewardEligible(peer) && peer.id !== stewardId);
+    const select = el('select', { id: 'steward-choice' });
+    for (const person of eligible) select.append(el('option', { value: person.id }, [person.name]));
+    if (!eligible.length) card.append(el('p', { class: 'muted' }, ['A new steward is a Tier-1 member who has cleared a balance once.']));
+    card.append(select);
+    if (isGroupAdmin(mine, code)) {
+      card.append(el('button', { id: 'change-steward', type: 'button', onClick: async () => {
+        const result = changeSteward(groupMembers, code, select.value, mine.id);
+        if (!result.ok) { status(result.error); return; }
+        await writeSteward(code, result.steward, groupMembers);
+        render();
+      } }, ['Change steward']));
+    } else {
+      card.append(el('button', { id: 'vote-steward', type: 'button', onClick: async () => {
+        const votes = JSON.parse(localStorage.getItem(voteKey(code)) || '{}');
+        votes[mine.id] = select.value;
+        localStorage.setItem(voteKey(code), JSON.stringify(votes));
+        const winner = majoritySteward(votes, groupMembers.length);
+        if (!winner) { status('The vote is recorded. A majority of the group is still needed.'); return; }
+        const candidate = groupMembers.find((peer) => peer.id === winner);
+        if (!stewardEligible(candidate)) { status('A steward is a Tier-1 member who has cleared a balance once.'); return; }
+        await writeSteward(code, winner, groupMembers);
+        render();
+      } }, ['Vote to change steward']));
+    }
+    card.append(el('button', { type: 'button', onClick: async () => {
+      mine.intake = { ...(mine.intake || {}), mediation: [...(mine.intake?.mediation || []), 'Bilateral resolution did not finish.'] };
+      await store.set(mine.id, mine);
+      status('The steward has the mediation request. No credit moved.');
+      render();
+    } }, ['Ask the steward to mediate']));
+    if (mine.id === stewardId) card.append(queueCard(mine, members, code));
+  }
+  return card;
+}
+
+function queueCard(steward, members, code) {
+  const box = el('div', { id: 'steward-queue' });
+  box.append(el('h3', {}, ['Review queue']));
+  const rows = queueFor(steward.id, members, code);
+  if (!rows.length) box.append(el('p', { class: 'muted' }, ['No reviews are waiting.']));
+  for (const row of rows) {
+    const peer = members.find((item) => item.id === row.id);
+    const line = el('article', { class: 'card' }, [el('p', {}, [row.text])]);
+    if (row.kind === 'split' && peer) {
+      line.append(el('button', { type: 'button', onClick: () => settleSplit(peer, steward.id, 'PASS', 'PASS') }, ['Tie-break: both pass']));
+      line.append(el('button', { type: 'button', onClick: () => settleSplit(peer, steward.id, 'PASS', 'REVISE') }, ['Tie-break: primary only']));
+    }
+    if (row.kind === 'raise' && peer) {
+      line.append(el('button', { type: 'button', onClick: () => signRaise(peer, steward.id) }, ['Approve limit raise']));
+    }
+    box.append(line);
+  }
+  return box;
+}
+
+async function settleSplit(peer, stewardId, primary, secondary) {
+  const before = sim.replay(peer).balance;
+  const saved = breakSplit(peer.intake, stewardId, { primary, secondary }, sponsorIds(peer));
+  if (!saved.ok) { status(saved.error); return; }
+  peer.intake = saved.intake;
+  await store.set(peer.id, peer);
+  const after = sim.replay(await store.get(peer.id)).balance;
+  status(after === before ? `${intakeStatusText(saved.intake.status)}. The steward was not paid.` : 'The balance changed.');
+  render();
+}
+
+async function signRaise(peer, stewardId) {
+  const before = sim.replay(peer).balance;
+  const saved = approveLimitRaise(peer.intake, stewardId, sponsorIds(peer));
+  if (!saved.ok) { status(saved.error); return; }
+  peer.intake = saved.intake;
+  await store.set(peer.id, peer);
+  const after = sim.replay(await store.get(peer.id)).balance;
+  status(after === before ? 'Limit raise signed. The steward was not paid.' : 'The balance changed.');
+  render();
+}
+
 async function renderGroups() {
   const mine = await seat();
   const sync = await chatStatus();
@@ -531,8 +635,10 @@ async function renderGroups() {
       }
     }
   }
+  const peers = mine ? await books() : [];
   return el('div', {}, [
     el('h2', {}, ['Group']),
+    mine ? stewardCard(mine, peers) : el('p', { id: 'steward-name' }, ['Steward: none yet.']),
     el('p', {}, [sync.message || LOCAL_CHAT_NOTE]),
     el('label', {}, ['Invite code', code]),
     el('button', { type: 'button', onClick: async () => {
@@ -965,7 +1071,7 @@ async function renderRegister() {
   return box;
 }
 
-function covenantPanel(peer) {
+function covenantPanel(peer, members = []) {
   if (!peer?.covenant) return null;
   const host = el('section', { class: 'card', id: 'covenant-member' });
   host.append(el('p', { id: 'intake-status' }, [intakeStatusText(peer.intake?.status)]));
@@ -975,7 +1081,32 @@ function covenantPanel(peer) {
     host.append(el('p', {}, [(peer.intake.notes || []).join(' ')]));
     host.append(el('button', { type: 'button', onClick: () => go('/intake') }, ['Edit intake']));
   }
-  if (peer.intake?.status === 'Tier-1') host.append(el('p', {}, ['Negative line is -50.']));
+  if (peer.intake?.status === 'Tier-1') {
+    host.append(el('p', {}, ['Negative line is -50.']));
+    if (!peer.intake.limitRequest?.approved) {
+      host.append(el('button', { type: 'button', onClick: async () => {
+        const raised = requestLimitRaise(peer.intake, -200);
+        if (!raised.ok) { status(raised.error); return; }
+        peer.intake = raised.intake;
+        await store.set(peer.id, peer);
+        status('The raise waits for the steward. Nothing was credited.');
+        render();
+      } }, ['Request a limit of -200']));
+    }
+  }
+  const groupCode = Object.keys(peer.clubGroups || {})[0];
+  if (groupCode) {
+    const stewardId = groupSteward(members, groupCode);
+    const routed = routeSteward({ steward: stewardId, members, sponsors: sponsorIds(peer), requested: peer.intake?.stewardRequest === true });
+    if (routed.conflict) host.append(el('p', {}, [routed.alternate ? `Steward routed to ${routed.alternate}.` : 'An alternate steward is needed.']));
+    if (sponsorIds(peer).includes(stewardId)) {
+      host.append(el('button', { type: 'button', onClick: async () => {
+        peer.intake = { ...(peer.intake || {}), stewardRequest: true };
+        await store.set(peer.id, peer);
+        render();
+      } }, ['Request a different steward']));
+    }
+  }
   if (peer.intake?.status === 'Tier-0') host.append(el('p', {}, ['No negative line until 25 units are earned.']));
   if (peer.intake?.status === 'paused') host.append(el('p', {}, [(peer.intake.notes || []).join(' ')]));
   if (peer.intake?.reviewHash) host.append(el('p', { class: 'muted' }, [`Review hash ${peer.intake.reviewHash}`]));
@@ -1222,7 +1353,7 @@ async function renderDashboard() {
   const groups = Object.values(mine.clubGroups || {});
   const view = el('div', {}, [
     el('p', {}, [el('a', { href: '/?picker=1' }, ['All categories']), ' · ', el('a', { href: '/gym/covenant' }, ['Member Covenant'])]),
-    covenantPanel(mine),
+    covenantPanel(mine, locals),
     await renderProgress(mine, true),
     localAiCard(mine),
     el('h2', {}, ['Your groups']),

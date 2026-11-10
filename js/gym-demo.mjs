@@ -98,7 +98,7 @@ export async function seedDemoClub(store) {
     peer.example = true;
     peer.gymRole = person.role;
     peer.gymProfile = profile(person.journey);
-    peer.clubGroups = { [DEMO_CLUB]: { name: DEMO_NAME, code: DEMO_CLUB, role: person.role } };
+    peer.clubGroups = { [DEMO_CLUB]: { name: DEMO_NAME, code: DEMO_CLUB, role: person.role, steward: 'sam', creator: 'sam', stewardSet: 'default' } };
     await store.set(person.id, peer);
   }
   const bundle = { startedAt: AT, finishedAt: END, points: [], photos: [], samples: 0 };

@@ -3230,7 +3230,7 @@ export async function createClubGroup(store, peerId, spec = {}) {
   const keyed = await unlockDeed(peer, spec);
   if (!keyed.ok) return keyed;
   peer.clubGroups = peer.clubGroups || {};
-  peer.clubGroups[code] = { name, code, role: 'trainer' };
+  peer.clubGroups[code] = { name, code, role: 'trainer', steward: peer.id, creator: peer.id, stewardSet: 'default' };
   releaseLockedKey(peer);
   await store.set(peerId, peer);
   return { ok: true, code };
@@ -3250,7 +3250,7 @@ export async function joinClubGroup(store, peerId, spec = {}) {
   const keyed = await unlockDeed(peer, spec);
   if (!keyed.ok) return keyed;
   peer.clubGroups = peer.clubGroups || {};
-  peer.clubGroups[code] = { name: found.name, code, role: 'member' };
+  peer.clubGroups[code] = { name: found.name, code, role: 'member', steward: found.steward || '', creator: found.creator || '', stewardSet: found.stewardSet || 'default' };
   releaseLockedKey(peer);
   await store.set(peerId, peer);
   return { ok: true, code, name: found.name };

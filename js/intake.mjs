@@ -36,8 +36,17 @@ function notesOf(rows) {
   return rows.map((row) => String(row.notes || '').trim()).filter(Boolean);
 }
 
-export function intakeOutcome(reviews = []) {
-  const rows = Array.isArray(reviews) ? reviews : [];
+export function sponsorsSplit(reviews = []) {
+  if (!Array.isArray(reviews) || reviews.length < 2) return false;
+  const [first, second] = reviews;
+  return first.primary?.status !== second.primary?.status || first.secondary?.status !== second.secondary?.status;
+}
+
+function gatesFor(status) {
+  return status === 'PASS' ? [true, true, true, true, true] : [false, false, false, false, false];
+}
+
+function decideAgreed(rows) {
   if (rows.some((row) => row.primary?.status === 'REJECT' || row.secondary?.status === 'REJECT')) {
     return { status: 'paused', notes: notesOf(rows) };
   }
@@ -51,17 +60,58 @@ export function intakeOutcome(reviews = []) {
   return { status: 'Tier-0', notes: [] };
 }
 
+export function intakeOutcome(reviews = [], stewardBreak) {
+  const rows = Array.isArray(reviews) ? reviews : [];
+  if (sponsorsSplit(rows)) {
+    if (!stewardBreak?.primary || !stewardBreak?.secondary) return { status: 'Split', notes: notesOf(rows) };
+    const decided = {
+      primary: { status: stewardBreak.primary, gates: gatesFor(stewardBreak.primary) },
+      secondary: { status: stewardBreak.secondary, gates: gatesFor(stewardBreak.secondary) }
+    };
+    return decideAgreed([decided, decided]);
+  }
+  return decideAgreed(rows);
+}
+
 export function intakeStatusText(status) {
   if (status === 'paused') return 'Application paused';
+  if (status === 'Split') return 'Pending steward';
   if (INTAKE_STATUSES.includes(status)) return status;
   return 'Pending sponsors';
 }
 
 export function intakeCreditLimit(intake, earned = 0) {
   if (!intake) return 0;
+  if (intake.status === 'Tier-1' && intake.limitRequest?.approved) {
+    const asked = Number(intake.limitRequest.to);
+    if (asked <= -50 && asked >= -200) return asked;
+  }
   if (intake.status === 'Tier-1') return -50;
   if (intake.status === 'Tier-0' && Number(earned) >= 25) return -50;
   return 0;
+}
+
+export function requestLimitRaise(intake, amount) {
+  const figure = Number(amount);
+  if (intake?.status !== 'Tier-1') return { ok: false, error: 'A limit raise starts from Tier-1.' };
+  if (!(figure < -50 && figure >= -200)) return { ok: false, error: 'A raise stays between -50 and -200.' };
+  return { ok: true, intake: { ...intake, limitRequest: { to: figure, approved: false } } };
+}
+
+export function approveLimitRaise(intake, stewardId, sponsors = []) {
+  if (!intake?.limitRequest || intake.limitRequest.approved) return { ok: false, error: 'No raise is waiting.' };
+  if ((sponsors || []).includes(stewardId)) return { ok: false, error: 'A steward never reviews someone they sponsored.' };
+  return { ok: true, intake: { ...intake, limitRequest: { ...intake.limitRequest, approved: true, steward: stewardId } } };
+}
+
+export function breakSplit(intake, stewardId, decision = {}, sponsors = []) {
+  if ((sponsors || []).includes(stewardId)) return { ok: false, error: 'A steward never reviews someone they sponsored.' };
+  if (!sponsorsSplit(intake?.reviews || [])) return { ok: false, error: 'The sponsors do not disagree.' };
+  const outcome = intakeOutcome(intake.reviews, decision);
+  return {
+    ok: true,
+    intake: { ...intake, stewardBreak: { handle: stewardId, primary: decision.primary, secondary: decision.secondary }, status: outcome.status, notes: outcome.notes }
+  };
 }
 
 export function publicIntake(record = {}) {
