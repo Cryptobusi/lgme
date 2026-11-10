@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0c100c" />
+  <title>Breach plan · lgme Gym</title>
+  <meta name="description" content="Draft plan for a health-data breach in the Gym beta." />
+  <link rel="icon" href="/icons/gym-192.png" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600&family=Newsreader:opsz,wght@6..72,500&display=swap" />
+  <style>
+    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; --card:#151a15; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; font-size:1.05rem; line-height:1.5; }
+    header, main, footer { padding:1rem; max-width:40rem; margin:0 auto; }
+    h1,h2 { font-family:Newsreader,serif; font-weight:500; }
+    h1 { font-size:1.8rem; }
+    a { color:var(--fg); }
+    .kicker { margin:0; letter-spacing:0.14em; text-transform:uppercase; color:var(--gold); font-size:0.75rem; }
+    .card { background:var(--card); border:1px solid var(--gold); border-radius:14px; padding:0.9rem 1rem; margin:0.8rem 0; }
+    ol { padding-left:1.2rem; }
+    li { margin:0.7rem 0; }
+    .muted { color:var(--muted); }
+  </style>
+</head>
+<body>
+<header>
+  <p class="kicker">lgme · Gym beta</p>
+  <h1>Breach response plan</h1>
+  <p class="muted">Draft pending counsel review. Not legal advice.</p>
+  <p><a href="/gym/health-data">Consumer health data</a> · <a href="/gym">Gym</a></p>
+</header>
+<main>
+  <section class="card">
+    <p>Workout and health records live on the member’s phone. This plan covers a case where that data leaves a phone, or a credit hash is exposed, without the member’s permission.</p>
+    <ol>
+      <li><strong>Detect.</strong> A member report, a support note to desk@lgme.app, or a sign that health data left a device without permission starts the clock.</li>
+      <li><strong>Contain.</strong> Stop the path that leaked it. Turn sharing off for the affected member. Keep new health data on the phone. Do not put the leaked record on Hedera.</li>
+      <li><strong>Assess.</strong> Write down what left, whose records, and whether it was health data or only a credit hash. Health data and a credit hash are not the same notice.</li>
+      <li><strong>Notify.</strong> Tell each affected member within 60 days. This follows the FTC Health Breach Notification Rule. If 500 or more people are affected, also notify the FTC and the media.</li>
+      <li><strong>Log the lesson.</strong> Record what happened, who was told, and what changes so the same path is closed. Keep that log with the operator, not in the member’s workout book.</li>
+    </ol>
+    <p>Contact for a suspected breach: <a href="mailto:desk@lgme.app">desk@lgme.app</a>.</p>
+  </section>
+</main>
+<footer>
+  <a href="/gym/health-data">Consumer health data</a>
+</footer>
+</body>
+</html>

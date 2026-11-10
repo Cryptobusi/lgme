@@ -67,10 +67,21 @@ export function publicCovenant(record = {}) {
   return copy;
 }
 
+export function sponsorInGroup(peer, sponsor) {
+  if (!sponsor) return false;
+  if (sponsor.inGroup === true) return true;
+  const groups = peer?.clubGroups || {};
+  if (sponsor.group && groups[sponsor.group]) return true;
+  const handle = String(sponsor.handle || '');
+  return Object.values(groups).some((group) => group?.creator && group.creator === handle);
+}
+
 export function sponsorStatus(record) {
   const count = (record?.sponsors || []).length;
-  if (count >= 2) return `Sponsors signed (${count}/2).`;
-  return `Pending sponsors (${count}/2).`;
+  const group = (record?.sponsors || []).some((sponsor) => sponsor.inGroup === true);
+  if (count >= 2 && group) return `Sponsors: ${count}.`;
+  if (count >= 2) return `Sponsors: ${count}. One must be from your group.`;
+  return `Sponsors: ${count}. At least 2, including one from your group.`;
 }
 
 export function circleGate(peer, action) {
@@ -85,20 +96,25 @@ export function circleGate(peer, action) {
   }
   if (!peer?.covenant) return { ok: true };
   const count = (peer.covenant.sponsors || []).length;
-  if (count >= 2) return { ok: true };
+  const group = (peer.covenant.sponsors || []).some((sponsor) => sponsorInGroup(peer, sponsor));
+  if (count >= 2 && group) return { ok: true };
   if (action === 'listing' || action === 'credit') {
-    return { ok: false, error: `Pending sponsors (${count}/2). Listings and credit stay closed until 2 sponsors sign.` };
+    const error = count < 2
+      ? `Sponsors: ${count}. At least 2 sponsors, including one from your group.`
+      : `Sponsors: ${count}. One sponsor must be from your group. The group creator may sponsor you.`;
+    return { ok: false, error };
   }
   return { ok: true };
 }
 
 export function signSponsor(record, sponsorHandle, at = new Date().toISOString().slice(0, 10)) {
+  const meta = at && typeof at === 'object' ? at : { at };
+  const when = meta.at || new Date().toISOString().slice(0, 10);
   const handle = String(sponsorHandle || '').trim();
   const sponsors = [...(record?.sponsors || [])];
   if (!handle || handle === record?.handle) return { ok: false, error: 'A sponsor is another member.' };
   if (sponsors.some((row) => row.handle === handle)) return { ok: false, error: 'That sponsor already signed.' };
-  if (sponsors.length >= 2) return { ok: false, error: 'Two sponsors have signed.' };
-  sponsors.push({ handle, at });
+  sponsors.push({ handle, at: when, inGroup: meta.inGroup === true });
   return { ok: true, record: { ...publicCovenant(record), sponsors } };
 }
 
@@ -143,5 +159,10 @@ export function acceptsCovenant(body = {}) {
   if (!/^[0-9a-f-]{16,80}$/i.test(token)) return { ok: false, error: 'That sponsor link is not usable.' };
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { ok: false, error: 'Add the date.' };
   if (!/^[0-9a-f]{64}$/.test(hash)) return { ok: false, error: 'The covenant hash is not usable.' };
-  return { ok: true, record: { token, handle, date, hash, sponsors: Array.isArray(body.sponsors) ? body.sponsors.slice(0, 2) : [] } };
+  const sponsors = Array.isArray(body.sponsors) ? body.sponsors.flatMap((row) => {
+    const name = String(row?.handle || row || '').trim();
+    if (!/^[a-z0-9-]{2,24}$/.test(name)) return [];
+    return [{ handle: name, at: String(row?.at || '').slice(0, 10), inGroup: row?.inGroup === true }];
+  }) : [];
+  return { ok: true, record: { token, handle, date, hash, sponsors } };
 }

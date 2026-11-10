@@ -173,7 +173,7 @@ export async function reviewHash(intake) {
 export function sharePrivate(body = {}, viewer = '') {
   const sponsors = Array.isArray(body.sponsors) ? body.sponsors.map((item) => String(item || '').trim()) : [];
   const who = String(viewer || '').trim();
-  if (!who || !sponsors.includes(who)) return { ok: false, error: 'That record stays with the two sponsors.' };
+  if (!who || !sponsors.includes(who)) return { ok: false, error: 'That record stays with the sponsors.' };
   return {
     ok: true,
     private: {

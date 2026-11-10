@@ -13,6 +13,8 @@ import { communityFeed } from './gym-feed.mjs';
 import { OPT_IN_COPY, answerLocal, deleteDownloadedModel, detectEngine, isOn, setOn, unloadLocalModel } from './local-ai.mjs';
 import { STARTERS, agentNotice, deleteAgent, dueAgents, editAgent, listAgents, markFired, needsPermission, pauseAgent, saveAgent, scheduleNote } from './local-agents.mjs';
 import { CLARIFICATIONS, COVENANT_TITLE, FIELD_LABELS, covenantHash, covenantSections, covenantText, exitReceipt, openCommitments, publicCovenant, signSponsor, sponsorStatus, velocityNote } from './covenant.mjs';
+import { TESTNET_TOPIC, creditReport, mirrorMatch, sponsorshipReady } from './sponsor-report.mjs';
+import { AGE_LABEL, COLLECT_LABEL, SHARE_LABEL, healthConsent, mayCollect, mayShare, revokeShare } from './health-safeguards.mjs';
 import { addReview, approveLimitRaise, breakSplit, intakeParts, intakeStatusText, publicIntake, requestLimitRaise, reviewHash } from './intake.mjs';
 import { changeSteward, groupSteward, isGroupAdmin, isTrainer, majoritySteward, queueFor, routeSteward, setTrainer, sponsorIds, stewardEligible, trainingOffer } from './steward.mjs';
 import { deleteHelper, helperFile, loadHelper, saveHelper } from './helper-store.mjs';
@@ -146,6 +148,7 @@ async function renderTrain() {
 }
 
 async function begin(peer, ui) {
+  if (!mayCollect(peer)) { status('Confirm that workout and health info stays on this device.'); return; }
   if (workout.startedAt) { status('A session is already running.'); return; }
   workout.startedAt = new Date().toISOString();
   workout.points = [];
@@ -169,6 +172,7 @@ async function begin(peer, ui) {
 }
 
 async function finish(peer, ui) {
+  if (!mayCollect(peer)) { status('Confirm that workout and health info stays on this device.'); return; }
   if (!workout.startedAt) { status('Tap Start first.'); return; }
   const finishedAt = new Date().toISOString();
   if (ui.useGps.checked) {
@@ -355,6 +359,7 @@ function manualForm(peer, rows) {
     showHealth ? el('label', {}, ['Mood', mood]) : null,
     showHealth ? el('label', {}, ['Sleep', sleep]) : null,
     el('button', { type: 'button', onClick: async () => {
+      if (!mayCollect(peer)) { status('Confirm that workout and health info stays on this device.'); return; }
       const entries = [];
       if (rows.some((row) => row.id === 'calories') && value.value !== '') {
         const built = manualEntry({ kind: 'calories', value: value.value });
@@ -381,6 +386,9 @@ function manualForm(peer, rows) {
 }
 
 function shareControls(peer, row) {
+  if (!mayShare(peer)) {
+    return el('p', { class: 'muted', id: 'share-locked' }, ['Sharing stays off until you check “Share selected progress with people I choose” in Settings.']);
+  }
   const preview = sharePreview(peer, row);
   const host = el('div', {}, []);
   const level = el('select', {}, [
@@ -830,12 +838,45 @@ function localAiCard(peer) {
   return host;
 }
 
+function healthSettings(peer) {
+  const needsAge = peer.healthConsent?.adult !== true;
+  const adult = el('input', { type: 'checkbox', id: 'settings-age' });
+  const collect = el('input', { type: 'checkbox', id: 'settings-collect' });
+  const share = el('input', { type: 'checkbox', id: 'settings-share' });
+  collect.checked = peer.healthConsent?.collect === true;
+  share.checked = peer.healthConsent?.share === true;
+  return el('section', { class: 'card', id: 'health-settings' }, [
+    el('h3', {}, ['Health data']),
+    needsAge ? el('label', { class: 'check' }, [adult, AGE_LABEL]) : el('p', {}, ['You confirmed you are 18 or older.']),
+    el('label', { class: 'check' }, [collect, COLLECT_LABEL]),
+    el('label', { class: 'check' }, [share, SHARE_LABEL]),
+    el('p', { class: 'muted' }, ['Sharing stays off until you check it. Uncheck it any time.']),
+    el('p', {}, [el('a', { href: '/gym/health-data' }, ['Consumer health data notice'])]),
+    el('button', { type: 'button', onClick: async () => {
+      if (needsAge && adult.checked !== true) { status('Confirm you are 18 or older.'); return; }
+      let fresh = await store.get(peer.id);
+      fresh.healthConsent = {
+        adult: true,
+        collect: collect.checked === true,
+        share: collect.checked === true && share.checked === true
+      };
+      if (!fresh.healthConsent.share) fresh = revokeShare(fresh);
+      await store.set(peer.id, fresh);
+      status(fresh.healthConsent.share ? 'Sharing is on for the categories you pick.' : 'Sharing is off.');
+      render();
+    } }, ['Save health choices'])
+  ]);
+}
+
 async function renderMore() {
+  const mine = await seat();
   const email = el('div', { id: 'gym-email' });
   const passkey = el('p', {}, [passkeySupported() ? PASSKEY_COPY : PASSKEY_FALLBACK]);
   queueMicrotask(() => mountEmailCheck(email));
   return el('div', {}, [
     el('h2', {}, ['Settings']),
+    mine && mine.example !== true ? healthSettings(mine) : null,
+    el('p', {}, [el('a', { href: '/gym/health-data' }, ['Consumer health data']), ' · ', el('a', { href: '/gym/breach-plan' }, ['Breach plan']), ' · ', el('a', { href: '/help' }, ['Help'])]),
     localAiCard(null),
     el('h2', {}, ['More']),
     todayLine(),
@@ -912,6 +953,14 @@ function agreeBox(key, label) {
 }
 
 async function finishSignup(group) {
+  const consent = healthConsent({ adult: signup.adult === true, collect: signup.collect === true, share: signup.share === true });
+  if (!consent.ok) {
+    signup.adult = false;
+    signup.step = 1;
+    status(consent.error);
+    render();
+    return;
+  }
   if (group?.name && !/^[a-z0-9-]{4,24}$/.test(group.invite || '')) {
     status('Use a group name of 4 to 24 letters.');
     return;
@@ -930,7 +979,8 @@ async function finishSignup(group) {
   peer.gymRole = 'member';
   peer.gymProfile = { journey: 'My better tomorrow.', healthNote: '', public: { journey: true, sessions: false, minutes: false, supports: false, credits: false } };
   peer.gymProgress = chosen.progress;
-  peer.covenant = publicCovenant({ handle: id, date: signup.date, primary: signup.primary, secondary: signup.secondary, sponsors: [], hash, token, openedAt: new Date().toISOString(), anchor: null });
+  peer.healthConsent = consent.consent;
+  peer.covenant = publicCovenant({ handle: id, date: signup.date, primary: signup.primary, secondary: signup.secondary, sponsors: [], hash, token, openedAt: new Date().toISOString(), anchor: null, reportAccess: true, authorizeHealth: false });
   peer.intake = publicIntake({ handle: id, primary: signup.primary, secondary: signup.secondary, status: 'Pending sponsors', reviews: [], notes: [] });
   savePrivate(id, signup);
   await store.set(id, peer);
@@ -982,8 +1032,14 @@ async function renderRegister() {
   const box = el('section', { id: 'join-health' }, [
     el('p', { class: 'kicker' }, [`Step ${signup.step} of 5`]),
     el('h2', {}, ['Join Health']),
-    el('p', {}, [el('a', { href: '/gym/covenant' }, ['Member Covenant'])])
+    el('p', {}, [el('a', { href: '/gym/covenant' }, ['Member Covenant']), ' · ', el('a', { href: '/gym/health-data' }, ['Consumer health data'])])
   ]);
+  if (signup.step === 1 && signup.adult !== true) {
+    box.append(ageGateCard());
+    box.append(el('p', { id: 'gym-status', role: 'status' }, []));
+    box.append(el('p', {}, [el('a', { href: '/?picker=1' }, ['All categories'])]));
+    return box;
+  }
   if (signup.step === 1) {
     const text = await covenantBody();
     const sections = covenantSections(text);
@@ -1106,12 +1162,90 @@ async function renderRegister() {
   return box;
 }
 
+function ageGateCard() {
+  const adult = el('input', { type: 'checkbox', id: 'age-gate' });
+  const collect = el('input', { type: 'checkbox', id: 'collect-health' });
+  const share = el('input', { type: 'checkbox', id: 'share-health' });
+  return el('section', { class: 'card', id: 'health-gate' }, [
+    el('h3', {}, ['Before you enter anything']),
+    el('p', {}, ['This is for adults. The form stays closed until you confirm.']),
+    el('label', { class: 'check' }, [adult, AGE_LABEL]),
+    el('label', { class: 'check' }, [collect, COLLECT_LABEL]),
+    el('label', { class: 'check' }, [share, SHARE_LABEL]),
+    el('p', { class: 'muted' }, ['Sharing stays off unless you check it. You can turn it off later in Settings.']),
+    el('p', {}, [el('a', { href: '/gym/health-data' }, ['Consumer health data notice'])]),
+    el('button', { type: 'button', class: 'primary', onClick: () => {
+      const saved = healthConsent({ adult: adult.checked === true, collect: collect.checked === true, share: share.checked === true });
+      if (!saved.ok) { status(saved.error); return; }
+      signup.adult = true;
+      signup.collect = true;
+      signup.share = saved.consent.share;
+      render();
+    } }, ['Continue'])
+  ]);
+}
+
+function sponsorSeatInGroup(member, sponsorPeer) {
+  if (!member || !sponsorPeer) return false;
+  return Object.entries(member.clubGroups || {}).some(([code, group]) => group?.creator === sponsorPeer.id || Boolean(sponsorPeer.clubGroups?.[code]));
+}
+
+function reportView(report) {
+  const host = el('div', { id: 'sponsor-report' });
+  if (!report?.ok) {
+    host.append(el('p', {}, [report?.error || 'This report is not available.']));
+    return host;
+  }
+  host.append(el('h3', {}, ['Verified credit report']));
+  host.append(el('p', {}, [`Balance ${Number(report.balance).toFixed(2)}. Initial limit ${report.limits.initial}. Maximum ${report.limits.maximum}. Counted across all groups.`]));
+  host.append(el('p', {}, [`90-day velocity ${report.velocity.net}. Counted across all groups.`]));
+  host.append(el('p', {}, [`Floor contributions ${report.floor}.`]));
+  host.append(el('p', {}, [report.healthIncluded ? 'This member allowed health rows. The report keeps hashes, not the workout.' : 'Health and workout data is not in this report.']));
+  host.append(el('p', { class: 'hash' }, [`Daily root ${report.root || 'none'}.`]));
+  const mirror = report.onTestnet
+    ? `This root is in the latest messages on Hedera testnet topic ${report.topic}.`
+    : `This root is not in the latest messages on Hedera testnet topic ${report.topic}. ${report.mirrorError || 'Only hashes are written there.'}`;
+  host.append(el('p', {}, [mirror]));
+  if (!report.rows.length) host.append(el('p', {}, ['No credit rows yet.']));
+  for (const row of report.rows) {
+    host.append(el('p', { class: 'hash' }, [`${row.type} · debit ${row.debit} · credit ${row.credit} · floor ${row.floor} · ${row.included ? 'inclusion proof holds' : 'inclusion proof does not hold'} · ${row.hash}`]));
+  }
+  return host;
+}
+
+async function requestSponsorReport(peer) {
+  const mine = await seat();
+  const sponsors = peer?.covenant?.sponsors || [];
+  if (!mine || !sponsors.some((row) => row.handle === mine.id)) {
+    status('A sponsor requests this report.');
+    return;
+  }
+  const report = await creditReport(peer, { authorizeHealth: peer.covenant?.authorizeHealth === true });
+  if (!report.ok) { status(report.error); return; }
+  report.topic = TESTNET_TOPIC;
+  try {
+    const response = await fetch(`/api/hedera/mirror?topic=${TESTNET_TOPIC}`);
+    const body = await response.json();
+    report.onTestnet = body.ok === true && mirrorMatch(report.root, body.messages || []);
+    report.mirrorError = body.ok ? '' : (body.error || 'The testnet mirror did not answer.');
+  } catch {
+    report.onTestnet = false;
+    report.mirrorError = 'The testnet mirror did not answer.';
+  }
+  const view = reportView(report);
+  const prior = document.getElementById('sponsor-report');
+  if (prior) prior.replaceWith(view);
+  else document.getElementById('sponsor-report-slot')?.append(view);
+}
+
 function covenantPanel(peer, members = []) {
   if (!peer?.covenant) return null;
   const host = el('section', { class: 'card', id: 'covenant-member' });
   host.append(el('p', { id: 'intake-status' }, [intakeStatusText(peer.intake?.status)]));
   const tierOpen = peer.intake?.status === 'Tier-0' || peer.intake?.status === 'Tier-1';
-  if (!tierOpen) host.append(el('p', { id: 'sponsor-status' }, [sponsorStatus(peer.covenant)]));
+  const ready = sponsorshipReady(peer);
+  host.append(el('p', { id: 'sponsor-count' }, [`Sponsors: ${ready.count}.`]));
+  if (!ready.ok) host.append(el('p', { id: 'sponsor-status' }, [ready.error]));
   if (peer.intake?.status === 'Revise') {
     host.append(el('p', {}, [(peer.intake.notes || []).join(' ')]));
     host.append(el('button', { type: 'button', onClick: () => go('/intake') }, ['Edit intake']));
@@ -1146,15 +1280,36 @@ function covenantPanel(peer, members = []) {
   if (peer.intake?.status === 'paused') host.append(el('p', {}, [(peer.intake.notes || []).join(' ')]));
   if (peer.intake?.reviewHash) host.append(el('p', { class: 'muted' }, [`Review hash ${peer.intake.reviewHash}`]));
   if (peer.intake?.reviewAnchor?.hashscan) host.append(el('p', {}, [el('a', { href: peer.intake.reviewAnchor.hashscan, target: '_blank', rel: 'noopener noreferrer' }, ['HashScan testnet'])]));
-  if (!tierOpen && (peer.covenant.sponsors || []).length < 2) {
+  if (peer.covenant.token) {
     const link = `${location.origin}/gym#/sponsor/${peer.covenant.token}`;
-    host.append(el('p', {}, ['Request 2 sponsors. Share this link or QR. A sponsor confirms in the app.']));
+    host.append(el('p', {}, [ready.ok
+      ? 'Another sponsor can still sign. There is no maximum.'
+      : 'At least 2 sponsors, including one from your group. The group creator may sponsor you. There is no maximum.']));
     host.append(el('p', {}, [el('a', { id: 'sponsor-link', href: `#/sponsor/${peer.covenant.token}` }, [link])]));
     const qr = el('div', { id: 'sponsor-qr' });
     host.append(qr);
     queueMicrotask(() => { if (globalThis.QRCode) new globalThis.QRCode(qr, { text: link, width: 160, height: 160 }); });
-    host.append(el('p', { class: 'muted' }, ['You can use private progress now. Listings and credit stay closed until 2 sponsors sign.']));
+    if (!tierOpen) host.append(el('p', { class: 'muted' }, ['You can use private progress now. Listings and credit stay closed until 2 sponsors sign, including one from your group.']));
   }
+  const reports = el('input', { type: 'checkbox', id: 'report-access' });
+  reports.checked = peer.covenant.reportAccess !== false;
+  reports.addEventListener('change', async () => {
+    const fresh = await store.get(peer.id);
+    fresh.covenant.reportAccess = reports.checked === true;
+    await store.set(peer.id, fresh);
+    status(reports.checked ? 'Sponsors can request a credit report.' : 'Sponsor reports are off.');
+  });
+  const healthRows = el('input', { type: 'checkbox', id: 'authorize-health' });
+  healthRows.checked = peer.covenant.authorizeHealth === true;
+  healthRows.addEventListener('change', async () => {
+    const fresh = await store.get(peer.id);
+    fresh.covenant.authorizeHealth = healthRows.checked === true;
+    await store.set(peer.id, fresh);
+    status(healthRows.checked ? 'A sponsor report may include health rows as hashes.' : 'Health data stays out of sponsor reports.');
+  });
+  host.append(el('label', { class: 'check' }, [reports, 'Allow sponsor credit reports']));
+  host.append(el('label', { class: 'check' }, [healthRows, 'Include health data in sponsor reports']));
+  host.append(el('p', { class: 'muted' }, ['Health stays out unless you check it. It is never written to Hedera.']));
   host.append(el('button', { type: 'button', onClick: async () => {
     const result = await sim.createListing(store, peer.id, {});
     status(result.error || 'Listed.');
@@ -1215,13 +1370,16 @@ async function renderSponsor(token) {
   if (priv.applicantName || priv.trackRecord) {
     shared.append(el('p', {}, [`Applicant name: ${priv.applicantName || ''}`]));
     shared.append(el('p', {}, [`Track record: ${priv.trackRecord || ''}`]));
-    shared.append(el('p', { class: 'muted' }, ['Shared with the two sponsors. It is not on the public page.']));
+    shared.append(el('p', { class: 'muted' }, ['Shared with your sponsors. It is not on the public page.']));
   }
   return el('section', {}, [
     el('h2', {}, ['Sponsor a member']),
     el('p', {}, [`${peer.covenant.handle} asked for a sponsor on ${peer.covenant.date}.`]),
+    el('p', { id: 'sponsor-count' }, [`Sponsors: ${(peer.covenant.sponsors || []).length}.`]),
     shared,
     await reviewSheet(peer),
+    el('button', { type: 'button', id: 'request-report', onClick: () => requestSponsorReport(peer) }, ['Request verified credit report']),
+    el('div', { id: 'sponsor-report-slot' }),
     el('p', { id: 'gym-status', role: 'status' }, [])
   ]);
 }
@@ -1252,7 +1410,7 @@ async function submitReview(peer, checks, notes) {
   });
   if (!saved.ok) { status(saved.error); return; }
   peer.intake = saved.intake;
-  const signed = signSponsor(peer.covenant, mine.id);
+  const signed = signSponsor(peer.covenant, mine.id, { inGroup: sponsorSeatInGroup(peer, mine) });
   if (signed.ok) {
     const text = await covenantBody();
     peer.covenant = { ...signed.record, hash: await covenantHash({ text, handle: peer.covenant.handle, date: peer.covenant.date, sponsors: signed.record.sponsors }) };
@@ -1315,7 +1473,7 @@ async function publishReview(peer) {
 async function signLocal(peer) {
   const mine = await seat();
   if (!mine) { status('Join Health before you sponsor someone.'); return; }
-  const signed = signSponsor(peer.covenant, mine.id);
+  const signed = signSponsor(peer.covenant, mine.id, { inGroup: sponsorSeatInGroup(peer, mine) });
   if (!signed.ok) { status(signed.error); return; }
   const text = await covenantBody();
   peer.covenant = { ...signed.record, hash: await covenantHash({ text, handle: peer.covenant.handle, date: peer.covenant.date, sponsors: signed.record.sponsors }) };
@@ -1407,9 +1565,18 @@ async function renderDashboard() {
   }
   const feed = communityFeed({ peers: feedPeers, viewer: mine, remoteCards: remote });
   const groups = Object.values(mine.clubGroups || {});
+  const sponsored = locals.filter((peer) => peer.id !== mine.id && (peer.covenant?.sponsors || []).some((row) => row.handle === mine.id));
   const view = el('div', {}, [
     el('p', {}, [el('a', { href: '/?picker=1' }, ['All categories']), ' · ', el('a', { href: '/gym/covenant' }, ['Member Covenant'])]),
     covenantPanel(mine, locals),
+    sponsored.length ? el('section', { class: 'card', id: 'sponsored-members' }, [
+      el('h2', {}, ['People you sponsor']),
+      ...sponsored.map((peer) => el('div', {}, [
+        el('p', {}, [`${peer.id}. Sponsors: ${(peer.covenant.sponsors || []).length}.`]),
+        el('button', { type: 'button', onClick: () => requestSponsorReport(peer) }, ['Request verified credit report'])
+      ])),
+      el('div', { id: 'sponsor-report-slot' })
+    ]) : null,
     el('section', { class: 'card', id: 'trade-neighbors' }, [
       el('h2', {}, ['Trade with neighbors']),
       el('p', {}, ['Earn and spend outside a workout. A ride, a meal, or an hour.']),

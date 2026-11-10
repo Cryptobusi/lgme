@@ -31,7 +31,7 @@ export default async function handler(req, res) {
     prior.private = {
       applicantName: String(body.applicantName || ''),
       trackRecord: String(body.trackRecord || ''),
-      sponsors: Array.isArray(body.sponsors) ? body.sponsors.slice(0, 2) : []
+      sponsors: Array.isArray(body.sponsors) ? body.sponsors.map((item) => String(item || '').trim()).filter(Boolean) : []
     };
     saved[token] = prior;
     await store.set(KEY, saved);

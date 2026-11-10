@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0c100c" />
+  <title>Consumer health data · lgme Gym</title>
+  <meta name="description" content="What the Gym beta keeps on your phone, what sharing requires, and how to delete it." />
+  <link rel="icon" href="/icons/gym-192.png" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600&family=Newsreader:opsz,wght@6..72,500&display=swap" />
+  <style>
+    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; --card:#151a15; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; font-size:1.05rem; line-height:1.5; }
+    header, main, footer { padding:1rem; max-width:40rem; margin:0 auto; }
+    h1,h2 { font-family:Newsreader,serif; font-weight:500; }
+    h1 { font-size:1.8rem; }
+    a { color:var(--fg); }
+    .kicker { margin:0; letter-spacing:0.14em; text-transform:uppercase; color:var(--gold); font-size:0.75rem; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:0.9rem 1rem; margin:0.8rem 0; }
+    .draft { border-color:var(--gold); }
+    button { font:inherit; min-height:48px; padding:0.7rem 0.9rem; border-radius:12px; border:1px solid var(--gold); background:var(--gold); color:#1a1408; }
+    .muted { color:var(--muted); }
+  </style>
+</head>
+<body>
+<header>
+  <p class="kicker">lgme · Gym beta</p>
+  <h1>Consumer health data</h1>
+  <p class="muted">Not legal advice. Draft pending counsel review.</p>
+  <p><a href="/gym">Gym</a> · <a href="/gym/breach-plan">Breach plan</a> · <a href="/help">Help</a></p>
+</header>
+<main>
+  <section class="card draft">
+    <h2>On this phone</h2>
+    <p>Workout logs, the health meter, GPS points, photos, your legal name, your signature, and the salts that lock this book stay in this browser. lgme does not keep a copy on a server.</p>
+  </section>
+  <section class="card">
+    <h2>Shared only with permission</h2>
+    <p>Sharing is a separate choice. It stays off until you check “Share selected progress with people I choose.” You pick a category, you see a preview, and you can turn it off later in Settings. People you did not choose do not get the numbers.</p>
+  </section>
+  <section class="card">
+    <h2>Hedera</h2>
+    <p>Health data never goes on Hedera. A sponsor report can show credit hashes. Only hashes of credit records can be anchored, and only on Hedera testnet. A workout is not in that anchor.</p>
+  </section>
+  <section class="card">
+    <h2>Ads and analytics</h2>
+    <p>No ads code and no analytics code reads your workout. Gym pages load scripts from lgme only.</p>
+  </section>
+  <section class="card">
+    <h2>Delete everything on this phone</h2>
+    <p>One tap removes the local health book, private covenant fields, and helper key. It also discards local salts. This cannot be undone.</p>
+    <button type="button" id="delete-health">Delete my health data on this phone</button>
+    <p id="delete-note" role="status"></p>
+  </section>
+  <section class="card">
+    <h2>Not medical advice</h2>
+    <p>The health meter is self-reported. It is not a diagnosis, a treatment, or a training plan. Stop when you want to.</p>
+    <p>Questions and deletion requests: <a href="mailto:desk@lgme.app">desk@lgme.app</a>.</p>
+  </section>
+</main>
+<footer>
+  <a href="/gym/health-data">Consumer health data</a> · <a href="/gym/breach-plan">Breach plan</a>
+</footer>
+<script type="module" src="/js/health-data-page.mjs"></script>
+</body>
+</html>
