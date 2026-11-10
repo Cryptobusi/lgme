@@ -1,5 +1,5 @@
 // lgme.app shell. HTML is fetched from the network first so a published change shows.
-const CACHE_NAME = "lgme-v79";
+const CACHE_NAME = "lgme-v80";
 const NET_MS = 8000;
 const SHELL = [
   "/",
@@ -56,6 +56,11 @@ const SHELL = [
   "/campus.html",
   "/health-club",
   "/health-club.html",
+  "/gym",
+  "/gym.html",
+  "/gym-manifest.webmanifest",
+  "/sw-gym.js",
+  "/icons/gym-192.png",
   "/wisdom",
   "/wisdom.html",
   "/js/wisdom.mjs",
@@ -105,7 +110,7 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))))
+      .then((keys) => Promise.all(keys.filter((key) => key.startsWith("lgme-v") && key !== CACHE_NAME).map((key) => caches.delete(key))))
       .then(() => self.clients.claim())
   );
 });

@@ -99,7 +99,7 @@ test('support cannot spend the floor, and a no moves nothing', async () => {
   assert.equal(sim.replay(await store.get('alice')).balance, 100);
 });
 
-test('an accepted contribution skims one percent and still mints nothing from the workout', async () => {
+test('an accepted $lgme contribution withholds 5 percent for the Floor and 5 percent for the app fund', async () => {
   const store = await people();
   const aliceCode = await codeFor(store, 'alice');
   const recorded = await sim.recordExerciseSession(store, 'alice', {
@@ -119,7 +119,7 @@ test('an accepted contribution skims one percent and still mints nothing from th
   assert.equal(accepted.ok, true, accepted.error);
   assert.equal(accepted.creditMinted, false);
   assert.equal(accepted.giverBalance, 45);
-  assert.equal(accepted.authorBalance, 104.95);
+  assert.equal(accepted.authorBalance, 104.5);
   assert.equal(sim.replay(await store.get('bob')).balance >= 40, true);
 });
 

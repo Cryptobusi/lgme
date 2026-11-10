@@ -18,6 +18,18 @@
       ]
     },
     {
+      "source": "/gym-manifest.webmanifest",
+      "headers": [
+        { "key": "Content-Type", "value": "application/manifest+json" }
+      ]
+    },
+    {
+      "source": "/sw-gym.js",
+      "headers": [
+        { "key": "Service-Worker-Allowed", "value": "/" }
+      ]
+    },
+    {
       "source": "/(.*)",
       "headers": [
         {

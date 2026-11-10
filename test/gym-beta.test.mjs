@@ -1,0 +1,65 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import * as sim from '../js/p2p-exchange-sim.mjs';
+import { publicCard } from '../js/gym-charts.mjs';
+import { DEMO_PREFIX, seedDemoClub } from '../js/gym-demo.mjs';
+import { gymChatReady, publicChatMessage } from '../js/gym-sync.mjs';
+import { COMMONS_SPLIT } from '../js/commons-split.mjs';
+
+const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const text = (path) => readFileSync(join(root, path), 'utf8');
+
+test('the gym beta is a separate installable page', () => {
+  const page = text('gym.html');
+  const manifest = JSON.parse(text('gym-manifest.webmanifest'));
+  const home = text('index.html');
+  const worker = text('sw.js');
+  const gymWorker = text('sw-gym.js');
+  assert.equal(page.startsWith('<!doctype html>'), true);
+  assert.equal(page.trimEnd().endsWith('</html>'), true);
+  assert.equal(page.includes('CONTENT_FROM_FILE'), false);
+  assert.equal(page.includes('$Trust'), false);
+  assert.equal(page.includes('src="/js/gym-app.mjs"'), true);
+  assert.equal(page.includes('/sw.js'), false);
+  assert.equal(manifest.name, 'lgme Gym');
+  assert.equal(manifest.start_url, '/gym');
+  assert.equal(manifest.scope, '/gym');
+  assert.equal(home.includes('href="/gym">Gym beta</a>'), true);
+  assert.equal(text('health-club.html').includes('href="/gym">Gym beta</a>'), true);
+  assert.equal(text('sitemap.xml').includes('https://lgme.app/gym'), true);
+  assert.equal(text('help.html').includes('Chat text is not written to Hedera.'), true);
+  assert.equal(text('glossary.html').includes('App development fund'), true);
+  assert.equal(worker.includes('lgme-v80'), true);
+  assert.equal(worker.includes('key.startsWith("lgme-v")'), true);
+  assert.equal(gymWorker.includes("key.startsWith('lgme-gym-')"), true);
+  assert.equal(gymWorker.includes('lgme-v80'), false);
+  assert.equal(text('vercel.json').includes('Service-Worker-Allowed'), true);
+  assert.deepEqual(COMMONS_SPLIT, { floor: 0.05, app: 0.05 });
+  assert.equal(text('docs/gym-beta-ui-roadmap.md').includes('Wearable import'), true);
+});
+
+test('demo club stays off the real book and the share card hides health details', async () => {
+  const demo = sim.createMemoryStore();
+  const seeded = await seedDemoClub(demo);
+  assert.equal(seeded.ok, true, seeded.error);
+  const jordan = await demo.get('jordan');
+  assert.equal(jordan.example, true);
+  assert.equal(jordan.gymProfile.journey.includes('better tomorrow'), true);
+  assert.equal(Object.keys(await demo.listIds()).length >= 0, true);
+  const ids = await demo.listIds();
+  assert.deepEqual(ids.sort(), ['desk', 'jordan', 'riley', 'sam']);
+  const card = publicCard({ ...jordan, gymProfile: { ...jordan.gymProfile, healthNote: 'knee', public: { ...jordan.gymProfile.public, health: true } } });
+  assert.equal(card.healthNote, undefined);
+  assert.equal(JSON.stringify(card).includes('knee'), false);
+  assert.equal(card.example, true);
+  const real = sim.createLocalStorageStore({ length: 0, getItem: () => null, setItem() {}, removeItem() {}, key: () => null });
+  assert.equal(DEMO_PREFIX.startsWith('lgme-gym-demo:'), true);
+  assert.equal(await real.get('jordan'), null);
+  assert.equal(gymChatReady({}).enabled, false);
+  assert.equal(gymChatReady({ GYM_CHAT_SYNC: 'on', UPSTASH_REDIS_REST_URL: 'https://example.upstash.io', UPSTASH_REDIS_REST_TOKEN: 'token' }).enabled, true);
+  assert.equal(publicChatMessage({ text: 'latitude 38', handle: 'Sam', code: 'demo-club' }).ok, false);
+  assert.equal(publicChatMessage({ text: 'See you at the desk', handle: 'Sam', code: 'demo-club' }).ok, true);
+});

@@ -20,7 +20,8 @@ const POOL_TYPES = new Set([
   'DEED_POST',
   'DEED_ATTESTED',
   'THIRD_SEAT_VETO',
-  'WISDOM_SUPPORT'
+  'WISDOM_SUPPORT',
+  'COMMONS_WITHHOLD'
 ]);
 
 export function round2(value) {
@@ -90,11 +91,15 @@ export function projectSubfloors(peers) {
   const vetoed = new Set(rows.filter((entry) => entry.type === 'THIRD_SEAT_VETO' && entry.payload?.postId).map((entry) => entry.payload.postId));
   const holds = new Map();
   let floorReserve = 0;
+  let appFund = 0;
   for (const entry of rows) {
     const payload = entry.payload || {};
     if (entry.type === 'THIRD_SEAT_VETO') continue;
-    if (entry.type === 'WISDOM_SUPPORT') {
-      if (payload.unit === '$lgme') floorReserve = round2(floorReserve + round2(payload.floorShare || 0));
+    if (entry.type === 'WISDOM_SUPPORT' || entry.type === 'COMMONS_WITHHOLD') {
+      if (payload.unit === '$lgme') {
+        floorReserve = round2(floorReserve + round2(payload.floorShare || 0));
+        appFund = round2(appFund + round2(payload.appShare || 0));
+      }
       continue;
     }
     const cat = ensure(payload.category || 'tutoring');
@@ -132,7 +137,7 @@ export function projectSubfloors(peers) {
     openHolds = round2(openHolds + held.amount);
   }
   for (const cat of Object.values(cats)) cat.available = round2(cat.balance - cat.holds);
-  return { categories: cats, floorReserve, openHolds };
+  return { categories: cats, floorReserve, appFund, openHolds };
 }
 
 export function demandScore(row) {

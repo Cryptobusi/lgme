@@ -9,6 +9,7 @@ import { ALT_CHOICES, DEFAULT_CLAMP_BAND, HISTORY_UNAVAILABLE, NO_COIN, PEG_LABE
 import { bilateralNet, clearingRules, clearingWindow, cycleNetStub, dayEntries, merkleProofFor, merkleRootOf, nextWindow, verifyMerkleProof, windowEntries } from './clearing.mjs';
 import { DEED_CATEGORIES, DEED_POST_TYPES, RECEIPT_NAME, DEFAULT_SUBFLOOR_RULES, firstClaimCategory, floatedUnit, lockDeedUnit, paidAndHeldToday, planDeedPost, projectSubfloors, rankCategories, splitZeroProceeds } from './subfloor.mjs';
 import { publicExerciseItem } from './exercise-record.mjs';
+import { commonsSplit, deedCreditSplit } from './commons-split.mjs';
 import { publicWisdom, wisdomSplit } from './wisdom.mjs';
 import { listingMessage } from './shared-listings.mjs';
 
@@ -182,10 +183,10 @@ export function createMemoryStore() {
   };
 }
 
-export function createLocalStorageStore(storage = globalThis.localStorage) {
+export function createLocalStorageStore(storage = globalThis.localStorage, prefix = PEER_PREFIX) {
   return {
     async get(id) {
-      const raw = storage.getItem(PEER_PREFIX + id);
+      const raw = storage.getItem(prefix + id);
       if (!raw) return null;
       if (raw.length > 40000) await new Promise((resolve) => setTimeout(resolve, 0));
       return JSON.parse(raw);
@@ -193,16 +194,16 @@ export function createLocalStorageStore(storage = globalThis.localStorage) {
     async set(id, value) {
       const tape = value && value.tape;
       if (Array.isArray(tape) && tape.length > 40) await new Promise((resolve) => setTimeout(resolve, 0));
-      storage.setItem(PEER_PREFIX + id, JSON.stringify(value));
+      storage.setItem(prefix + id, JSON.stringify(value));
     },
     async remove(id) {
-      storage.removeItem(PEER_PREFIX + id);
+      storage.removeItem(prefix + id);
     },
     async listIds() {
       const ids = [];
       for (let i = 0; i < storage.length; i++) {
         const key = storage.key(i);
-        if (key && key.startsWith(PEER_PREFIX)) ids.push(key.slice(PEER_PREFIX.length));
+        if (key && key.startsWith(prefix)) ids.push(key.slice(prefix.length));
       }
       return ids;
     },
@@ -210,7 +211,7 @@ export function createLocalStorageStore(storage = globalThis.localStorage) {
       const keys = [];
       for (let i = 0; i < storage.length; i++) {
         const key = storage.key(i);
-        if (key && key.startsWith(PEER_PREFIX)) keys.push(key);
+        if (key && key.startsWith(prefix)) keys.push(key);
       }
       keys.forEach((key) => storage.removeItem(key));
     }
@@ -411,8 +412,9 @@ export function entryDetail(entry, names = {}) {
   if (entry.type === 'WISDOM_CONCUR') return 'Wisdom concurrence. No credit minted.';
   if (entry.type === 'WISDOM_NO') return 'No. Wisdom concurrence declined.';
   if (entry.type === 'WISDOM_SUPPORT') {
-    if (payload.unit === 'barter') return 'Wisdom barter. 10% of the deed to the Floor, 90% to the author.';
-    return `Wisdom support ${payload.authorShare} to the author, ${payload.floorShare} to the Floor`.trim();
+    if (payload.unit === 'barter') return 'Wisdom barter. No $lgme moved.';
+    if (payload.unit === 'deed-credit') return `Wisdom deed credit ${payload.authorShare} to the author, ${payload.skim} skim to Health and fitness`.trim();
+    return `Wisdom support ${payload.authorShare} to the author, ${payload.floorShare} to the Floor, ${payload.appShare} to the App development fund`.trim();
   }
   if (entry.type === 'refusal') return payload.statement || 'REFUSAL';
   if (entry.type === 'block') return payload.message || FLOOR_BLOCK;
@@ -3342,16 +3344,22 @@ export async function acceptExerciseSupport(store, authorId, supportId, spec = {
       await store.set(authorId, author);
       return fail(blocked);
     }
-    const skim = round2(offer.amount * 0.01);
-    const net = round2(offer.amount - skim);
+    const split = commonsSplit(offer.amount);
+    if (!split.ok) {
+      releaseLockedKey(author);
+      await store.set(authorId, author);
+      return split;
+    }
     await appendEntry(giver, 'transfer', { fromId: giver.id, toId: author.id, amount: offer.amount, unit: '$lgme', direction: 'out', note: 'Exercise support' }, at);
-    await appendEntry(author, 'transfer', { fromId: giver.id, toId: author.id, amount: net, unit: '$lgme', direction: 'in', note: 'Exercise support' }, at);
-    const skimPayload = { entryId: `skim:exercise:${supportId}`, postId: supportId, category: 'health-fitness', amount: skim, hedera: false };
-    await appendEntry(giver, 'SUBFLOOR_SKIM', skimPayload, at);
-    await appendEntry(author, 'SUBFLOOR_SKIM', skimPayload, at);
+    await appendEntry(author, 'transfer', { fromId: giver.id, toId: author.id, amount: split.author, unit: '$lgme', direction: 'in', note: 'Exercise support' }, at);
+    const withheld = { entryId: `commons:exercise:${supportId}`, supportId, unit: '$lgme', floorShare: split.floor, appShare: split.app, authorShare: split.author, hedera: false };
+    await appendEntry(giver, 'COMMONS_WITHHOLD', withheld, at);
+    await appendEntry(author, 'COMMONS_WITHHOLD', withheld, at);
   } else if (offer.kind === 'contribute-credit') {
-    await appendEntry(giver, 'EXERCISE_CREDIT', { supportId, amount: offer.amount, unit: 'campus-credit', lgme: false }, at);
-    await appendEntry(author, 'EXERCISE_CREDIT', { supportId, amount: offer.amount, unit: 'campus-credit', lgme: false }, at);
+    const credit = deedCreditSplit(offer.amount);
+    const creditPayload = { supportId, amount: offer.amount, authorShare: credit.author, skim: credit.skim, category: 'health-fitness', unit: 'deed-credit', lgme: false };
+    await appendEntry(giver, 'EXERCISE_CREDIT', creditPayload, at);
+    await appendEntry(author, 'EXERCISE_CREDIT', creditPayload, at);
   } else {
     await appendEntry(giver, 'EXERCISE_BARTER', { supportId, barter: offer.barter, lgme: false }, at);
     await appendEntry(author, 'EXERCISE_BARTER', { supportId, barter: offer.barter, lgme: false }, at);
@@ -3372,7 +3380,7 @@ export async function acceptExerciseSupport(store, authorId, supportId, spec = {
     giverBalance: replay(freshGiver).balance,
     authorBalance: replay(freshAuthor).balance,
     movedLgme: offer.kind === 'contribute-lgme'
-      ? replay(freshGiver).balance === round2(beforeGiver - offer.amount) && replay(freshAuthor).balance === round2(beforeAuthor + round2(offer.amount * 0.99))
+      ? replay(freshGiver).balance === round2(beforeGiver - offer.amount) && replay(freshAuthor).balance === round2(beforeAuthor + commonsSplit(offer.amount).author)
       : replay(freshGiver).balance === beforeGiver && replay(freshAuthor).balance === beforeAuthor
   };
 }
@@ -3484,6 +3492,8 @@ export async function supportWisdom(store, supporterId, submissionId, spec = {})
   let unit = '$lgme';
   let amount = 0;
   let floorShare = 0;
+  let appShare = 0;
+  let skim = 0;
   let authorShare = 0;
   let lgmeAmount = 0;
   let fallback = '';
@@ -3497,7 +3507,7 @@ export async function supportWisdom(store, supporterId, submissionId, spec = {})
     }
     unit = 'barter';
   } else if (kind === 'credit') {
-    const split = wisdomSplit(spec.amount);
+    const split = deedCreditSplit(spec.amount);
     if (!split.ok) {
       releaseLockedKey(supporter);
       await store.set(supporterId, supporter);
@@ -3505,7 +3515,7 @@ export async function supportWisdom(store, supporterId, submissionId, spec = {})
     }
     unit = 'deed-credit';
     amount = split.amount;
-    floorShare = split.floor;
+    skim = split.skim;
     authorShare = split.author;
   } else if (kind === 'usd' && !(Number(spec.lgmePrice) > 0)) {
     const split = wisdomSplit(spec.amount);
@@ -3522,6 +3532,7 @@ export async function supportWisdom(store, supporterId, submissionId, spec = {})
     unit = 'USD';
     amount = split.amount;
     floorShare = split.floor;
+    appShare = split.app;
     authorShare = split.author;
     fallback = 'pay-in-terms';
   } else {
@@ -3548,6 +3559,7 @@ export async function supportWisdom(store, supporterId, submissionId, spec = {})
     unit = '$lgme';
     amount = split.amount;
     floorShare = split.floor;
+    appShare = split.app;
     authorShare = split.author;
     lgmeAmount = split.amount;
   }
@@ -3560,6 +3572,8 @@ export async function supportWisdom(store, supporterId, submissionId, spec = {})
     amount,
     unit,
     floorShare,
+    appShare,
+    skim,
     authorShare,
     fromId: supporterId,
     toId: author.id,
@@ -3584,6 +3598,8 @@ export async function supportWisdom(store, supporterId, submissionId, spec = {})
     ok: true,
     supportId,
     floorShare,
+    appShare,
+    skim,
     authorShare,
     unit,
     fallback,

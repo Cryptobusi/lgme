@@ -1,4 +1,5 @@
 import * as sim from './p2p-exchange-sim.mjs';
+import { deedCreditSplit } from './commons-split.mjs';
 import { CHECK_KEY, checkState, loadExcerpts, visibleWisdom, wisdomSplit } from './wisdom.mjs';
 import { PASSKEY_COPY, PASSKEY_FALLBACK, passkeySupported, unlockWithPasskey } from './passkey-unlock.mjs';
 import { fetchLgmePrice } from './lgme-price.mjs';
@@ -165,16 +166,16 @@ function supportControls(item) {
       confirm.hidden = false;
       return;
     }
-    const split = wisdomSplit(amount.value);
+    const split = selected === 'credit' ? deedCreditSplit(amount.value) : wisdomSplit(amount.value);
     if (!split.ok) {
       preview.textContent = split.error;
       return;
     }
     if (selected === 'credit') {
-      preview.textContent = `${split.floor} deed credit to the Floor. ${split.author} to the author. No $lgme moves. Confirm to sign.`;
+      preview.textContent = `${split.skim} deed credit skim to Health and fitness. ${split.author} to the author. No $lgme moves. Confirm to sign.`;
       ready = { kind: 'credit', amount: split.amount };
     } else if (selected === 'lgme') {
-      preview.textContent = `${split.floor} $lgme to the Floor. ${split.author} $lgme to the author. You pay ${split.amount}. Confirm to sign.`;
+      preview.textContent = `${split.floor} $lgme to the Floor. ${split.app} $lgme to the App development fund. ${split.author} $lgme to the author. You pay ${split.amount}. Confirm to sign.`;
       ready = { kind: 'lgme', amount: split.amount };
     } else {
       let price = 0;
@@ -183,7 +184,7 @@ function supportControls(item) {
         if (quote?.ok && quote.price > 0) price = quote.price;
       } catch { price = 0; }
       if (!(price > 0)) {
-        preview.textContent = `No $lgme quote. ${split.floor} US$ is noted for the Floor and ${split.author} US$ for the author. This is pay-in-terms or barter. No $lgme moves. Confirm to sign.`;
+        preview.textContent = `No $lgme quote. ${split.floor} US$ is noted for the Floor and ${split.app} US$ for the App development fund. ${split.author} US$ is noted for the author. This is pay-in-terms or barter. No $lgme moves. Confirm to sign.`;
         ready = { kind: 'usd', amount: split.amount, terms: terms.value, barter: terms.value };
       } else {
         const settled = wisdomSplit(Math.round((split.amount / price) * 100) / 100);
@@ -191,7 +192,7 @@ function supportControls(item) {
           preview.textContent = settled.error;
           return;
         }
-        preview.textContent = `${settled.floor} $lgme to the Floor. ${settled.author} $lgme to the author. That is 10% and 90% of ${split.amount} US$ at the current quote. Confirm to sign.`;
+        preview.textContent = `${settled.floor} $lgme to the Floor. ${settled.app} $lgme to the App development fund. ${settled.author} $lgme to the author. That is 5%, 5%, and 90% of ${split.amount} US$ at the current quote. Confirm to sign.`;
         ready = { kind: 'usd', amount: split.amount, lgmePrice: price };
       }
     }

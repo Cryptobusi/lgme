@@ -1,3 +1,5 @@
+import { commonsSplit } from './commons-split.mjs';
+
 export const TEXT_MAX = 280;
 export const EXCERPT_NOTE = 'New excerpts are added daily.';
 export const EXCERPT_FIELDS = Object.freeze(['date', 'text', 'theme', 'forTheApp', 'source', 'sourceUrl', 'kind']);
@@ -168,18 +170,7 @@ export function intentTitle(value, allowed = []) {
 }
 
 export function wisdomSplit(amount) {
-  const figure = Math.round(Number(amount) * 100) / 100;
-  if (!Number.isFinite(figure) || figure <= 0) return { ok: false, error: 'Enter an amount greater than zero.' };
-  const cents = Math.round(figure * 100);
-  const floorCents = Math.floor(cents * 0.1);
-  if (floorCents < 1) return { ok: false, error: 'Use at least 0.10 so the Floor receives a share.' };
-  const authorCents = cents - floorCents;
-  return {
-    ok: true,
-    amount: figure,
-    floor: floorCents / 100,
-    author: authorCents / 100
-  };
+  return commonsSplit(amount);
 }
 
 export function checkState(saved, day) {

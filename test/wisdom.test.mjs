@@ -90,10 +90,10 @@ test('the wisdom page carries the maxims, the checklist, and the empty daily fil
   assert.equal(nav.includes('href="/wisdom">Wisdom</a>'), true);
   assert.equal(nav.includes('href="/health-club"'), true);
   assert.equal(map.includes('<loc>https://lgme.app/wisdom</loc>'), true);
-  assert.equal(help.includes('Concurrence: at least 2 other members agree before wisdom is published; 10% of support goes to the Floor.'), true);
+  assert.equal(help.includes('5% to the Floor and 5% to the App development fund'), true);
   assert.equal(glossary.includes('Sober Poverty'), true);
-  assert.equal(glossary.includes('At least 2 other members agree before wisdom is published; 10% of support goes to the Floor.'), true);
-  assert.equal(worker.includes('lgme-v79'), true);
+  assert.equal(glossary.includes('App development fund'), true);
+  assert.equal(worker.includes('lgme-v80'), true);
   assert.equal(worker.includes('/data/wisdom-excerpts.json'), true);
   assert.equal(text('js/p2p-exchange-sim-ui.mjs').match(/fetch\(/g).length, 6);
   assert.equal(text('health-club.html').includes('The gift clears its own ledger'), true);
@@ -176,21 +176,24 @@ test('support splits 10 percent to the Floor and refuses a gift that spends the 
     authorId: 'alice', kind: 'lgme', amount: 5, passphrase: 'correct horse', code: codes.bob, unixSeconds: unix, at
   });
   assert.equal(paid.ok, true, paid.error);
-  assert.equal(paid.floorShare, 0.5);
+  assert.equal(paid.floorShare, 0.25);
+  assert.equal(paid.appShare, 0.25);
   assert.equal(paid.authorShare, 4.5);
   assert.equal(paid.creditMinted, false);
   assert.equal(sim.replay(await store.get('bob')).balance, 45);
   assert.equal(sim.replay(await store.get('alice')).balance, 104.5);
   const snapshot = projectSubfloors([await store.get('alice'), await store.get('bob')]);
-  assert.equal(snapshot.floorReserve, 0.5);
+  assert.equal(snapshot.floorReserve, 0.25);
+  assert.equal(snapshot.appFund, 0.25);
   await reopen(store, 'charlie', codes.charlie);
   const credit = await sim.supportWisdom(store, 'charlie', submitted.submissionId, {
     authorId: 'alice', kind: 'credit', amount: 1, passphrase: 'correct horse', code: codes.charlie, unixSeconds: unix, at
   });
   assert.equal(credit.ok, true, credit.error);
   assert.equal(credit.unchanged, true);
-  assert.equal(credit.floorShare, 0.1);
-  assert.equal(credit.authorShare, 0.9);
+  assert.equal(credit.floorShare, 0);
+  assert.equal(credit.skim, 0.01);
+  assert.equal(credit.authorShare, 0.99);
   assert.equal(sim.replay(await store.get('charlie')).balance, 80);
   await reopen(store, 'charlie', codes.charlie);
   const terms = await sim.supportWisdom(store, 'charlie', submitted.submissionId, {
@@ -205,7 +208,8 @@ test('support splits 10 percent to the Floor and refuses a gift that spends the 
   });
   assert.equal(own.ok, false);
   const early = wisdomSplit(5);
-  assert.equal(early.floor, 0.5);
+  assert.equal(early.floor, 0.25);
+  assert.equal(early.app, 0.25);
   assert.equal(early.author, 4.5);
 });
 
