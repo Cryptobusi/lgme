@@ -1366,6 +1366,7 @@ async function renderHelperHome() {
   return el('section', { id: 'my-helper', class: 'card' }, [
     el('h2', {}, [config.name || 'Helper']),
     el('p', {}, [config.paused ? 'Paused.' : 'On.']),
+    el('p', {}, [config.does ? `It may ${config.does}.` : '']),
     el('p', {}, [config.schedule || '']),
     el('p', { class: 'muted' }, ['It never sends, posts, accepts, signs, spends, or mints credit.']),
     el('button', { type: 'button', onClick: async () => { config.paused = !config.paused; await saveHelper(config); render(); } }, [config.paused ? 'Resume' : 'Pause']),

@@ -180,6 +180,8 @@ function reviewStep() {
       words: state.words,
       fields: state.fields,
       terms: state.terms,
+      schedule: card.schedule,
+      does: card.does,
       paused: false
     };
     setOn(localStorage, true);
