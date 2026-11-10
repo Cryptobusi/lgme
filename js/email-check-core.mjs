@@ -57,6 +57,16 @@ export async function hashCode(code, pepper) {
   return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+export async function hashEmail(email, pepper) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`email:${pepper}:${email}`));
+  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+export async function deviceThumb(jwk = {}) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${jwk.x || ''}.${jwk.y || ''}`));
+  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 export function clientIp(headers) {
   const forwarded = String(headers?.['x-forwarded-for'] || headers?.get?.('x-forwarded-for') || '');
   const first = forwarded.split(',')[0].trim();

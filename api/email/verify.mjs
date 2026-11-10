@@ -19,12 +19,14 @@ export default async function handler(req, res) {
     allowlist: allowlistFrom(env.CAMPUS_EMAIL_DOMAINS),
     clubAllowlist: allowlistFrom(env.CLUB_EMAIL_DOMAINS),
     clubInvites: allowlistFrom(env.CLUB_INVITE_CODES),
-    invite: body.invite
+    invite: body.invite,
+    publicJwk: body.publicJwk
   });
   return json(res, result.status, {
     ok: result.ok,
     error: result.error || '',
     member: result.member || '',
+    emailHash: result.emailHash || '',
     campusVerified: result.campusVerified === true,
     clubVerified: result.clubVerified === true
   });

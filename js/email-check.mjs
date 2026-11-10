@@ -1,3 +1,6 @@
+import { ensureDeviceKey } from './device-sign.mjs';
+import { saveEmailSession } from './health-email.mjs';
+
 const WAITING = 'Email sign-in is coming. Nothing is sent until that step is connected. Google sign-in: later.';
 
 function line(text) {
@@ -50,7 +53,7 @@ export async function mountEmailCheck(host) {
     send.disabled = true;
     verify.disabled = true;
   } else {
-    note.textContent = 'A .edu address is the campus option. A club domain, or a club invite code, can mark a health-club member. Neither is required. One verified email is one member. The code expires in 10 minutes. Full identity checks are not started. Google sign-in: later.';
+    note.textContent = 'A code expires in 10 minutes. This device keeps the session. Your device key and passkey stay the second check. No phone number and no ID check. Google sign-in: later.';
   }
   send.addEventListener('click', async () => {
     result.textContent = 'Sending…';
@@ -64,17 +67,19 @@ export async function mountEmailCheck(host) {
   });
   verify.addEventListener('click', async () => {
     result.textContent = 'Checking…';
+    const key = await ensureDeviceKey(localStorage);
     const response = await fetch('/api/email/verify', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email: email.value, code: code.value, invite: invite.value })
+      body: JSON.stringify({ email: email.value, code: code.value, invite: invite.value, publicJwk: key.publicJwk })
     });
     const body = await response.json();
     if (!body.ok) { result.textContent = body.error || 'Not verified.'; return; }
+    saveEmailSession(localStorage, { email: email.value, emailHash: body.emailHash, x: key.publicJwk.x, y: key.publicJwk.y, at: new Date().toISOString() });
     const campus = body.campusVerified ? 'Campus-verified.' : 'Verified. This domain is not marked as campus.';
     result.textContent = body.member === 'existing' ? `This email is already a member. ${campus}` : `Email verified. ${campus}`;
   });
   const title = document.createElement('h3');
-  title.textContent = 'Campus email check';
+  title.textContent = 'Email sign-in';
   host.replaceChildren(title, note, field('Email', email), field('Code', code), field('Club invite, optional', invite), send, verify, result);
 }

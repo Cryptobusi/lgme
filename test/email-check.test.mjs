@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { emailReadiness, hashCode, isCampusEmail, makeCode, normalizeEmail } from '../js/email-check-core.mjs';
+import { emailReadiness, hashCode, hashEmail, isCampusEmail, makeCode, normalizeEmail } from '../js/email-check-core.mjs';
 import { confirmCode, requestCode } from '../api/lib/email-flow.mjs';
 
 function memory() {
@@ -56,9 +56,11 @@ test('a campus address is marked once and the code is stored only as a hash', as
   });
   assert.equal(first.ok, true);
   assert.deepEqual(sent, [['ada@school.edu', '123456']]);
-  const saved = await store.get('email:code:ada@school.edu');
+  const emailHash = await hashEmail('ada@school.edu', 'pepper');
+  const saved = await store.get(`email:code:${emailHash}`);
   assert.equal(saved.hash, await hashCode('123456', 'pepper'));
   assert.equal(JSON.stringify(saved).includes('123456'), false);
+  assert.equal(JSON.stringify(saved).includes('ada@school.edu'), false);
   const verified = await confirmCode(store, { email: 'ada@school.edu', code: '123456', now: 2_000, pepper: 'pepper' });
   assert.equal(verified.ok, true);
   assert.equal(verified.member, 'new');
@@ -70,8 +72,10 @@ test('a campus address is marked once and the code is stored only as a hash', as
   const second = await confirmCode(store, { email: 'ada@school.edu', code: '654321', now: 81_000, pepper: 'pepper' });
   assert.equal(second.member, 'existing');
   assert.equal(second.campusVerified, true);
-  const member = await store.get('email:member:ada@school.edu');
-  assert.deepEqual(Object.keys(member).sort(), ['campusVerified', 'clubVerified', 'email', 'verifiedAt']);
+  const member = await store.get(`email:member:${emailHash}`);
+  assert.equal(member.email, undefined);
+  assert.equal(member.emailHash, emailHash);
+  assert.equal(JSON.stringify(member).includes('ada@school.edu'), false);
   assert.equal(member.clubVerified, false);
 });
 

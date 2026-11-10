@@ -11,6 +11,8 @@ import { LOCAL_CHAT_NOTE, chatStatus, publicChatMessage } from './gym-sync.mjs';
 import { BOARD_NOTE, PROGRESS_KINDS, boardCards, chooseProgress, manualEntry, progressRows, sharePreview } from './gym-progress.mjs';
 import { communityFeed } from './gym-feed.mjs';
 import { OPT_IN_COPY, answerLocal, deleteDownloadedModel, detectEngine, isOn, setOn, unloadLocalModel } from './local-ai.mjs';
+import { EMAIL_WAITING, joinEmailDone, saveEmailSession } from './health-email.mjs';
+import { FALLBACK_LABEL, HEALTH_PLANS, PLAN_ORDER, draftPlan, saveConfirmedPlan } from './health-plan.mjs';
 import { STARTERS, agentNotice, deleteAgent, dueAgents, editAgent, listAgents, markFired, needsPermission, pauseAgent, saveAgent, scheduleNote } from './local-agents.mjs';
 import { CLARIFICATIONS, COVENANT_TITLE, FIELD_LABELS, covenantHash, covenantSections, covenantText, exitReceipt, openCommitments, publicCovenant, signSponsor, sponsorStatus, velocityNote } from './covenant.mjs';
 import { LEGACY_TOPIC, TESTNET_TOPIC, creditReport, mirrorMatch, sponsorshipReady } from './sponsor-report.mjs';
@@ -946,7 +948,7 @@ async function renderMore() {
   ]);
 }
 
-const signup = { step: 1, name: '', kinds: [], agree: {}, primary: '', secondary: '', legalName: '', signature: '', date: new Date().toISOString().slice(0, 10), applicantName: '', trackRecord: '' };
+const signup = { step: 0, name: '', kinds: [], agree: {}, primary: '', secondary: '', legalName: '', signature: '', date: new Date().toISOString().slice(0, 10), applicantName: '', trackRecord: '' };
 let intakeRaw = '';
 let covenantRaw = '';
 
@@ -1045,7 +1047,7 @@ async function finishSignup(group) {
   localStorage.setItem('lgme.entry.category', 'health');
   registered = await store.get(id);
   setSeat(id);
-  go('/me');
+  go('/personalize');
 }
 
 async function publishCovenant(peer, text) {
@@ -1072,12 +1074,63 @@ async function publishCovenant(peer, text) {
   void text;
 }
 
+function emailJoinCard() {
+  const host = el('section', { class: 'card', id: 'health-email' });
+  host.append(el('h3', {}, ['Email']));
+  host.append(el('p', {}, ['A new member verifies an email once, before the covenant. This device keeps that check. Later visits use the device key and the passkey. No phone number and no ID check.']));
+  const email = el('input', { id: 'join-email', type: 'email', maxlength: '120', placeholder: 'name@email.com', autocomplete: 'email' });
+  const code = el('input', { id: 'join-code', inputmode: 'numeric', maxlength: '6', placeholder: '6-digit code', autocomplete: 'one-time-code' });
+  const result = el('p', { id: 'join-email-result' });
+  const send = el('button', { type: 'button', id: 'join-send', onClick: async () => {
+    result.textContent = 'Sending…';
+    const response = await fetch('/api/email/send', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: email.value }) });
+    const body = await response.json();
+    result.textContent = body.ok ? 'Code sent. It expires in 10 minutes.' : (body.error || body.waiting || EMAIL_WAITING);
+  } }, ['Send code']);
+  const verify = el('button', { type: 'button', class: 'primary', id: 'join-verify', onClick: async () => {
+    result.textContent = 'Checking…';
+    const key = await ensureDeviceKey(localStorage);
+    const response = await fetch('/api/email/verify', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email: email.value, code: code.value, publicJwk: key.publicJwk })
+    });
+    const body = await response.json();
+    if (!body.ok) { result.textContent = body.error || body.waiting || 'Not verified.'; return; }
+    saveEmailSession(localStorage, { email: email.value, emailHash: body.emailHash, x: key.publicJwk.x, y: key.publicJwk.y, at: new Date().toISOString() });
+    signup.step = 1;
+    result.textContent = 'Email verified on this device.';
+    render();
+  } }, ['Verify and continue']);
+  host.append(el('label', {}, ['Email', email]));
+  host.append(el('label', {}, ['Code', code]));
+  host.append(send, verify, result);
+  queueMicrotask(async () => {
+    let status = { enabled: false };
+    try { status = await (await fetch('/api/email/status')).json(); } catch { status = { enabled: false }; }
+    if (!status.enabled) {
+      result.textContent = EMAIL_WAITING;
+      send.disabled = true;
+      verify.disabled = true;
+    }
+  });
+  return host;
+}
+
 async function renderRegister() {
   const box = el('section', { id: 'join-health' }, [
-    el('p', { class: 'kicker' }, [`Step ${signup.step} of 5`]),
+    el('p', { class: 'kicker' }, [signup.step === 0 ? 'New member' : `Step ${signup.step} of 5`]),
     el('h2', {}, ['Join Health']),
     el('p', {}, [el('a', { href: '/gym/covenant' }, ['Member Covenant']), ' · ', el('a', { href: '/gym/health-data' }, ['Consumer health data'])])
   ]);
+  if (!joinEmailDone(localStorage)) {
+    signup.step = 0;
+    box.append(emailJoinCard());
+    box.append(el('p', {}, [el('a', { href: '#/personalize' }, ['See the three example prompts'])]));
+    box.append(el('p', { id: 'gym-status', role: 'status' }, []));
+    return box;
+  }
+  if (signup.step === 0) signup.step = 1;
   if (signup.step === 1 && signup.adult !== true) {
     box.append(ageGateCard());
     box.append(el('p', { id: 'gym-status', role: 'status' }, []));
@@ -1620,7 +1673,7 @@ async function renderDashboard() {
   const groups = Object.values(mine.clubGroups || {});
   const sponsored = locals.filter((peer) => peer.id !== mine.id && (peer.covenant?.sponsors || []).some((row) => row.handle === mine.id));
   const view = el('div', {}, [
-    el('p', {}, [el('a', { href: '/?picker=1' }, ['All categories']), ' · ', el('a', { href: '/gym/covenant' }, ['Member Covenant']), ' · ', el('a', { href: '#/dispute' }, ['Dispute rehearsal'])]),
+    el('p', {}, [el('a', { href: '/?picker=1' }, ['All categories']), ' · ', el('a', { href: '/gym/covenant' }, ['Member Covenant']), ' · ', el('a', { href: '#/personalize' }, ['Personalize']), ' · ', el('a', { href: '#/dispute' }, ['Dispute rehearsal'])]),
     covenantPanel(mine, locals),
     sponsored.length ? el('section', { class: 'card', id: 'sponsored-members' }, [
       el('h2', {}, ['People you sponsor']),
@@ -1799,6 +1852,53 @@ async function renderDispute() {
   ]);
 }
 
+async function launchPlan(id, note, host) {
+  host.replaceChildren(el('p', {}, ['Drafting on this phone…']));
+  const prompt = note.value.trim() || HEALTH_PLANS[id].prompt;
+  const custom = prompt !== HEALTH_PLANS[id].prompt;
+  let shown = draftPlan(id, custom ? 'your edited prompt' : '');
+  if (detectEngine(globalThis).id !== 'rules') {
+    try {
+      const result = await answerLocal({ question: `${prompt}\n\nDraft only. Do not send it.` });
+      if (result.engine !== 'rules' && result.text) {
+        shown = { ...shown, label: result.label, lines: result.text.split('\n').map((line) => line.trim()).filter(Boolean) };
+      }
+    } catch { /* the deterministic draft stays */ }
+  }
+  host.replaceChildren(
+    el('p', { class: 'kicker', id: `plan-label-${id}` }, [shown.label || FALLBACK_LABEL]),
+    el('h3', {}, [shown.title]),
+    ...shown.lines.map((line) => el('p', {}, [line])),
+    el('button', { type: 'button', id: `confirm-${id}`, onClick: () => {
+      saveConfirmedPlan(localStorage, { ...shown, note: note.value.trim() });
+      status('Confirmed on this phone. Nothing was sent.');
+    } }, ['Confirm this draft'])
+  );
+}
+
+async function renderPersonalize() {
+  const host = el('section', { id: 'personalize' }, [
+    el('h2', {}, ['Personalize my Health app']),
+    el('p', {}, ['Three drafts. The helper on this phone writes one. You confirm it. It only drafts and reminds. Nothing is sent. A workout still mints no credit.'])
+  ]);
+  for (const id of PLAN_ORDER) {
+    const plan = HEALTH_PLANS[id];
+    const note = el('textarea', { id: `plan-note-${id}`, maxlength: '400' });
+    note.value = plan.prompt;
+    const draft = el('article', { class: 'card', id: `plan-draft-${id}` });
+    host.append(el('section', { class: 'card', id: `plan-${id}` }, [
+      el('h3', {}, [plan.title]),
+      el('img', { id: `plan-image-${id}`, src: plan.image, alt: `${plan.title} personalized Health app`, width: '358' }),
+      el('pre', { id: `plan-prompt-${id}` }, [plan.prompt]),
+      el('label', {}, ['Prompt. You can edit it.', note]),
+      el('button', { type: 'button', class: 'primary', id: `use-${id}`, onClick: () => launchPlan(id, note, draft) }, ['Use this']),
+      draft
+    ]));
+  }
+  host.append(el('p', { id: 'gym-status', role: 'status' }, []));
+  return host;
+}
+
 async function render() {
   const path = route();
   const panel = document.getElementById('gym-panel');
@@ -1813,8 +1913,10 @@ async function render() {
   else if (path.startsWith('/sponsor/')) view = await renderSponsor(decodeURIComponent(path.slice('/sponsor/'.length)));
   else if (path === '/intake') view = await renderIntakeEdit();
   else if (path === '/dispute') view = await renderDispute();
+  else if (path === '/personalize') view = await renderPersonalize();
+  else if (path === '/start' && registered && mode !== 'demo') view = await renderDashboard();
   else if (path === '/helper') view = await renderHelperHome();
-  else if (path === '/register' || (!registered && mode !== 'demo' && path === '/')) view = await renderRegister();
+  else if (path === '/register' || path === '/start' || (!registered && mode !== 'demo' && path === '/')) view = await renderRegister();
   else if (registered && (path === '/' || path === '/me')) view = await renderDashboard();
   else view = await renderClub();
   panel.replaceChildren(view);
