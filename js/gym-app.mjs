@@ -15,6 +15,8 @@ import { holdFromChat } from './equipment-referral.mjs';
 import { mountEquipmentCard } from './equipment-card.mjs';
 import { EMAIL_WAITING, joinEmailDone, saveEmailSession } from './health-email.mjs';
 import { personalizeView, personalPageView, recallPage } from './health-page.mjs';
+import { renderSetupFee } from './setup-fee-page.mjs';
+import { noteReminder, optOutReminder, readSetup, reminderDue, writeSetup } from './setup-fee.mjs';
 import { STARTERS, agentNotice, deleteAgent, dueAgents, editAgent, listAgents, markFired, needsPermission, pauseAgent, saveAgent, scheduleNote } from './local-agents.mjs';
 import { CLARIFICATIONS, COVENANT_TITLE, FIELD_LABELS, covenantHash, covenantSections, covenantText, exitReceipt, openCommitments, publicCovenant, signSponsor, sponsorStatus, velocityNote } from './covenant.mjs';
 import { LEGACY_TOPIC, TESTNET_TOPIC, creditReport, mirrorMatch, sponsorshipReady } from './sponsor-report.mjs';
@@ -1066,7 +1068,7 @@ async function finishSignup(group) {
   localStorage.setItem('lgme.entry.category', 'health');
   registered = await store.get(id);
   setSeat(id);
-  go('/personalize');
+  go('/setup');
 }
 
 async function publishCovenant(peer, text) {
@@ -1693,6 +1695,7 @@ async function renderDashboard() {
   const sponsored = locals.filter((peer) => peer.id !== mine.id && (peer.covenant?.sponsors || []).some((row) => row.handle === mine.id));
   const view = el('div', {}, [
     el('p', {}, [el('a', { href: '/?picker=1' }, ['All categories']), ' · ', el('a', { href: '/gym/covenant' }, ['Member Covenant']), ' · ', el('a', { href: '#/personalize' }, ['Personalize']), ' · ', el('a', { href: '#/dispute' }, ['Dispute rehearsal'])]),
+    setupReminder(mine),
     covenantPanel(mine, locals),
     sponsored.length ? el('section', { class: 'card', id: 'sponsored-members' }, [
       el('h2', {}, ['People you sponsor']),
@@ -1885,6 +1888,7 @@ async function render() {
   else if (path.startsWith('/sponsor/')) view = await renderSponsor(decodeURIComponent(path.slice('/sponsor/'.length)));
   else if (path === '/intake') view = await renderIntakeEdit();
   else if (path === '/dispute') view = await renderDispute();
+  else if (path === '/setup') view = await renderSetupFee({ storage: localStorage, go, mine: await seat() });
   else if (path === '/personalize') {
     const mine = await seat();
     view = await personalizeView({ storage: localStorage, status, go, goals: goalsOfSeat(mine), memberId: mine?.id, peerStore: store });
@@ -1918,6 +1922,18 @@ async function listBooks(book) {
     if (row) rows.push(row);
   }
   return rows;
+}
+
+function setupReminder(peer) {
+  const record = readSetup(localStorage, peer.id);
+  if (!reminderDue(record)) return null;
+  writeSetup(localStorage, noteReminder(record));
+  return el('p', { id: 'setup-reminder' }, [
+    'The voluntary setup fee is still open. ',
+    el('a', { href: '#/setup' }, ['See it']),
+    ' ',
+    el('button', { type: 'button', id: 'setup-opt-out', onClick: () => { writeSetup(localStorage, optOutReminder(record)); render(); } }, ['No monthly note'])
+  ]);
 }
 
 function goalsOfSeat(peer) {

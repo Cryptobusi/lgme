@@ -4,6 +4,8 @@ import { VIEW_ONLY_MESSAGE } from '../../js/view-only-api.mjs';
 import { verifyDevice } from '../../js/device-sign.mjs';
 import { HOUR_LIMIT, LISTINGS_OPERATOR, LISTINGS_TOPIC, publicExchangeListing } from '../../js/exchange-listing.mjs';
 import { submitPaidListing } from '../../js/hedera-submit.mjs';
+import { SETUP_ADDRESS, SETUP_MINT, confirmSetupTransfer, publicSetupReceivable } from '../../js/setup-fee.mjs';
+import { rpc } from '../../js/solana-pay.mjs';
 import { redisRest } from '../../js/redis-env.mjs';
 import { upstashStore } from '../lib/upstash.mjs';
 import { allowRate } from '../../js/gym-kv.mjs';
@@ -72,8 +74,18 @@ export default async function handler(req, res) {
   if (!paced.ok) return json(res, 429, paced);
   const body = await readBody(req);
   const payload = body.payload || {};
-  const built = publicExchangeListing({ ...payload, handle: payload.handle || body.handle });
+  const fee = payload.action === 'receivable' || payload.action === 'receivable-paid';
+  const built = fee
+    ? publicSetupReceivable({ ...payload, handle: payload.handle || body.handle })
+    : publicExchangeListing({ ...payload, handle: payload.handle || body.handle });
   if (!built.ok) return json(res, built.status || 400, { ok: false, viewOnly: built.viewOnly === true, error: built.error || VIEW_ONLY_MESSAGE });
+  if (payload.action === 'receivable-paid') {
+    const tx = await rpc('mainnet-beta', 'getTransaction', [payload.signature, { encoding: 'jsonParsed', maxSupportedTransactionVersion: 0, commitment: 'finalized' }]);
+    const confirmed = tx.ok && tx.result
+      ? confirmSetupTransfer(tx.result, { recipient: SETUP_ADDRESS, mint: SETUP_MINT, amount: built.body.lgmeAmount, signature: payload.signature })
+      : { ok: false, error: tx.error || 'The payment was not confirmed on Solana mainnet.' };
+    if (!confirmed.ok) return json(res, 400, { ok: false, error: confirmed.error });
+  }
   if (String(payload.category || '').toLowerCase() !== 'exchange') {
     return json(res, 403, { ok: false, viewOnly: true, error: VIEW_ONLY_MESSAGE });
   }
