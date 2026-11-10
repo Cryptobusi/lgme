@@ -289,9 +289,9 @@ test('the page is linked from the menus, the picture, the workflow, and the site
   assert.equal(text('sitemap.xml').includes('https://lgme.app/tap-entry</loc>'), true);
   assert.equal(text('my-picture.html').includes('href="/tap-entry"'), true);
   assert.equal(text('workflow.html').includes('href="/tap-entry"'), true);
-  assert.equal(text('my-picture.html').includes('arbiter who can veto'), true);
-  assert.equal(text('workflow.html').includes('arbiter who can veto'), true);
-  assert.equal(page.includes('arbiter who can veto') || ui.includes('arbiter who can veto'), true);
+  assert.equal(text('my-picture.html').includes('held by you alone'), true);
+  assert.equal(text('workflow.html').includes('held by you alone'), true);
+  assert.equal(page.includes('held by you alone') || ui.includes('held by you alone'), true);
   assert.equal(ui.includes('Review: what works, what doesn’t'), true);
   assert.equal(STORAGE_KEY, 'lgme.tap-entry.demo.v1');
   assert.equal(script.includes(STORAGE_KEY), true);

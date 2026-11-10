@@ -746,7 +746,7 @@ export function mount(root, env) {
   function renderConfirmPartner() {
     const kids = [
       el('h2', {}, ['Does the other person confirm?']),
-      el('p', {}, ['The second confirm on this page is a sample tap on the same device. Two taps here do not show that two people agreed. A real second confirm would happen on the other person’s device. The Third Seat is the arbiter who can veto. This demo does not contact an arbiter.']),
+      el('p', {}, ['The second confirm on this page is a sample tap on the same device. Two taps here do not show that two people agreed. A real second confirm would happen on the other person’s device. The Third Seat is your seat, held by you alone. This demo does not contact an arbiter.']),
       primary('confirm-partner', ACTIONS['confirm-partner'].label, true)
     ];
     if (state.undo) kids.push(ghost('undo', 'Undo'));

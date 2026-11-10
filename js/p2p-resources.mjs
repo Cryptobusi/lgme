@@ -108,7 +108,7 @@ export const ARTICLES = [
     title: 'The third seat',
     deck: 'Read the order. Refuse a line that skipped it. The no stays.',
     blocks: [
-      { type: 'p', text: 'The Third Seat is the arbiter who can veto: the $lgme self-regulating nonprofit arbiter, which holds a veto as a check on the State and Floor seats. The veto is a record. It does not mint and it does not spend. Silence is not a refusal.' },
+      { type: 'p', text: 'The Third Seat is your seat, held by you alone, with equal standing beside the state and the firm. You may decline any exchange at no cost, no unpublished rule can bind you, and any hold on your exchange must give a reason and can be challenged, decided within 7 days or it lapses. Holds the law requires are cited, recorded, and kept no broader or longer than the law demands. The veto is a record. It does not mint and it does not spend. Silence is not a refusal.' },
       { type: 'link', href: 'https://www.egonomicanonymous.live/third-seat', text: 'The third seat, on egonomicanonymous.live' },
       { type: 'link', href: '/the-third-seat', text: 'The third seat, on this site' },
       { type: 'link', href: '/marketing', text: 'Marketing & Adoption' },

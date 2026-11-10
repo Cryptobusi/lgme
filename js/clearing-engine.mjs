@@ -7,7 +7,7 @@ export const SCALE_STEP = 0.1;
 export const FIT_MIN = 0.12;
 export const PAN_STEP = 70;
 
-export const THIRD_SEAT = "The Third Seat is the arbiter who can veto: the $lgme self-regulating nonprofit arbiter, which holds a veto as a check on the State and Floor seats.";
+export const THIRD_SEAT = "The Third Seat is your seat, held by you alone, with equal standing beside the state and the firm. You may decline any exchange at no cost, no unpublished rule can bind you, and any hold on your exchange must give a reason and can be challenged, decided within 7 days or it lapses. Holds the law requires are cited, recorded, and kept no broader or longer than the law demands.";
 
 export const CARDS = [
   { id: "c1", n: "01", x: 70, y: 120, w: 500, h: 700, tone: "amber", nav: "5-Pillars Origin", title: "Sovereign Origin & the 5 Pillars", kicker: "The Fundamental Human Economic State Vector" },
@@ -104,7 +104,7 @@ export const SPECS = {
     stage: "STAGE 03 · THIRD SEAT CLEARING",
     paragraphs: [
       THIRD_SEAT,
-      "The arbiter holds a veto as a check on the State seat and the Floor seat. It does not replace a court. Disputes go to peer review first, with legal recourse intact. A private hearing is not a court judgment.",
+      "The nonprofit is never an arbiter. A member may decline an exchange. Disputes go to peer review first, with legal recourse intact. A private hearing is not a court judgment.",
       "Campus Credit in this design is mutual credit: a confirmed deed issues it, and consumption extinguishes it. The proposal aims at zero interest and at a cap so one participant cannot corner the book. Anything above the cap, in the proposal, is redirected toward the commons. Those limits are design rules. This site does not run them as a live contract.",
       "Komunitin is named only as a comparable mutual-credit pattern. It is not a live integration. A failed sample attestation would go to peer review with the hash the parties already hold. $lgme cannot buy a softer cap, a waiver, or a favorable ruling. Holders receive no yield in this design."
     ]

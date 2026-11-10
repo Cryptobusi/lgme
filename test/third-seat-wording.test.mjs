@@ -35,11 +35,12 @@ const FILES = [
   'js/clearing-engine.mjs'
 ];
 
-test('Third Seat descriptions say the arbiter who can veto', () => {
+test('Third Seat descriptions say the person holds the seat', () => {
   for (const file of FILES) {
     const body = text(file);
-    assert.equal(body.includes('arbiter who can veto'), true, file);
-    assert.equal(body.includes('named everyday member who can veto'), false, file);
+    assert.equal(body.includes('held by you alone'), true, file);
+    assert.equal(body.includes('self-regulating nonprofit arbiter'), false, file);
+    assert.equal(body.includes('arbiter who can veto'), false, file);
   }
   assert.equal(text('docs/sovereign-provenance-protocol-draft.pdf').includes('arbiter who can veto'), false);
 });

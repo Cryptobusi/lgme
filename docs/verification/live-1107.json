@@ -1,0 +1,112 @@
+[
+  {
+    "name": "sitemap and shell URLs return 200",
+    "pass": true,
+    "detail": "44 urls"
+  },
+  {
+    "name": "no $Trust on crawled pages",
+    "pass": true,
+    "detail": "absent"
+  },
+  {
+    "name": "no EgonomicAnon on crawled pages",
+    "pass": true,
+    "detail": "absent"
+  },
+  {
+    "name": "security headers",
+    "pass": true,
+    "detail": ""
+  },
+  {
+    "name": "CSP script-src is self only",
+    "pass": true,
+    "detail": "default-src 'self'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' d"
+  },
+  {
+    "name": "CSP object, base, frame, upgrade",
+    "pass": true,
+    "detail": "csp"
+  },
+  {
+    "name": "HSTS nosniff frame referrer permissions",
+    "pass": true,
+    "detail": "max-age=31536000; includeSubDomains"
+  },
+  {
+    "name": "no CSP or console errors at phone",
+    "pass": true,
+    "detail": "41 pages"
+  },
+  {
+    "name": "no CSP or console errors at pixel7",
+    "pass": true,
+    "detail": "41 pages"
+  },
+  {
+    "name": "no CSP or console errors at desk",
+    "pass": true,
+    "detail": "41 pages"
+  },
+  {
+    "name": "install bar on /",
+    "pass": true,
+    "detail": "{\"text\":\"Install & launch\",\"href\":\"/p2p-exchange-sim\",\"top\":\"launch-bar\",\"y\":9,\"bg\":\"rgb(249, 115, 22)\"}"
+  },
+  {
+    "name": "coin mint address and X Money",
+    "pass": true,
+    "detail": "{\"mint\":\"7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump\",\"donate\":\"6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY\",\"name\":\"@EgonAnon\",\"x\":\"https://x.com/Trancesage\",\"install\":\"/p2p-exchange-sim\"}"
+  },
+  {
+    "name": "coin donate QR decodes",
+    "pass": true,
+    "detail": "6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY"
+  },
+  {
+    "name": "install bar on the practice desk",
+    "pass": true,
+    "detail": "Install & launch"
+  },
+  {
+    "name": "passkey wording",
+    "pass": true,
+    "detail": "true"
+  },
+  {
+    "name": "donation cards",
+    "pass": true,
+    "detail": "{\"name\":true,\"address\":true,\"phrase\":true,\"href\":\"https://x.com/Trancesage\"}"
+  },
+  {
+    "name": "short handoff QR decodes",
+    "pass": true,
+    "detail": "{\"decoded\":\"lgme1q.af99f5a9e23cf868b2f9c5\",\"stored\":\"lgme1q.af99f5a9e23cf868b2f9c5\",\"width\":220}"
+  },
+  {
+    "name": "third-seat co-sign above 50",
+    "pass": true,
+    "detail": "{\"blocked\":\"Amounts above 50 $lgme need a third-seat co-sign.\",\"allowed\":true,\"allowedError\":\"\",\"fraud\":true,\"fraudError\":\"Fork. The same serial has two next owners.\",\"floor\":41}"
+  },
+  {
+    "name": "double-spend fraud proof",
+    "pass": true,
+    "detail": "{\"blocked\":\"Amounts above 50 $lgme need a third-seat co-sign.\",\"allowed\":true,\"allowedError\":\"\",\"fraud\":true,\"fraudError\":\"Fork. The same serial has two next owners.\",\"floor\":41}"
+  },
+  {
+    "name": "online-only spend refusal",
+    "pass": true,
+    "detail": "Offline is read-only. Open the books, but do not spend, until this browser is online."
+  },
+  {
+    "name": "IdidIt invoice signs without moving a balance",
+    "pass": true,
+    "detail": "{\"status\":\"Invoice signed. The balance did not move. Open SMS from the ledger to remind. SIMULATION.\",\"keys\":[\"status\",\"displayName\",\"sealed\"],\"opened\":\"sim-salt-alice\",\"error\":\"\",\"wrap\":\"ok\",\"dek\":\"248,188,206,89\",\"vault\":true}"
+  },
+  {
+    "name": "soBeIT grant stays simulated",
+    "pass": true,
+    "detail": "Simulated grant recorded. Balance 65. No real funds moved."
+  }
+]

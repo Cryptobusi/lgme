@@ -68,8 +68,8 @@ test('nine zones, the nodes, and the edges are in the map', () => {
   assert.equal((svg.match(/data-path="/g) || []).length, PATHS.length);
   for (const phrase of [
     'Person and onboarding',
-    'Third Seat arbiter',
-    'the arbiter who can veto',
+    'Third Seat',
+    'the nonprofit is not this seat',
     'Consent first',
     'AI suggests, you decide',
     'Live beta',
@@ -84,7 +84,7 @@ test('nine zones, the nodes, and the edges are in the map', () => {
   const allow = EDGES.find((edge) => edge.label === 'Allow');
   const ends = edgeEndpoints(allow);
   assert.equal(Number.isFinite(ends.x1 + ends.y1 + ends.x2 + ends.y2), true);
-  assert.equal(renderZoneKeyHtml().includes('arbiter who can veto'), true);
+  assert.equal(renderZoneKeyHtml().includes('held by you alone'), true);
   assert.equal(renderLiveTableHtml().includes('Live beta'), true);
   assert.equal(renderLiveTableHtml().includes('To be verified'), true);
   assert.equal(LIVE_ROWS[2][1], 'Planned');

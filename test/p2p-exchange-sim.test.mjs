@@ -1798,7 +1798,7 @@ test('DC reference values stay pending when a series has no number', () => {
   const worker = readFileSync(join(root, 'sw.js'), 'utf8');
   assert.equal(worker.includes('lgme-v130'), true);
   assert.equal(worker.includes('key.startsWith("lgme-v")'), true);
-  assert.equal(ui.includes('the arbiter who can veto'), true);
+  assert.equal(ui.includes('held by you alone'), true);
   assert.equal(ui.includes('Public Ledger / Verified Receipt'), true);
   assert.equal(ui.includes('lgme.exchange.introSeen'), true);
   assert.equal(ui.includes('Show intro'), true);
