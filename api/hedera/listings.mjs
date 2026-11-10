@@ -3,6 +3,7 @@ import { json, readEnv } from '../lib/http.mjs';
 import { VIEW_ONLY_MESSAGE } from '../../js/view-only-api.mjs';
 
 export default async function handler(req, res) {
+  if (req.method === 'POST') return json(res, 403, { ok: false, viewOnly: true, error: VIEW_ONLY_MESSAGE });
   const env = readEnv();
   const enabled = sharedListingsEnabled(env);
   if (!enabled) {
@@ -28,6 +29,5 @@ export default async function handler(req, res) {
     })).sort((a, b) => String(a.consensusTimestamp).localeCompare(String(b.consensusTimestamp)));
     return json(res, 200, { ok: true, enabled: true, network: 'testnet', listings, rules: OPERATOR_RULES });
   }
-  if (req.method !== 'POST') return json(res, 405, { ok: false, error: 'Use GET or POST.' });
-  return json(res, 403, { ok: false, viewOnly: true, error: VIEW_ONLY_MESSAGE });
+  return json(res, 405, { ok: false, error: 'Use GET or POST.' });
 }
