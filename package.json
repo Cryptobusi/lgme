@@ -3,6 +3,10 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@hashgraph/sdk": "2.71.0"
+    "@hashgraph/sdk": "2.81.0"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "1.14.7",
+    "protobufjs": "8.8.1"
   }
 }
