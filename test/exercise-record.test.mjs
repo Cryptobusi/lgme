@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as sim from '../js/p2p-exchange-sim.mjs';
 import { listingMessage, sharedListingsEnabled, withinRate } from '../js/shared-listings.mjs';
+import { EVIDENCE_UNVERIFIED, evidenceHash, locationMatched } from '../js/exercise-record.mjs';
 
 const at = '2026-11-10T15:00:00.000Z';
 const unix = 1700000000;
@@ -27,13 +28,19 @@ async function reopen(store, id, code) {
 test('a workout records an IdidIt listing and mints no credit', async () => {
   const store = await people();
   const aliceCode = await codeFor(store, 'alice');
+  const bundle = { startedAt: at, finishedAt: '2026-11-10T15:20:00.000Z', points: [{ lat: 38.9, lon: -77.0, acc: 5, t: at }], photos: [], samples: 2 };
+  const hash = await evidenceHash(bundle);
   const recorded = await sim.recordExerciseSession(store, 'alice', {
     day: '2026-11-10',
     category: 'strength',
-    evidence: 'device',
+    evidence: EVIDENCE_UNVERIFIED,
     terms: 'Contribution or barter',
+    durationSec: 1200,
+    sensors: ['gps', 'motion'],
+    locationMatched: locationMatched(bundle.points, { lat: 38.9, lon: -77.0, radiusM: 150 }),
     privateNote: 'knee felt fine',
-    deviceHash: 'ab'.repeat(32),
+    evidenceHash: hash,
+    bundle,
     passphrase: 'correct horse',
     code: aliceCode,
     unixSeconds: unix,
@@ -45,7 +52,9 @@ test('a workout records an IdidIt listing and mints no credit', async () => {
   const alice = await store.get('alice');
   const tape = JSON.stringify(alice.tape);
   assert.equal(tape.includes('knee felt fine'), false);
-  assert.equal(tape.includes('ab'.repeat(32)), false);
+  assert.equal(tape.includes('38.9'), false);
+  assert.equal(recorded.publicItem.locationMatched, 'yes');
+  assert.equal(recorded.publicItem.evidence, EVIDENCE_UNVERIFIED);
   assert.equal(alice.exercisePrivate[recorded.sessionId].note, 'knee felt fine');
   assert.equal(alice.tape.some((entry) => entry.type === 'CAMPUS_CREDIT'), false);
   const shared = await sim.exerciseShareBody(store, 'alice', recorded.sessionId);
@@ -61,7 +70,7 @@ test('support cannot spend the floor, and a no moves nothing', async () => {
   const store = await people();
   const aliceCode = await codeFor(store, 'alice');
   const recorded = await sim.recordExerciseSession(store, 'alice', {
-    day: '2026-11-10', category: 'cardio', evidence: 'self-reported', terms: 'Contribution or barter',
+    day: '2026-11-10', category: 'cardio', evidence: EVIDENCE_UNVERIFIED, terms: 'Contribution or barter', durationSec: 60, sensors: [], locationMatched: 'no', evidenceHash: 'cd'.repeat(32),
     passphrase: 'correct horse', code: aliceCode, unixSeconds: unix, at
   });
   await reopen(store, 'alice', aliceCode);
@@ -91,7 +100,7 @@ test('an accepted contribution skims one percent and still mints nothing from th
   const store = await people();
   const aliceCode = await codeFor(store, 'alice');
   const recorded = await sim.recordExerciseSession(store, 'alice', {
-    day: '2026-11-10', category: 'mobility', evidence: 'self-reported', terms: 'Contribution or barter',
+    day: '2026-11-10', category: 'mobility', evidence: EVIDENCE_UNVERIFIED, terms: 'Contribution or barter', durationSec: 60, sensors: [], locationMatched: 'no', evidenceHash: 'ef'.repeat(32),
     passphrase: 'correct horse', code: aliceCode, unixSeconds: unix, at
   });
   await reopen(store, 'alice', aliceCode);

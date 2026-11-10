@@ -1,4 +1,4 @@
-import { CODE_TTL_MS, IP_HOUR_MAX, MAX_ATTEMPTS, SEND_GAP_MS, SEND_HOUR_MAX, codeKey, hashCode, isCampusEmail, makeCode, memberKey, normalizeEmail } from '../../js/email-check-core.mjs';
+import { CODE_TTL_MS, IP_HOUR_MAX, MAX_ATTEMPTS, SEND_GAP_MS, SEND_HOUR_MAX, codeKey, hashCode, isCampusEmail, isClubEmail, makeCode, memberKey, normalizeEmail } from '../../js/email-check-core.mjs';
 
 const HOUR_MS = 60 * 60 * 1000;
 
@@ -49,11 +49,13 @@ export async function confirmCode(store, spec) {
   const key = memberKey(email);
   const existing = await store.get(key);
   const campusVerified = isCampusEmail(email, spec.allowlist || []);
+  const invite = String(spec.invite || '').trim().toLowerCase();
+  const clubVerified = isClubEmail(email, spec.clubAllowlist || []) || (invite && (spec.clubInvites || []).includes(invite));
   if (!existing) {
-    await store.set(key, { email, campusVerified, verifiedAt: new Date(now).toISOString() }, 0);
-    return { ok: true, status: 200, member: 'new', campusVerified };
+    await store.set(key, { email, campusVerified, clubVerified: clubVerified === true, verifiedAt: new Date(now).toISOString() }, 0);
+    return { ok: true, status: 200, member: 'new', campusVerified, clubVerified: clubVerified === true };
   }
-  return { ok: true, status: 200, member: 'existing', campusVerified: existing.campusVerified === true };
+  return { ok: true, status: 200, member: 'existing', campusVerified: existing.campusVerified === true, clubVerified: existing.clubVerified === true };
 }
 
 async function bump(store, key, now) {

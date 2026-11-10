@@ -14,12 +14,16 @@ export default async function handler(req, res) {
     code: body.code,
     now: Date.now(),
     pepper: env.EMAIL_CODE_PEPPER,
-    allowlist: allowlistFrom(env.CAMPUS_EMAIL_DOMAINS)
+    allowlist: allowlistFrom(env.CAMPUS_EMAIL_DOMAINS),
+    clubAllowlist: allowlistFrom(env.CLUB_EMAIL_DOMAINS),
+    clubInvites: allowlistFrom(env.CLUB_INVITE_CODES),
+    invite: body.invite
   });
   return json(res, result.status, {
     ok: result.ok,
     error: result.error || '',
     member: result.member || '',
-    campusVerified: result.campusVerified === true
+    campusVerified: result.campusVerified === true,
+    clubVerified: result.clubVerified === true
   });
 }

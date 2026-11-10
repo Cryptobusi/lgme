@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Health club community · lgme</title>
+  <meta name="description" content="A health club time-and-deed bank: members, trainers, and the front desk." />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" />
+  <link rel="stylesheet" href="/menu.css" />
+  <style>
+    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; --card:#151a15; }
+    body { background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; font-size:1.05rem; line-height:1.55; max-width:40rem; margin:0 auto; padding:1.25rem max(1rem, env(safe-area-inset-right)) 4rem max(1rem, env(safe-area-inset-left)); }
+    h1,h2 { font-family:Newsreader,serif; font-weight:500; }
+    h1 { font-size:clamp(1.9rem, 7vw, 2.5rem); line-height:1.05; margin:0.4rem 0; }
+    h2 { font-size:1.3rem; margin:1.2rem 0 0.3rem; }
+    .kicker { margin:0; font-size:0.72rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--gold); }
+    .muted { color:var(--muted); }
+    a { color:var(--fg); }
+    nav a { min-height:44px; display:inline-flex; align-items:center; margin-right:0.8rem; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:0.9rem 1rem; margin:0.7rem 0; }
+  </style>
+</head>
+<body>
+<nav aria-label="Desk">
+  <a href="/">Desk</a>
+  <a href="/exchange?group=health-club">Join</a>
+  <a href="/campus">Campus</a>
+</nav>
+<p class="kicker">lgme · Health club</p>
+<h1>Health club community</h1>
+<p>This is the primary pilot. Members and trainers log deeds and exercise sessions. The club front desk is where a credit can be redeemed. The club keeps its own subfloor under the main floor. A deed is not $lgme, and it is not written to Hedera.</p>
+<div class="card">
+  <h2>Who is here</h2>
+  <p>Members train. Trainers can verify a session. The front desk is the merchant: a place that can take a club credit for a listed offer. One verified deed is one club credit, spent once.</p>
+</div>
+<div class="card">
+  <h2>Exercise</h2>
+  <p>Start, then Finish. GPS, a photo, and motion are optional. The raw record stays on the phone. The receipt says how long it lasted, which sensors were used, and whether the location matched the club fence. Someone else in the club co-signs. You cannot verify yourself.</p>
+</div>
+<div class="card">
+  <h2>Join</h2>
+  <p><a href="/exchange?group=health-club#exchange">Open the exchange in the health club group</a>. The campus pilot is still there if you need it.</p>
+</div>
+<p class="muted"><a href="/help">Help</a> · <a href="/campus">Campus pilot</a></p>
+</body>
+</html>

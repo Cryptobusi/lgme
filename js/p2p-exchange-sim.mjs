@@ -8,7 +8,7 @@ import { ACK_MS, CO_SIGN_ABOVE, FORK, OFFLINE_SPEND, REPLAY, STALE_ACK, ackFresh
 import { ALT_CHOICES, DEFAULT_CLAMP_BAND, HISTORY_UNAVAILABLE, NO_COIN, PEG_LABEL, PEG_NOTE, QUOTE_MS, applyPegBands, buildPegQuote, clampBand, round6, withinLock } from './lgme-price.mjs';
 import { bilateralNet, clearingRules, clearingWindow, cycleNetStub, dayEntries, merkleProofFor, merkleRootOf, nextWindow, verifyMerkleProof, windowEntries } from './clearing.mjs';
 import { DEED_CATEGORIES, DEED_POST_TYPES, RECEIPT_NAME, DEFAULT_SUBFLOOR_RULES, firstClaimCategory, floatedUnit, lockDeedUnit, paidAndHeldToday, planDeedPost, projectSubfloors, rankCategories, splitZeroProceeds } from './subfloor.mjs';
-import { privateExerciseNote, publicExerciseItem } from './exercise-record.mjs';
+import { publicExerciseItem } from './exercise-record.mjs';
 import { listingMessage } from './shared-listings.mjs';
 
 export { bilateralNet, clearingRules, clearingWindow, cycleNetStub, merkleProofFor, merkleRootOf, nextWindow, verifyMerkleProof };
@@ -3145,8 +3145,8 @@ export async function recordExerciseSession(store, peerId, spec = {}) {
   if (!peer) return fail('Unknown peer.');
   const pub = publicExerciseItem(spec);
   if (!pub.ok) return pub;
-  if (spec.evidence === 'device' && !/^[0-9a-f]{64}$/i.test(String(spec.deviceHash || ''))) {
-    return fail('A device log needs a hash. The file stays on this device.');
+  if (!/^[0-9a-f]{64}$/i.test(String(spec.evidenceHash || ''))) {
+    return fail('The evidence bundle needs a hash. The raw record stays on this device.');
   }
   const keyed = await unlockDeed(peer, spec);
   if (!keyed.ok) return keyed;
@@ -3164,11 +3164,13 @@ export async function recordExerciseSession(store, peerId, spec = {}) {
   await appendEntry(peer, 'EXERCISE_SESSION', payload, at);
   peer.exerciseSessions = peer.exerciseSessions || {};
   peer.exerciseSessions[sessionId] = payload;
-  const kept = privateExerciseNote(spec);
-  if (kept.note || kept.deviceHash) {
-    peer.exercisePrivate = peer.exercisePrivate || {};
-    peer.exercisePrivate[sessionId] = kept;
-  }
+  peer.exercisePrivate = peer.exercisePrivate || {};
+  peer.exercisePrivate[sessionId] = {
+    note: String(spec.privateNote || '').slice(0, 500),
+    evidenceHash: String(spec.evidenceHash).toLowerCase(),
+    bundle: spec.bundle || null,
+    groupCode: String(spec.groupCode || '').trim().toLowerCase()
+  };
   releaseLockedKey(peer);
   await store.set(peerId, peer);
   const fresh = await store.get(peerId);
@@ -3186,19 +3188,56 @@ export async function witnessExercise(store, witnessId, sessionId, spec = {}) {
   const witness = await store.get(witnessId);
   const author = await store.get(spec.authorId || '');
   if (!witness || !author?.exerciseSessions?.[sessionId]) return fail('No exercise session on this book.');
-  if (witnessId === author.id) return fail('A witness is the other person.');
+  if (witnessId === author.id) return fail('Self-verification is not allowed.');
+  const groupCode = author.exercisePrivate?.[sessionId]?.groupCode || '';
+  if (groupCode && !witness.clubGroups?.[groupCode]) return fail('A private group session is verified by a member of that group.');
   const keyed = await unlockDeed(witness, spec);
   if (!keyed.ok) return keyed;
   const at = spec.at || nowIso();
   const before = replay(author).balance;
-  const payload = { sessionId, evidence: 'witness', creditMinted: false };
-  author.exerciseSessions[sessionId] = { ...author.exerciseSessions[sessionId], evidence: 'witness' };
+  const payload = { sessionId, evidence: 'phone-recorded + verified by trainer/group member', creditMinted: false };
+  author.exerciseSessions[sessionId] = { ...author.exerciseSessions[sessionId], evidence: payload.evidence };
   if (author.privateKeyJwk || author.signingKey) await appendEntry(author, 'EXERCISE_WITNESS', payload, at);
   await appendEntry(witness, 'EXERCISE_WITNESS', payload, at);
   releaseLockedKey(witness);
   await store.set(witnessId, witness);
   await store.set(author.id, author);
-  return { ok: true, evidence: 'witness', unchanged: replay(await store.get(author.id)).balance === before, creditMinted: false };
+  return { ok: true, evidence: payload.evidence, unchanged: replay(await store.get(author.id)).balance === before, creditMinted: false };
+}
+
+export async function createClubGroup(store, peerId, spec = {}) {
+  const peer = await store.get(peerId);
+  if (!peer) return fail('Unknown peer.');
+  const name = String(spec.name || '').trim().slice(0, 60);
+  const code = String(spec.invite || '').trim().toLowerCase();
+  if (!name || !/^[a-z0-9-]{4,24}$/.test(code)) return fail('Use a club name and a short invite code.');
+  const keyed = await unlockDeed(peer, spec);
+  if (!keyed.ok) return keyed;
+  peer.clubGroups = peer.clubGroups || {};
+  peer.clubGroups[code] = { name, code, role: 'trainer' };
+  releaseLockedKey(peer);
+  await store.set(peerId, peer);
+  return { ok: true, code };
+}
+
+export async function joinClubGroup(store, peerId, spec = {}) {
+  const peer = await store.get(peerId);
+  if (!peer) return fail('Unknown peer.');
+  const code = String(spec.invite || '').trim().toLowerCase();
+  if (!/^[a-z0-9-]{4,24}$/.test(code)) return fail('That invite code is not usable.');
+  let found = null;
+  for (const id of await store.listIds()) {
+    const other = await store.get(id);
+    if (other?.clubGroups?.[code]) found = other.clubGroups[code];
+  }
+  if (!found) return fail('No club is using that invite code on this device.');
+  const keyed = await unlockDeed(peer, spec);
+  if (!keyed.ok) return keyed;
+  peer.clubGroups = peer.clubGroups || {};
+  peer.clubGroups[code] = { name: found.name, code, role: 'member' };
+  releaseLockedKey(peer);
+  await store.set(peerId, peer);
+  return { ok: true, code, name: found.name };
 }
 
 export async function offerExerciseSupport(store, giverId, sessionId, spec = {}) {

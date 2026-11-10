@@ -42,7 +42,7 @@
         },
         {
           "key": "Permissions-Policy",
-          "value": "camera=(self), microphone=(self), geolocation=(self), payment=(), on-device-speech-recognition=(self)"
+          "value": "camera=(self), microphone=(self), geolocation=(self), accelerometer=(self), gyroscope=(self), magnetometer=(self), payment=(), on-device-speech-recognition=(self)"
         },
         {
           "key": "X-XSS-Protection",

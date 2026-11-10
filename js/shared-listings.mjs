@@ -1,4 +1,4 @@
-const BANNED = /@|https?:|phone|email|heart|weight|latitude|longitude|location|\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b/i;
+const BANNED = /@|https?:|\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b|\blatitude\b|\blongitude\b/i;
 
 export function sharedListingsEnabled(env = {}) {
   return env.SHARED_LISTINGS_TESTNET === 'on'

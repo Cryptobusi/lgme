@@ -34,6 +34,9 @@ export async function mountEmailCheck(host) {
   code.maxLength = 6;
   code.autocomplete = 'one-time-code';
   code.placeholder = '6-digit code';
+  const invite = document.createElement('input');
+  invite.maxLength = 24;
+  invite.placeholder = 'Club invite code, optional';
   const result = document.createElement('p');
   result.className = 'legend';
   const send = document.createElement('button');
@@ -47,7 +50,7 @@ export async function mountEmailCheck(host) {
     send.disabled = true;
     verify.disabled = true;
   } else {
-    note.textContent = 'Campus check only. A .edu address, or a domain on the campus list, is marked campus-verified. One verified email is one member. The code expires in 10 minutes. Full KYC is not started. Google sign-in: later.';
+    note.textContent = 'A .edu address is the campus option. A club domain on CLUB_EMAIL_DOMAINS, or a club invite code, can mark a health-club member. Neither is required. One verified email is one member. The code expires in 10 minutes. Full KYC is not started. Google sign-in: later.';
   }
   send.addEventListener('click', async () => {
     result.textContent = 'Sending…';
@@ -64,7 +67,7 @@ export async function mountEmailCheck(host) {
     const response = await fetch('/api/email/verify', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email: email.value, code: code.value })
+      body: JSON.stringify({ email: email.value, code: code.value, invite: invite.value })
     });
     const body = await response.json();
     if (!body.ok) { result.textContent = body.error || 'Not verified.'; return; }
@@ -73,5 +76,5 @@ export async function mountEmailCheck(host) {
   });
   const title = document.createElement('h3');
   title.textContent = 'Campus email check';
-  host.replaceChildren(title, note, field('Email', email), field('Code', code), send, verify, result);
+  host.replaceChildren(title, note, field('Email', email), field('Code', code), field('Club invite, optional', invite), send, verify, result);
 }

@@ -64,7 +64,8 @@ test('a campus address is marked once and the code is stored only as a hash', as
   assert.equal(second.member, 'existing');
   assert.equal(second.campusVerified, true);
   const member = await store.get('email:member:ada@school.edu');
-  assert.deepEqual(Object.keys(member).sort(), ['campusVerified', 'email', 'verifiedAt']);
+  assert.deepEqual(Object.keys(member).sort(), ['campusVerified', 'clubVerified', 'email', 'verifiedAt']);
+  assert.equal(member.clubVerified, false);
 });
 
 test('a code expires, a wrong code does not verify, and sends are rate limited', async () => {

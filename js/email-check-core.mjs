@@ -33,6 +33,11 @@ export function allowlistFrom(value) {
   return String(value || '').split(',').map((item) => item.trim().toLowerCase()).filter(Boolean);
 }
 
+export function isClubEmail(email, allowlist = []) {
+  const domain = String(email || '').split('@')[1] || '';
+  return Boolean(domain) && allowlist.includes(domain);
+}
+
 export function isCampusEmail(email, allowlist = []) {
   const domain = String(email || '').split('@')[1] || '';
   if (!domain) return false;

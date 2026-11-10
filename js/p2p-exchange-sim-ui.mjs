@@ -5,6 +5,8 @@ import { createIndexedDbVault, deviceKeyForMigration, importNonExtractable, open
 import { PASSKEY_COPY, PASSKEY_FALLBACK, enrollPasskey, passkeySupported, readCredentialId, unlockWithPasskey } from './passkey-unlock.mjs';
 import { mountEmailCheck } from './email-check.mjs';
 import { mountSharedListingNote } from './shared-listings.mjs';
+import { EVIDENCE_UNVERIFIED, evidenceHash, locationMatched } from './exercise-record.mjs';
+import { allowMotion, captureFrame, readGps } from './exercise-sensors.mjs';
 import { mountHederaAnchor } from './hedera-anchor.mjs';
 import { REFERENCE_LABEL, optionLabel, referenceLine } from './dc-reference.mjs';
 import { DONATION_ADDRESS, MINT, buildTransferRequest, createReference, findReferencePayment, isValidPublicKey, readTokenBalance } from './solana-pay.mjs';
@@ -1165,7 +1167,7 @@ function campusDeedPanel(peers, me, full) {
   ]));
   return h('section', { id: 'campus-deed' }, [
     h('h3', {}, ['Campus deed']),
-    h('p', { class: 'legend' }, [campusGroup() === 'campus' ? 'You are in the campus group. One verified deed is one campus credit. Not $lgme. Not on Hedera.' : 'Log a deed for the campus pilot. Join with the campus QR, or log here on this device.']),
+    h('p', { class: 'legend' }, [campusGroup() === 'health-club' ? 'You are in the health club community. One verified deed is one club credit. Not $lgme. Not on Hedera.' : campusGroup() === 'campus' ? 'You are in the campus pilot. One verified deed is one campus credit. Not $lgme. Not on Hedera.' : 'Log a deed for the health club, or open the campus pilot from Other pilots.']),
     emailHost(),
     form,
     h('p', { class: 'legend' }, ['Redeem inside the pilot']),
@@ -3528,6 +3530,83 @@ async function exerciseBoard(seat) {
   return exerciseCard(peer, books);
 }
 
+const workout = { startedAt: '', points: [], photos: [], samples: 0, stop: null };
+
+async function beginWorkout(ui) {
+  if (workout.startedAt) { setStatus('A session is already running.', 'bad'); return; }
+  workout.startedAt = new Date().toISOString();
+  workout.points = [];
+  workout.photos = [];
+  workout.samples = 0;
+  const used = [];
+  if (ui.useGps.checked) {
+    const point = await readGps(navigator.geolocation);
+    if (point) { workout.points.push(point); used.push('gps'); }
+  }
+  if (ui.useCamera.checked) {
+    const photo = await captureFrame();
+    if (photo) { workout.photos.push(photo); used.push('camera'); }
+  }
+  if (ui.useMotion.checked) {
+    const allowed = await allowMotion();
+    if (allowed) {
+      used.push('motion');
+      const onMotion = () => { workout.samples += 1; };
+      window.addEventListener('devicemotion', onMotion);
+      workout.stop = () => window.removeEventListener('devicemotion', onMotion);
+    }
+  }
+  ui.sensorsNote.textContent = used.length ? `Started. Sensors so far: ${used.join(', ')}.` : 'Started. No sensor was used.';
+  setStatus('Session started. Tap Finish when you are done.', 'ok');
+}
+
+async function finishWorkout(peer, ui) {
+  if (!workout.startedAt) { setStatus('Tap Start first.', 'bad'); return; }
+  const finishedAt = new Date().toISOString();
+  if (ui.useGps.checked) {
+    const point = await readGps(navigator.geolocation);
+    if (point) workout.points.push(point);
+  }
+  if (ui.useCamera.checked) {
+    const photo = await captureFrame();
+    if (photo) workout.photos.push(photo);
+  }
+  workout.stop?.();
+  workout.stop = null;
+  const sensors = [];
+  if (workout.points.length) sensors.push('gps');
+  if (workout.photos.length) sensors.push('camera');
+  if (workout.samples > 0) sensors.push('motion');
+  const fence = {
+    lat: Number(ui.fenceLat.value),
+    lon: Number(ui.fenceLon.value),
+    radiusM: Number(ui.fenceRadius.value)
+  };
+  const matched = locationMatched(workout.points, fence);
+  const bundle = { startedAt: workout.startedAt, finishedAt, points: workout.points, photos: workout.photos, samples: workout.samples };
+  const hash = await evidenceHash(bundle);
+  const durationSec = Math.max(0, Math.round((Date.parse(finishedAt) - Date.parse(workout.startedAt)) / 1000));
+  const result = await sim.recordExerciseSession(store, peer.id, {
+    day: finishedAt.slice(0, 10),
+    category: ui.category.value,
+    evidence: EVIDENCE_UNVERIFIED,
+    terms: ui.terms.value,
+    durationSec,
+    sensors,
+    locationMatched: matched,
+    privateNote: ui.note.value,
+    evidenceHash: hash,
+    bundle,
+    groupCode: ui.groupCode.value,
+    passphrase: ui.pass.value,
+    code: ui.code.value,
+    unixSeconds: Math.floor(Date.now() / 1000)
+  });
+  workout.startedAt = '';
+  setStatus(result.ok ? `IdidIt (verified receipt). ${EVIDENCE_UNVERIFIED}. No credit was minted. Location matched club: ${matched}.` : result.error, result.ok ? 'ok' : 'bad');
+  if (result.ok) await render();
+}
+
 function exerciseCard(peer, books = []) {
   const category = h('select', {}, [
     option('strength', 'Strength', true),
@@ -3535,57 +3614,59 @@ function exerciseCard(peer, books = []) {
     option('mobility', 'Mobility', false),
     option('mixed', 'Mixed', false)
   ]);
-  const evidence = h('select', {}, [
-    option('self-reported', 'Self-reported', true),
-    option('witness', 'Witness co-signed', false),
-    option('device', 'Device log', false)
-  ]);
-  const day = h('input', { type: 'date', value: new Date().toISOString().slice(0, 10) });
   const terms = h('input', { maxlength: '160', value: 'Contribution or barter', placeholder: 'Support terms' });
   const note = h('input', { maxlength: '160', placeholder: 'Private note, stays on this device' });
-  const file = h('input', { type: 'file' });
+  const groupCode = h('input', { maxlength: '24', placeholder: 'Invite code, optional' });
+  const clubName = h('input', { maxlength: '60', placeholder: 'Club or crew name' });
+  const useGps = h('input', { type: 'checkbox' });
+  const useCamera = h('input', { type: 'checkbox' });
+  const useMotion = h('input', { type: 'checkbox' });
+  const fenceLat = h('input', { type: 'number', step: '0.000001', placeholder: 'Club latitude' });
+  const fenceLon = h('input', { type: 'number', step: '0.000001', placeholder: 'Club longitude' });
+  const fenceRadius = h('input', { type: 'number', min: '10', step: '1', value: '150' });
   const pass = h('input', { type: 'password', autocomplete: 'current-password' });
   const code = h('input', { inputmode: 'numeric', maxlength: '8', autocomplete: 'one-time-code' });
+  const sensorsNote = h('p', { class: 'legend' }, ['No sensors yet. Each one is optional.']);
   const shared = h('div', { id: 'shared-listings' });
   queueMicrotask(() => { mountSharedListingNote(shared); });
-  const form = h('form', { id: 'exercise-session' }, [
-    h('p', { class: 'legend' }, ['Exercise session (IdidIt / verified receipt). A workout alone mints no credit. Public fields are the day, the category, the evidence level, and the support terms.']),
-    field('Day', day),
+  const start = h('button', { type: 'button', onClick: () => beginWorkout({ useGps, useCamera, useMotion, sensorsNote }) }, ['Start']);
+  const finish = h('button', { type: 'button', class: 'primary', onClick: () => finishWorkout(peer, { category, terms, note, groupCode, useGps, useCamera, useMotion, fenceLat, fenceLon, fenceRadius, pass, code, sensorsNote }) }, ['Finish']);
+  const form = h('form', { id: 'exercise-session', onSubmit: (event) => event.preventDefault() }, [
+    h('p', { class: 'legend' }, ['Exercise session (IdidIt / verified receipt). Start, then Finish. A workout alone mints no credit. Raw GPS, photos, and motion stay on this phone.']),
     field('Category', category),
-    field('Evidence', evidence),
     field('Support terms', terms),
     field('Private note', note),
-    field('Device log, stays on this device', file),
+    field('Club or crew name', clubName),
+    field('Club invite code', groupCode),
+    h('label', {}, [useGps, ' Use GPS at start and finish']),
+    h('label', {}, [useCamera, ' Use camera at start and finish']),
+    h('label', {}, [useMotion, ' Use motion sensors']),
+    field('Club latitude, stays on this device', fenceLat),
+    field('Club longitude, stays on this device', fenceLon),
+    field('Club radius, meters', fenceRadius),
+    sensorsNote,
     field('Passphrase', pass),
     field('6-digit code', code),
-    h('div', { class: 'actions' }, [h('button', { class: 'primary', type: 'submit' }, ['Record session'])]),
+    h('div', { class: 'actions' }, [
+      start,
+      finish,
+      h('button', { type: 'button', onClick: async () => {
+        const result = await sim.createClubGroup(store, peer.id, { name: clubName.value, invite: groupCode.value, passphrase: pass.value, code: code.value, unixSeconds: Math.floor(Date.now() / 1000) });
+        setStatus(result.ok ? `Private club invite ${result.code}. Share the code. It is not a public listing.` : result.error, result.ok ? 'ok' : 'bad');
+      } }, ['Create club']),
+      h('button', { type: 'button', onClick: async () => {
+        const result = await sim.joinClubGroup(store, peer.id, { invite: groupCode.value, passphrase: pass.value, code: code.value, unixSeconds: Math.floor(Date.now() / 1000) });
+        setStatus(result.ok ? `Joined ${result.name}.` : result.error, result.ok ? 'ok' : 'bad');
+        if (result.ok) await render();
+      } }, ['Join club'])
+    ]),
     shared
   ]);
-  form.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    let deviceHash = '';
-    const chosen = file.files && file.files[0];
-    if (chosen) {
-      const bytes = new Uint8Array(await chosen.arrayBuffer());
-      const digest = await crypto.subtle.digest('SHA-256', bytes);
-      deviceHash = Array.from(new Uint8Array(digest)).map((item) => item.toString(16).padStart(2, '0')).join('');
-    }
-    const result = await sim.recordExerciseSession(store, peer.id, {
-      day: day.value,
-      category: category.value,
-      evidence: evidence.value,
-      terms: terms.value,
-      privateNote: note.value,
-      deviceHash,
-      passphrase: pass.value,
-      code: code.value,
-      unixSeconds: Math.floor(Date.now() / 1000)
-    });
-    setStatus(result.ok ? 'IdidIt (verified receipt) recorded. No credit was minted.' : result.error, result.ok ? 'ok' : 'bad');
-    if (result.ok) await render();
-  });
   const sessions = books.flatMap((book) => Object.values(book.exerciseSessions || {}));
   const rows = sessions.map((session) => {
+    const owner = books.find((book) => book.id === session.authorId);
+    const club = owner?.exercisePrivate?.[session.sessionId]?.groupCode || '';
+    if (club && session.authorId !== peer.id && !peer.clubGroups?.[club]) return null;
     const mine = session.authorId === peer.id;
     const offers = Object.values((books.find((book) => book.id === session.authorId)?.exerciseSupports) || {}).filter((offer) => offer.sessionId === session.sessionId && offer.status === 'offered');
     const actions = [];
@@ -3599,7 +3680,7 @@ function exerciseCard(peer, books = []) {
       actions.push(h('button', { type: 'button', class: 'primary', onClick: () => answerExercise(peer, offer, true, pass, code) }, ['Accept']));
     }
     return h('article', { class: 'row' }, [
-      h('p', {}, [`Session completed · ${session.day} · ${session.category} · ${session.evidence}`]),
+      h('p', {}, [`Session completed · ${session.day} · ${session.category} · ${session.evidence} · ${session.durationSec || 0}s · location matched club: ${session.locationMatched || 'no'}`]),
       h('p', { class: 'legend' }, [`Terms: ${session.terms || 'Contribution or barter'}`]),
       actions.length ? h('div', { class: 'actions' }, actions) : null
     ]);
@@ -3607,7 +3688,7 @@ function exerciseCard(peer, books = []) {
   return h('section', { id: 'exercise-record' }, [
     h('h3', {}, ['Exercise session (IdidIt / verified receipt)']),
     form,
-    ...rows
+    ...rows.filter(Boolean)
   ]);
 }
 
@@ -4565,7 +4646,7 @@ deliveryChannel?.addEventListener('message', async (event) => {
 captureFragment();
 try {
   const group = new URLSearchParams(location.search).get('group');
-  if (group === 'campus') localStorage.setItem('lgme.exchange.group', 'campus');
+  if (group === 'campus' || group === 'health-club') localStorage.setItem('lgme.exchange.group', group);
 } catch { /* the group stays unset */ }
 applyLayout();
 window.addEventListener('resize', applyLayout);
