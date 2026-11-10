@@ -1,0 +1,35 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { EXCLUDED_NOTE, addMatchingHour, catalogFor, checkIn, createCircle, createHost, draftStory, hostSteward, postDeed, publicCounts, publicStories, publishStory, emptyBook, verifyDeed } from '../js/pairing.mjs';
+
+test('neighbor help, hosts, private circles, and stories stay in bounds', () => {
+  const book = emptyBook();
+  assert.equal(EXCLUDED_NOTE.includes('medication'), true);
+  const ride = postDeed(book, { deedId: 'ride', side: 'IhavIT', by: 'ada' });
+  assert.equal(ride.deed.unit, 'one ride');
+  assert.equal(verifyDeed(book, ride.deed.id, 'ada').ok, false);
+  assert.equal(verifyDeed(book, ride.deed.id, 'bo').deed.verified, true);
+  const senior = createHost(book, { name: 'Oak House', kind: 'senior', by: 'ada', byName: 'Ada' });
+  assert.equal(catalogFor(senior.host).some((row) => row.id === 'dog'), false);
+  assert.equal(postDeed(book, { deedId: 'dog', side: 'IwantIT', by: 'ada', host: senior.host }).ok, false);
+  assert.equal(hostSteward(senior.host), 'ada');
+  const hour = addMatchingHour(book, senior.host.id, { date: '2026-11-12', time: '10:00', place: 'Lobby' });
+  const visit = checkIn(hour.event, 'ada');
+  assert.equal(visit.attendance, null);
+  assert.equal(book.deeds.length, 1);
+  const quiet = createCircle(book, { name: 'Tuesday group', privacy: 'high', condition: 'grief', by: 'ada' });
+  const leaked = publishStory(book, { text: 'I gave a ride.', audience: 'public', circleId: quiet.circle.id, consent: true });
+  assert.equal(leaked.ok, false);
+  const named = publishStory(book, { text: 'I gave a ride with @bo.', audience: 'circle', circleId: quiet.circle.id, consent: true, otherConsent: false });
+  assert.equal(named.ok, false);
+  const kept = publishStory(book, { text: 'I gave a ride. I received a meal.', audience: 'public', consent: true });
+  assert.equal(kept.story.hedera, false);
+  assert.equal(draftStory(ride.deed), 'I gave a ride.');
+  postDeed(book, { deedId: 'meal', side: 'IwantIT', by: 'ada', circleId: quiet.circle.id });
+  verifyDeed(book, book.deeds.at(-1).id, 'bo');
+  const counts = publicCounts(book);
+  assert.equal(counts.byCategory.Ride, 1);
+  assert.equal(counts.privateReceipts, 1);
+  assert.equal(JSON.stringify(counts).includes('grief'), false);
+  assert.equal(publicStories(book).length, 1);
+});

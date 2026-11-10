@@ -1410,6 +1410,11 @@ async function renderDashboard() {
   const view = el('div', {}, [
     el('p', {}, [el('a', { href: '/?picker=1' }, ['All categories']), ' · ', el('a', { href: '/gym/covenant' }, ['Member Covenant'])]),
     covenantPanel(mine, locals),
+    el('section', { class: 'card', id: 'trade-neighbors' }, [
+      el('h2', {}, ['Trade with neighbors']),
+      el('p', {}, ['Earn and spend outside a workout. A ride, a meal, or an hour.']),
+      el('p', {}, [el('a', { href: '/neighbors' }, ['Open neighbor help'])])
+    ]),
     await renderProgress(mine, true),
     localAiCard(mine),
     el('h2', {}, ['Your groups']),
