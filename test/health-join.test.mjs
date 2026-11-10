@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { confirmCode, requestCode } from '../api/lib/email-flow.mjs';
@@ -93,5 +93,6 @@ test('the three Health drafts stay on the phone and do not rank anyone', () => {
     assert.equal(draftPlan(id).lines.some((line) => /your rank|day streak is/i.test(line)), false, id);
   }
   assert.equal(EMAIL_WAITING.startsWith('Email sign-in is coming.'), true);
+  for (const id of PLAN_ORDER) assert.equal(existsSync(join(root, `images/health-plan-${id}.png`)), true, id);
   assert.equal(text('js/gym-app.mjs').includes('id: \'use-easy\'') || text('js/gym-app.mjs').includes('use-${id}'), true);
 });
