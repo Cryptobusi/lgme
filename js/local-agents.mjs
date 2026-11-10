@@ -147,7 +147,8 @@ export function agentNotice(agent) {
 
 export function scheduleNote(scope = globalThis) {
   if (typeof scope.TimestampTrigger === 'function') return 'This phone can show the reminder at the time.';
-  if (scope.ServiceWorkerRegistration?.prototype?.periodicSync || scope.registration?.periodicSync) {
+  const proto = scope.ServiceWorkerRegistration?.prototype;
+  if ((proto && 'periodicSync' in proto) || scope.registration?.periodicSync) {
     return 'This phone can check in the background.';
   }
   return 'If you leave, this phone shows the reminder the next time you open the app.';
