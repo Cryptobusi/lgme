@@ -1,9 +1,6 @@
-import { OPERATOR_RULES, listingMessage, sharedListingsEnabled, withinRate } from '../../js/shared-listings.mjs';
-import { cronAllowed } from '../../js/hedera-topic.mjs';
-import { testnetOperatorKey } from '../../js/hedera-operator.mjs';
-import { json, readBody, readEnv } from '../lib/http.mjs';
-
-const stamps = new Map();
+import { OPERATOR_RULES, sharedListingsEnabled } from '../../js/shared-listings.mjs';
+import { json, readEnv } from '../lib/http.mjs';
+import { VIEW_ONLY_MESSAGE } from '../../js/view-only-api.mjs';
 
 export default async function handler(req, res) {
   const env = readEnv();
@@ -32,41 +29,5 @@ export default async function handler(req, res) {
     return json(res, 200, { ok: true, enabled: true, network: 'testnet', listings, rules: OPERATOR_RULES });
   }
   if (req.method !== 'POST') return json(res, 405, { ok: false, error: 'Use GET or POST.' });
-  if (!cronAllowed(req.headers || {}, env)) return json(res, 401, { ok: false, error: 'Listing posts are not open to the public.' });
-  const body = await readBody(req);
-  const built = listingMessage(body.message || body);
-  if (!built.ok) return json(res, 400, built);
-  const author = JSON.stringify(built.body.author);
-  const now = Date.now();
-  const prior = stamps.get(author) || [];
-  const rate = withinRate(prior, now);
-  if (!rate.ok) return json(res, 429, { ok: false, error: 'That author has hit the testnet listing limit for this hour.' });
-  const topic = String(env.HEDERA_TESTNET_LISTINGS_TOPIC_ID || '');
-  if (!topic) {
-    return json(res, 503, { ok: false, enabled: true, error: 'HEDERA_TESTNET_LISTINGS_TOPIC_ID is not set. No testnet message was sent.', rules: OPERATOR_RULES });
-  }
-  stamps.set(author, [...rate.recent, now]);
-  const sdk = await import('@hashgraph/sdk');
-  const client = sdk.Client.forTestnet();
-  let operator;
-  try {
-    operator = await testnetOperatorKey(sdk, env);
-  } catch (error) {
-    return json(res, 400, { ok: false, error: error.public ? error.message : 'The testnet operator key could not be used.' });
-  }
-  client.setOperator(sdk.AccountId.fromString(env.HEDERA_TESTNET_OPERATOR_ID), operator);
-  const submitted = await new sdk.TopicMessageSubmitTransaction({
-    topicId: topic,
-    message: JSON.stringify(built.body)
-  }).execute(client);
-  const record = await submitted.getRecord(client);
-  const sequence = record.receipt.topicSequenceNumber.toString();
-  return json(res, 200, {
-    ok: true,
-    network: 'testnet',
-    topicId: topic,
-    sequenceNumber: sequence,
-    consensusTimestamp: record.consensusTimestamp?.toString?.() || '',
-    rules: OPERATOR_RULES
-  });
+  return json(res, 403, { ok: false, viewOnly: true, error: VIEW_ONLY_MESSAGE });
 }

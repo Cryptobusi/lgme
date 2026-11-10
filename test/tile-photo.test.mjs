@@ -17,18 +17,19 @@ test('a tile photo is resized and a non-photo is refused', () => {
   assert.equal(JPEG_QUALITY < 1, true);
 });
 
-test('the first screen drops campus and neighbor help and keeps the photo on the phone', () => {
+test('the first screen names every category and keeps the photo on the phone', () => {
   const home = text('index.html');
   const script = text('js/health-tile-photo.mjs');
   const milestones = text('milestones.html');
   const sitemap = text('sitemap.xml');
   const csp = text('vercel.json');
-  assert.equal(home.includes('href="/preview-campus"'), false);
-  assert.equal(home.includes('href="/preview-neighbor"'), false);
-  assert.equal(home.includes('Neighbor help'), false);
-  assert.equal(home.includes('href="/preview-hosts"'), true);
-  assert.equal(home.includes('href="/preview-circles"'), true);
-  assert.equal(home.includes('href="/preview-stories"'), true);
+  assert.equal(home.includes('href="/campus"'), true);
+  assert.equal(home.includes('href="/neighbors"'), true);
+  assert.equal(home.includes('Neighbor help'), true);
+  assert.equal(home.includes('href="/hosts"'), true);
+  assert.equal(home.includes('href="/circles"'), true);
+  assert.equal(home.includes('href="/stories"'), true);
+  assert.equal(text('js/gym-app.mjs').includes('href="/neighbors"'), false);
   assert.equal(home.includes('href="/gym"'), true);
   assert.equal(home.includes('Set background photo'), true);
   assert.equal(home.includes('Remove photo'), true);
@@ -46,5 +47,5 @@ test('the first screen drops campus and neighbor help and keeps the photo on the
   assert.equal(sitemap.includes('https://lgme.app/milestones'), true);
   assert.equal(sitemap.includes('https://lgme.app/campus'), true);
   assert.equal(csp.includes("img-src 'self' data: blob:"), true);
-  assert.equal(text('sw.js').includes('lgme-v104'), true);
+  assert.equal(text('sw.js').includes('lgme-v105'), true);
 });

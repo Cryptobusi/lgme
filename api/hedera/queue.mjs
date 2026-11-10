@@ -4,6 +4,7 @@ import { verifyDevice } from '../../js/device-sign.mjs';
 import { redisRest } from '../../js/redis-env.mjs';
 import { upstashStore } from '../lib/upstash.mjs';
 import { queueHash, submitLeaves } from '../../js/hedera-submit.mjs';
+import { VIEW_ONLY_MESSAGE, healthWrite } from '../../js/view-only-api.mjs';
 
 const hits = new Map();
 
@@ -15,6 +16,7 @@ export default async function handler(req, res) {
   if (!paced.ok) return json(res, 429, paced);
   const body = await readBody(req);
   const payload = body.payload || {};
+  if (!healthWrite(payload.category)) return json(res, 403, { ok: false, viewOnly: true, error: VIEW_ONLY_MESSAGE });
   const hash = String(payload.hash || '').toLowerCase();
   if (payload.action !== 'queue' || payload.handle !== body.handle || !/^[0-9a-f]{64}$/.test(hash)) {
     return json(res, 400, { ok: false, error: 'Send a hash only.' });

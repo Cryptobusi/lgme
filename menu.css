@@ -17,6 +17,8 @@ html { background: #0c100c; color: #f4f1e8; overflow-x: clip; }
   text-decoration: none;
 }
 .deskmenu a:hover { color: #c6a15b; }
+.view-only-banner { margin: 0 0 0.8rem; padding: 0.7rem 0.9rem; border: 1px solid #c6a15b; border-radius: 12px; background: #17140c; color: #f4f1e8; }
+button:disabled, input:disabled, textarea:disabled, select:disabled { cursor: not-allowed; }
 a.transcribed {
   display: inline-flex;
   align-items: center;
