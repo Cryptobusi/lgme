@@ -156,6 +156,7 @@ export async function renderMembershipPool(host, handle) {
   }
 
   host.replaceChildren(
+    el('img', { src: '/images/photos/volunteers-640.webp', alt: 'Neighbors working together outdoors', width: '640', height: '420', loading: 'lazy', style: 'width:100%;height:160px;object-fit:cover;border-radius:10px' }),
     el('h2', {}, [POOL_TITLE]),
     el('p', {}, ['Anyone can donate $lgme. Members can donate deed credit or cover the next member. Donors are anonymous.']),
     balance,

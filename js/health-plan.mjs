@@ -4,7 +4,9 @@ export const HEALTH_PLANS = Object.freeze({
   easy: {
     id: 'easy',
     title: 'Easy',
-    image: '/images/health-plan-easy.png',
+    image: '/images/photos/neighborhood-640.webp',
+    srcset: '/images/photos/neighborhood-640.webp 640w, /images/photos/neighborhood-1200.webp 1200w',
+    alt: 'A quiet path through pines, an easy place for a walk',
     prompt: [
       'You are the local Health helper on this phone. Draft a personalized Health app for me.',
       'Do not diagnose. Do not send anything. Do not mint credit. Do not rank me.',
@@ -18,7 +20,9 @@ export const HEALTH_PLANS = Object.freeze({
   engaging: {
     id: 'engaging',
     title: 'Engaging',
-    image: '/images/health-plan-engaging.png',
+    image: '/images/photos/stretch-640.webp',
+    srcset: '/images/photos/stretch-640.webp 640w, /images/photos/stretch-1200.webp 1200w',
+    alt: 'An adult stretching on the grass before a walk',
     prompt: [
       'You are the local Health helper on this phone. Draft a personalized Health app for me.',
       'Do not diagnose. Do not send anything. Do not mint credit. Do not rank me.',
@@ -33,7 +37,9 @@ export const HEALTH_PLANS = Object.freeze({
   ultimate: {
     id: 'ultimate',
     title: 'Ultimate',
-    image: '/images/health-plan-ultimate.png',
+    image: '/images/photos/jogger-640.webp',
+    srcset: '/images/photos/jogger-640.webp 640w, /images/photos/jogger-1200.webp 1200w',
+    alt: 'A person jogging away along a tree-lined park path',
     prompt: [
       'You are the local Health helper on this phone. Draft a personalized Health app for me.',
       'Do not diagnose. Do not send anything. Do not mint credit. Do not rank me.',

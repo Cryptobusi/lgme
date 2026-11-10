@@ -101,6 +101,7 @@ export function mountEquipmentCard(host, card, { onStatus } = {}) {
     onStatus?.(body.ok ? 'Requested. The Exchange item is linked. Nothing was emailed.' : (body.error || 'The request stayed on this phone.'));
   } }, ['Request this']);
   host.replaceChildren(el('article', { class: 'card', id: 'equipment-referral' }, [
+    el('img', { src: '/images/photos/tools-bench-640.webp', alt: 'A hand beside a workshop tool', width: '640', height: '420', loading: 'lazy', style: 'width:100%;height:140px;object-fit:cover;border-radius:10px' }),
     el('p', { class: 'kicker' }, ['Referral']),
     el('h3', {}, [card.name]),
     el('p', { id: 'equipment-copy' }, [card.text]),

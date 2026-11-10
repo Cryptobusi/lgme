@@ -153,7 +153,7 @@ export async function personalizeView({ storage, status, go, goals, memberId, pe
     const live = el('div', { id: `plan-live-${id}` });
     const card = el('section', { class: 'card plan-card', id: `plan-${id}` }, [
       el('h3', {}, [plan.title, id === recommended ? el('span', { id: 'plan-recommended', class: 'badge' }, [' Recommended']) : '']),
-      el('img', { src: plan.image, alt: `${plan.title} example`, width: '280' }),
+      el('img', { src: plan.image, srcset: plan.srcset, sizes: '(max-width: 700px) 90vw, 280px', alt: plan.alt, width: '640', height: '420', loading: 'lazy' }),
       live,
       el('pre', { id: `plan-prompt-${id}` }, [plan.prompt]),
       el('label', {}, ['Prompt. You can edit it.', note]),
@@ -533,6 +533,8 @@ export async function personalPageView({ storage, status, go, mine, signedGym, p
       ...(others.length ? others.map((row) => el('p', { id: `live-${row.handle}` }, [`${row.handle}: ${row.status}. ${row.dot}. ${row.note || ''}`])) : [el('p', {}, ['No shared status yet.'])])
     );
   }
+  const planId = saved?.layout?.layout?.id || 'easy';
+  paintPage(root, (HEALTH_PLANS[planId] || HEALTH_PLANS.easy).image);
   const blob = await loadTilePhoto(saved?.background || `${PHOTO_KEY}:${mine?.id || 'this-phone'}`).catch(() => null);
   if (blob) paintPage(root, URL.createObjectURL(blob));
   await refresh();

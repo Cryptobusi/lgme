@@ -3319,7 +3319,10 @@ async function repairFollowSection() {
     body = await response.json();
   } catch { body = { items: [] }; }
   const items = Array.isArray(body.items) ? body.items : [];
-  if (!items.length) host.append(h('p', { id: 'repair-follow-empty', class: 'muted' }, ['No Health repair request yet.']));
+  if (!items.length) host.append(h('div', { id: 'repair-follow-empty' }, [
+    h('img', { src: '/images/photos/tools-bench-640.webp', alt: 'Workshop tools, ready when a repair is requested', width: '640', height: '420', loading: 'lazy', style: 'width:100%;max-height:120px;object-fit:cover;border-radius:10px' }),
+    h('p', { class: 'muted' }, ['No Health repair request yet.'])
+  ]));
   for (const item of items) {
     const status = h('select', { 'data-view-ok': '1', id: `repair-status-${String(item.id).slice(0, 8)}` }, REPAIR_STATUSES.map((name) => h('option', { value: name }, [name])));
     status.value = REPAIR_STATUSES.includes(item.status) ? item.status : 'requested';
@@ -3529,7 +3532,10 @@ async function renderMarket(peers, seat) {
     kinds,
     pills,
     filters,
-    feed.length || grid.childElementCount ? grid : h('p', { class: 'empty' }, ['No listings match. List one, or clear the filters.']),
+    feed.length || grid.childElementCount ? grid : h('div', { class: 'empty', id: 'listings-empty' }, [
+      h('img', { src: '/images/photos/neighborhood-640.webp', alt: 'A quiet path, waiting for a listing', width: '640', height: '420', loading: 'lazy', style: 'width:100%;max-height:140px;object-fit:cover;border-radius:10px' }),
+      h('p', {}, ['No listings match. List one, or clear the filters.'])
+    ]),
     follow,
     !marketQuery.kind || marketQuery.kind === 'IwanIT' ? wantedMatchSection(seat) : null,
     !marketQuery.kind || marketQuery.kind === 'IwanIT' ? thumbtackSection(seat) : null,

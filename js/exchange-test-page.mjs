@@ -55,10 +55,25 @@ export async function mountExchangeTest(host) {
       const claim = item.status === UNCLAIMED
         ? el('button', { type: 'button', id: `claim-${item.id}`, onClick: () => claimItem(item) }, ['Claim as provider'])
         : null;
+      const thumbs = {
+        'ex-strength': ['/images/photos/dumbbells-640.webp', 'A rack of dumbbells'],
+        'ex-running': ['/images/photos/jogger-640.webp', 'A person jogging on a park path'],
+        'ex-yoga': ['/images/photos/stretch-640.webp', 'An adult stretching on the grass'],
+        'ex-plan': ['/images/photos/neighborhood-640.webp', 'A quiet path through pines'],
+        'ex-motivation': ['/images/photos/shop-street-640.webp', 'People walking together on a city street'],
+        'ex-seniors': ['/images/photos/shop-street-640.webp', 'Adults, including an older couple, walking on a city street'],
+        'ex-bike': ['/images/photos/neighborhood-640.webp', 'A neighborhood path for a ride'],
+        'ex-loan': ['/images/photos/dumbbells-640.webp', 'Dumbbells ready to borrow'],
+        'ex-walk': ['/images/photos/jogger-640.webp', 'A person out for a walk or jog'],
+        'ex-repair': ['/images/photos/tools-bench-640.webp', 'A hand beside a workshop tool'],
+        [POOL_ID]: ['/images/photos/volunteers-640.webp', 'Neighbors working together outdoors']
+      };
+      const thumb = thumbs[item.id] || (String(item.title || '').includes('Repair') ? ['/images/photos/tools-bench-640.webp', 'Workshop tools'] : null);
       const poolLine = item.id === POOL_ID
         ? `In US$${Number(item.inUsd || 0).toFixed(2)}. Out US$${Number(item.outUsd || 0).toFixed(2)}. Covers ${item.covers || 0}.`
         : `${item.status}. ${item.service}. ${item.durationMin || 0} min.`;
       return el('article', { class: 'card', id: `mirror-${item.id}` }, [
+        thumb ? el('img', { src: thumb[0], alt: thumb[1], width: '640', height: '420', loading: 'lazy', style: 'width:100%;height:140px;object-fit:cover;border-radius:10px' }) : null,
         el('h3', {}, [item.title || item.id]),
         el('p', {}, [poolLine]),
         el('p', { class: 'muted' }, [item.rate ? `Suggested credit ${item.rate.author}. ${item.rate.note || ''}` : '']),
@@ -67,7 +82,10 @@ export async function mountExchangeTest(host) {
         ]),
         claim
       ]);
-    }) : [el('p', { class: 'muted' }, ['No Exchange listings on the mirror yet.'])]));
+    }) : [
+      el('img', { src: '/images/photos/neighborhood-640.webp', alt: 'A quiet path, waiting for the first listing', width: '640', height: '420', loading: 'lazy', style: 'width:100%;max-height:160px;object-fit:cover;border-radius:10px' }),
+      el('p', { class: 'muted' }, ['No Exchange listings on the mirror yet.'])
+    ]));
     status.textContent = body.topicId
       ? `Testnet topic ${body.topicId}. Paid by ${body.payer}. ${body.rules || ''}`
       : (body.error || 'The listings topic did not answer.');

@@ -88,8 +88,8 @@ function paint(tile, url) {
     tile.classList.add('has-photo');
     document.getElementById('health-photo-remove')?.removeAttribute('hidden');
   } else {
-    tile.style.backgroundImage = '';
-    tile.classList.remove('has-photo');
+    tile.style.removeProperty('background-image');
+    tile.classList.add('has-photo');
     document.getElementById('health-photo-remove')?.setAttribute('hidden', '');
   }
 }

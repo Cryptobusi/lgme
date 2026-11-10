@@ -212,6 +212,8 @@
     .topsecret h2 { color: #f87171; margin: 0 0 0.5rem; font-size: clamp(1.4rem, 3vw, 2rem); }
     .topsecret .badge { display: inline-block; background: #dc2626; color: white; font-weight: 700; padding: 0.25rem 0.75rem; font-size: 0.8rem; letter-spacing: 0.2em; margin-bottom: 1rem; }
     .hero { margin: 0.4rem 0 1.5rem; }
+    .hero-photo { margin: 0 0 1rem; }
+    .hero-photo img { width: 100%; height: auto; max-height: 280px; object-fit: cover; border-radius: 16px; display: block; }
     .hero h1 { font-size: clamp(2rem, 8vw, 3.2rem); }
     .hero-actions { display: flex; flex-wrap: wrap; gap: 0.7rem; align-items: center; margin: 1.1rem 0; }
     .hero-actions a { min-height: 44px; display: inline-flex; align-items: center; }
@@ -261,6 +263,16 @@
     .entry-tile.health .tile-note a { color: inherit; }
     .beta-banner { margin: 0 0 0.8rem; padding: 0.7rem 0.9rem; border: 1px solid var(--gold); border-radius: 12px; background: #17140c; }
     .entry-tile.preview { opacity: 0.92; }
+    .entry-tile.has-photo { background-size: cover; background-position: center; color: #f4f1e8; position: relative; overflow: hidden; }
+    .entry-tile.has-photo::after { content: ""; position: absolute; inset: 0; background: rgba(12, 16, 12, 0.55); pointer-events: none; }
+    .entry-tile.has-photo .badge, .entry-tile.has-photo .tile-name { position: relative; z-index: 1; }
+    #health-tile { background-image: url('/images/photos/stretch-640.webp'); }
+    .entry-tile[data-entry="campus"] { background-image: url('/images/photos/volunteers-640.webp'); }
+    .entry-tile[data-entry="neighbor"] { background-image: url('/images/photos/neighborhood-640.webp'); }
+    .entry-tile[data-entry="hosts"] { background-image: url('/images/photos/shop-street-640.webp'); }
+    .entry-tile[data-entry="circles"] { background-image: url('/images/photos/stretch-640.webp'); }
+    .entry-tile[data-entry="stories"] { background-image: url('/images/photos/jogger-640.webp'); }
+    .entry-tile[data-entry="exchange"] { background-image: url('/images/photos/dumbbells-640.webp'); }
     @media (min-width: 800px) {
       .entry-grid { grid-template-columns: repeat(4, 1fr); }
       .entry-tile.health { grid-column: span 2; }
@@ -273,7 +285,7 @@
     <p class="beta-banner" role="status">Health is the live category. Exchange listings are open on Hedera testnet. The other categories are view only.</p>
     <h2>Categories</h2>
     <div class="entry-grid">
-      <div class="entry-tile health" id="health-tile">
+      <div class="entry-tile health has-photo" id="health-tile">
         <a class="health-open" data-entry="health" href="/gym"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 5.6-7 10-7 10z"/></svg><span class="badge">Live</span><span class="tile-name">Health</span></a>
         <p class="tile-note">Local AI is available. <a href="/helper">AI helper</a> · <a href="/ai-help">AI help</a></p>
         <p class="tile-note"><a class="cta" id="start-health" href="/gym#/start">Start Health</a></p>
@@ -284,12 +296,12 @@
         </div>
         <p id="health-photo-status" class="photo-status" role="status"></p>
       </div>
-      <a class="entry-tile preview" data-entry="campus" href="/campus"><span class="badge">View only, coming next</span><span class="tile-name">Campus</span></a>
-      <a class="entry-tile preview" data-entry="neighbor" href="/neighbors"><span class="badge">View only, coming next</span><span class="tile-name">Neighbor help</span></a>
-      <a class="entry-tile preview" data-entry="hosts" href="/hosts"><span class="badge">View only, coming next</span><span class="tile-name">Hosts</span></a>
-      <a class="entry-tile preview" data-entry="circles" href="/circles"><span class="badge">View only, coming next</span><span class="tile-name">Circles</span></a>
-      <a class="entry-tile preview" data-entry="stories" href="/stories"><span class="badge">View only, coming next</span><span class="tile-name">Stories</span></a>
-      <a class="entry-tile" data-entry="exchange" href="/exchange"><span class="badge">Testnet</span><span class="tile-name">Exchange</span></a>
+      <a class="entry-tile preview has-photo" data-entry="campus" href="/campus"><span class="badge">View only, coming next</span><span class="tile-name">Campus</span></a>
+      <a class="entry-tile preview has-photo" data-entry="neighbor" href="/neighbors"><span class="badge">View only, coming next</span><span class="tile-name">Neighbor help</span></a>
+      <a class="entry-tile preview has-photo" data-entry="hosts" href="/hosts"><span class="badge">View only, coming next</span><span class="tile-name">Hosts</span></a>
+      <a class="entry-tile preview has-photo" data-entry="circles" href="/circles"><span class="badge">View only, coming next</span><span class="tile-name">Circles</span></a>
+      <a class="entry-tile preview has-photo" data-entry="stories" href="/stories"><span class="badge">View only, coming next</span><span class="tile-name">Stories</span></a>
+      <a class="entry-tile has-photo" data-entry="exchange" href="/exchange"><span class="badge">Testnet</span><span class="tile-name">Exchange</span></a>
     </div>
     <p><a href="/milestones">Next milestones</a></p>
   </section>
@@ -304,6 +316,7 @@
     <span class="menu-group">Use</span>
     <a href="/exchange">Exchange</a>
     <a href="/help">Help</a>
+    <a href="/credits">Photo credits</a>
     <a href="/glossary">Glossary</a>
     <a href="/plain-english">Plain English</a>
     <a href="/health-club">Health club</a>
@@ -385,6 +398,9 @@
     </div>
   </div>
   <header class="hero" id="home-hero">
+    <figure class="hero-photo">
+      <img src="/images/photos/jogger-640.webp" srcset="/images/photos/jogger-640.webp 640w, /images/photos/jogger-1200.webp 1200w" sizes="(max-width: 800px) 100vw, 720px" width="1200" height="800" alt="A person jogging away along a tree-lined park path" />
+    </figure>
     <p class="kicker">lgme</p>
     <h1>Prove what you did. Keep what you earn. Build trust that lasts.</h1>
     <p>A tamper-evident digital notebook for your community contributions, work exchanges, and agreements, verified by both people, without middlemen or hidden fees.</p>
