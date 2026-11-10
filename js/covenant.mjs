@@ -8,7 +8,11 @@ export const CLARIFICATIONS = Object.freeze([
   'Velocity (Art. 11): after 90 days the app gives a gentle reminder and the option to gift surplus to the Floor; no automatic penalty or seizure.',
   'Identity: legal name and signature stay on the member\'s phone; only a hash of the signed covenant is anchored (Hedera testnet), never the name. A handle is used in the app.',
   'Geography (Art. 10): health club exchanges are local; remote help (e.g. coaching by video) is allowed as non-core.',
-  'Not medical advice; members exercise at their own risk and may stop anytime.'
+  'Not medical advice; members exercise at their own risk and may stop anytime.',
+  "Fitness coaching/personal training delivered in person and measured in session-hours counts as direct professional labor, not 'speculative coaching'.",
+  "Using club-owned equipment under the member's own paid-up membership counts as unencumbered access.",
+  "'Admissions stewards' are, until defined, the two sponsors.",
+  'If only one offering passes, the member gets Tier-0 rather than rejection.'
 ]);
 
 export const FIELD_LABELS = Object.freeze([
@@ -70,6 +74,15 @@ export function sponsorStatus(record) {
 }
 
 export function circleGate(peer, action) {
+  if (peer?.intake?.status) {
+    const status = peer.intake.status;
+    if (status === 'Tier-1' || status === 'Tier-0') return { ok: true };
+    if (action === 'listing' || action === 'credit') {
+      const label = status === 'paused' ? 'Application paused' : status;
+      return { ok: false, error: `${label}. Outbound credit stays closed.` };
+    }
+    return { ok: true };
+  }
   if (!peer?.covenant) return { ok: true };
   const count = (peer.covenant.sponsors || []).length;
   if (count >= 2) return { ok: true };

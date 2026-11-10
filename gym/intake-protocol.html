@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0c100c" />
+  <title>Member Intake</title>
+  <link rel="icon" href="/icons/gym-192.png" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600&family=Newsreader:opsz,wght@6..72,500&display=swap" />
+  <style>
+    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; --card:#151a15; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; font-size:1.02rem; line-height:1.45; }
+    header, main, footer { padding:1rem; max-width:40rem; margin:0 auto; }
+    h1 { font-family:Newsreader,serif; font-weight:500; }
+    a { color:var(--fg); }
+    .kicker { margin:0; letter-spacing:0.14em; text-transform:uppercase; color:var(--gold); font-size:0.75rem; }
+    .covenant-text { white-space:pre-wrap; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:0.9rem 1rem; }
+    .covenant-text input.short { width:10rem; display:inline-block; min-height:44px; margin:0.15rem; font:inherit; color:var(--fg); background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:0.3rem 0.5rem; }
+    .covenant-text input[type="checkbox"] { width:1.3rem; height:1.3rem; margin:0 0.3rem; }
+    .table-wrap { overflow-x:auto; white-space:normal; margin:0.6rem 0; }
+    table { border-collapse:collapse; min-width:36rem; }
+    th, td { border:1px solid var(--line); padding:0.4rem; vertical-align:top; text-align:left; }
+    footer { padding-bottom:2rem; }
+  </style>
+</head>
+<body>
+<header>
+  <p class="kicker">lgme · Gym beta</p>
+  <h1>Member Intake</h1>
+  <p><a href="/gym/covenant">Member Covenant</a> · <a href="/gym">Gym</a></p>
+</header>
+<main id="intake-body"></main>
+<footer>
+  <a href="/gym/intake-protocol">Intake protocol</a>
+</footer>
+<script type="module" src="/js/intake-page.mjs"></script>
+</body>
+</html>

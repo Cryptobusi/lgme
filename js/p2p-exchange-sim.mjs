@@ -13,6 +13,7 @@ import { commonsSplit, deedCreditSplit } from './commons-split.mjs';
 import { publicWisdom, wisdomSplit } from './wisdom.mjs';
 import { listingMessage } from './shared-listings.mjs';
 import { circleGate } from './covenant.mjs';
+import { intakeCreditLimit } from './intake.mjs';
 
 export { bilateralNet, clearingRules, clearingWindow, cycleNetStub, merkleProofFor, merkleRootOf, nextWindow, verifyMerkleProof };
 export { DEED_CATEGORIES, DEED_POST_TYPES, DEFAULT_SUBFLOOR_RULES, firstClaimCategory, floatedUnit, lockDeedUnit, planDeedPost, projectSubfloors, rankCategories, splitZeroProceeds };
@@ -344,11 +345,13 @@ export function replay(peer) {
 }
 
 export function floorBlockReason(peer, nextBalance) {
-  const current = replay(peer).balance;
+  const played = replay(peer);
+  const current = played.balance;
   const { floor, creditLimit } = terms(peer);
+  const limit = peer?.intake ? intakeCreditLimit(peer.intake, played.credits) : creditLimit;
   const lowered = nextBalance < current - 1e-9;
   if (!lowered) return '';
-  if (nextBalance < floor - 1e-9 || nextBalance < creditLimit - 1e-9) return FLOOR_BLOCK;
+  if (nextBalance < floor - 1e-9 || nextBalance < limit - 1e-9) return FLOOR_BLOCK;
   return '';
 }
 

@@ -1,0 +1,67 @@
+Member Intake: Productive Capacity Vetting Protocol
+This instrument audits and validates the two declared offerings required under Section 2 of the Member Covenant. Its purpose is to ensure that all credit issued across the circle represents unencumbered, physically verifiable human capacity rather than speculative promises or debt-leveraged intermediation.
+Part I: The Intake Questionnaire (Applicant Form)
+MEMBER CAPACITY INTAKE FORM
+Circle Node: ____ Date: ____
+Applicant Name: ____ Handle / Identifier: ____
+Section A: Primary Productive Offering
+ * Concrete Description: What specific service or physical good will you provide to members of the circle?
+   * Response: ____
+ * Delivery Mechanism: How is this offering delivered?
+   * [ ] Physical in-person delivery / on-site labor
+   * [ ] Physical handover of handcrafted / produced goods
+   * [ ] Direct synchronous digital transfer (e.g., technical review, live tutoring)
+ * Execution Tooling & Materials: What tools, equipment, or raw supplies are required to execute this offering? Do you currently own or have unencumbered, debt-free access to them?
+   * Tools required: ____
+   * Unencumbered possession: [ ] Yes  [ ] No (If No, describe dependency)
+ * Unit Measure & Time Footprint: What is the discrete unit of delivery (e.g., 1 hour of labor, 1 bushel, 1 repaired blade, 1 code review), and how many hours of your direct physical/mental labor are embedded in one unit?
+   * Unit definition: ____
+   * Direct labor per unit: ____ hours
+ * Sustainable Monthly Capacity: How many units can you deliver each month without creating personal distress or unmanageable backlogs?
+   * Safe monthly output: ____ units
+Section B: Secondary Productive Offering
+ * Concrete Description: What distinct, secondary service or good can you provide if demand for your primary offering shifts?
+   * Response: ____
+ * Delivery Mechanism:
+   * [ ] Physical in-person labor
+   * [ ] Physical goods exchange
+   * [ ] Direct synchronous transfer
+ * Execution Tooling & Materials:
+   * Tools required: ____
+   * Unencumbered possession: [ ] Yes  [ ] No
+ * Unit Measure & Time Footprint:
+   * Unit definition: ____
+   * Direct labor per unit: ____ hours
+ * Sustainable Monthly Capacity:
+   * Safe monthly output: ____ units
+Section C: Capacity Verification & Clearance Attestation
+ * Prior Track Record: Provide one concrete instance where you successfully delivered this good or service to an individual or community peer.
+   * Reference / verifiable context: ____
+ * Clearing Commitment: If your circle balance reaches -50 units, can you clear this obligation through the delivery of either offering within 30 to 60 days?
+   * [ ] Confirmed
+Part II: The 5-Point Vetting Assessment Framework
+Sponsoring members and admissions stewards evaluate each declared offering against five pass/fail gates. Both offerings must achieve a PASS on all five criteria before the initial negative clearing threshold is granted.
+| Gate | Assessment Criterion | Passing Standard | Red Flags (Auto-Fail) |
+|---|---|---|---|
+| 1. Grounded Reality (Physicality) | The offering consists of real, demonstrable skills or physical utility directly usable by household or community members. | Essential maintenance, food production, childcare, fabrication, physical hauling, direct professional/technical labor. | Abstract consulting, multi-level marketing, dropshipping, speculative coaching, or vague "ideation." |
+| 2. Unencumbered Tooling (Zero-Debt) | The applicant owns and controls the tools, workspace, or seed materials necessary to fulfill the offering. | Hand tools, verified software environment, owned workshop/kitchen, existing physical inventory. | Equipment rented on credit, dependence on proprietary paywalled APIs, or requiring circle funds to buy initial tools. |
+| 3. Non-Intermediated Labor (Directness) | The offering represents the applicant’s own direct exertion and time, not brokered or subcontracted work. | Performed personally by the applicant; transparent execution. | Reselling goods made by third parties, outsourcing labor to non-members, or automated scraping/arbitrage. |
+| 4. Discrete Quantifiability (Clearing Metric) | The offering can be measured in clean, repeatable units tied directly to time and effort. | Standardized units: "1 cord of stacked firewood," "2 hours of carpentry," "1 complete mechanical inspection." | Open-ended retainers, subjective "value pricing," or unbounded commitments that cannot be audited. |
+| 5. Realistic Capacity (Solvency) | The declared monthly volume reflects true availability alongside the applicant’s normal life demands. | 4–15 hours/month of dedicated circle capacity; sustainable rhythm. | Over-promising 40+ hours/week, or under-promising less than 1 unit/month (inability to clear debits). |
+Part III: Steward Evaluation & Scoring Rubric
+REVIEW SHEET (To be completed by Sponsors / Stewards)
+Applicant Name: ____
+Sponsor 1: ____ Sponsor 2: ____
+Primary Offering Evaluation:
+  [ ] Grounded Reality     [ ] Unencumbered Tools   [ ] Direct Labor
+  [ ] Quantifiable Unit    [ ] Realistic Capacity
+  Status: [ ] PASS   [ ] REVISE   [ ] REJECT
+Secondary Offering Evaluation:
+  [ ] Grounded Reality     [ ] Unencumbered Tools   [ ] Direct Labor
+  [ ] Quantifiable Unit    [ ] Realistic Capacity
+  Status: [ ] PASS   [ ] REVISE   [ ] REJECT
+Initial Credit Line Determination:
+  [ ] Standard Tier-1 (-50 units allocated)
+  [ ] Provisional Tier-0 (Pre-clearance required: must earn +25 units before negative line activates)
+Steward Notes / Refinements Required:
+____

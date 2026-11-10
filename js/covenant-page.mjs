@@ -38,4 +38,13 @@ function clarifications() {
 
 const response = await fetch('/data/member-covenant.txt');
 const text = await response.text();
-document.getElementById('covenant-body')?.append(verbatim(text), clarifications());
+const charter = verbatim(text);
+for (const node of charter.childNodes) {
+  if (node.textContent.startsWith('Section 2:')) {
+    const link = document.createElement('a');
+    link.href = '/gym/intake-protocol';
+    link.textContent = 'Intake protocol';
+    node.append(' ', link);
+  }
+}
+document.getElementById('covenant-body')?.append(charter, clarifications());
