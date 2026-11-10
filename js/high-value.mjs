@@ -10,14 +10,13 @@ export function pairKey(fromId, toId) {
   return [String(fromId || ''), String(toId || '')].sort().join('|');
 }
 
-export function usdOf({ kind, amount, price, samples, now, basis, purchasePrice } = {}) {
+export function usdOf({ kind, amount, price, samples, now } = {}) {
   const figure = Number(amount);
   if (!Number.isFinite(figure) || figure <= 0) return 0;
   if (kind === 'usd' || kind === 'credit') return Math.round(figure * 100) / 100;
   if (kind === 'lgme') {
     let rate = Number(price);
-    if (purchasePrice > 0 && basis === 'purchase') rate = Number(purchasePrice);
-    else if (samples) {
+    if (samples) {
       const avg = averagePrice(samples, Number.isFinite(Number(now)) ? Number(now) : Date.now());
       if (!avg.ok) return null;
       rate = avg.price;
@@ -43,7 +42,7 @@ export function windowTotal(rows, pair, at) {
 export function evaluateHold(rows, entry) {
   const usd = usdOf(entry);
   if (usd == null) {
-    return { ok: false, error: entry.samples || entry.basis === 'purchase' ? PRICE_UNAVAILABLE : 'Store the GeckoTerminal price for this $lgme entry.' };
+    return { ok: false, error: entry.samples ? PRICE_UNAVAILABLE : 'Store the GeckoTerminal price for this $lgme entry.' };
   }
   const pair = pairKey(entry.fromId, entry.toId);
   const priorRows = (rows || []).filter((row) => row.id !== entry.id);

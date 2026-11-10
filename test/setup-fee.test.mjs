@@ -80,7 +80,7 @@ test('pay now quotes one dollar and pay later settles only a verified transfer',
   assert.equal(help.includes('id="setup-fee-help"'), true);
   assert.match(help, /Get a Solana wallet/);
   assert.match(help, /pump\.fun/);
-  assert.match(help, /paste the transaction signature/i);
+  assert.match(help, /No receipt is pasted/);
   assert.equal(text('js/gym-app.mjs').includes("go('/setup')"), true);
   assert.equal(text('api/hedera/listings.mjs').includes('publicSetupReceivable'), true);
   assert.equal(text('api/hedera/listings.mjs').includes("rpc('mainnet-beta'"), true);

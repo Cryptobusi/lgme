@@ -1,4 +1,4 @@
-import { DONATION_ADDRESS, MINT, buildTransferRequest, parseSplTransfer } from './solana-pay.mjs';
+import { DONATION_ADDRESS, MINT, buildTransferRequest, parseSplTransfer, rpc } from './solana-pay.mjs';
 import { matchesPeg } from './lgme-price.mjs';
 import { VIEW_ONLY_MESSAGE } from './view-only-api.mjs';
 import { LISTINGS_OPERATOR, LISTINGS_TOPIC } from './exchange-listing.mjs';
@@ -95,7 +95,7 @@ export function publicSetupReceivable(spec = {}) {
   const lgmeAmount = round6(spec.lgmeAmount);
   if (action === 'receivable-paid') {
     if (!/^[1-9A-HJ-NP-Za-km-z]{64,88}$/.test(String(spec.signature || ''))) {
-      return { ok: false, status: 400, error: 'Paste the transaction signature.' };
+      return { ok: false, status: 400, error: 'The payment was not confirmed.' };
     }
     if (!(lgmeAmount > 0)) return { ok: false, status: 400, error: 'The quoted amount is missing.' };
   }
@@ -141,9 +141,13 @@ export function confirmSetupTransfer(tx, expected = {}) {
   if (tolerance > 0) {
     const got = transferDelta(tx, recipient, mint);
     if (!got.ok) return got;
-    const quotes = [expected.amount, expected.purchaseAmount].filter((value) => Number(value) > 0);
+    const quotes = [expected.amount].filter((value) => Number(value) > 0);
     if (!matchesPeg(got.delta, quotes, tolerance)) {
       return { ok: false, error: 'The amount is outside the locked quote.' };
+    }
+    if (expected.reference) {
+      const keys = (tx?.transaction?.message?.accountKeys || []).map((key) => (typeof key === 'string' ? key : key?.pubkey));
+      if (!keys.includes(expected.reference)) return { ok: false, error: 'The reference is not on this transaction.' };
     }
     const signature = tx?.transaction?.signatures?.[0] || '';
     if (expected.signature && signature !== expected.signature) {
@@ -168,6 +172,22 @@ export function confirmSetupTransfer(tx, expected = {}) {
     return { ok: false, error: 'The payment did not go to the setup address.' };
   }
   return { ok: true, signature, delta: parsed.delta, cluster: 'mainnet-beta' };
+}
+
+export async function findSetupPayment(reference, expected = {}) {
+  const signatures = await rpc('mainnet-beta', 'getSignaturesForAddress', [reference, { limit: 5, commitment: 'finalized' }]);
+  if (!signatures.ok) return signatures;
+  const list = signatures.result || [];
+  if (!list.length) return { ok: false, error: 'No payment is on chain for this reference yet.' };
+  for (const row of list) {
+    if (row?.confirmationStatus && row.confirmationStatus !== 'finalized') continue;
+    if (row?.err) continue;
+    const tx = await rpc('mainnet-beta', 'getTransaction', [row.signature, { encoding: 'jsonParsed', maxSupportedTransactionVersion: 0, commitment: 'finalized' }]);
+    if (!tx.ok || !tx.result) continue;
+    const matched = confirmSetupTransfer(tx.result, { ...expected, reference, signature: row.signature, tolerance: expected.tolerance || 0.02 });
+    if (matched.ok) return matched;
+  }
+  return { ok: false, error: 'No payment is on chain for this reference yet.' };
 }
 
 export function markReceivablePaid(record, confirmation) {

@@ -1,5 +1,5 @@
 import { createReference, rpc } from './solana-pay.mjs';
-import { PRICE_UNAVAILABLE, SAMPLE_MS, averagePrice, fetchSpotPrice, lgmeForUsd, lockOpen, lockPayQuote, purchaseQuote } from './lgme-price.mjs';
+import { PRICE_UNAVAILABLE, SAMPLE_MS, averagePrice, fetchSpotPrice, lgmeForUsd, lockOpen, lockPayQuote } from './lgme-price.mjs';
 import { ensureDeviceKey, signDevice } from './device-sign.mjs';
 import {
   PUMP_URL,
@@ -7,6 +7,7 @@ import {
   SETUP_COPY,
   SETUP_OWED_TO,
   SETUP_TITLE,
+  findSetupPayment,
   markReceivablePaid,
   payNowQuote,
   readSetup,
@@ -47,12 +48,8 @@ export async function renderSetupFee({ storage, go, mine }) {
   let sampling = false;
   const amountLine = el('p', { id: 'setup-lgme' }, [PRICE_UNAVAILABLE]);
   const priceLine = el('p', { id: 'setup-price', class: 'muted' }, ['At current price (3-sec avg).']);
-  const purchaseLine = el('p', { id: 'purchase-lgme' }, ['At my purchase price. Paste a buy signature.']);
-  let purchase = null;
-  const basis = el('select', { id: 'quote-basis' }, [
-    el('option', { value: 'average', selected: 'selected' }, ['At current price (3-sec avg)']),
-    el('option', { value: 'purchase' }, ['At my purchase price'])
-  ]);
+  const wallet = el('a', { id: 'setup-wallet', href: '#' }, ['Pay with my wallet']);
+  const reference = createReference();
   const status = el('p', { id: 'setup-status', role: 'status' });
   const panel = el('div', { id: 'setup-choice' });
 
@@ -64,25 +61,16 @@ export async function renderSetupFee({ storage, go, mine }) {
     if (!latest.ok) {
       amountLine.textContent = PRICE_UNAVAILABLE;
       priceLine.textContent = 'At current price (3-sec avg).';
+      wallet.setAttribute('href', '#');
       return;
     }
-    const amount = lockOpen(lock, now) && lock.basis !== 'purchase' ? lock.lgmeAmount : lgmeForUsd(1, latest.price);
+    const amount = lockOpen(lock, now) ? lock.lgmeAmount : lgmeForUsd(1, latest.price);
+    const price = lockOpen(lock, now) ? lock.price : latest.price;
     amountLine.textContent = `At current price (3-sec avg): ${amount} $lgme for US$1.`;
     const when = lockOpen(lock, now) ? `Locked until ${new Date(lock.expiresAt).toISOString()}.` : 'Updating.';
     priceLine.textContent = `${latest.source} · ${latest.timestamp} · ${when}`;
-  }
-
-  async function readBuy() {
-    const signature = document.getElementById('buy-signature')?.value.trim();
-    if (!signature) { status.textContent = 'Paste a buy signature first.'; return; }
-    const tx = await rpc('mainnet-beta', 'getTransaction', [signature, { encoding: 'jsonParsed', maxSupportedTransactionVersion: 0, commitment: 'finalized' }]);
-    if (!tx.ok || !tx.result) { status.textContent = tx.error || 'The buy could not be read.'; return; }
-    const sol = await fetchSpotPrice({ mint: 'So11111111111111111111111111111111111111112' });
-    purchase = purchaseQuote(tx.result, { solUsd: sol.ok ? sol.price : 0 });
-    if (!purchase.ok) { purchaseLine.textContent = purchase.error; status.textContent = purchase.error; return; }
-    purchase.timestamp = new Date().toISOString();
-    purchaseLine.textContent = `At my purchase price: ${purchase.lgmeAmount} $lgme for US$1.`;
-    status.textContent = 'Purchase price read. Current price stays the default until you choose the other option.';
+    const link = payNowQuote(price, reference);
+    if (link.ok) wallet.setAttribute('href', link.url);
   }
 
   async function sample() {
@@ -100,13 +88,7 @@ export async function renderSetupFee({ storage, go, mine }) {
 
   function showPayNow() {
     const now = Date.now();
-    if (basis.value === 'purchase') {
-      if (!purchase?.ok) { status.textContent = 'Paste a buy signature first.'; return; }
-      lock = { ...lockPayQuote({ ok: true, price: purchase.price, source: 'purchase', timestamp: purchase.timestamp || new Date(now).toISOString() }, 1, now), basis: 'purchase', lgmeAmount: purchase.lgmeAmount };
-    } else if (!lockOpen(lock, now) || lock.basis === 'purchase') {
-      const avg = averagePrice(samples, now);
-      lock = { ...lockPayQuote(avg, 1, now), basis: 'average' };
-    }
+    if (!lockOpen(lock, now)) lock = lockPayQuote(averagePrice(samples, now), 1, now);
     paintQuote();
     if (!lock?.ok) { status.textContent = PRICE_UNAVAILABLE; return; }
     const link = payNowQuote(lock.price, createReference());
@@ -134,10 +116,9 @@ export async function renderSetupFee({ storage, go, mine }) {
     el('p', { class: 'muted' }, ['You sign in your own wallet. This app never holds funds or keys.']),
     amountLine,
     priceLine,
-    basis,
-    purchaseLine,
-    el('input', { id: 'buy-signature', maxlength: '100', placeholder: 'Buy transaction signature' }),
-    el('button', { type: 'button', id: 'read-buy', onClick: () => readBuy() }, ['Read purchase price']),
+    el('p', { id: 'setup-address' }, [SETUP_ADDRESS]),
+    el('p', { id: 'setup-mint', class: 'muted' }, [SETUP_MINT]),
+    wallet,
     el('button', { type: 'button', class: 'primary', id: 'pay-now', onClick: () => showPayNow() }, ['Pay']),
     el('button', { type: 'button', id: 'pay-later', onClick: () => showPayLater() }, ['Pay later']),
     panel,
@@ -147,10 +128,13 @@ export async function renderSetupFee({ storage, go, mine }) {
 
   async function showPayLater() {
     const now = Date.now();
-    const quote = lockOpen(lock, now) ? lock : averagePrice(samples, now);
-    if (!quote.ok) { status.textContent = PRICE_UNAVAILABLE; return; }
-    const built = receivableRecord({ handle, price: quote.price, at: new Date().toISOString() });
+    if (!lockOpen(lock, now)) lock = lockPayQuote(averagePrice(samples, now), 1, now);
+    paintQuote();
+    if (!lock?.ok) { status.textContent = PRICE_UNAVAILABLE; return; }
+    const built = receivableRecord({ handle, price: lock.price, at: new Date().toISOString() });
     if (!built.ok) { status.textContent = built.error; return; }
+    built.item.reference = reference;
+    built.item.lgmeAmount = lock.lgmeAmount;
     writeSetup(storage, built.item);
     const posted = await postExchange({
       handle,
@@ -158,31 +142,32 @@ export async function renderSetupFee({ storage, go, mine }) {
       category: 'exchange',
       title: SETUP_TITLE,
       owedTo: SETUP_OWED_TO,
-      lgmeAmount: built.item.lgmeAmount,
+      lgmeAmount: lock.lgmeAmount,
+      reference,
       at: built.item.at
     });
-    const signature = el('input', { id: 'setup-signature', maxlength: '100', placeholder: 'Paste the transaction signature' });
+    async function look() {
+      const found = await findSetupPayment(reference, { amount: lock.lgmeAmount, tolerance: 0.02 });
+      if (!found.ok) { status.textContent = found.error; return; }
+      const body = await postExchange({
+        handle,
+        action: 'receivable-paid',
+        category: 'exchange',
+        title: SETUP_TITLE,
+        owedTo: SETUP_OWED_TO,
+        lgmeAmount: lock.lgmeAmount,
+        reference,
+        at: new Date().toISOString()
+      });
+      if (!body.ok) { status.textContent = body.error || 'The payment was not confirmed.'; return; }
+      const paid = markReceivablePaid(readSetup(storage, handle) || built.item, found);
+      if (paid.ok) writeSetup(storage, paid.item);
+      status.textContent = 'Marked paid. The reference payment matched the locked quote.';
+    }
     panel.replaceChildren(
       el('p', { id: 'setup-receivable' }, [`${SETUP_TITLE}. Owed to ${SETUP_OWED_TO}.`]),
-      el('p', { class: 'muted' }, [posted.ok ? 'The Exchange item was written.' : 'The item is on this phone. The Exchange write did not finish.']),
-      signature,
-      el('button', { type: 'button', id: 'setup-check', onClick: async () => {
-        const body = await postExchange({
-          handle,
-          action: 'receivable-paid',
-          category: 'exchange',
-          title: SETUP_TITLE,
-          owedTo: SETUP_OWED_TO,
-          lgmeAmount: built.item.lgmeAmount,
-          buySignature: document.getElementById('buy-signature')?.value.trim() || '',
-          signature: signature.value.trim(),
-          at: new Date().toISOString()
-        });
-        if (!body.ok) { status.textContent = body.error || 'The payment was not confirmed.'; return; }
-        const paid = markReceivablePaid(readSetup(storage, handle) || built.item, { ok: true, signature: signature.value.trim() });
-        if (paid.ok) writeSetup(storage, paid.item);
-        status.textContent = 'Marked paid. Solana mainnet confirmed the transfer to the setup address.';
-      } }, ['Check on Solana'])
+      el('p', { class: 'muted' }, [posted.ok ? 'The Exchange item was written. Send from the wallet link. No receipt is needed.' : 'The item is on this phone. Send from the wallet link.']),
+      el('button', { type: 'button', id: 'setup-check', onClick: () => look() }, ['Look for the payment'])
     );
     status.textContent = 'Pay whenever you are inclined. Health stays open.';
   }
