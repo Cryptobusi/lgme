@@ -33,8 +33,56 @@ export function realStore(storage = globalThis.localStorage) {
   return sim.createLocalStorageStore(storage);
 }
 
+export async function ensureDemoProgress(store, now = new Date()) {
+  const sam = await store.get('sam');
+  if (!sam) return { ok: true };
+  if (!sam.gymProgress) {
+  sam.gymProgress = {
+    chosen: ['miles', 'minutes', 'sessions'],
+    custom: null,
+    allowGps: false,
+    share: { miles: 'board', minutes: 'me', sessions: 'me' },
+    manual: [{ kind: 'miles', value: 12, at: now.toISOString(), source: 'example' }]
+  };
+  }
+  if (!Object.keys(sam.exerciseSessions || {}).length && sam.privateKeyJwk) {
+    const at = now.toISOString();
+    const recorded = await sim.recordExerciseSession(store, 'sam', {
+      day: at.slice(0, 10),
+      category: 'cardio',
+      evidence: EVIDENCE_UNVERIFIED,
+      terms: 'Example: a walk',
+      durationSec: 1800,
+      sensors: [],
+      locationMatched: 'no',
+      evidenceHash: await evidenceHash({ startedAt: at, finishedAt: at, points: [], photos: [], samples: 0 }),
+      at
+    });
+    if (!recorded.ok) return recorded;
+  }
+  await store.set('sam', await store.get('sam').then(async (fresh) => {
+    fresh.gymProgress = fresh.gymProgress || sam.gymProgress;
+    return fresh;
+  }));
+  const jordan = await store.get('jordan');
+  if (jordan && !jordan.gymProgress) {
+    jordan.gymProgress = {
+      chosen: ['minutes', 'sessions', 'verified'],
+      custom: null,
+      allowGps: false,
+      share: { minutes: 'me', sessions: 'me', verified: 'me' },
+      manual: []
+    };
+    await store.set('jordan', jordan);
+  }
+  return { ok: true };
+}
+
 export async function seedDemoClub(store) {
-  if (await store.get('jordan')) return { ok: true, seeded: false, example: true };
+  if (await store.get('jordan')) {
+    await ensureDemoProgress(store);
+    return { ok: true, seeded: false, example: true };
+  }
   for (const person of PEOPLE) {
     const created = await sim.createPeer(store, {
       id: person.id,
@@ -78,6 +126,7 @@ export async function seedDemoClub(store) {
   if (!quote.ok) return quote;
   await sim.concurWisdom(store, 'sam', quote.submissionId, { authorId: 'riley', at: AT });
   await sim.concurWisdom(store, 'jordan', quote.submissionId, { authorId: 'riley', at: END });
+  await ensureDemoProgress(store);
   return { ok: true, seeded: true, example: true };
 }
 

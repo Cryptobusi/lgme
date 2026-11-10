@@ -8,6 +8,7 @@ import { PASSKEY_COPY, PASSKEY_FALLBACK, passkeySupported, unlockWithPasskey } f
 import { barsSvg, memberStats, publicCard } from './gym-charts.mjs';
 import { DEMO_CLUB, DEMO_NAME, MODE_KEY, chatKey, demoStore, realStore, seedDemoChat, seedDemoClub } from './gym-demo.mjs';
 import { LOCAL_CHAT_NOTE, chatStatus, publicChatMessage } from './gym-sync.mjs';
+import { BOARD_NOTE, PROGRESS_KINDS, boardCards, chooseProgress, manualEntry, progressRows, sharePreview } from './gym-progress.mjs';
 
 const mode = localStorage.getItem(MODE_KEY) === 'real' ? 'real' : 'demo';
 const store = mode === 'demo' ? demoStore() : realStore();
@@ -110,6 +111,7 @@ async function renderClub() {
       el('button', { type: 'submit', class: 'primary' }, ['Create my page'])
     ]));
   } else if (mine) {
+    panel.append(await renderBoard());
     panel.append(el('button', { type: 'button', class: 'primary', onClick: () => go('/train') }, ['Start a session']));
     panel.append(el('button', { type: 'button', onClick: () => go('/people/' + mine.id) }, ['My page']));
   }
@@ -133,7 +135,9 @@ async function renderTrain() {
   const pass = el('input', { type: 'password', autocomplete: 'current-password' });
   const code = el('input', { inputmode: 'numeric', maxlength: '8' });
   const note = el('p', { class: 'muted' }, ['No sensors yet. Each one is optional.']);
+  const panel = await renderProgress(mine, true);
   return el('div', {}, [
+    panel,
     todayLine(),
     el('p', {}, ['Tap Start, then Finish. Raw GPS, photos, and motion stay on this phone.']),
     el('label', {}, ['Category', category]),
@@ -205,6 +209,197 @@ async function finish(peer, ui) {
   status(result.ok ? `IdidIt (verified receipt). ${EVIDENCE_UNVERIFIED}. No credit was minted.` : result.error);
 }
 
+function cheerKey(card) {
+  return `${card.handle}:${card.week}:${card.category}`;
+}
+
+function cheered(card) {
+  try { return JSON.parse(localStorage.getItem('lgme-gym.cheers') || '[]').includes(cheerKey(card)); } catch { return false; }
+}
+
+function markCheer(card) {
+  const prior = cheered(card) ? [] : JSON.parse(localStorage.getItem('lgme-gym.cheers') || '[]');
+  if (!cheered(card)) localStorage.setItem('lgme-gym.cheers', JSON.stringify([...prior, cheerKey(card)]));
+}
+
+async function renderBoard() {
+  const sync = await chatStatus();
+  const rows = await books();
+  const cards = boardCards(rows).filter((card) => card.example || sync.shared);
+  const host = el('section', {}, [
+    el('h2', {}, ['Shared board']),
+    el('p', {}, [sync.shared ? 'These cards left this phone. They are not written to Hedera.' : BOARD_NOTE]),
+    el('p', { class: 'muted' }, ['Example cards are labeled example. There is no ranking.'])
+  ]);
+  if (!cards.length) host.append(el('p', { class: 'muted' }, ['No shared cards yet.']));
+  for (const card of cards) {
+    const owner = rows.find((peer) => peer.name === card.handle);
+    const article = el('article', { class: 'card' }, [
+      card.example ? el('p', { class: 'kicker' }, ['Example']) : null,
+      el('p', {}, [card.line]),
+      card.selfReported ? el('p', { class: 'muted' }, ['Self-reported.']) : null
+    ]);
+    article.append(el('button', { type: 'button', onClick: () => { markCheer(card); render(); } }, [cheered(card) ? 'Cheered' : 'Cheer']));
+    if (owner) {
+      article.append(el('button', { type: 'button', onClick: async () => {
+        const session = Object.values(owner.exerciseSessions || {})[0];
+        if (!session) { status('Support needs a session on their book.'); return; }
+        const split = commonsSplit(1);
+        const mine = await seat();
+        const offer = await sim.offerExerciseSupport(store, mine.id, session.sessionId, { authorId: owner.id, kind: 'contribute-lgme', amount: 1 });
+        if (!offer.ok) { status(offer.error); return; }
+        const accepted = await sim.acceptExerciseSupport(store, owner.id, offer.supportId, {});
+        status(accepted.ok ? `Supported. ${split.floor} to the Floor and ${split.app} to the App development fund.` : accepted.error);
+      } }, ['Support']));
+    }
+    host.append(article);
+  }
+  return host;
+}
+
+async function saveProgress(peer, patch) {
+  const fresh = await store.get(peer.id);
+  fresh.gymProgress = { ...(fresh.gymProgress || {}), ...patch };
+  await store.set(peer.id, fresh);
+}
+
+async function renderProgress(peer, editable) {
+  const rows = progressRows(peer);
+  const box = el('section', { class: 'card progress-card' }, [
+    el('p', { class: 'kicker' }, ['My progress']),
+    el('p', { class: 'muted' }, ['Numbers stay on this phone until you share one. Health meter is self-reported, not medical.'])
+  ]);
+  if (!rows.length && editable) {
+    box.append(categoryPicker(peer));
+    return box;
+  }
+  for (const row of rows) {
+    const card = el('article', { class: 'card' }, [
+      el('h3', {}, [row.label]),
+      el('p', { class: 'progress-num' }, [String(row.current)]),
+      el('p', {}, [`${row.unit} this week`]),
+      el('p', { class: 'muted' }, [`${row.change >= 0 ? '+' : ''}${row.change} vs last week`]),
+      row.selfReported ? el('p', { class: 'muted' }, [row.health ? 'Self-reported. Not medical.' : 'Self-reported.']) : null,
+      row.money ? el('p', { class: 'muted' }, [`$lgme in ${row.money.lgmeIn}. $lgme out ${row.money.lgmeOut}. US$ noted ${row.money.usd}.`]) : null
+    ]);
+    const chart = el('div', { class: 'chart' });
+    chart.innerHTML = barsSvg(row.series, row.label);
+    card.append(chart);
+    if (editable) card.append(shareControls(peer, row));
+    box.append(card);
+  }
+  if (editable) {
+    box.append(categoryPicker(peer));
+    box.append(manualForm(peer, rows));
+  }
+  return box;
+}
+
+function categoryPicker(peer) {
+  const selected = new Set(peer.gymProgress?.chosen || []);
+  const boxes = PROGRESS_KINDS.map((kind) => {
+    const input = el('input', { type: 'checkbox', value: kind.id });
+    input.checked = selected.has(kind.id);
+    return el('label', { class: 'check' }, [input, kind.label]);
+  });
+  const customName = el('input', { maxlength: '24', placeholder: 'Custom name', value: peer.gymProgress?.custom?.name || '' });
+  const customUnit = el('input', { maxlength: '12', placeholder: 'Unit', value: peer.gymProgress?.custom?.unit || '' });
+  const gps = el('input', { type: 'checkbox' });
+  gps.checked = Boolean(peer.gymProgress?.allowGps);
+  return el('div', {}, [
+    el('h3', {}, ['Choose 3 to 5']),
+    ...boxes,
+    el('label', {}, ['Custom category', customName]),
+    el('label', {}, ['Custom unit', customUnit]),
+    el('label', { class: 'check' }, [gps, 'Count GPS distance. Coordinates stay on this phone.']),
+    el('button', { type: 'button', class: 'primary', onClick: async () => {
+      const kinds = boxes.map((label) => label.querySelector('input')).filter((input) => input.checked).map((input) => input.value);
+      const chosen = chooseProgress({ kinds, customName: customName.value, customUnit: customUnit.value, allowGps: gps.checked });
+      if (!chosen.ok) { status(chosen.error); return; }
+      const prior = peer.gymProgress || {};
+      chosen.progress.manual = prior.manual || [];
+      chosen.progress.share = { ...chosen.progress.share, ...(prior.share || {}) };
+      await saveProgress(peer, chosen.progress);
+      render();
+    } }, ['Save categories'])
+  ]);
+}
+
+function manualForm(peer, rows) {
+  const value = el('input', { type: 'number', min: '0', step: '0.1', placeholder: 'Calories or custom number' });
+  const energy = el('input', { type: 'number', min: '1', max: '10', placeholder: 'Energy 1-10' });
+  const mood = el('input', { type: 'number', min: '1', max: '10', placeholder: 'Mood 1-10' });
+  const sleep = el('input', { type: 'number', min: '1', max: '10', placeholder: 'Sleep 1-10' });
+  const showHealth = rows.some((row) => row.health);
+  return el('div', {}, [
+    el('h3', {}, ['Add a self-reported number']),
+    el('label', {}, ['Calories or custom', value]),
+    showHealth ? el('label', {}, ['Energy', energy]) : null,
+    showHealth ? el('label', {}, ['Mood', mood]) : null,
+    showHealth ? el('label', {}, ['Sleep', sleep]) : null,
+    el('button', { type: 'button', onClick: async () => {
+      const entries = [];
+      if (rows.some((row) => row.id === 'calories') && value.value !== '') {
+        const built = manualEntry({ kind: 'calories', value: value.value });
+        if (!built.ok) { status(built.error); return; }
+        entries.push(built.entry);
+      }
+      if (rows.some((row) => row.id === 'custom') && value.value !== '') {
+        const built = manualEntry({ kind: 'custom', value: value.value });
+        if (!built.ok) { status(built.error); return; }
+        entries.push(built.entry);
+      }
+      if (showHealth && energy.value) {
+        const built = manualEntry({ kind: 'health', energy: energy.value, mood: mood.value, sleep: sleep.value });
+        if (!built.ok) { status(built.error); return; }
+        entries.push(built.entry);
+      }
+      if (!entries.length) { status('Enter a self-reported number.'); return; }
+      const fresh = await store.get(peer.id);
+      fresh.gymProgress.manual = [...(fresh.gymProgress.manual || []), ...entries];
+      await store.set(peer.id, fresh);
+      render();
+    } }, ['Save self-reported'])
+  ]);
+}
+
+function shareControls(peer, row) {
+  const preview = sharePreview(peer, row);
+  const host = el('div', {}, []);
+  const level = el('select', {}, [
+    el('option', { value: 'me' }, ['Only me']),
+    el('option', { value: 'groups' }, ['My groups']),
+    el('option', { value: 'board' }, ['Shared community board'])
+  ]);
+  level.value = row.share;
+  const note = el('p', { class: 'muted' }, []);
+  function showPreview() {
+    note.textContent = level.value === 'me'
+      ? 'Only you can see this.'
+      : `Preview: ${preview.example ? 'Example. ' : ''}${preview.line}. Week ${preview.week}. ${preview.selfReported ? 'Self-reported. ' : ''}Nothing else is included.`;
+  }
+  showPreview();
+  host.append(el('label', {}, ['Share', level]), note);
+  host.append(el('button', { type: 'button', onClick: async () => {
+    if (level.value !== 'me') showPreview();
+    const fresh = await store.get(peer.id);
+    fresh.gymProgress.share = { ...(fresh.gymProgress.share || {}), [row.id]: level.value };
+    await store.set(peer.id, fresh);
+    status(level.value === 'me' ? 'Sharing stopped.' : 'Shared. You can stop it in one tap.');
+    render();
+  } }, [level.value === 'me' && row.share !== 'me' ? 'Stop sharing' : 'Save sharing']));
+  if (row.share !== 'me') {
+    host.append(el('button', { type: 'button', onClick: async () => {
+      const fresh = await store.get(peer.id);
+      fresh.gymProgress.share = { ...(fresh.gymProgress.share || {}), [row.id]: 'me' };
+      await store.set(peer.id, fresh);
+      render();
+    } }, ['Stop sharing']));
+  }
+  level.addEventListener('change', showPreview);
+  return host;
+}
+
 function chartBlock(title, values, label) {
   const host = el('div', { class: 'chart' });
   host.innerHTML = barsSvg(values, label);
@@ -217,6 +412,7 @@ async function renderMember(id, shareOnly) {
   const stats = memberStats(peer);
   const card = publicCard(peer);
   const view = el('div', {}, []);
+  if (!shareOnly) view.append(await renderProgress(peer, (await seat())?.id === peer.id));
   if (peer.example) view.append(el('p', { class: 'kicker' }, ['Example']));
   view.append(el('div', { class: 'avatar', 'aria-hidden': 'true' }, [(peer.name || '?').slice(0, 1)]));
   view.append(el('h2', {}, [card.handle]));
@@ -232,7 +428,7 @@ async function renderMember(id, shareOnly) {
     view.append(el('h3', {}, ['Receipts']));
     for (const session of Object.values(peer.exerciseSessions || {})) {
       view.append(el('article', { class: 'card' }, [
-        el('p', {}, [`${session.day} · ${session.category} · ${session.evidence} · ${session.durationSec || 0}s`]),
+        el('p', {}, [`${session.day} · ${session.category} · ${session.evidence} · ${Math.round((session.durationSec || 0) / 60)} min`]),
         session.intent ? el('p', { class: 'muted' }, [`Intent: ${session.intent}`]) : null
       ]));
     }

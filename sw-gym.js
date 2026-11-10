@@ -1,6 +1,6 @@
 // Gym beta shell. Scope is /gym only, so the main lgme service worker keeps the rest of the site.
-const CACHE_NAME = 'lgme-gym-v1';
-const SHELL = ['/gym', '/gym.html', '/gym-manifest.webmanifest', '/icons/gym-192.png', '/js/gym-app.mjs'];
+const CACHE_NAME = 'lgme-gym-v2';
+const SHELL = ['/gym', '/gym.html', '/gym-manifest.webmanifest', '/icons/gym-192.png', '/js/gym-app.mjs', '/js/gym-progress.mjs'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => Promise.all(SHELL.map((url) => fetch(url).then((response) => {
