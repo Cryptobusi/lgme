@@ -8,6 +8,7 @@ import {
   PAY_LOCK_MS,
   PRICE_UNAVAILABLE,
   PRICE_UNSETTLED,
+  clearSpotMemory,
   fetchSpotBoard,
   lockOpen,
   lockPayQuote,
@@ -105,4 +106,46 @@ test('a thin spike, disagreeing sources, and a normal one-dollar payment follow 
   assert.equal(pool.includes('pegQuote'), true);
   assert.equal(coin.includes('pegQuote'), true);
   assert.equal(page.includes('Up to $20 uses the 3-second average.'), true);
+});
+
+test('one live source still quotes a dollar and a cached 304 keeps that price', async () => {
+  const now = 400000;
+  const alone = pegQuote({
+    usd: 1,
+    samples: [{ t: now, price: 0.000004, source: 'geckoterminal' }],
+    quotes: [{ source: 'geckoterminal', price: 0.000004 }],
+    now
+  });
+  assert.equal(alone.ok, true, alone.error);
+  assert.equal(alone.rule, 'single source');
+  assert.match(alone.plain, /single source/);
+  assert.equal(alone.lgmeAmount, 250000);
+  const over = pegQuote({
+    usd: 25,
+    samples: [{ t: now, price: 0.000004, source: 'geckoterminal' }],
+    quotes: [{ source: 'geckoterminal', price: 0.000004 }],
+    now
+  });
+  assert.equal(over.ok, false);
+  assert.equal(over.error, PRICE_UNAVAILABLE);
+  clearSpotMemory();
+  let geckoCalls = 0;
+  const fetchImpl = async (url) => {
+    const href = String(url);
+    if (!href.includes('geckoterminal')) return { ok: false, status: 401, json: async () => ({}) };
+    geckoCalls += 1;
+    if (geckoCalls === 1) {
+      return { ok: true, status: 200, json: async () => ({ data: [{ attributes: { token_price_usd: '0.000004', reserve_in_usd: '3000' } }] }) };
+    }
+    return { ok: false, status: 304, json: async () => ({}) };
+  };
+  const first = await fetchSpotBoard({ fetchImpl });
+  assert.equal(first.ok, true, first.error);
+  assert.equal(first.quotes.length, 1);
+  assert.equal(first.source, 'geckoterminal');
+  const second = await fetchSpotBoard({ fetchImpl });
+  assert.equal(second.ok, true, second.error);
+  assert.equal(second.price, 0.000004);
+  assert.equal(second.quotes.length, 1);
+  clearSpotMemory();
 });

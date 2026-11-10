@@ -334,13 +334,17 @@ function pricedRows(samples) {
     .sort((a, b) => a.t - b.t);
 }
 
+function liveQuotes(quotes) {
+  return (quotes || []).filter((row) => Number(row?.price) > 0);
+}
+
 export function sourceGap(quotes) {
-  const prices = (quotes || []).map((row) => Number(row?.price)).filter((price) => price > 0);
-  if (prices.length < 2) return { unsettled: false, gap: 0 };
+  const prices = liveQuotes(quotes).map((row) => Number(row.price));
+  if (prices.length < 2) return { unsettled: false, gap: 0, single: prices.length === 1 };
   const high = Math.max(...prices);
   const low = Math.min(...prices);
   const gap = (high - low) / low;
-  return { unsettled: gap > SOURCE_GAP + 1e-12, gap };
+  return { unsettled: gap > SOURCE_GAP + 1e-12, gap, single: false };
 }
 
 export function minuteJump(samples, now = Date.now()) {
@@ -390,8 +394,24 @@ function samePrice(left, right) {
 export function pegQuote({ usd, samples, quotes, now = Date.now() } = {}) {
   const dollars = Math.round((Number(usd) + Number.EPSILON) * 100) / 100;
   if (!(dollars > 0)) return { ok: false, error: PRICE_UNAVAILABLE };
-  const board = sourceGap(quotes);
+  const rows = liveQuotes(quotes);
+  const board = sourceGap(rows);
   if (board.unsettled) return { ok: false, unsettled: true, error: PRICE_UNSETTLED };
+  if (dollars <= SMALL_USD && rows.length === 1) {
+    const short = averagePrice(samples, now);
+    const price = short.ok ? short.price : Number(rows[0].price);
+    if (!(price > 0)) return { ok: false, error: PRICE_UNAVAILABLE };
+    return {
+      ok: true,
+      price,
+      lgmeAmount: lgmeForUsd(dollars, price),
+      usdAmount: dollars,
+      source: rows[0].source || short.source || '',
+      timestamp: short.ok ? short.timestamp : new Date(now).toISOString(),
+      rule: 'single source',
+      plain: 'Up to $20 uses a single source.'
+    };
+  }
   const jump = minuteJump(samples, now);
   if (jump.unsettled) return { ok: false, unsettled: true, error: PRICE_UNSETTLED };
   const short = averagePrice(samples, now);
@@ -568,12 +588,43 @@ export async function fetchSpotPrice({ fetchImpl = globalThis.fetch, timeoutMs =
   return { ok: false, stale: true, error: PRICE_UNAVAILABLE };
 }
 
+const spotMemory = new Map();
+
+export function clearSpotMemory() {
+  spotMemory.clear();
+}
+
+async function quoteOne(fetchImpl, source, timeoutMs, at) {
+  const prior = spotMemory.get(source.id);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetchImpl(source.url, { signal: controller.signal, headers: { accept: 'application/json' } });
+    const status = Number(response?.status);
+    if (status === 304 && prior && at - prior.at < QUOTE_MS) return { source: source.id, price: prior.price };
+    if (!response?.ok) {
+      if (prior && at - prior.at < QUOTE_MS) return { source: source.id, price: prior.price };
+      return null;
+    }
+    const body = await response.json();
+    const price = source.parse(body);
+    if (price > 0) {
+      spotMemory.set(source.id, { price, at });
+      return { source: source.id, price };
+    }
+    if (prior && at - prior.at < QUOTE_MS) return { source: source.id, price: prior.price };
+    return null;
+  } catch {
+    if (prior && at - prior.at < QUOTE_MS) return { source: source.id, price: prior.price };
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function fetchSpotBoard({ fetchImpl = globalThis.fetch, timeoutMs = 2500, mint = MINT, now = () => new Date().toISOString() } = {}) {
-  const found = await Promise.all(spotSources(mint).map(async (source) => {
-    const body = await readJson(fetchImpl, source.url, timeoutMs);
-    const price = body ? source.parse(body) : 0;
-    return price > 0 ? { source: source.id, price } : null;
-  }));
+  const at = Date.now();
+  const found = await Promise.all(spotSources(mint).map((source) => quoteOne(fetchImpl, source, timeoutMs, at)));
   const quotes = found.filter(Boolean);
   if (!quotes.length) return { ok: false, stale: true, error: PRICE_UNAVAILABLE, quotes: [] };
   const gap = sourceGap(quotes);
