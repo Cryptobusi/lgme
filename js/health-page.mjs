@@ -1,4 +1,6 @@
 import { answerLocal, detectEngine } from './local-ai.mjs';
+import { holdFromChat } from './equipment-referral.mjs';
+import { mountEquipmentCard } from './equipment-card.mjs';
 import { HEALTH_PLANS, PLAN_ORDER } from './health-plan.mjs';
 import { fallbackLayout, layoutFromText, recommendId } from './health-layout.mjs';
 import { ENCOURAGEMENTS, inQuietHours, timeProposal, unreadCount } from './health-presence.mjs';
@@ -288,6 +290,7 @@ export async function personalPageView({ storage, status, go, mine, signedGym, p
     chatLog,
     chatText,
     el('button', { type: 'button', id: 'send-chat', onClick: () => sendChat() }, ['Send chat']),
+    el('div', { id: 'equipment-card' }),
     el('label', {}, ['Suggest a time', el('input', { id: 'suggest-time', type: 'datetime-local' })]),
     el('button', { type: 'button', id: 'suggest-time-send', onClick: () => suggestTime() }, ['Suggest a time']),
     el('h3', {}, ['Encouragement']),
@@ -418,6 +421,13 @@ export async function personalPageView({ storage, status, go, mine, signedGym, p
   }
   async function sendChat() {
     if (!mine || !code) { status('Join a group before chatting.'); return; }
+    const held = holdFromChat(chatText.value);
+    if (!held.send) {
+      const slot = document.getElementById('equipment-card');
+      if (slot && held.card?.equipment) mountEquipmentCard(slot, held.card, { onStatus: status });
+      status(held.card?.error || 'Nothing was sent. You choose whether to share these details.');
+      return;
+    }
     const response = await signedGym('/api/gym/chat', { handle: mine.id, action: 'chat', code, text: chatText.value, at: new Date().toISOString() });
     const body = await response.json().catch(() => ({}));
     status(body.ok ? 'Sent to the group.' : (body.error || 'Chat stays on this phone.'));

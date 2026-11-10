@@ -1,4 +1,5 @@
 import { ASK_EXAMPLES, contributedCount, draftOffer, draftRequest, helpDraft, settleAiHelp, shareExcerpt } from './ai-help.mjs';
+import { mountEquipmentAsk } from './equipment-card.mjs';
 
 const state = {
   requester: 'river',
@@ -94,7 +95,9 @@ function draw() {
     status('Declined. Nothing was applied.');
     draw();
   });
+  const equip = el('div', { id: 'equipment-ask-host' });
   const view = el('div', {}, [
+    equip,
     el('p', { class: 'kicker' }, ['AI help']),
     el('h1', {}, ['Ask for AI help']),
     el('p', {}, ['You choose the words that are shared. The draft is not applied until you accept it.']),
@@ -139,6 +142,7 @@ function draw() {
   }
   view.append(el('p', { id: 'ai-status', role: 'status' }, []));
   root.replaceChildren(view);
+  mountEquipmentAsk(equip, { onStatus: status });
 }
 
 draw();

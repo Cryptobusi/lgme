@@ -625,7 +625,8 @@ test('pages stay simulation-only', () => {
   assert.equal(ui.includes("fetch('/data/thumbtack-wanted-v0.json', { signal: gate.signal })"), true);
   assert.equal(ui.includes("fetch('/data/payment-methods.json', { signal: gate.signal })"), true);
   assert.equal(ui.includes("fetch('/data/sourcing-daily.json', { signal: gate.signal })"), true);
-  assert.equal((ui.match(/fetch\(/g) || []).length, 6);
+  assert.equal(ui.includes("fetch('/api/exchange/repair')"), true);
+  assert.equal((ui.match(/fetch\(/g) || []).length, 8);
   const design = readFileSync(join(root, 'docs/marketplace-design.md'), 'utf8');
   for (const word of banned) assert.equal(design.includes(word), false, `docs/marketplace-design.md contains ${word}`);
   assert.equal(design.includes('Trust Score'), false);
@@ -1299,6 +1300,13 @@ test('the wanted pin stays on IwanIT and a concluded match closes on the book', 
   assert.equal(repair.listing.kind, 'IwanIT');
   assert.equal(repair.listing.pinned, true);
   assert.equal((await sim.verifyListing(repair.listing)).ok, true);
+  const pro = await sim.ensureStandingRepairPro(store, '2026-11-07T00:00:00.000Z');
+  assert.equal(pro.ok, true, pro.error);
+  assert.equal(pro.listing.pinned, true);
+  assert.equal(pro.listing.kind, 'ihavIT');
+  assert.match(pro.listing.title, /The Repair Extraordinaire/);
+  assert.match(pro.listing.title, /tcare4me@gmail.com/);
+  assert.equal((await sim.verifyListing(pro.listing)).ok, true);
   const again = await sim.marketFeed(store, { kind: 'IwanIT' }, far);
   assert.equal(again[0].title, 'Donation — soBeIT');
   assert.equal(again.some((card) => card.id === repair.listing.id), true);
@@ -1772,7 +1780,8 @@ test('DC reference values stay pending when a series has no number', () => {
   assert.equal(ui.includes("fetch('/data/thumbtack-wanted-v0.json', { signal: gate.signal })"), true);
   assert.equal(ui.includes("fetch('/data/payment-methods.json', { signal: gate.signal })"), true);
   assert.equal(ui.includes("fetch('/data/sourcing-daily.json', { signal: gate.signal })"), true);
-  assert.equal((ui.match(/fetch\(/g) || []).length, 6);
+  assert.equal(ui.includes("fetch('/api/exchange/repair')"), true);
+  assert.equal((ui.match(/fetch\(/g) || []).length, 8);
   assert.equal(ui.includes('REFERENCE_LABEL'), true);
   assert.equal(ui.includes("id: 'dc-reference'"), true);
   assert.equal(helper.includes("DC reference values"), true);
@@ -1787,7 +1796,7 @@ test('DC reference values stay pending when a series has no number', () => {
   assert.equal(page.includes('id="refList"'), true);
   assert.equal(/<script(?![^>]*\bsrc=)/i.test(page), false);
   const worker = readFileSync(join(root, 'sw.js'), 'utf8');
-  assert.equal(worker.includes('lgme-v108'), true);
+  assert.equal(worker.includes('lgme-v109'), true);
   assert.equal(worker.includes('key.startsWith("lgme-v")'), true);
   assert.equal(ui.includes('the arbiter who can veto'), true);
   assert.equal(ui.includes('Public Ledger / Verified Receipt'), true);

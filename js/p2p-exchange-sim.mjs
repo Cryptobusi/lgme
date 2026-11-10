@@ -77,6 +77,16 @@ export const STANDING_REPAIR = Object.freeze({
   photo: '/icons/icon-512.png',
   payments: Object.freeze(['Cash', 'Terms over 3 to 6 months', '$lgme services (IprovIT)'])
 });
+export const STANDING_REPAIR_PRO = Object.freeze({
+  title: 'The Repair Extraordinaire: equipment repair, phone/online support (tcare4me@gmail.com) or in-person via Thumbtack',
+  description: 'A standing service offer. Phone or online support at tcare4me@gmail.com, or an in-person visit through Thumbtack. This is a referral, not an lgme guarantee.',
+  href: 'https://www.thumbtack.com/search?query=The%20Repair%20Extraordinaire',
+  action: 'Service offer',
+  kinds: Object.freeze(['ihavIT']),
+  photo: '/icons/icon-512.png',
+  category: 'Services',
+  circle: 'soBeIT'
+});
 export const WANTED_STATUSES = Object.freeze(['Available', 'Pending reply', 'Offer made', 'Closed']);
 export const TAILORED_AWAITING = 'Draft, awaiting approval';
 export const THUMBTACK_CAVEAT = 'Third-party pro on Thumbtack, not verified by lgme';
@@ -4046,10 +4056,10 @@ async function ensurePinned(store, spec, at) {
     publicKeyJwk: signer.publicKeyJwk,
     photo: spec.photo,
     kind: spec.kinds[0] || 'ihavIT',
-    category: 'Goods',
+    category: spec.category || 'Goods',
     condition: 'Good',
     pickup: 'Pickup',
-    circle: spec.kinds.includes('IwanIT') && spec.kinds.length === 1 ? 'Wanted' : 'soBeIT',
+    circle: spec.circle || (spec.kinds.includes('IwanIT') && spec.kinds.length === 1 ? 'Wanted' : 'soBeIT'),
     area: spec.kinds.length === 1 ? 'Washington DC area' : '',
     amount: 0,
     referenceId: null,
@@ -4080,6 +4090,10 @@ export async function ensureStandingWanted(store, at = nowIso()) {
 
 export async function ensureStandingRepair(store, at = nowIso()) {
   return ensurePinned(store, STANDING_REPAIR, at);
+}
+
+export async function ensureStandingRepairPro(store, at = nowIso()) {
+  return ensurePinned(store, STANDING_REPAIR_PRO, at);
 }
 
 export function normalizeWantedMatch(item) {

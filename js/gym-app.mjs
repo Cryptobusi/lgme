@@ -11,6 +11,8 @@ import { LOCAL_CHAT_NOTE, chatStatus, publicChatMessage } from './gym-sync.mjs';
 import { BOARD_NOTE, PROGRESS_KINDS, boardCards, chooseProgress, manualEntry, progressRows, sharePreview } from './gym-progress.mjs';
 import { communityFeed } from './gym-feed.mjs';
 import { OPT_IN_COPY, answerLocal, deleteDownloadedModel, detectEngine, isOn, setOn, unloadLocalModel } from './local-ai.mjs';
+import { holdFromChat } from './equipment-referral.mjs';
+import { mountEquipmentCard } from './equipment-card.mjs';
 import { EMAIL_WAITING, joinEmailDone, saveEmailSession } from './health-email.mjs';
 import { personalizeView, personalPageView, recallPage } from './health-page.mjs';
 import { STARTERS, agentNotice, deleteAgent, dueAgents, editAgent, listAgents, markFired, needsPermission, pauseAgent, saveAgent, scheduleNote } from './local-agents.mjs';
@@ -739,7 +741,15 @@ async function renderGroups() {
     } }, ['Join']),
     log,
     el('label', {}, ['Chat', text]),
+    el('div', { id: 'equipment-card' }),
     el('button', { type: 'button', class: 'primary', onClick: () => {
+      const held = holdFromChat(text.value);
+      if (!held.send) {
+        const slot = document.getElementById('equipment-card');
+        if (slot && held.card?.equipment) mountEquipmentCard(slot, held.card, { onStatus: status });
+        status(held.card?.error || 'Nothing was sent. You choose whether to share these details.');
+        return;
+      }
       const built = publicChatMessage({ text: text.value, handle: mine?.name || 'Member', code: code.value, example: mode === 'demo', at: new Date().toISOString() });
       if (!built.ok) { status(built.error); return; }
       const prior = readChat();
@@ -866,14 +876,23 @@ function localAiCard(peer) {
       const engine = detectEngine();
       lines.push(el('p', {}, [`Engine: ${engine.label}.`]));
       if (engine.id === 'rules') lines.push(el('p', { class: 'muted' }, ['No model was downloaded.']));
-      const question = el('textarea', { maxlength: '400', placeholder: 'Ask, or ask for a draft' });
+      const question = el('textarea', { id: 'local-ai-question', maxlength: '400', placeholder: 'Ask, or ask for a draft' });
       const out = el('p', {});
+      const equip = el('div', { id: 'equipment-card' });
       lines.push(question);
       lines.push(el('button', { type: 'button', class: 'primary', onClick: async () => {
         out.textContent = 'Working on this phone…';
+        const held = holdFromChat(question.value);
+        if (held.card?.equipment) {
+          mountEquipmentCard(equip, held.card, { onStatus: status });
+          out.textContent = `${held.card.text} ${held.card.note} Nothing was sent.`;
+          return;
+        }
+        equip.replaceChildren();
         const result = await answerLocal({ question: question.value, progressLines: progressLines(peer) });
         out.textContent = `${result.text} Engine: ${result.label}. Not sent.`;
       } }, ['Ask']));
+      lines.push(equip);
       lines.push(el('p', { class: 'muted' }, ['A draft is not sent. Nothing here mints credit or posts.']));
       lines.push(out);
       lines.push(el('button', { type: 'button', onClick: async () => { await unloadLocalModel(); setOn(localStorage, false); draw(); } }, ['Turn off']));

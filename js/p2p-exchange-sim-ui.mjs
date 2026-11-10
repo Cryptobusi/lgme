@@ -12,6 +12,8 @@ import { mountHederaAnchor } from './hedera-anchor.mjs';
 import { REFERENCE_LABEL, optionLabel, referenceLine } from './dc-reference.mjs';
 import { DONATION_ADDRESS, MINT, buildTransferRequest, createReference, findReferencePayment, isValidPublicKey, readTokenBalance } from './solana-pay.mjs';
 import { fetchLgmePrice as quoteLgme } from './lgme-price.mjs';
+import { ensureDeviceKey, signDevice } from './device-sign.mjs';
+import { REPAIR_STATUSES } from './repair-follow.mjs';
 
 const sessionKeys = new Map();
 const sessionCrypto = new Map();
@@ -3305,6 +3307,43 @@ function thumbtackCard(item, seat) {
   ]);
 }
 
+async function repairFollowSection() {
+  const host = h('section', { id: 'repair-follow', class: 'card' }, [
+    h('h3', {}, ['Repair follow-through']),
+    h('p', { class: 'legend' }, ['Exchange stays view only. A Health request is the exception. Nothing is emailed from here.'])
+  ]);
+  let body = { items: [] };
+  try {
+    const response = await fetch('/api/exchange/repair');
+    body = await response.json();
+  } catch { body = { items: [] }; }
+  const items = Array.isArray(body.items) ? body.items : [];
+  if (!items.length) host.append(h('p', { id: 'repair-follow-empty', class: 'muted' }, ['No Health repair request yet.']));
+  for (const item of items) {
+    const status = h('select', { 'data-view-ok': '1', id: `repair-status-${String(item.id).slice(0, 8)}` }, REPAIR_STATUSES.map((name) => h('option', { value: name }, [name])));
+    status.value = REPAIR_STATUSES.includes(item.status) ? item.status : 'requested';
+    host.append(h('article', { id: `repair-item-${String(item.id).slice(0, 8)}` }, [
+      h('p', {}, [`${item.details?.item || 'Equipment'} · ${item.details?.brandModel || ''} · ${item.status}`]),
+      h('p', { class: 'muted' }, [item.details?.symptom || '']),
+      item.suggestion?.note ? h('p', { class: 'muted' }, [item.suggestion.note]) : null,
+      status,
+      h('button', { type: 'button', 'data-view-ok': '1', onClick: async () => {
+        const key = await ensureDeviceKey(localStorage);
+        const payload = { handle: item.handle, action: 'repair-status', origin: 'health', id: item.id, status: status.value, at: new Date().toISOString() };
+        const response = await fetch('/api/exchange/repair', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ handle: item.handle, publicJwk: key.publicJwk, payload, sig: await signDevice(key.privateJwk, payload) })
+        });
+        const saved = await response.json().catch(() => ({}));
+        setStatus(saved.ok ? `Status ${saved.item?.status || status.value}.` : (saved.error || 'The status stayed as it was.'), saved.ok ? 'ok' : 'bad');
+        if (saved.ok) render();
+      } }, ['Update status'])
+    ]));
+  }
+  return host;
+}
+
 function thumbtackSection(seat) {
   const pros = thumbtackItems.filter((item) => item.isIprovIT);
   const rest = thumbtackItems.filter((item) => !item.isIprovIT);
@@ -3422,6 +3461,7 @@ async function renderMarket(peers, seat) {
   await sim.ensureStandingDonation(store);
   await sim.ensureStandingWanted(store);
   await sim.ensureStandingRepair(store);
+  await sim.ensureStandingRepairPro(store);
   const feed = await sim.marketFeed(store, marketQuery);
   const serviceList = await sim.marketFeed(store, { kind: 'IprovIT' });
   const search = h('input', { type: 'search', placeholder: 'Search', value: marketQuery.q, autocomplete: 'off' });
@@ -3460,7 +3500,7 @@ async function renderMarket(peers, seat) {
   const grid = h('div', { class: 'market-grid', id: 'market-grid' }, feed.map((card) => h('button', {
     type: 'button',
     class: 'card market-card',
-    id: card.title === sim.STANDING_DONATION.title ? 'donation-card' : card.title === sim.STANDING_WANTED.title ? 'wanted-card' : card.title === sim.STANDING_REPAIR.title ? 'repair-card' : undefined,
+    id: card.title === sim.STANDING_DONATION.title ? 'donation-card' : card.title === sim.STANDING_WANTED.title ? 'wanted-card' : card.title === sim.STANDING_REPAIR.title ? 'repair-card' : card.title === sim.STANDING_REPAIR_PRO.title ? 'repair-pro-card' : undefined,
     onClick: () => { openListingId = card.id; render(); }
   }, [
     h('img', { alt: '', src: card.photo || '', width: '224', height: '224', loading: 'lazy' }),
@@ -3471,6 +3511,14 @@ async function renderMarket(peers, seat) {
     h('div', {}, [h('span', { class: card.verified ? 'badge badge-verified' : 'badge badge-unverified' }, [card.verified ? 'Verified' : 'Unverified'])]),
     h('small', { class: 'meta' }, [`${card.circle} · Peer standing ${card.standing}`])
   ])));
+  if (!feed.some((card) => card.title === sim.STANDING_REPAIR_PRO.title)) {
+    grid.prepend(h('article', { class: 'card market-card', id: 'repair-pro-card' }, [
+      h('h3', {}, [sim.STANDING_REPAIR_PRO.title]),
+      h('p', { class: 'muted' }, [sim.STANDING_REPAIR_PRO.description]),
+      h('span', { class: 'badge badge-verified' }, ['Service offer'])
+    ]));
+  }
+  const follow = await repairFollowSection();
   const mine = await store.get(seat);
   const standing = mine ? sim.peerProfile(mine) : null;
   const filters = h('details', {}, [h('summary', {}, ['Filters']), form]);
@@ -3480,7 +3528,8 @@ async function renderMarket(peers, seat) {
     kinds,
     pills,
     filters,
-    feed.length ? grid : h('p', { class: 'empty' }, ['No listings match. List one, or clear the filters.']),
+    feed.length || grid.childElementCount ? grid : h('p', { class: 'empty' }, ['No listings match. List one, or clear the filters.']),
+    follow,
     !marketQuery.kind || marketQuery.kind === 'IwanIT' ? wantedMatchSection(seat) : null,
     !marketQuery.kind || marketQuery.kind === 'IwanIT' ? thumbtackSection(seat) : null,
     offerupSection(seat, serviceList),
