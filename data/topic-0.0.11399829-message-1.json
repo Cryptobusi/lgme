@@ -1,0 +1,19 @@
+{
+  "chunk_info": {
+    "initial_transaction_id": {
+      "account_id": "0.0.11281203",
+      "nonce": 0,
+      "scheduled": false,
+      "transaction_valid_start": "1794337890.344205722"
+    },
+    "number": 1,
+    "total": 1
+  },
+  "consensus_timestamp": "1794337897.541660697",
+  "message": "eyJ2ZXJzaW9uIjoxLCJuZXR3b3JrIjoidGVzdG5ldCIsImRheSI6IjIwMjYtMTEtMTAiLCJyb290IjoiMTM3ZjE4MTkxYmY5ZTBlZTJkMGJlNWI4ZTQ5NjU2NWQ4MjAwNTM4OGVkZWRkODg3MGE1ZWQ2MmUxNjIyYTRlOCIsImxlYWZDb3VudCI6MX0=",
+  "payer_account_id": "0.0.11281203",
+  "running_hash": "acDbbPvqBerWVxZBhU7w+d33TXbP7T3hgYLPCFWZoyR0kbU1X0GxG+gFIZrn0LXd",
+  "running_hash_version": 3,
+  "sequence_number": 1,
+  "topic_id": "0.0.11399829"
+}

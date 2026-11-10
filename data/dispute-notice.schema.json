@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lgme.app/schemas/v1/DisputeNotice.json",
+  "title": "DisputeNotice",
+  "description": "A local dispute record. Opening it starts steward mediation. It does not halt clearing, freeze the Floor, or move credit. This is a JSON Schema. It is not JSON-LD.",
+  "type": "object",
+  "required": ["type", "disputeId", "agreementHash", "claimant", "respondent", "steward", "statementHash", "day", "hash"],
+  "properties": {
+    "type": { "type": "string", "const": "DisputeNotice" },
+    "disputeId": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "agreementHash": { "type": "string", "pattern": "^[a-f0-9]{0,64}$" },
+    "claimant": { "type": "string" },
+    "respondent": { "type": "string" },
+    "steward": { "type": "string" },
+    "statementHash": { "type": "string", "pattern": "^[a-f0-9]{64}$", "description": "SHA-256 of the statement. The statement stays on the phone." },
+    "day": { "type": "string" },
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$", "description": "The only value queued for the testnet topic." }
+  },
+  "additionalProperties": false
+}

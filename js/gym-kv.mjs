@@ -1,11 +1,12 @@
 import { acceptsCovenant, signSponsor } from './covenant.mjs';
+import { publicDispute } from './dispute.mjs';
 import { acceptableInvite, sameDeviceKey, verifyDevice } from './device-sign.mjs';
 import { publicProgressCard } from './gym-progress.mjs';
 import { publicChatMessage } from './gym-sync.mjs';
 import { publicIntake } from './intake.mjs';
 
 export function emptyGymKv() {
-  return { members: {}, progress: [], chats: {}, covenants: {}, intakes: {} };
+  return { members: {}, progress: [], chats: {}, covenants: {}, intakes: {}, disputes: {} };
 }
 
 export function allowRate(hits, ip, now = Date.now(), limit = 30) {
@@ -55,6 +56,7 @@ export async function gymMutate(state, envelope) {
   if (payload.action === 'sign') return signCovenant(state, auth.handle, payload);
   if (payload.action === 'share' || payload.action === 'public') return writeIntake(state, auth.handle, payload);
   if (payload.action === 'read') return readIntake(state, auth.handle, payload);
+  if (payload.action === 'dispute') return writeDispute(state, auth.handle, payload);
   return fail(400, 'That gym action is not available.');
 }
 
@@ -85,6 +87,28 @@ function writeChat(state, handle, payload) {
   if (!built.ok) return { ...built, status: 400 };
   state.chats[key] = [...prior, built.message].slice(-50);
   return { ok: true, messages: state.chats[key] };
+}
+
+function writeDispute(state, handle, payload) {
+  if (payload.handle !== handle) return fail(403, 'A member signs only their own dispute hash.');
+  if (payload.legalName || payload.applicantName || payload.fault || payload.faultPubkey) return fail(400, 'A name stays on the phone.');
+  const hash = String(payload.hash || '').toLowerCase();
+  if (!/^[0-9a-f]{64}$/.test(hash)) return fail(400, 'Send a hash only.');
+  const both = payload.bothConsent === true;
+  if (!both && (payload.statement || payload.findings || payload.name)) return fail(400, 'A statement stays on the phone.');
+  const row = publicDispute({
+    hash,
+    day: payload.day,
+    status: payload.status,
+    claimantId: handle,
+    respondentId: payload.respondent || '',
+    statement: both ? payload.statement : '',
+    findings: both ? payload.findings : '',
+    shareConsent: both ? { [handle]: true, [payload.respondent || '']: true } : {},
+    verdict: { hash: payload.verdictHash || '' }
+  });
+  state.disputes[hash] = row;
+  return { ok: true, record: row };
 }
 
 function writeCovenant(state, handle, payload) {

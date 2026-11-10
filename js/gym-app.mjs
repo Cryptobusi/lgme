@@ -21,6 +21,7 @@ import { changeSteward, groupSteward, isGroupAdmin, isTrainer, majoritySteward, 
 import { deleteHelper, helperFile, loadHelper, saveHelper } from './helper-store.mjs';
 import { ensureDeviceKey, intakeSharePayload, randomInvite, signDevice } from './device-sign.mjs';
 import { renderProtocol } from './intake-view.mjs';
+import { DISCLAIMER, SANDBOX_LABEL, confirmOutcome, failMediation, messageFromMirror, openDispute, publicDispute, rehearsalMembers, requestPanel, setShareConsent, signVerdict } from './dispute.mjs';
 
 let mode = localStorage.getItem(MODE_KEY) === 'demo' ? 'demo' : 'real';
 let store = mode === 'demo' ? demoStore() : realStore();
@@ -1121,13 +1122,19 @@ async function renderRegister() {
       agreeBox('health', 'I agree to the Health clarifications')
     ]);
     box.append(notes);
+    box.append(el('section', { id: 'signup-disclaimer', class: 'card' }, [
+      el('h3', {}, ['Disclaimer']),
+      ...DISCLAIMER.map((line) => el('p', {}, [line])),
+      el('p', {}, [el('a', { href: '/disclaimer' }, ['Read the disclaimer'])]),
+      agreeBox('disclaimer', 'I understand. Use is voluntary, and this does not replace a court.')
+    ]));
     box.append(el('button', { type: 'button', class: 'primary', onClick: () => {
       signup.primary = primary.value.trim();
       signup.secondary = secondary.value.trim();
       signup.legalName = legal.value.trim();
       signup.signature = signature.value.trim();
       signup.date = date.value;
-      if (!signup.agree.preamble || !signup.agree.articles || !signup.agree.section2 || !signup.agree.health) {
+      if (!signup.agree.preamble || !signup.agree.articles || !signup.agree.section2 || !signup.agree.health || !signup.agree.disclaimer) {
         status('Agree to each section.');
         return;
       }
@@ -1613,7 +1620,7 @@ async function renderDashboard() {
   const groups = Object.values(mine.clubGroups || {});
   const sponsored = locals.filter((peer) => peer.id !== mine.id && (peer.covenant?.sponsors || []).some((row) => row.handle === mine.id));
   const view = el('div', {}, [
-    el('p', {}, [el('a', { href: '/?picker=1' }, ['All categories']), ' · ', el('a', { href: '/gym/covenant' }, ['Member Covenant'])]),
+    el('p', {}, [el('a', { href: '/?picker=1' }, ['All categories']), ' · ', el('a', { href: '/gym/covenant' }, ['Member Covenant']), ' · ', el('a', { href: '#/dispute' }, ['Dispute rehearsal'])]),
     covenantPanel(mine, locals),
     sponsored.length ? el('section', { class: 'card', id: 'sponsored-members' }, [
       el('h2', {}, ['People you sponsor']),
@@ -1644,6 +1651,154 @@ async function renderDashboard() {
   return view;
 }
 
+async function saveDispute(ownerId, dispute) {
+  const fresh = await store.get(ownerId);
+  if (!fresh) return;
+  const prior = fresh.disputes || [];
+  fresh.disputes = prior.some((row) => row.id === dispute.id) ? prior.map((row) => row.id === dispute.id ? dispute : row) : [...prior, dispute];
+  await store.set(ownerId, fresh);
+}
+
+async function queueDisputeHash(handle, hash, day) {
+  try { await signedGym('/api/hedera/queue', { handle, action: 'queue', hash, day }); } catch { /* the daily job sends a queued hash */ }
+  try { await signedGym('/api/gym/dispute', { handle, action: 'dispute', hash, day, status: 'mediation' }); } catch { /* the record stays on this phone */ }
+}
+
+function disputeCard(dispute, mine, rows) {
+  const host = el('section', { class: 'card', id: 'dispute-record' });
+  host.append(el('p', {}, [`Steward mediation is with ${dispute.stewardId} (${dispute.stewardRole}).`]));
+  host.append(el('p', {}, [`Status: ${dispute.status}. Credit and the Floor stay where they are.`]));
+  if (dispute.pendingEntryId) host.append(el('p', {}, [`Pending entry ${dispute.pendingEntryId} stays pending.`]));
+  host.append(el('p', { class: 'muted' }, [`Hash ${dispute.hash}. The statement stays on this phone.`]));
+  if (mine.id === dispute.stewardId && dispute.status === 'mediation') {
+    host.append(el('button', { type: 'button', id: 'mediation-failed', onClick: async () => {
+      const result = failMediation(dispute, mine.id);
+      if (!result.ok) { status(result.error); return; }
+      await saveDispute(dispute.claimantId, result.dispute);
+      status('Mediation failed. Either party can ask for a rehearsal panel. Nothing was moved.');
+      render();
+    } }, ['Mediation failed']));
+  }
+  if (dispute.status === 'mediation-failed' && (mine.id === dispute.claimantId || mine.id === dispute.respondentId)) {
+    host.append(el('button', { type: 'button', class: 'primary', id: 'draw-panel', onClick: () => drawDisputePanel(dispute, mine, rows, false) }, ['Draw the panel from the testnet record']));
+    host.append(el('button', { type: 'button', id: 'draw-rehearsal', onClick: () => drawDisputePanel(dispute, mine, rows, true) }, [SANDBOX_LABEL]));
+  }
+  if (dispute.panel) {
+    host.append(el('p', { id: 'panel-label' }, [dispute.panel.label]));
+    host.append(el('p', { id: 'panel-line' }, [`Panel: ${dispute.panel.ids.join(', ')}.`]));
+    host.append(el('p', {}, [dispute.panel.suggestion]));
+    if (dispute.panel.ids.includes(mine.id) && !dispute.verdict?.ready) {
+      const choice = el('select', { id: 'verdict-choice' }, [
+        el('option', { value: 'write-down' }, ['Agree a write-down']),
+        el('option', { value: 'nullification' }, ['Mutual nullification']),
+        el('option', { value: 'no-change' }, ['No change'])
+      ]);
+      host.append(choice);
+      host.append(el('button', { type: 'button', id: 'sign-verdict', onClick: () => signDispute(dispute, mine, choice.value) }, ['Sign this advisory outcome']));
+    }
+  }
+  if (dispute.verdict?.ready) {
+    host.append(el('p', { id: 'verdict-line' }, [`Advisory outcome: ${dispute.verdict.choice}. 2 of 3 signed. Both parties confirm before anything is noted.`]));
+    if ((mine.id === dispute.claimantId || mine.id === dispute.respondentId) && dispute.verdict.confirmed?.[mine.id] !== true) {
+      host.append(el('button', { type: 'button', id: 'confirm-outcome', onClick: () => confirmDispute(dispute, mine) }, ['Confirm the note']));
+    }
+  }
+  const share = el('input', { type: 'checkbox', id: 'dispute-share' });
+  share.checked = dispute.shareConsent?.[mine.id] === true;
+  if (mine.id === dispute.claimantId || mine.id === dispute.respondentId) {
+    host.append(el('label', { class: 'check' }, [share, 'Share my side of the statement with the other party']));
+    host.append(el('button', { type: 'button', onClick: async () => {
+      const result = setShareConsent(dispute, mine.id, share.checked);
+      await saveDispute(dispute.claimantId, result.dispute);
+      const shared = publicDispute(result.dispute);
+      if (shared.statement) await signedGym('/api/gym/dispute', { handle: mine.id, action: 'dispute', ...shared, respondent: dispute.respondentId });
+      status(shared.statement ? 'Both parties agreed to share the statement. The chain still gets only the hash.' : 'The statement stays on this phone.');
+      render();
+    } }, ['Save sharing']));
+  }
+  return host;
+}
+
+async function drawDisputePanel(dispute, mine, rows, rehearsal) {
+  const claimant = rows.find((peer) => peer.id === dispute.claimantId);
+  const respondent = rows.find((peer) => peer.id === dispute.respondentId);
+  let record = null;
+  if (!rehearsal) {
+    try {
+      const response = await fetch('/api/hedera/mirror?topic=0.0.11399829');
+      const body = await response.json();
+      const own = (body.messages || []).find((row) => String(row.contents || '').includes(dispute.hash));
+      const daily = (body.messages || []).find((row) => String(row.contents || '').includes(dispute.day) && row.root && row.runningHash);
+      record = messageFromMirror(own || daily || {});
+    } catch { record = null; }
+  }
+  if (rehearsal || !record?.running_hash) {
+    const response = await fetch('/data/topic-0.0.11399829-message-1.json');
+    record = await response.json();
+    rehearsal = true;
+  }
+  const members = rehearsal ? [...rows, ...rehearsalMembers(claimant, respondent)] : rows;
+  const result = await requestPanel(dispute, mine.id, record, { members, rehearsal });
+  if (!result.ok) { status(result.error); return; }
+  await saveDispute(dispute.claimantId, result.dispute);
+  status(`${result.dispute.panel.label} Nothing was moved.`);
+  render();
+}
+
+async function signDispute(dispute, mine, choice) {
+  const key = await ensureDeviceKey(localStorage);
+  const payload = { action: 'verdict', disputeId: dispute.id, choice, handle: mine.id };
+  const result = await signVerdict(dispute, { handle: mine.id, choice, publicJwk: key.publicJwk, sig: await signDevice(key.privateJwk, payload) });
+  if (!result.ok) { status(result.error); return; }
+  await saveDispute(dispute.claimantId, result.dispute);
+  if (result.dispute.verdict.hash) await queueDisputeHash(mine.id, result.dispute.verdict.hash, dispute.day);
+  status('Signed. The outcome is advisory. Credit and the Floor did not move.');
+  render();
+}
+
+async function confirmDispute(dispute, mine) {
+  const key = await ensureDeviceKey(localStorage);
+  const payload = { action: 'confirm', disputeId: dispute.id, choice: dispute.verdict.choice, handle: mine.id };
+  const result = await confirmOutcome(dispute, { handle: mine.id, publicJwk: key.publicJwk, sig: await signDevice(key.privateJwk, payload) });
+  if (!result.ok) { status(result.error); return; }
+  await saveDispute(dispute.claimantId, result.dispute);
+  status(result.noted ? 'Both parties noted the outcome. Credit and the Floor did not move.' : 'Noted on this phone. The other party still confirms. Nothing moved.');
+  render();
+}
+
+async function renderDispute() {
+  const mine = await seat();
+  const rows = await books();
+  if (!mine) return el('section', { id: 'dispute-flow' }, [el('p', {}, ['Choose who is acting before you open a dispute.'])]);
+  const choices = rows.filter((peer) => peer.id !== mine.id);
+  const who = el('select', { id: 'dispute-respondent' }, choices.map((peer) => el('option', { value: peer.id }, [peer.name || peer.id])));
+  const note = el('textarea', { id: 'dispute-note', maxlength: '500' });
+  const box = el('input', { type: 'checkbox', id: 'dispute-disclaimer' });
+  const open = el('button', { type: 'button', class: 'primary', id: 'open-dispute', onClick: async () => {
+    if (box.checked !== true) { status('Acknowledge the disclaimer before you open a dispute.'); return; }
+    const respondent = rows.find((peer) => peer.id === who.value);
+    const pending = (mine.highValue || []).find((row) => row.status === 'pending') || null;
+    const result = await openDispute({ claimant: mine, respondent, members: rows, statement: note.value, pending, acknowledged: true });
+    if (!result.ok) { status(result.error); return; }
+    await saveDispute(mine.id, result.dispute);
+    await queueDisputeHash(mine.id, result.dispute.hash, result.dispute.day);
+    status('Opened. Steward mediation comes first. Credit and the Floor did not move.');
+    render();
+  } }, ['Open dispute']);
+  const current = rows.flatMap((peer) => peer.disputes || []).find((row) => row.claimantId === mine.id || row.respondentId === mine.id || row.stewardId === mine.id) || null;
+  return el('section', { id: 'dispute-flow' }, [
+    el('h2', {}, ['Dispute rehearsal']),
+    ...DISCLAIMER.map((line) => el('p', {}, [line])),
+    el('p', {}, [el('a', { href: '/disclaimer' }, ['Read the disclaimer'])]),
+    el('label', { class: 'check' }, [box, 'I understand. Use is voluntary, and this does not replace a court.']),
+    choices.length ? el('label', {}, ['Other member', who]) : el('p', {}, ['Another member has to be on this phone.']),
+    el('label', {}, ['What happened. This stays on the phone.', note]),
+    choices.length ? open : null,
+    current ? disputeCard(current, mine, rows) : null,
+    el('p', { id: 'gym-status', role: 'status' }, [])
+  ]);
+}
+
 async function render() {
   const path = route();
   const panel = document.getElementById('gym-panel');
@@ -1657,6 +1812,7 @@ async function render() {
   else if (path === '/more') view = await renderMore();
   else if (path.startsWith('/sponsor/')) view = await renderSponsor(decodeURIComponent(path.slice('/sponsor/'.length)));
   else if (path === '/intake') view = await renderIntakeEdit();
+  else if (path === '/dispute') view = await renderDispute();
   else if (path === '/helper') view = await renderHelperHome();
   else if (path === '/register' || (!registered && mode !== 'demo' && path === '/')) view = await renderRegister();
   else if (registered && (path === '/' || path === '/me')) view = await renderDashboard();

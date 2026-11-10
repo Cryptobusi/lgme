@@ -32,7 +32,9 @@ export default async function handler(req, res) {
       sequence: message.sequence_number,
       consensus: message.consensus_timestamp,
       root,
-      contents
+      contents,
+      runningHash: message.running_hash || '',
+      runningHashVersion: message.running_hash_version
     };
   });
   return json(res, 200, { ok: true, network: 'testnet', topic, messages });

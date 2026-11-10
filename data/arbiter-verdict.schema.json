@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lgme.app/schemas/v1/ArbiterVerdict.json",
+  "title": "ArbiterVerdict",
+  "description": "An advisory 2-of-3 device-signed outcome. It does not enforce a remedy, name a fault, or move credit. This is a JSON Schema. It is not JSON-LD.",
+  "type": "object",
+  "required": ["type", "disputeId", "choice", "signers", "hash"],
+  "properties": {
+    "type": { "type": "string", "const": "ArbiterVerdict" },
+    "disputeId": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "choice": { "type": "string", "enum": ["write-down", "nullification", "no-change"] },
+    "signers": { "type": "array", "minItems": 2, "maxItems": 3, "items": { "type": "string" } },
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$", "description": "The only value queued for the testnet topic." }
+  },
+  "additionalProperties": false
+}
