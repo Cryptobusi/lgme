@@ -1,0 +1,9 @@
+:root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; --card:#151a15; }
+body { margin:0 auto; max-width:40rem; padding:1rem; background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; font-size:1.05rem; line-height:1.45; }
+h1,h2 { font-family:Newsreader,serif; font-weight:500; }
+a { color:var(--fg); }
+.kicker { letter-spacing:0.12em; text-transform:uppercase; color:var(--gold); font-size:0.75rem; }
+.banner, .sample { border:1px solid var(--line); border-radius:14px; background:var(--card); padding:0.9rem; margin:0.7rem 0; }
+.banner { border-color:var(--gold); }
+button { font:inherit; min-height:48px; padding:0.6rem 0.9rem; border-radius:12px; border:1px solid var(--gold); background:var(--gold); color:#1a1408; }
+.muted { color:var(--muted); }

@@ -52,7 +52,7 @@ test('the community feed keeps private numbers off and sorts by time', () => {
   const home = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   assert.equal(home.includes('data-entry="health"'), true);
   assert.equal(home.includes('Gym beta'), true);
-  assert.equal(home.indexOf('data-entry="health"') < home.indexOf('data-entry="campus"'), true);
+  assert.equal(home.indexOf('data-entry="health"') < home.indexOf('Beta preview, coming next'), true);
   assert.equal(home.includes('lgme.entry.category') || readFileSync(new URL('../js/home-entry.js', import.meta.url), 'utf8').includes('lgme.entry.category'), true);
   assert.equal(home.includes('$Trust'), false);
   assert.equal(home.includes('CONTENT_FROM_FILE'), false);

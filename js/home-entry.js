@@ -1,15 +1,5 @@
 (function () {
   var KEY = 'lgme.entry.category';
-  var routes = {
-    health: '/gym',
-    campus: '/campus',
-    barter: '/exchange',
-    wisdom: '/wisdom',
-    tutoring: '/good-deeds#tutoring',
-    repair: '/good-deeds#repair',
-    cleanup: '/good-deeds#cleanup',
-    gear: '/good-deeds#gear'
-  };
 
   function registered() {
     try {
@@ -24,12 +14,7 @@
   }
 
   var params = new URLSearchParams(location.search);
-  if (params.get('picker') !== '1') {
-    var last = '';
-    try { last = localStorage.getItem(KEY) || ''; } catch (error) { last = ''; }
-    if (registered() && (!last || last === 'health')) location.replace('/gym');
-    else if (last && routes[last]) location.replace(routes[last]);
-  }
+  if (params.get('picker') !== '1' && registered()) location.replace('/gym');
 
   function bind() {
     document.querySelectorAll('[data-entry]').forEach(function (tile) {

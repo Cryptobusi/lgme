@@ -14,6 +14,7 @@
     h1 { font-size:clamp(1.9rem, 7vw, 2.5rem); line-height:1.05; margin:0.4rem 0; }
     h2 { font-size:1.3rem; margin:1.3rem 0 0.3rem; }
     .kicker { margin:0; font-size:0.72rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--gold); }
+    .beta-banner { border:1px solid var(--gold); border-radius:12px; padding:0.7rem 0.9rem; background:#17140c; }
     .muted { color:var(--muted); }
     a { color:var(--fg); }
     nav a { min-height:44px; display:inline-flex; align-items:center; margin-right:0.8rem; }
@@ -36,7 +37,10 @@
   <a href="/exchange?group=campus">Join</a>
 </nav>
 <p class="kicker">lgme · Campus</p>
+<p class="beta-banner" role="status">Beta preview, coming next. This page is still reachable. It does not open a new posting path.</p>
 <h1>Campus pilot</h1>
+<p><button type="button" data-preview-note="campus">Tell me when it opens</button></p>
+<script src="/js/preview-note.js"></script>
 <p class="muted"><a href="/helper">Set up my own AI helper</a></p>
 <p>A small room on one campus. People log tutoring, cleanup, and gear share. When the other person attests, the deed is an IdidIt (verified receipt). One verified deed is one campus credit. The credit is not $lgme and it is not written to Hedera.</p>
 <div class="card">
