@@ -1,5 +1,5 @@
-import { createReference } from './solana-pay.mjs';
-import { PRICE_UNAVAILABLE, SAMPLE_MS, averagePrice, fetchSpotPrice, lgmeForUsd, lockOpen, lockPayQuote } from './lgme-price.mjs';
+import { createReference, rpc } from './solana-pay.mjs';
+import { PRICE_UNAVAILABLE, SAMPLE_MS, averagePrice, fetchSpotPrice, lgmeForUsd, lockOpen, lockPayQuote, purchaseQuote } from './lgme-price.mjs';
 import { ensureDeviceKey, signDevice } from './device-sign.mjs';
 import {
   PUMP_URL,
@@ -46,7 +46,13 @@ export async function renderSetupFee({ storage, go, mine }) {
   let lock = null;
   let sampling = false;
   const amountLine = el('p', { id: 'setup-lgme' }, [PRICE_UNAVAILABLE]);
-  const priceLine = el('p', { id: 'setup-price', class: 'muted' }, ['3-second average.']);
+  const priceLine = el('p', { id: 'setup-price', class: 'muted' }, ['At current price (3-sec avg).']);
+  const purchaseLine = el('p', { id: 'purchase-lgme' }, ['At my purchase price. Paste a buy signature.']);
+  let purchase = null;
+  const basis = el('select', { id: 'quote-basis' }, [
+    el('option', { value: 'average', selected: 'selected' }, ['At current price (3-sec avg)']),
+    el('option', { value: 'purchase' }, ['At my purchase price'])
+  ]);
   const status = el('p', { id: 'setup-status', role: 'status' });
   const panel = el('div', { id: 'setup-choice' });
 
@@ -57,13 +63,26 @@ export async function renderSetupFee({ storage, go, mine }) {
     latest = quote.ok ? quote : { ok: false, error: PRICE_UNAVAILABLE };
     if (!latest.ok) {
       amountLine.textContent = PRICE_UNAVAILABLE;
-      priceLine.textContent = '3-second average.';
+      priceLine.textContent = 'At current price (3-sec avg).';
       return;
     }
-    const amount = lockOpen(lock, now) ? lock.lgmeAmount : lgmeForUsd(1, latest.price);
-    amountLine.textContent = `${amount} $lgme, equal to US$1.`;
+    const amount = lockOpen(lock, now) && lock.basis !== 'purchase' ? lock.lgmeAmount : lgmeForUsd(1, latest.price);
+    amountLine.textContent = `At current price (3-sec avg): ${amount} $lgme for US$1.`;
     const when = lockOpen(lock, now) ? `Locked until ${new Date(lock.expiresAt).toISOString()}.` : 'Updating.';
-    priceLine.textContent = `${latest.source} · ${latest.timestamp} · 3-second average. ${when}`;
+    priceLine.textContent = `${latest.source} · ${latest.timestamp} · ${when}`;
+  }
+
+  async function readBuy() {
+    const signature = document.getElementById('buy-signature')?.value.trim();
+    if (!signature) { status.textContent = 'Paste a buy signature first.'; return; }
+    const tx = await rpc('mainnet-beta', 'getTransaction', [signature, { encoding: 'jsonParsed', maxSupportedTransactionVersion: 0, commitment: 'finalized' }]);
+    if (!tx.ok || !tx.result) { status.textContent = tx.error || 'The buy could not be read.'; return; }
+    const sol = await fetchSpotPrice({ mint: 'So11111111111111111111111111111111111111112' });
+    purchase = purchaseQuote(tx.result, { solUsd: sol.ok ? sol.price : 0 });
+    if (!purchase.ok) { purchaseLine.textContent = purchase.error; status.textContent = purchase.error; return; }
+    purchase.timestamp = new Date().toISOString();
+    purchaseLine.textContent = `At my purchase price: ${purchase.lgmeAmount} $lgme for US$1.`;
+    status.textContent = 'Purchase price read. Current price stays the default until you choose the other option.';
   }
 
   async function sample() {
@@ -81,9 +100,12 @@ export async function renderSetupFee({ storage, go, mine }) {
 
   function showPayNow() {
     const now = Date.now();
-    if (!lockOpen(lock, now)) {
+    if (basis.value === 'purchase') {
+      if (!purchase?.ok) { status.textContent = 'Paste a buy signature first.'; return; }
+      lock = { ...lockPayQuote({ ok: true, price: purchase.price, source: 'purchase', timestamp: purchase.timestamp || new Date(now).toISOString() }, 1, now), basis: 'purchase', lgmeAmount: purchase.lgmeAmount };
+    } else if (!lockOpen(lock, now) || lock.basis === 'purchase') {
       const avg = averagePrice(samples, now);
-      lock = lockPayQuote(avg, 1, now);
+      lock = { ...lockPayQuote(avg, 1, now), basis: 'average' };
     }
     paintQuote();
     if (!lock?.ok) { status.textContent = PRICE_UNAVAILABLE; return; }
@@ -112,6 +134,10 @@ export async function renderSetupFee({ storage, go, mine }) {
     el('p', { class: 'muted' }, ['You sign in your own wallet. This app never holds funds or keys.']),
     amountLine,
     priceLine,
+    basis,
+    purchaseLine,
+    el('input', { id: 'buy-signature', maxlength: '100', placeholder: 'Buy transaction signature' }),
+    el('button', { type: 'button', id: 'read-buy', onClick: () => readBuy() }, ['Read purchase price']),
     el('button', { type: 'button', class: 'primary', id: 'pay-now', onClick: () => showPayNow() }, ['Pay']),
     el('button', { type: 'button', id: 'pay-later', onClick: () => showPayLater() }, ['Pay later']),
     panel,
@@ -148,6 +174,7 @@ export async function renderSetupFee({ storage, go, mine }) {
           title: SETUP_TITLE,
           owedTo: SETUP_OWED_TO,
           lgmeAmount: built.item.lgmeAmount,
+          buySignature: document.getElementById('buy-signature')?.value.trim() || '',
           signature: signature.value.trim(),
           at: new Date().toISOString()
         });

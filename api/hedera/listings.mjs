@@ -6,6 +6,7 @@ import { HOUR_LIMIT, LISTINGS_OPERATOR, LISTINGS_TOPIC, publicExchangeListing } 
 import { submitPaidListing } from '../../js/hedera-submit.mjs';
 import { SETUP_ADDRESS, SETUP_MINT, confirmSetupTransfer, publicSetupReceivable } from '../../js/setup-fee.mjs';
 import { rpc } from '../../js/solana-pay.mjs';
+import { fetchSpotPrice, purchaseQuote } from '../../js/lgme-price.mjs';
 import { redisRest } from '../../js/redis-env.mjs';
 import { upstashStore } from '../lib/upstash.mjs';
 import { allowRate } from '../../js/gym-kv.mjs';
@@ -81,8 +82,16 @@ export default async function handler(req, res) {
   if (!built.ok) return json(res, built.status || 400, { ok: false, viewOnly: built.viewOnly === true, error: built.error || VIEW_ONLY_MESSAGE });
   if (payload.action === 'receivable-paid') {
     const tx = await rpc('mainnet-beta', 'getTransaction', [payload.signature, { encoding: 'jsonParsed', maxSupportedTransactionVersion: 0, commitment: 'finalized' }]);
+    let purchaseAmount = 0;
+    if (payload.buySignature) {
+      const buy = await rpc('mainnet-beta', 'getTransaction', [payload.buySignature, { encoding: 'jsonParsed', maxSupportedTransactionVersion: 0, commitment: 'finalized' }]);
+      const sol = buy.ok ? await fetchSpotPrice({ mint: 'So11111111111111111111111111111111111111112' }) : { ok: false };
+      const bought = buy.ok && buy.result ? purchaseQuote(buy.result, { solUsd: sol.ok ? sol.price : 0 }) : { ok: false, error: buy.error || 'The buy could not be read.' };
+      if (!bought.ok) return json(res, 400, { ok: false, error: bought.error });
+      purchaseAmount = bought.lgmeAmount;
+    }
     const confirmed = tx.ok && tx.result
-      ? confirmSetupTransfer(tx.result, { recipient: SETUP_ADDRESS, mint: SETUP_MINT, amount: built.body.lgmeAmount, signature: payload.signature, tolerance: 0.02 })
+      ? confirmSetupTransfer(tx.result, { recipient: SETUP_ADDRESS, mint: SETUP_MINT, amount: built.body.lgmeAmount, purchaseAmount, signature: payload.signature, tolerance: 0.02 })
       : { ok: false, error: tx.error || 'The payment was not confirmed on Solana mainnet.' };
     if (!confirmed.ok) return json(res, 400, { ok: false, error: confirmed.error });
   }

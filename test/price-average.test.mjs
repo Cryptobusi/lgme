@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { evaluateHold } from '../js/high-value.mjs';
 import {
   AVERAGE_COUNT,
+  MINT,
   PAY_LOCK_MS,
   PRICE_UNAVAILABLE,
   SAMPLE_MS,
@@ -13,14 +14,15 @@ import {
   fetchSpotPrice,
   lockOpen,
   lockPayQuote,
+  matchesPeg,
   parseBirdeyePrice,
   parseJupiterPrice,
   parsePumpCoin,
+  purchaseQuote,
   withinPeg
 } from '../js/lgme-price.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const MINT = '7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump';
 
 test('a 3-second average converts the peg and a stale feed is not guessed', async () => {
   assert.equal(AVERAGE_COUNT, 3);
@@ -84,7 +86,8 @@ test('a 3-second average converts the peg and a stale feed is not guessed', asyn
   assert.equal(mocked.ok, true, mocked.error);
   assert.equal(mocked.source, 'geckoterminal');
   assert.equal(mocked.price, 0.00000415);
-  const live = await fetchSpotPrice({ timeoutMs: 8000 });
+  let live = { ok: false, error: PRICE_UNAVAILABLE };
+  for (let attempt = 0; attempt < 3 && !live.ok; attempt += 1) live = await fetchSpotPrice({ timeoutMs: 8000 });
   assert.equal(live.ok, true, live.error);
   assert.equal(live.price > 0, true);
   assert.equal(parsePumpCoin({ usd_market_cap: 4150 }), 0.00000415);
@@ -95,4 +98,28 @@ test('a 3-second average converts the peg and a stale feed is not guessed', asyn
   assert.equal(csp.includes('https://frontend-api-v3.pump.fun'), true);
   assert.equal(csp.includes('https://lite-api.jup.ag'), true);
   assert.equal(csp.includes('https://public-api.birdeye.so'), true);
+  const buy = {
+    meta: {
+      err: null,
+      fee: 5000,
+      preBalances: [2_000_000_000],
+      postBalances: [999_995_000],
+      preTokenBalances: [{ accountIndex: 1, mint: MINT, uiTokenAmount: { amount: '0', decimals: 6 } }],
+      postTokenBalances: [{ accountIndex: 1, mint: MINT, uiTokenAmount: { amount: '150000000', decimals: 6 } }]
+    }
+  };
+  const bought = purchaseQuote(buy, { solUsd: 150 });
+  assert.equal(bought.ok, true, bought.error);
+  assert.equal(bought.basis, 'sol');
+  assert.equal(bought.price, 1);
+  assert.equal(bought.lgmeAmount, 1);
+  const current = 200000;
+  assert.equal(matchesPeg(1.01, [current, bought.lgmeAmount]), true);
+  assert.equal(matchesPeg(current * 1.03, [current, bought.lgmeAmount]), false);
+  const atPurchase = evaluateHold([], {
+    id: 'buy', fromId: 'mina', toId: 'ria', kind: 'lgme', amount: 1, basis: 'purchase', purchasePrice: bought.price,
+    at: '2026-11-10T21:00:00.000Z'
+  });
+  assert.equal(atPurchase.usd, 1);
+  assert.equal(atPurchase.pending, false);
 });

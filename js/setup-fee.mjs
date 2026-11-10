@@ -1,5 +1,5 @@
 import { DONATION_ADDRESS, MINT, buildTransferRequest, parseSplTransfer } from './solana-pay.mjs';
-import { withinPeg } from './lgme-price.mjs';
+import { matchesPeg } from './lgme-price.mjs';
 import { VIEW_ONLY_MESSAGE } from './view-only-api.mjs';
 import { LISTINGS_OPERATOR, LISTINGS_TOPIC } from './exchange-listing.mjs';
 
@@ -141,7 +141,8 @@ export function confirmSetupTransfer(tx, expected = {}) {
   if (tolerance > 0) {
     const got = transferDelta(tx, recipient, mint);
     if (!got.ok) return got;
-    if (!withinPeg(got.delta, expected.amount, tolerance)) {
+    const quotes = [expected.amount, expected.purchaseAmount].filter((value) => Number(value) > 0);
+    if (!matchesPeg(got.delta, quotes, tolerance)) {
       return { ok: false, error: 'The amount is outside the locked quote.' };
     }
     const signature = tx?.transaction?.signatures?.[0] || '';

@@ -241,6 +241,6 @@ test('the disclaimer is on the dispute page, help, the glossary, and sign-up', (
   assert.equal(gym.includes('dispute-disclaimer'), true);
   assert.equal(home.includes('href="/disclaimer"'), true);
   assert.equal(text('gym.html').includes('href="/disclaimer"'), true);
-  assert.equal(text('sw.js').includes('lgme-v112'), true);
+  assert.equal(text('sw.js').includes('lgme-v113'), true);
   assert.equal(page.includes('$Trust'), false);
 });

@@ -321,6 +321,67 @@ export function lockOpen(lock, now = Date.now()) {
   return Boolean(lock?.ok && Number.isFinite(Number(lock.expiresAt)) && now <= Number(lock.expiresAt));
 }
 
+export const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+export const USDT_MINT = 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB';
+
+function tokenDelta(tx, mint) {
+  let spent = 0;
+  let received = 0;
+  for (const post of tx?.meta?.postTokenBalances || []) {
+    if (post?.mint !== mint || post?.uiTokenAmount?.amount == null) continue;
+    const before = (tx.meta.preTokenBalances || []).find((row) => row.accountIndex === post.accountIndex);
+    const decimals = Number(post.uiTokenAmount.decimals ?? before?.uiTokenAmount?.decimals ?? 6);
+    const scale = 10 ** decimals;
+    const preRaw = before?.uiTokenAmount?.amount != null ? BigInt(before.uiTokenAmount.amount) : 0n;
+    const delta = Number(BigInt(post.uiTokenAmount.amount) - preRaw) / scale;
+    if (delta > received) received = delta;
+    if (-delta > spent) spent = -delta;
+  }
+  return { spent, received };
+}
+
+function solSpent(tx) {
+  const pre = tx?.meta?.preBalances || [];
+  const post = tx?.meta?.postBalances || [];
+  if (!pre.length || pre.length !== post.length) return 0;
+  const fee = Number(tx?.meta?.fee) || 0;
+  const drop = Number(pre[0]) - Number(post[0]) - fee;
+  return drop > 0 ? drop / 1e9 : 0;
+}
+
+export function purchaseQuote(tx, { mint = MINT, solUsd } = {}) {
+  if (tx?.meta?.err) return { ok: false, error: 'The buy transaction failed on Solana.' };
+  const received = tokenDelta(tx, mint).received;
+  if (!(received > 0)) return { ok: false, error: 'That transaction did not receive $lgme.' };
+  const stable = Math.max(tokenDelta(tx, USDC_MINT).spent, tokenDelta(tx, USDT_MINT).spent);
+  let usd = stable;
+  let basis = 'usd';
+  if (!(usd > 0)) {
+    const sol = solSpent(tx);
+    const px = Number(solUsd);
+    if (!(sol > 0) || !(px > 0)) return { ok: false, error: 'The buy did not show US$ or SOL spent.' };
+    usd = sol * px;
+    basis = 'sol';
+  }
+  const price = usd / received;
+  const lgmeAmount = lgmeForUsd(1, price);
+  if (!(price > 0) || !(lgmeAmount > 0)) return { ok: false, error: 'The purchase price could not be read.' };
+  return {
+    ok: true,
+    basis,
+    source: 'purchase',
+    price: roundPrice(price),
+    usdSpent: Math.round(usd * 1e6) / 1e6,
+    received,
+    lgmeAmount,
+    label: 'At my purchase price'
+  };
+}
+
+export function matchesPeg(paid, quotes, tolerance = PEG_TOLERANCE) {
+  return (quotes || []).some((quote) => withinPeg(paid, quote, tolerance));
+}
+
 export function parsePumpCoin(body) {
   const cap = Number(body?.usd_market_cap);
   if (cap > 0) return cap / 1e9;
