@@ -83,5 +83,5 @@ test('the notice, breach plan, and gym pages carry no ad or analytics scripts', 
   assert.equal(text('js/gym-app.mjs').includes('COLLECT_LABEL'), true);
   assert.equal(text('js/gym-app.mjs').includes('SHARE_LABEL'), true);
   assert.equal(text('sw.js').includes('lgme-v127'), true);
-  assert.equal(text('sw-gym.js').includes('lgme-gym-v37'), true);
+  assert.equal(text('sw-gym.js').includes('lgme-gym-v38'), true);
 });
