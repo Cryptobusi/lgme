@@ -54,8 +54,8 @@ test('the community feed keeps private numbers off and sorts by time', () => {
   assert.equal(home.includes('Gym beta'), true);
   assert.equal(home.indexOf('data-entry="health"') < home.indexOf('Beta preview, coming next'), true);
   assert.equal(home.includes('Health is the live category'), true);
-  assert.equal(home.includes('>Live</span>Neighbor help'), false);
-  assert.equal(home.includes('href="/preview-neighbor"'), true);
+  assert.equal(home.includes('href="/preview-neighbor"'), false);
+  assert.equal(home.includes('href="/preview-campus"'), false);
   assert.equal(home.includes('href="/preview-hosts"'), true);
   assert.equal(home.includes('href="/preview-circles"'), true);
   assert.equal(home.includes('href="/preview-stories"'), true);

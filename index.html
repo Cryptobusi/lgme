@@ -247,7 +247,14 @@
     .entry-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; }
     .entry-tile { min-height: 96px; border: 1px solid var(--line); border-radius: 16px; background: var(--card); color: var(--fg); text-decoration: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.25rem; font-weight: 700; padding: 0.7rem; }
     .entry-tile svg { width: 36px; height: 36px; }
-    .entry-tile.health { grid-column: 1 / -1; min-height: 128px; background: var(--gold); color: #1a1408; border-color: var(--gold); font-size: 1.35rem; }
+    .entry-tile.health { grid-column: 1 / -1; min-height: 128px; background: var(--gold); color: #1a1408; border-color: var(--gold); font-size: 1.35rem; position: relative; overflow: hidden; padding: 0; background-position: center; background-size: cover; }
+    .entry-tile.health .health-open { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.25rem; min-height: 128px; padding: 0.9rem 0.7rem 0.4rem; color: inherit; text-decoration: none; width: 100%; }
+    .entry-tile.health.has-photo { color: #f4f1e8; background-color: #1a1408; }
+    .entry-tile.health.has-photo::after { content: ""; position: absolute; inset: 0; background: rgba(12, 16, 12, 0.62); pointer-events: none; }
+    .photo-actions { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center; padding: 0 0.7rem 0.75rem; }
+    .photo-actions label, .photo-actions button { font: inherit; font-size: 0.85rem; font-weight: 700; min-height: 44px; border-radius: 999px; border: 1px solid #1a1408; background: rgba(244, 241, 232, 0.94); color: #1a1408; padding: 0.35rem 0.8rem; }
+    .photo-status { position: relative; z-index: 1; margin: 0; padding: 0 0.8rem 0.7rem; font-size: 0.85rem; font-weight: 600; text-align: center; }
+    #health-photo { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
     .entry-tile .badge { font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; }
     .beta-banner { margin: 0 0 0.8rem; padding: 0.7rem 0.9rem; border: 1px solid var(--gold); border-radius: 12px; background: #17140c; }
     .entry-tile.preview { opacity: 0.92; }
@@ -263,13 +270,19 @@
     <p class="beta-banner" role="status">Beta. Health is the live category. The tiles below it are previews.</p>
     <h2>Start here</h2>
     <div class="entry-grid">
-      <a class="entry-tile health" data-entry="health" href="/gym"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 5.6-7 10-7 10z"/></svg><span class="badge">Gym beta</span>Health</a>
+      <div class="entry-tile health" id="health-tile">
+        <a class="health-open" data-entry="health" href="/gym"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 5.6-7 10-7 10z"/></svg><span class="badge">Gym beta</span>Health</a>
+        <div class="photo-actions">
+          <label for="health-photo">Set background photo</label>
+          <input id="health-photo" type="file" accept="image/*">
+          <button type="button" id="health-photo-remove" hidden>Remove photo</button>
+        </div>
+        <p id="health-photo-status" class="photo-status" role="status"></p>
+      </div>
       <a class="entry-tile" id="helper-tile" href="/helper"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a7 7 0 0 0-4 12v2h8v-2a7 7 0 0 0-4-12z"/><path d="M9 21h6"/></svg>Set up my own AI helper</a>
     </div>
     <h2>Beta preview, coming next</h2>
     <div class="entry-grid">
-      <a class="entry-tile preview" href="/preview-campus"><span class="badge">Beta preview, coming next</span>Campus</a>
-      <a class="entry-tile preview" href="/preview-neighbor"><span class="badge">Beta preview, coming next</span>Neighbor help</a>
       <a class="entry-tile preview" href="/preview-hosts"><span class="badge">Beta preview, coming next</span>Hosts</a>
       <a class="entry-tile preview" href="/preview-circles"><span class="badge">Beta preview, coming next</span>Circles</a>
       <a class="entry-tile preview" href="/preview-stories"><span class="badge">Beta preview, coming next</span>Stories</a>
@@ -277,6 +290,7 @@
     </div>
     <p><a href="/milestones">Next milestones</a></p>
   </section>
+  <script type="module" src="/js/health-tile-photo.mjs"></script>
   <p class="launch-bar"><a class="install-launch" data-install-launch href="/exchange">Install &amp; launch</a></p>
   <p class="give-banner" role="note"><span>Real donations &amp; grants accepted</span> <a href="/lgme-coin#give">Give via soBeIT</a> <a href="/lgme-coin#give">How to give</a> <a href="/grants">Grants</a></p>
   <p class="kicker" style="margin:0 0 0.35rem;"><a href="/lgme-coin">$lgme on pump.fun</a></p>
