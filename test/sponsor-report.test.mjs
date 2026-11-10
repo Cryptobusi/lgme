@@ -30,7 +30,7 @@ test('two sponsors are enough when one is the group creator, and more are allowe
   assert.match(sponsorshipReady({ covenant: { sponsors: [{ handle: 'cy' }] } }).error, /Sponsors: 1/);
   member.covenant.sponsors.push({ handle: 'dee', inGroup: true });
   assert.equal(sponsorshipReady(member).count, 3);
-  assert.equal(TESTNET_TOPIC, '0.0.11397291');
+  assert.equal(TESTNET_TOPIC, '0.0.11399829');
 });
 
 test('a sponsor report keeps health data out and proves credit rows', async () => {

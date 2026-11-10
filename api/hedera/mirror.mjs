@@ -1,7 +1,7 @@
 import { json, readEnv } from '../lib/http.mjs';
-import { LEGACY_TOPIC, readableTopic } from '../../js/hedera-topic.mjs';
+import { ATTESTATION_TOPIC, readableTopic } from '../../js/hedera-topic.mjs';
 
-const TOPIC = LEGACY_TOPIC;
+const TOPIC = ATTESTATION_TOPIC;
 const hits = new Map();
 
 function allowed(ip) {

@@ -46,5 +46,5 @@ test('the first screen drops campus and neighbor help and keeps the photo on the
   assert.equal(sitemap.includes('https://lgme.app/milestones'), true);
   assert.equal(sitemap.includes('https://lgme.app/campus'), true);
   assert.equal(csp.includes("img-src 'self' data: blob:"), true);
-  assert.equal(text('sw.js').includes('lgme-v102'), true);
+  assert.equal(text('sw.js').includes('lgme-v103'), true);
 });

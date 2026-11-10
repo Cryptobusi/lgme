@@ -1,5 +1,6 @@
 export const FORBIDDEN_TOPIC = '0.0.489104';
-export const HEDERA_COMING = 'Public Hedera anchoring: coming. Not written to Hedera today.';
+export const HEDERA_COMING = 'Testnet anchoring is not running yet. Nothing is written until the operator is connected. No mainnet write.';
+export const HEDERA_LIVE = 'Testnet hashes are written on a schedule. The browser queues a hash. The daily job sends it. Health data is not written. No mainnet write.';
 
 export const HEDERA_ENV = Object.freeze([
   'HEDERA_TESTNET_ANCHOR',
@@ -12,7 +13,13 @@ export function hederaReadiness(env = {}) {
   if (env.HEDERA_TESTNET_ANCHOR !== 'on') missing.push('HEDERA_TESTNET_ANCHOR=on');
   if (!String(env.HEDERA_TESTNET_OPERATOR_ID || '').trim()) missing.push('HEDERA_TESTNET_OPERATOR_ID');
   if (!String(env.HEDERA_TESTNET_OPERATOR_KEY || '').trim()) missing.push('HEDERA_TESTNET_OPERATOR_KEY');
-  return { enabled: missing.length === 0, missing, wording: HEDERA_COMING };
+  const enabled = missing.length === 0;
+  return {
+    enabled,
+    missing,
+    wording: enabled ? HEDERA_LIVE : HEDERA_COMING,
+    topicId: enabled ? String(env.HEDERA_TESTNET_TOPIC_ID || '') : ''
+  };
 }
 
 export function topicAllowed(topicId) {

@@ -1096,13 +1096,16 @@ test('a reward is minted only when the invoice is paid, and the period cap holds
   const first = await bill(400, '2026-11-08T00:00:00.000Z');
   const paid = await sim.payInvoice(store, 'dana', first.invoiceId, { at: '2026-11-08T01:00:00.000Z' });
   assert.equal(paid.ok, true, paid.error);
-  assert.equal(paid.reward, 5);
-  assert.equal(sim.replay(await store.get('dana')).balance, 600);
+  assert.equal(paid.pending, true);
+  assert.equal(paid.reward, 0);
+  assert.equal(sim.replay(await store.get('dana')).balance, 1000);
   const second = await bill(100, '2026-11-09T00:00:00.000Z');
   const again = await sim.payInvoice(store, 'dana', second.invoiceId, { at: '2026-11-09T01:00:00.000Z' });
   assert.equal(again.ok, true, again.error);
-  assert.equal(again.reward, 0);
-  assert.equal(sim.rewardTotal(await store.get('bob')), 5);
+  assert.equal(again.pending, undefined);
+  assert.equal(again.reward, 2);
+  assert.equal(sim.replay(await store.get('dana')).balance, 900);
+  assert.equal(sim.rewardTotal(await store.get('bob')), 2);
 });
 
 test('the floor blocks an invoice payment', async () => {
@@ -1359,8 +1362,10 @@ test('Install & launch hides in the app, prompts when it can, and otherwise open
     assert.equal(page.includes('Install &amp; launch'), true, file);
     assert.equal(page.includes('/js/install-launch.mjs'), true, file);
     assert.equal(page.includes('#F97316'), true, file);
-    const top = page.slice(page.indexOf('<body>'), page.indexOf('<body>') + 280);
-    assert.equal(top.includes('data-install-launch'), true, file + ' top');
+    const body = page.slice(page.indexOf('<body>'));
+    const launch = body.indexOf('data-install-launch');
+    const nav = body.indexOf('id="main-nav"');
+    assert.equal(launch > 0 && (nav < 0 || launch < nav), true, file + ' top');
   }
 });
 
@@ -1782,7 +1787,7 @@ test('DC reference values stay pending when a series has no number', () => {
   assert.equal(page.includes('id="refList"'), true);
   assert.equal(/<script(?![^>]*\bsrc=)/i.test(page), false);
   const worker = readFileSync(join(root, 'sw.js'), 'utf8');
-  assert.equal(worker.includes('lgme-v102'), true);
+  assert.equal(worker.includes('lgme-v103'), true);
   assert.equal(worker.includes('key.startsWith("lgme-v")'), true);
   assert.equal(ui.includes('the arbiter who can veto'), true);
   assert.equal(ui.includes('Public Ledger / Verified Receipt'), true);

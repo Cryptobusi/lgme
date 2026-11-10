@@ -158,7 +158,8 @@ test('the price fetch uses GeckoTerminal, then DexScreener, and blocks when neit
   assert.equal(parseGeckoPools({ data: [] }), 0);
   assert.equal(parseDexPairs({ pairs: null }), 0);
   assert.equal(QUOTE_MS, 15000);
-  const headers = JSON.parse(readFileSync(join(root, 'vercel.json'), 'utf8')).headers[1].headers[0].value;
+  const blocks = JSON.parse(readFileSync(join(root, 'vercel.json'), 'utf8')).headers;
+  const headers = blocks.flatMap((block) => block.headers).find((header) => header.key === 'Content-Security-Policy').value;
   assert.equal(headers.includes('https://api.geckoterminal.com'), true);
   assert.equal(headers.includes('https://api.dexscreener.com'), true);
   assert.equal(headers.includes(MINT), false);

@@ -9,6 +9,7 @@ export default function handler(req, res) {
     enabled: ready.enabled,
     network: 'testnet',
     missing: ready.missing,
-    wording: ready.wording
+    wording: ready.wording,
+    topicId: ready.topicId || ''
   });
 }

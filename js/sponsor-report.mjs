@@ -2,7 +2,8 @@ import { merkleProofFor, merkleRootOf, verifyMerkleProof } from './clearing.mjs'
 import { sponsorInGroup } from './covenant.mjs';
 import { replay } from './p2p-exchange-sim.mjs';
 
-export const TESTNET_TOPIC = '0.0.11397291';
+export const TESTNET_TOPIC = '0.0.11399829';
+export const LEGACY_TOPIC = '0.0.11397291';
 export const MEMBER_LIMITS = Object.freeze({ initial: -50, maximum: -200 });
 const DAY = 24 * 60 * 60 * 1000;
 

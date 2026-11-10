@@ -5427,7 +5427,17 @@ export async function payInvoice(store, payerId, invoiceId, spec = {}) {
   const beforePayer = replay(payer).balance;
   const beforeWorker = replay(worker).balance;
   const priceUsd = Number(spec.priceUsd) || 0;
-  if (!(priceUsd > 0) && figure > 100) return fail('Store the GeckoTerminal price for this $lgme entry.');
+  if (!(priceUsd > 0) && figure > 100) {
+    const hold = evaluateHold(payer.highValue || [], { id: invoiceId, fromId: payerId, toId: invoice.workerId, kind: 'usd', amount: figure, at });
+    if (!hold.ok) return fail(hold.error);
+    const suggestion = suggestThird(spec.members || [], payer, worker);
+    const record = { ...(hold.record || {}), suggestion: suggestion.text, price: 0, kind: 'lgme', amount: figure };
+    saveHigh(payer, record);
+    saveHigh(worker, record);
+    await store.set(payerId, payer);
+    await store.set(worker.id, worker);
+    return { ok: true, pending: true, paid: false, reward: 0, note: ATTESTATION_NOTE, count: hold.count || 0, suggestion: suggestion.text };
+  }
   if (priceUsd > 0) {
     const hold = evaluateHold(payer.highValue || [], { id: invoiceId, fromId: payerId, toId: invoice.workerId, kind: 'lgme', amount: figure, price: priceUsd, at });
     if (!hold.ok) return fail(hold.error);

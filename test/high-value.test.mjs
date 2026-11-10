@@ -46,7 +46,7 @@ test('three device signatures clear it, and the third name is only a suggestion'
   const parties = suggestThird([group('ada', 'admin'), group('bo', 'trainer', '2026-11-01'), group('cy', 'member')], members[0], members[1]);
   assert.equal(parties.role, 'group creator');
   let record = evaluateHold([], entry(150, 'credit')).record;
-  const keys = await Promise.all(['cy', 'dee', 'ef'].map(async (handle) => ({ handle, ...(await generateDeviceKey()) })));
+  const keys = await Promise.all(['mina', 'noor', 'otis'].map(async (handle) => ({ handle, ...(await generateDeviceKey()) })));
   for (const key of keys) {
     const payload = { action: 'attest', entryId: record.id, at };
     const sig = await signDevice(key.privateJwk, payload);

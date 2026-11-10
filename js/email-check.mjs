@@ -1,4 +1,4 @@
-const WAITING = 'Email sign-in is built, waiting on an email provider key. The code store can be Upstash or Vercel KV. Nothing is sent until RESEND_API_KEY, EMAIL_FROM, EMAIL_CODE_PEPPER, and EMAIL_CHECK=on are set. Google sign-in: later.';
+const WAITING = 'Email sign-in is coming. Nothing is sent until that step is connected. Google sign-in: later.';
 
 function line(text) {
   const p = document.createElement('p');
@@ -46,11 +46,11 @@ export async function mountEmailCheck(host) {
   verify.type = 'button';
   verify.textContent = 'Verify email';
   if (!status.enabled) {
-    note.textContent = status.missing?.length ? `${WAITING} Missing: ${status.missing.join(', ')}.` : WAITING;
+    note.textContent = WAITING;
     send.disabled = true;
     verify.disabled = true;
   } else {
-    note.textContent = 'A .edu address is the campus option. A club domain on CLUB_EMAIL_DOMAINS, or a club invite code, can mark a health-club member. Neither is required. One verified email is one member. The code expires in 10 minutes. Full KYC is not started. Google sign-in: later.';
+    note.textContent = 'A .edu address is the campus option. A club domain, or a club invite code, can mark a health-club member. Neither is required. One verified email is one member. The code expires in 10 minutes. Full identity checks are not started. Google sign-in: later.';
   }
   send.addEventListener('click', async () => {
     result.textContent = 'Sending…';

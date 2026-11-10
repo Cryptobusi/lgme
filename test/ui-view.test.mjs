@@ -1,13 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import vm from 'node:vm';
 
-const require = createRequire(import.meta.url);
-const ui = require('../js/ui-view.js');
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const sandbox = { module: { exports: {} }, exports: {}, globalThis, console };
+vm.runInNewContext(readFileSync(join(root, 'js/ui-view.js'), 'utf8'), sandbox, { filename: 'ui-view.js' });
+const ui = sandbox.module.exports;
 const text = (path) => readFileSync(join(root, path), 'utf8');
 
 function memory() {
@@ -40,7 +41,7 @@ test('the default view is classic and an unsaved visit stays put', () => {
 });
 
 test('each saved view persists and switches among classic, picture, app, and one-tap entry', () => {
-  assert.deepEqual(ui.VIEWS, {
+  assert.deepEqual({ ...ui.VIEWS }, {
     classic: '/',
     picture: '/my-picture-classic',
     app: '/my-picture',

@@ -1,4 +1,7 @@
 {
+  "crons": [
+    { "path": "/api/hedera/cron", "schedule": "0 4 * * *" }
+  ],
   "cleanUrls": true,
   "redirects": [
     { "source": "/p2p-exchange-sim", "destination": "/exchange", "statusCode": 301 },

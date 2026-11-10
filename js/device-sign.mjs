@@ -81,7 +81,7 @@ export async function sha256Hex(text) {
 }
 
 export async function intakeSharePayload(peer, priv = {}, steward = '') {
-  const share = peer?.healthConsent?.share === true;
+  const share = peer?.healthConsent?.shareName === true;
   const payload = {
     handle: peer.id,
     action: 'share',
