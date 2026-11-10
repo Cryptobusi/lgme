@@ -604,6 +604,7 @@ async function keepAgent(text) {
   if (needsPermission(saved.agent) && before === 0 && globalThis.Notification && Notification.permission === 'default') {
     try { await Notification.requestPermission(); } catch { /* permission stays unset */ }
   }
+  await arm(saved.agent);
   const note = document.createElement('p');
   note.id = 'agent-schedule';
   note.textContent = scheduleNote();
@@ -629,12 +630,26 @@ function drawAgents(list) {
   }
 }
 
+async function arm(agent) {
+  if (agent.trigger?.kind !== 'time' || typeof TimestampTrigger !== 'function' || Notification?.permission !== 'granted') return;
+  try {
+    const registration = await navigator.serviceWorker?.getRegistration('/gym');
+    await registration?.showNotification(agent.name, {
+      body: agentNotice(agent),
+      tag: agent.id,
+      showTrigger: new TimestampTrigger(agent.trigger.at)
+    });
+  } catch { /* the open page still checks the time */ }
+}
+
 async function showAgent(agent) {
   let box = document.getElementById('agent-due');
   if (!box) {
     box = document.createElement('p');
     box.id = 'agent-due';
-    document.getElementById('gym-panel')?.prepend(box);
+    const setup = document.getElementById('agent-setup');
+    if (setup) setup.prepend(box);
+    else document.getElementById('gym-panel')?.prepend(box);
   }
   box.textContent = agentNotice(agent);
   markFired(localStorage, agent.id);
