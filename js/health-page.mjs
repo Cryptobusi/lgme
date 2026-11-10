@@ -360,7 +360,10 @@ export async function personalPageView({ storage, status, go, mine, signedGym, p
     storage.setItem('lgme.health.contact', JSON.stringify({ ...keys, kind, value }));
     if (mine && code) {
       const at = new Date().toISOString();
-      await signedGym('/api/gym/presence', { handle: mine.id, action: 'presence', code, contactKey: keys.publicJwk, share: false, connect: '', at, seen: at });
+      const response = await signedGym('/api/gym/presence', { handle: mine.id, action: 'presence', code, contactKey: keys.publicJwk, share: false, connect: '', at, seen: at });
+      const body = await response.json().catch(() => ({}));
+      status(body.ok ? 'Contact saved on this phone. Only the key is shared.' : `Contact saved on this phone. ${body.error || CONTACT_NOTICE}`);
+      return;
     }
     status('Contact saved on this phone. Nothing was posted.');
   }
@@ -375,6 +378,9 @@ export async function personalPageView({ storage, status, go, mine, signedGym, p
     if (!mine || !code) { status('Join a group first.'); return; }
     const to = document.getElementById('contact-ask-who')?.value.trim() || '';
     const mineContact = readJson(storage, 'lgme.health.contact');
+    if (!lastDirect.contactKeys?.some((row) => row.handle === to)) {
+      try { lastDirect = await (await fetch(`/api/gym/presence?code=${encodeURIComponent(code)}`)).json(); } catch { /* the notice below covers it */ }
+    }
     const theirKey = (lastDirect.contactKeys || []).find((row) => row.handle === to)?.contactKey;
     if (!mineContact?.privateJwk || !theirKey) { status(CONTACT_NOTICE); return; }
     const sealed = await sealContact(mineContact.privateJwk, theirKey, { kind: mineContact.kind, value: mineContact.value });
