@@ -25,6 +25,9 @@ test('testnet anchoring stays off without an operator and refuses topic 0.0.4891
   assert.equal(source.includes('fromStringECDSA') || readFileSync(join(root, 'js/hedera-operator.mjs'), 'utf8').includes('fromStringECDSA'), true);
   assert.equal(readFileSync(join(root, 'help.html'), 'utf8').includes('No mainnet write.'), true);
   assert.equal(readFileSync(join(root, 'help.html'), 'utf8').includes('HEDERA_TESTNET_OPERATOR_ID'), false);
+  assert.equal(readFileSync(join(root, 'help.html'), 'utf8').includes('GYM_CHAT_SYNC'), false);
+  assert.equal(readFileSync(join(root, 'index.html'), 'utf8').includes('not written to Hedera today'), false);
+  assert.equal(readFileSync(join(root, 'examine.html'), 'utf8').includes('not written to Hedera today'), false);
   assert.equal(source.includes('0.0.489104'), false);
 });
 
