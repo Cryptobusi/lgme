@@ -32,13 +32,27 @@ for (const [width, height] of [[390, 844], [768, 1024], [1280, 800]]) {
     localStorage.setItem('lgme.reset.epoch', '2');
     localStorage.setItem('lgme.exchange.splashSeen', '1');
   });
-  await context.route('**/*', (route) => route.request().url().includes('fonts.g') ? route.abort() : route.continue());
+  await context.route('**/*', (route) => {
+    const url = route.request().url();
+    if (url.includes('fonts.g')) return route.abort();
+    if (url.includes('/api/hedera/status')) {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ok: true, network: 'testnet', mainnetWrites: false })
+      });
+    }
+    return route.continue();
+  });
   const page = await context.newPage();
   await page.goto(`${base}/gym`, { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => (document.querySelector('#health-anchor')?.textContent || '').includes('Hedera testnet'));
   const anchor = await page.locator('#health-anchor').innerText();
-  if (anchor !== 'Health hashes are anchored on Hedera mainnet. Health data itself is never written on chain.') failures.push(`${width} missing Health anchor`);
+  if (anchor !== 'Health hashes are anchored on Hedera testnet. Health data itself is never written on chain.') failures.push(`${width} missing testnet anchor`);
+  const gym = await page.locator('body').innerText();
+  if (/mainnet/i.test(gym)) failures.push(`${width} gym says mainnet`);
   const home = await page.goto(`${base}/`, { waitUntil: 'domcontentloaded' }).then(() => page.locator('body').innerText());
-  if (/Mainnet|mainnet/.test(home)) failures.push(`${width} homepage says mainnet`);
+  if (/mainnet/i.test(home)) failures.push(`${width} homepage says mainnet`);
   await page.goto(`${base}/gym`, { waitUntil: 'domcontentloaded' });
   await page.locator('#health-anchor').scrollIntoViewIfNeeded();
   await page.screenshot({ path: `/opt/cursor/artifacts/health-anchor-${width}.png`, timeout: 8000, animations: 'disabled' });

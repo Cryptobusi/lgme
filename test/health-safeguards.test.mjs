@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { AGE_LABEL, COLLECT_LABEL, SHARE_LABEL, deleteLocalHealth, healthConsent, mayCollect, mayShare, revokeShare } from '../js/health-safeguards.mjs';
+import { TESTNET_ANCHOR, healthAnchorLine } from '../js/health-anchor.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const text = (path) => readFileSync(join(root, path), 'utf8');
@@ -68,6 +69,15 @@ test('the notice, breach plan, and gym pages carry no ad or analytics scripts', 
   assert.equal(notice.includes('Not legal advice'), true);
   assert.equal(notice.includes('pending counsel review'), true);
   assert.equal(notice.includes('never goes on Hedera'), true);
+  assert.equal(notice.includes(TESTNET_ANCHOR), true);
+  assert.equal(notice.includes('Hedera mainnet'), false);
+  assert.equal(text('gym/index.html').includes(TESTNET_ANCHOR), true);
+  assert.equal(text('gym.html').includes(TESTNET_ANCHOR), true);
+  assert.equal(text('gym/index.html').includes('Hedera mainnet'), false);
+  assert.equal(text('gym.html').includes('Hedera mainnet'), false);
+  assert.equal(healthAnchorLine({ network: 'testnet', mainnetWrites: false }), TESTNET_ANCHOR);
+  assert.equal(healthAnchorLine({ network: 'mainnet', mainnetWrites: false }), TESTNET_ANCHOR);
+  assert.equal(healthAnchorLine({ network: 'mainnet', mainnetWrites: true }).includes('Hedera mainnet'), true);
   assert.equal(notice.includes('id="delete-health"'), true);
   assert.equal(text('js/health-safeguards.mjs').includes(AGE_LABEL), true);
   assert.equal(text('js/gym-app.mjs').includes('id: \'age-gate\''), true);
@@ -85,6 +95,6 @@ test('the notice, breach plan, and gym pages carry no ad or analytics scripts', 
   assert.equal(text('js/health-safeguards.mjs').includes(SHARE_LABEL), true);
   assert.equal(text('js/gym-app.mjs').includes('COLLECT_LABEL'), true);
   assert.equal(text('js/gym-app.mjs').includes('SHARE_LABEL'), true);
-  assert.equal(text('sw.js').includes('lgme-v167'), true);
-  assert.equal(text('sw-gym.js').includes('lgme-gym-v74'), true);
+  assert.equal(text('sw.js').includes('lgme-v168'), true);
+  assert.equal(text('sw-gym.js').includes('lgme-gym-v75'), true);
 });

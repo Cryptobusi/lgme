@@ -25,6 +25,7 @@ import { CLARIFICATIONS, COVENANT_TITLE, FIELD_LABELS, covenantHash, covenantSec
 import { LEGACY_TOPIC, TESTNET_TOPIC, creditReport, mirrorMatch, sponsorshipReady } from './sponsor-report.mjs';
 import { suggestThird } from './high-value.mjs';
 import { AGE_LABEL, COLLECT_LABEL, SHARE_LABEL, healthConsent, mayCollect, mayShare, readHealthConsent, revokeShare, writeHealthConsent } from './health-safeguards.mjs';
+import { paintHealthAnchor } from './health-anchor.mjs';
 import { addReview, approveLimitRaise, breakSplit, intakeParts, intakeStatusText, publicIntake, requestLimitRaise, reviewHash } from './intake.mjs';
 import { changeSteward, groupSteward, isGroupAdmin, isTrainer, majoritySteward, queueFor, routeSteward, setTrainer, sponsorIds, stewardEligible, trainingOffer } from './steward.mjs';
 import { deleteHelper, helperFile, loadHelper, saveHelper } from './helper-store.mjs';
@@ -2128,6 +2129,7 @@ async function boot() {
   const deviceHost = document.getElementById('device-can-host') || document.createElement('div');
   deviceHost.id = 'device-can-host';
   if (!deviceHost.parentElement) document.querySelector('header')?.append(deviceHost);
+  paintHealthAnchor().catch(() => {});
   mountDeviceCard(deviceHost).catch(() => {});
   startAgentLoop();
   window.addEventListener('hashchange', () => { render(); });

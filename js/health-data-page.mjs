@@ -1,4 +1,7 @@
 import { deleteLocalHealth } from './health-safeguards.mjs';
+import { paintHealthAnchor } from './health-anchor.mjs';
+
+paintHealthAnchor().catch(() => {});
 
 const button = document.getElementById('delete-health');
 const note = document.getElementById('delete-note');
