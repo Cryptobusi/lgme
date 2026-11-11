@@ -134,6 +134,7 @@ await signed.close();
 const offline = await boot(390, 844, member);
 const offPage = await offline.newPage();
 await offPage.goto(`${base}/`, { waitUntil: 'domcontentloaded' });
+await offPage.locator('#ai-dock').waitFor();
 await offPage.context().setOffline(true);
 await offPage.evaluate(() => window.dispatchEvent(new Event('offline')));
 await offPage.getByRole('button', { name: 'Offer', exact: true }).click();

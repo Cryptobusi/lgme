@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
+  <title>Versions · lgme</title>
+  <link rel="stylesheet" href="/site-nav.css" />
+  <link rel="stylesheet" href="/category-board.css" />
+  <script src="/js/stable-screen.js"></script>
+  <style>
+    body { margin: 0; background: #0c100c; color: #f4f1e8; font-family: Figtree, sans-serif; }
+    main { max-width: 40rem; margin: 0 auto; padding: 1rem 1rem 8rem; }
+    button { font: inherit; min-height: 48px; font-weight: 700; background: #f4f1e8; color: #1a1408; border-radius: 12px; }
+    a { color: #f4f1e8; }
+    .card { border: 1px solid #c6a15b; border-radius: 12px; padding: 0.8rem; margin: 0.6rem 0; }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="kicker"><a href="/">Categories</a> · <a href="/customize">Customize</a></p>
+    <h1>Versions</h1>
+    <p>A member who installed the app can tailor a safe setup on their phone, offer it, and after three other members attest it can become their named version. Others can install that version with one tap. The author can also offer it as a Health service. Nothing here is written on chain.</p>
+    <p id="dao-line">Until a member DAO is established, the administrator has sole right to deny.</p>
+    <h2>How it works</h2>
+    <ol>
+      <li>Open Customize. Change colors, button order, labels that keep IdidIt (verified receipt), IwantIT, and IhavIT visible, which category chips show, dock suggestions, and field help. Preview it, or reset.</li>
+      <li>Offer this version. You confirm a name, one line, and a short list of what changed.</li>
+      <li>It is a proposed version. Three other signed-in members can attest, one time each. The count shows as n of 3.</li>
+      <li>The administrator gets a copy when you propose it and again when three people have attested. They can deny it, approve it now, or leave it. If they do nothing for 72 hours after the third attestation, it is committed.</li>
+      <li>A denied version goes back to the author’s phone as a private copy. A committed version appears in the gallery below.</li>
+    </ol>
+    <h2>What is allowed</h2>
+    <p>Settings only. A theme we already ship, the order of the three actions, a few extra words, which categories appear, short suggestions, and plain help text. You cannot add HTML, JavaScript, or your own CSS. Health stays the only open category. Other categories stay browse-only.</p>
+    <h2>Privacy</h2>
+    <p>The draft stays on your phone until you confirm. The server keeps the version so others can install it. It is not written to Hedera. The owner’s private notice is not shown on this page.</p>
+    <h2 id="version-proposed-title">Proposed</h2>
+    <div id="version-proposed"></div>
+    <h2>Gallery</h2>
+    <div id="version-gallery"></div>
+  </main>
+  <script type="module" src="/js/versions-page.mjs"></script>
+  <script src="/js/site-nav.js"></script>
+</body>
+</html>

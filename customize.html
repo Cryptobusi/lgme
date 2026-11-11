@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
+  <title>Customize · lgme</title>
+  <link rel="stylesheet" href="/site-nav.css" />
+  <link rel="stylesheet" href="/category-board.css" />
+  <script src="/js/stable-screen.js"></script>
+  <style>
+    body { margin: 0; background: #0c100c; color: #f4f1e8; font-family: Figtree, sans-serif; }
+    main { max-width: 40rem; margin: 0 auto; padding: 1rem 1rem 8rem; }
+    button, input, select { font: inherit; min-height: 48px; }
+    button { font-weight: 700; }
+    #customize-preview { min-height: 12rem; margin: 0.6rem 0; padding: 0.6rem; border: 1px solid #c6a15b; border-radius: 12px; }
+    #customize-preview[data-theme="paper"] { background: #f4f1e8; color: #1a1408; }
+    #customize-preview[data-theme="gold"] { background: #241c0c; }
+    #customize-preview button { display: block; width: 100%; margin: 0.35rem 0; background: #f4f1e8; color: #1a1408; border: 2px solid #1a1408; border-radius: 12px; }
+    #customize-preview[data-theme="gold"] button { background: #c6a15b; }
+    a { color: #f4f1e8; }
+    label { display: block; margin: 0.5rem 0; }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="kicker"><a href="/gym">Health</a></p>
+    <div id="customize-root"></div>
+    <p><button type="button" id="customize-revert">Revert installed version</button></p>
+  </main>
+  <script type="module" src="/js/customize-page.mjs"></script>
+  <script src="/js/site-nav.js"></script>
+</body>
+</html>
