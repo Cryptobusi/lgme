@@ -48,7 +48,7 @@ test('Exchange listings stay on the confirmed topic and other categories are ref
   assert.equal(withinRate([1, 2, 3, 4, 5, 6, 7, 8, 9], 11, 10).ok, true);
   const api = readFileSync(join(root, 'api/hedera/listings.mjs'), 'utf8');
   assert.equal(api.includes('submitPaidListing'), true);
-  assert.equal(api.includes('Only Health is written to the test network.'), true);
+  assert.equal(api.includes('Only Health can be written. An IwanIT in development is posted on the Health board.'), true);
   assert.equal(readFileSync(join(root, 'js/exchange-listing.mjs'), 'utf8').includes(LISTINGS_TOPIC), true);
   assert.equal(readFileSync(join(root, 'js/hedera-submit.mjs'), 'utf8').includes('LISTINGS_OPERATOR'), true);
   assert.equal(readFileSync(join(root, 'exchange.html'), 'utf8').includes('/js/view-only.js'), false);

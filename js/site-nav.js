@@ -1,4 +1,60 @@
 (function () {
+  var EPOCH = '2';
+  var CURRENT = { 'lgme-v162': 1, 'lgme-gym-v72': 1 };
+  function keep(name) {
+    if (!name) return true;
+    if (name === 'lgme.reset.epoch' || name === 'lgme.reset.note' || name === 'lgme.device.key' || name === 'lgme-gym.seat' || name === 'lgme.health.book' || name === 'lgme.health.email' || name === 'lgme.health.plan' || name === 'lgme.health.contact' || name === 'lgme.health.contactGrants') return true;
+    return name.indexOf('lgme-sim:peer:') === 0 || name.indexOf('lgme.health.page:') === 0;
+  }
+  function arm() {
+    try {
+      var names = [];
+      for (var i = 0; i < localStorage.length; i += 1) names.push(localStorage.key(i));
+      names.forEach(function (name) { if (!keep(name)) localStorage.removeItem(name); });
+      sessionStorage.clear();
+      localStorage.setItem('lgme.reset.epoch', EPOCH);
+      localStorage.setItem('lgme.reset.note', '1');
+    } catch (error) { /* a private window still loads */ }
+    var jobs = [];
+    if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+      jobs.push(navigator.serviceWorker.getRegistrations().then(function (regs) {
+        return Promise.all(regs.map(function (reg) { return reg.unregister(); }));
+      }).catch(function () {}));
+    }
+    if (window.caches && caches.keys) {
+      jobs.push(caches.keys().then(function (keys) {
+        return Promise.all(keys.map(function (key) { return caches.delete(key); }));
+      }).catch(function () {}));
+    }
+    var keepDb = { 'lgme-health-page': 1, 'lgme-tile-photo': 1, 'lgme-sim-vault': 1, 'lgme-device-profile': 1 };
+    if (window.indexedDB && indexedDB.databases) {
+      jobs.push(indexedDB.databases().then(function (rows) {
+        return Promise.all((rows || []).map(function (row) {
+          if (!row || !row.name || keepDb[row.name]) return Promise.resolve();
+          return new Promise(function (resolve) {
+            var req = indexedDB.deleteDatabase(row.name);
+            req.onsuccess = req.onerror = req.onblocked = function () { resolve(); };
+          });
+        }));
+      }).catch(function () {}));
+    }
+    Promise.all(jobs).then(function () { location.reload(); });
+  }
+  var epoch = '';
+  try { epoch = localStorage.getItem('lgme.reset.epoch') || ''; } catch (error) { epoch = EPOCH; }
+  if (epoch && epoch !== EPOCH) { arm(); return; }
+  if (!epoch) {
+    var controlled = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
+    if (controlled) { arm(); return; }
+    if (window.caches && caches.keys) {
+      caches.keys().then(function (keys) {
+        if ((keys || []).some(function (key) { return !CURRENT[key]; })) arm();
+        else { try { localStorage.setItem('lgme.reset.epoch', EPOCH); } catch (error) {} }
+      }).catch(function () { try { localStorage.setItem('lgme.reset.epoch', EPOCH); } catch (error) {} });
+    } else {
+      try { localStorage.setItem('lgme.reset.epoch', EPOCH); } catch (error) {}
+    }
+  }
   var bar = document.getElementById('site-nav');
   if (!bar) {
     var link = document.createElement('link');

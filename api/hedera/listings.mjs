@@ -253,8 +253,18 @@ export default async function handler(req, res) {
   if (!categoryOpen(payload.category || 'exchange')) {
     return json(res, 403, { ok: false, viewOnly: true, error: VIEW_ONLY_MESSAGE });
   }
-  if (!fee && String(built.body.category || payload.category || '').toLowerCase() !== 'health') {
-    return json(res, 403, { ok: false, localOnly: true, error: 'Saved on this device. Only Health is written to the test network.' });
+  if (!fee) {
+    const category = String(built.body.category || payload.category || '').toLowerCase();
+    const kind = String(payload.kind || '').toLowerCase();
+    const inDev = payload.inDevelopment === true;
+    if (kind === 'iwanit' && inDev) {
+      built.body.category = 'health';
+      built.body.inDevelopment = true;
+      built.body.label = 'In development';
+      built.body.targetCategory = String(payload.targetCategory || payload.category || '');
+    } else if (category !== 'health') {
+      return json(res, 403, { ok: false, error: 'Only Health can be written. An IwanIT in development is posted on the Health board.' });
+    }
   }
   const signed = await verifyDevice(body.publicJwk, payload, body.sig);
   if (!signed || payload.handle !== body.handle) return json(res, 401, { ok: false, error: 'The device signature was refused.' });

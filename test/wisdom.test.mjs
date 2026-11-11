@@ -93,7 +93,7 @@ test('the wisdom page carries the maxims, the checklist, and the empty daily fil
   assert.equal(help.includes('5% to the Floor and 5% to the App development fund'), true);
   assert.equal(glossary.includes('Sober Poverty'), true);
   assert.equal(glossary.includes('App development fund'), true);
-  assert.equal(worker.includes('lgme-v161'), true);
+  assert.equal(worker.includes('lgme-v162'), true);
   assert.equal(worker.includes('/data/wisdom-excerpts.json'), true);
   assert.equal(text('js/p2p-exchange-sim-ui.mjs').match(/fetch\(/g).length, 8);
   assert.equal(text('health-club.html').includes('The gift clears its own ledger'), true);

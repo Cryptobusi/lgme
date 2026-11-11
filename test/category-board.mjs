@@ -66,7 +66,7 @@ await page.route('**/*', (route) => route.request().url().startsWith(base) ? rou
 try {
   await page.goto(`${base}/?picker=1`, { waitUntil: 'domcontentloaded' });
   const badges = await page.locator('.entry-picker .badge').evaluateAll((nodes) => nodes.map((node) => node.textContent.trim()));
-  assert(badges[0] === 'Beta' && badges.slice(1).every((badge) => badge === 'Early'), badges.join('|'));
+  assert(badges[0] === 'Beta' && badges.slice(1).every((badge) => badge === 'In development'), badges.join('|'));
   assert((await page.content()).includes('mailto:') === false, 'mailto on the home screen');
   assert((await page.content()).includes('cryptovanities') === false, 'address on the home screen');
   for (const name of names) {

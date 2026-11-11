@@ -57,7 +57,13 @@ html.has-site-nav body:has(nav[aria-label="Gym"]) { padding-bottom: calc(17rem +
   overflow: visible;
 }
 body:has(nav[aria-label="Gym"]) #ai-dock { bottom: calc(4.5rem + env(safe-area-inset-bottom)); }
-.ai-label { margin: 0 0 0.15rem; font-size: 0.72rem; letter-spacing: 0.16em; font-weight: 700; color: #F97316; }
+.ai-top { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.6rem; margin: 0 0 0.15rem; }
+.ai-label { margin: 0; font-size: 0.72rem; letter-spacing: 0.16em; font-weight: 700; color: #F97316; }
+.ai-setup-link { min-height: 44px; display: inline-flex; align-items: center; color: #f4f1e8; }
+#app-reset-note { margin: 0 0 0.2rem; font-weight: 700; }
+#ai-dock.is-off #ai-log,
+#ai-dock.is-off #ai-flag,
+#ai-dock.is-off .ai-actions { display: none; }
 #ai-flag { margin: 0 0 0.2rem; font-size: 0.82rem; line-height: 1.3; }
 #ai-log {
   box-sizing: content-box;

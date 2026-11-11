@@ -21,7 +21,7 @@ test('only Health stays writable and every opening tile has a name', () => {
   for (const name of ['Campus', 'Neighbor help', 'Hosts', 'Circles', 'Stories', 'Exchange']) {
     assert.equal(home.includes(`<span class="tile-name">${name}</span>`), true, name);
     assert.equal(home.includes(`href="/develop?category=${encodeURIComponent(name)}"`), true, name);
-    assert.equal(home.includes('<span class="badge">Early</span>'), true);
+    assert.equal(home.includes('<span class="badge">In development</span>'), true);
   }
   assert.equal(home.includes('mailto:'), false);
   assert.equal(home.includes('cryptovanities@gmail.com'), false);
@@ -42,5 +42,5 @@ test('only Health stays writable and every opening tile has a name', () => {
   assert.equal(text('api/hedera/topic.mjs').includes('VIEW_ONLY_MESSAGE'), true);
   assert.equal(text('api/hedera/queue.mjs').includes('healthWrite'), true);
   assert.equal(text('api/gym/dispute.mjs').includes('VIEW_ONLY_MESSAGE'), false);
-  assert.equal(text('sw.js').includes('lgme-v161'), true);
+  assert.equal(text('sw.js').includes('lgme-v162'), true);
 });

@@ -121,7 +121,7 @@ await signedPage.screenshot({ path: '/opt/cursor/artifacts/ai-flag-390.png', tim
 posts.length = 0;
 await signedPage.getByRole('button', { name: 'Offer', exact: true }).click();
 await signedPage.locator('#demo-confirm').click();
-await signedPage.locator('#demo-saved').waitFor();
+await signedPage.locator('#browse-only').waitFor();
 if (posts.some((path) => path.startsWith('/api/hedera') || path === '/api/develop/want')) failures.push(`local offer wrote ${posts.join(',')}`);
 await signedPage.screenshot({ path: '/opt/cursor/artifacts/local-listing-390.png', timeout: 8000, animations: 'disabled' });
 posts.length = 0;

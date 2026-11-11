@@ -59,9 +59,10 @@ form.addEventListener('submit', async (event) => {
   if (confirm.dataset.busy === '1') return;
   confirm.dataset.busy = '1';
   confirm.disabled = true;
+  const target = document.getElementById('want-category').value;
   const payload = {
     kind: 'IwanIT',
-    category: document.getElementById('want-category').value,
+    category: target,
     title: document.getElementById('want-title').value,
     body: document.getElementById('want-body').value,
     skill: document.getElementById('want-skill').value,
@@ -89,7 +90,7 @@ form.addEventListener('submit', async (event) => {
   });
   const body = await response.json().catch(() => ({}));
   status.textContent = body.ok
-    ? `Posted. ${body.item?.title || payload.title}. Testnet only.`
+    ? `Posted on the Health board. In development. ${body.item?.target || payload.category}.`
     : (body.error || 'Nothing was posted.');
   if (!body.ok) {
     confirm.disabled = false;

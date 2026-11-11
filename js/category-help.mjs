@@ -3,12 +3,12 @@ export const DEV_TEAM_HREF = '/hosts#dev-interest';
 
 export const CATEGORIES = Object.freeze([
   { id: 'health', name: 'Health', href: '/gym', badge: 'Beta' },
-  { id: 'campus', name: 'Campus', href: '/campus', badge: 'Early' },
-  { id: 'neighbor', name: 'Neighbor help', href: '/neighbors', badge: 'Early' },
-  { id: 'hosts', name: 'Hosts', href: '/hosts', badge: 'Early' },
-  { id: 'circles', name: 'Circles', href: '/circles', badge: 'Early' },
-  { id: 'stories', name: 'Stories', href: '/stories', badge: 'Early' },
-  { id: 'exchange', name: 'Exchange', href: '/exchange', badge: 'Early' }
+  { id: 'campus', name: 'Campus', href: '/campus', badge: 'In development' },
+  { id: 'neighbor', name: 'Neighbor help', href: '/neighbors', badge: 'In development' },
+  { id: 'hosts', name: 'Hosts', href: '/hosts', badge: 'In development' },
+  { id: 'circles', name: 'Circles', href: '/circles', badge: 'In development' },
+  { id: 'stories', name: 'Stories', href: '/stories', badge: 'In development' },
+  { id: 'exchange', name: 'Exchange', href: '/exchange', badge: 'In development' }
 ]);
 
 const OPEN = new Set([

@@ -193,9 +193,9 @@ await flowPage.evaluate(() => {
   button.click();
   button.click();
 });
-await flowPage.locator('.demo-badge').first().waitFor();
+await flowPage.locator('#browse-only').waitFor();
 const posts = await flowPage.evaluate(() => JSON.parse(localStorage.getItem('lgme.demo.posts') || '[]').length);
-if (posts !== 1) failures.push(`double confirm saved ${posts}`);
+if (posts !== 0) failures.push(`double confirm saved ${posts}`);
 await flow.close();
 
 await browser.close();

@@ -26,6 +26,14 @@ export default async function handler(req, res) {
   }
   const redis = redisRest(env);
   const store = redis.configured ? upstashStore(redis.url, redis.token) : memory;
+  const url = new URL(req.url || '/', 'http://localhost');
+  if (req.method === 'GET' && url.searchParams.get('board') === '1') {
+    const notices = await listHelpWants(store);
+    return json(res, 200, {
+      ok: true,
+      items: notices.map((notice) => ({ category: 'Health', label: 'In development', target: notice.category, title: notice.title }))
+    });
+  }
   if (req.method === 'GET') {
     if (!admin(req, env)) return json(res, 401, { ok: false, error: 'The owner inbox needs the admin token.' });
     const notices = await listHelpWants(store);
@@ -41,7 +49,7 @@ export default async function handler(req, res) {
     ok: true,
     duplicate: result.duplicate === true,
     notified: result.notified === true,
-    item: { kind: 'IwanIT', category: result.item.category, title: result.item.title, at: result.item.at },
+    item: { kind: 'IwanIT', category: 'Health', target: result.item.category, label: 'In development', title: result.item.title, at: result.item.at },
     notice: result.notice
   });
 }

@@ -21,6 +21,9 @@ export function pickHelperSync(scope = globalThis, storage = scope.localStorage)
   const nav = scope.navigator || {};
   const unavailable = { id: 'unavailable', ready: false, note: helperNote('none') };
   if (nav.lgmeAi === 'off' || nav.lgmeAi === 'app') return unavailable;
+  try {
+    if (storage?.getItem('lgme.ai.enabled') === '0') return { id: 'unavailable', ready: false, note: 'AI is off on this device.' };
+  } catch { /* the switch still shows */ }
   if (hasBrowser(browserApi(scope))) return { id: 'browser', ready: true, note: helperNote('browser') };
   try {
     if (storage?.getItem('lgme.localModel.ready') === '1') return { id: 'model', ready: true, note: helperNote('model') };

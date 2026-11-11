@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Turn on AI · lgme</title>
+  <meta name="description" content="How to turn on the on-device helper in this browser." />
+  <link rel="stylesheet" href="/site-nav.css" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&display=swap" />
+  <style>
+    body { margin: 0 auto; max-width: 40rem; padding: 1rem 1rem 8rem; background: #0c100c; color: #f4f1e8; font-family: Figtree, sans-serif; font-size: 1.05rem; line-height: 1.45; }
+    h1 { font-size: 1.8rem; line-height: 1.1; }
+    ol { padding-left: 1.2rem; }
+    li { margin: 0.4rem 0; }
+    button { min-height: 44px; min-width: 44px; font: inherit; font-weight: 700; border-radius: 999px; border: 1px solid #c6a15b; background: transparent; color: #f4f1e8; padding: 0.4rem 0.9rem; }
+    #ai-check-status { min-height: 1.4em; }
+  </style>
+</head>
+<body>
+  <p class="kicker">On this device</p>
+  <h1 id="ai-setup-title">Turn on AI</h1>
+  <p id="ai-setup-lead">The helper drafts on this device. It does not post for you.</p>
+  <ol id="ai-setup-steps"></ol>
+  <p><button type="button" id="ai-check">Check again</button></p>
+  <p id="ai-check-status" role="status"></p>
+  <script type="module" src="/js/ai-setup-page.mjs"></script>
+  <script src="/js/site-nav.js"></script>
+</body>
+</html>

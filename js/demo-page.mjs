@@ -1,4 +1,4 @@
-import { CHOICES, DISCLAIMER, countByCategory, draftFor, examplePosts, markSeen, newSince, readDemo, readPosts, readSeen, saveDemo, savePost } from './demo-onboard.mjs';
+import { CHOICES, DISCLAIMER, countByCategory, draftFor, examplePosts, markSeen, newSince, readDemo, readPosts, readSeen, saveDemo } from './demo-onboard.mjs';
 import { AI_ENABLE, deviceContext, draftWithHelper, localAiReady, pickHelperSync, showHelperNote } from './one-tap.mjs';
 import { ensureDeviceKey } from './device-sign.mjs';
 
@@ -69,8 +69,7 @@ function paintHome() {
     });
     host.append(badge);
   }
-  const mine = readPosts(localStorage)[0];
-  root.replaceChildren(mine && mine.where === 'device' ? el('p', { id: 'demo-saved' }, ['Saved on this device.']) : el('span', { id: 'demo-home-note' }, ['']));
+  root.replaceChildren(el('span', { id: 'demo-home-note' }, ['']));
 }
 
 function begin(choice) {
@@ -127,21 +126,24 @@ function paintGuide() {
     state.busy = true;
     confirm.disabled = true;
     const raw = String(ctx.category || '').toLowerCase();
-    const named = { campus: 'Campus', exchange: 'Exchange', neighbor: 'Neighbor help', hosts: 'Hosts', circles: 'Circles', stories: 'Stories' }[raw] || 'Exchange';
-    const post = { id: `me-${Date.now()}`, category: state.choice === 'Health' ? 'Health' : named, title: title.value, at: new Date().toISOString(), example: false };
-    if (state.choice !== 'Browse' && state.choice !== 'Health' && state.choice !== 'IwanIT help develop') savePost(localStorage, { ...post, where: 'device' });
-    if (state.choice === 'IwanIT help develop') {
-      await fetch('/api/develop/want', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ kind: 'IwanIT', category: 'Health', title: title.value, body: body.value, skill: '', time: '' })
-      }).catch(() => {});
-    }
+    const named = { campus: 'Campus', exchange: 'Exchange', neighbor: 'Neighbor help', hosts: 'Hosts', circles: 'Circles', stories: 'Stories', health: 'Health' }[raw] || 'Health';
     saveDemo(localStorage, { choice: state.choice });
     writePending(null);
     if (state.choice === 'Health') { location.assign('/gym#/start'); return; }
+    if (state.choice === 'IwanIT help develop') {
+      const target = named;
+      await fetch('/api/develop/want', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ kind: 'IwanIT', category: target, title: title.value, body: body.value, skill: '', time: '' })
+      }).catch(() => {});
+      state.step = 'home';
+      paintHome();
+      return;
+    }
     state.step = 'home';
     paintHome();
+    root.replaceChildren(el('p', { id: 'browse-only' }, ['Only Health can list, trade, or record a receipt. Other categories are in development. Use IwanIT to take part.']));
   });
   root.replaceChildren(el('section', { id: 'demo-guide' }, [
     note,
