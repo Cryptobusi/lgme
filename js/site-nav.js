@@ -44,15 +44,13 @@
   try { epoch = localStorage.getItem('lgme.reset.epoch') || ''; } catch (error) { epoch = EPOCH; }
   if (epoch && epoch !== EPOCH) { arm(); return; }
   if (!epoch) {
+    try { localStorage.setItem('lgme.reset.epoch', EPOCH); } catch (error) { /* private mode */ }
     var controlled = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
     if (controlled) { arm(); return; }
     if (window.caches && caches.keys) {
       caches.keys().then(function (keys) {
         if ((keys || []).some(function (key) { return !CURRENT[key]; })) arm();
-        else { try { localStorage.setItem('lgme.reset.epoch', EPOCH); } catch (error) {} }
-      }).catch(function () { try { localStorage.setItem('lgme.reset.epoch', EPOCH); } catch (error) {} });
-    } else {
-      try { localStorage.setItem('lgme.reset.epoch', EPOCH); } catch (error) {}
+      }).catch(function () {});
     }
   }
   var bar = document.getElementById('site-nav');
