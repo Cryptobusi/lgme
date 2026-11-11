@@ -32,7 +32,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const text = (path) => readFileSync(join(root, path), 'utf8');
 
 const UNTOUCHED = {
-  'exchange.html': '57d3122805c297e9a76b1bed2664de660fe637a0436b20972def62119046802a',
+  'exchange.html': '4dbeaad55bdce2c98eace6f12cfb5db18b56968159180bf0b572568725e7501f',
   'js/p2p-exchange-sim.mjs': '30c24d75e8dca4d0a5427ba1176b13f192cd27d2ef4f2f709ab7c82449b4087c',
   'js/p2p-exchange-sim-ui.mjs': '7d16e6b151b3ee2ed136bbe283afc410719da1eeeac03dde73aa6f38e11c0f58',
   'js/solana-pay.mjs': '91696ed805cb43bca35734dbfbac1f70ea002a4d0c4398393e7df5cf0de976d5',

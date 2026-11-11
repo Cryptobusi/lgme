@@ -73,6 +73,22 @@
     .badge { display:inline-block; margin-left:0.35rem; font-size:0.68rem; font-weight:600; letter-spacing:0.04em; text-transform:uppercase; border-radius:999px; padding:0.12rem 0.45rem; vertical-align:middle; }
     .badge-verified { background:#F97316; color:#1c1b19; }
     .badge-unverified { background:transparent; color:var(--accent-text); border:1px solid #F97316; }
+    .overview-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin:0.6rem 0; }
+    .overview-tile, .overview-flow a { display:block; min-height:44px; text-decoration:none; color:var(--fg); background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:0.65rem 0.7rem; }
+    .overview-num { margin:0.15rem 0; font-size:1.35rem; font-weight:600; color:var(--fg); }
+    .overview-bars { display:none; width:100%; height:18px; margin-top:0.35rem; color:var(--faint); }
+    .overview-bars .bar-test { fill:var(--accent-text); }
+    .overview-bars .bar-claimed { fill:var(--ok); }
+    .overview-bars .bar-real { fill:var(--fg); }
+    .overview-flow { display:grid; grid-template-columns:1fr 1fr; gap:0.4rem; margin:0.5rem 0; }
+    .overview-flow a { display:grid; align-content:center; }
+    .overview-timeline { margin:0.4rem 0 0; padding-left:1.1rem; }
+    .overview-timeline a { color:var(--accent-text); }
+    @media (min-width:800px) {
+      .overview-grid { grid-template-columns:repeat(4, minmax(0, 1fr)); }
+      .overview-flow { grid-template-columns:repeat(4, minmax(0, 1fr)); }
+      .overview-bars { display:block; }
+    }
     table.gloss { width:100%; border-collapse:collapse; margin:0.6rem 0 1rem; }
     table.gloss th, table.gloss td { text-align:left; vertical-align:top; padding:0.6rem 0.4rem; border-bottom:1px solid var(--line); }
     table.gloss th { font-size:0.78rem; }
@@ -219,6 +235,7 @@
     </nav>
     <p class="kicker">lgme · BETA <button type="button" id="deep-theory" data-deep-theory aria-pressed="false">Deep theory</button> <button type="button" id="install-app" data-install hidden>Install</button> <a class="quiet-link" href="#help">Help</a></p>
     <h1>Exchange</h1>
+    <section id="exchange-overview" class="card" aria-label="Exchange status"></section>
     <section id="exchange-test" class="card"></section>
     <p class="muted"><a href="/helper">Set up my own AI helper</a></p>
     <p class="muted lede">Beta. List an item, sign an offer, and settle real $lgme from your own Solana wallet. Each person keeps their own book. A floor stays senior, and a refusal moves nothing.</p>
@@ -266,6 +283,7 @@
   <script src="/js/vendor/jsQR.js"></script>
   <script type="module" src="/js/p2p-exchange-sim-ui.mjs"></script>
   <script type="module" src="/js/exchange-test-page.mjs"></script>
+  <script type="module" src="/js/exchange-overview-ui.mjs"></script>
   <script type="module" src="/js/personal-images-apply.mjs"></script>
 </body>
 </html>
