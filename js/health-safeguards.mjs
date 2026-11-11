@@ -3,6 +3,23 @@ export const COLLECT_LABEL = 'Collect my own workout and health info on this dev
 export const SHARE_LABEL = 'Share selected progress with people I choose';
 export const NOTICE_PATH = '/gym/health-data';
 export const BREACH_PATH = '/gym/breach-plan';
+export const CONSENT_KEY = 'lgme.health.consent';
+
+export function readHealthConsent(storage) {
+  try {
+    const saved = JSON.parse(storage.getItem(CONSENT_KEY) || 'null');
+    if (!saved || typeof saved !== 'object') return null;
+    return { adult: saved.adult === true, collect: saved.collect === true, share: saved.share === true };
+  } catch {
+    return null;
+  }
+}
+
+export function writeHealthConsent(storage, consent = {}) {
+  const next = { adult: consent.adult === true, collect: consent.collect === true, share: consent.share === true, at: new Date().toISOString() };
+  storage.setItem(CONSENT_KEY, JSON.stringify(next));
+  return next;
+}
 
 const HEALTH_PREFIXES = [
   'lgme-sim:peer:',

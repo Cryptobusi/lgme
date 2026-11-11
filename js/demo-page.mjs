@@ -1,4 +1,5 @@
 import { CHOICES, DISCLAIMER, countByCategory, draftFor, examplePosts, markSeen, newSince, readDemo, readPosts, readSeen, saveDemo } from './demo-onboard.mjs';
+import { COLLECT_LABEL, SHARE_LABEL, readHealthConsent, writeHealthConsent } from './health-safeguards.mjs';
 import { AI_ENABLE, deviceContext, draftWithHelper, localAiReady, pickHelperSync, showHelperNote } from './one-tap.mjs';
 import { ensureDeviceKey } from './device-sign.mjs';
 
@@ -181,6 +182,12 @@ function paintDisclaimer() {
     const pending = readPending();
     const choice = state.choice || pending?.choice || '';
     saveDemo(localStorage, { disclaimer: true });
+    const prior = readHealthConsent(localStorage);
+    if (choice === 'Health' && prior?.adult !== true) {
+      writePending({ step: 'health', choice, returnTo: pending?.returnTo || '' });
+      paintHealthConsent();
+      return;
+    }
     writePending(null);
     if (pending?.returnTo && pending.returnTo.startsWith('/')) {
       location.assign(pending.returnTo);
@@ -198,7 +205,46 @@ function paintDisclaimer() {
     el('h2', {}, ['Demo']),
     ...DISCLAIMER.map((line) => el('p', {}, [line])),
     el('p', {}, [el('a', { href: '/disclaimer' }, ['Live beta v.5 disclaimer'])]),
+    state.choice === 'Health' ? el('p', {}, [el('a', { href: '/gym/health-data' }, ['Health data notice'])]) : el('span', {}, ['']),
     button
+  ]));
+}
+
+function paintHealthConsent() {
+  const collect = el('input', { type: 'checkbox', id: 'collect-health' });
+  const share = el('input', { type: 'checkbox', id: 'share-health' });
+  const status = el('p', { id: 'health-consent-status', role: 'status' });
+  const note = el('p', { id: 'health-consent-note' }, ['Health notes stay on this phone. Only a hash can leave, and only after you confirm a Health step.']);
+  const button = el('button', { type: 'button', class: 'primary', id: 'age-confirm' }, ['I am 18 or older']);
+  button.addEventListener('click', () => {
+    if (collect.checked !== true) {
+      status.textContent = 'Check the box to keep health notes on this phone, or leave Health.';
+      return;
+    }
+    writeHealthConsent(localStorage, { adult: true, collect: true, share: share.checked === true });
+    const pending = readPending();
+    writePending(null);
+    if (pending?.returnTo && pending.returnTo.startsWith('/')) {
+      location.assign(pending.returnTo);
+      return;
+    }
+    state.choice = 'Health';
+    paintGuide();
+  });
+  draftWithHelper(pickHelperSync(), {
+    template: note.textContent,
+    prompt: 'One short sentence: health notes stay on this phone until the person confirms.',
+    scope: window
+  }).then((result) => { if (result.text) note.textContent = result.text; });
+  root.replaceChildren(el('section', { id: 'health-consent' }, [
+    el('h2', {}, ['Health']),
+    note,
+    el('label', { class: 'check', for: 'collect-health' }, [collect, ` ${COLLECT_LABEL}`]),
+    el('label', { class: 'check', for: 'share-health' }, [share, ` ${SHARE_LABEL}`]),
+    el('p', {}, ['Sharing stays off unless you check it. You can turn it off later in Health settings.']),
+    el('p', {}, [el('a', { href: '/gym/health-data' }, ['Health data notice']), ' · ', el('a', { href: '/gym/breach-plan' }, ['Report a problem'])]),
+    button,
+    status
   ]));
 }
 
@@ -283,6 +329,9 @@ if (pending?.step === 'code' && pending.email) {
   state.email = pending.email;
   state.choice = pending.choice || '';
   paintCode();
+} else if (pending?.step === 'health' && pending.choice === 'Health') {
+  state.choice = 'Health';
+  paintHealthConsent();
 } else if (member?.disclaimer === false) {
   state.choice = pending?.choice || '';
   paintDisclaimer();

@@ -1,9 +1,9 @@
 (function () {
   var EPOCH = '2';
-  var CURRENT = { 'lgme-v164': 1, 'lgme-gym-v72': 1 };
+  var CURRENT = { 'lgme-v165': 1, 'lgme-gym-v73': 1 };
   function keep(name) {
     if (!name) return true;
-    if (name === 'lgme.reset.epoch' || name === 'lgme.reset.note' || name === 'lgme.device.key' || name === 'lgme-gym.seat' || name === 'lgme.health.book' || name === 'lgme.health.email' || name === 'lgme.health.plan' || name === 'lgme.health.contact' || name === 'lgme.health.contactGrants') return true;
+    if (name === 'lgme.reset.epoch' || name === 'lgme.reset.note' || name === 'lgme.device.key' || name === 'lgme-gym.seat' || name === 'lgme.health.book' || name === 'lgme.health.email' || name === 'lgme.health.plan' || name === 'lgme.health.contact' || name === 'lgme.health.contactGrants' || name === 'lgme.health.consent') return true;
     return name.indexOf('lgme-sim:peer:') === 0 || name.indexOf('lgme.health.page:') === 0;
   }
   function arm() {

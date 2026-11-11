@@ -24,7 +24,7 @@ import { STARTERS, agentNotice, deleteAgent, dueAgents, editAgent, listAgents, m
 import { CLARIFICATIONS, COVENANT_TITLE, FIELD_LABELS, covenantHash, covenantSections, covenantText, exitReceipt, openCommitments, publicCovenant, signSponsor, sponsorStatus, velocityNote } from './covenant.mjs';
 import { LEGACY_TOPIC, TESTNET_TOPIC, creditReport, mirrorMatch, sponsorshipReady } from './sponsor-report.mjs';
 import { suggestThird } from './high-value.mjs';
-import { AGE_LABEL, COLLECT_LABEL, SHARE_LABEL, healthConsent, mayCollect, mayShare, revokeShare } from './health-safeguards.mjs';
+import { AGE_LABEL, COLLECT_LABEL, SHARE_LABEL, healthConsent, mayCollect, mayShare, readHealthConsent, revokeShare, writeHealthConsent } from './health-safeguards.mjs';
 import { addReview, approveLimitRaise, breakSplit, intakeParts, intakeStatusText, publicIntake, requestLimitRaise, reviewHash } from './intake.mjs';
 import { changeSteward, groupSteward, isGroupAdmin, isTrainer, majoritySteward, queueFor, routeSteward, setTrainer, sponsorIds, stewardEligible, trainingOffer } from './steward.mjs';
 import { deleteHelper, helperFile, loadHelper, saveHelper } from './helper-store.mjs';
@@ -1016,6 +1016,7 @@ function healthSettings(peer) {
         shareName: shareName.checked === true
       };
       if (!fresh.healthConsent.share) fresh = revokeShare(fresh);
+      writeHealthConsent(localStorage, fresh.healthConsent);
       await store.set(peer.id, fresh);
       status(fresh.healthConsent.share ? 'Sharing is on for the categories you pick.' : 'Sharing is off.');
       render();
@@ -1286,6 +1287,14 @@ async function renderRegister() {
     return box;
   }
   if (signup.step === 0) signup.step = 1;
+  if (signup.step === 1 && signup.adult !== true) {
+    const prior = readHealthConsent(localStorage);
+    if (prior?.adult === true && prior.collect === true) {
+      signup.adult = true;
+      signup.collect = true;
+      signup.share = prior.share === true;
+    }
+  }
   if (signup.step === 1 && signup.adult !== true) {
     box.append(ageGateCard(invite));
     box.append(el('p', { id: 'gym-status', role: 'status' }, []));

@@ -31,7 +31,7 @@ test('the reset keeps health records and signing keys', () => {
   assert.equal(box.getItem('lgme.health.page:ada').includes('kept'), true);
   assert.equal(shouldReset({ epoch: '1' }), true);
   assert.equal(shouldReset({ epoch: '', controlled: true }), true);
-  assert.equal(shouldReset({ epoch: '', caches: ['lgme-v161'] }, ['lgme-v162', 'lgme-gym-v72']), true);
+  assert.equal(shouldReset({ epoch: '', caches: ['lgme-v161'] }, ['lgme-v162', 'lgme-gym-v73']), true);
   assert.equal(shouldReset({ epoch: RESET_EPOCH, caches: ['lgme-v161'] }, ['lgme-v162']), false);
   assert.equal(shouldReset({ epoch: '', caches: [] }, ['lgme-v162']), false);
 });
@@ -55,5 +55,5 @@ test('the shell bumps the reset epoch and refuses a non-health write', () => {
   assert.equal(nav.includes("var EPOCH = '2'"), true);
   assert.equal(nav.includes('lgme.device.key'), true);
   assert.equal(nav.includes('lgme-sim:peer:'), true);
-  assert.equal(readFileSync(join(root, 'sw.js'), 'utf8').includes('lgme-v164'), true);
+  assert.equal(readFileSync(join(root, 'sw.js'), 'utf8').includes('lgme-v165'), true);
 });
