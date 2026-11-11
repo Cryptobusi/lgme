@@ -263,7 +263,17 @@ async function helper(view) {
   await page.waitForSelector('#turn-on-helper');
   await page.locator('#turn-on-helper').click();
   await page.waitForURL(/\/gym/, { timeout: 8000 });
-  assert(await page.evaluate(() => localStorage.getItem('lgme.localAi')) === 'on', 'helper did not turn on');
+  let turned = '';
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      turned = await page.evaluate(() => localStorage.getItem('lgme.localAi'));
+      break;
+    } catch (error) {
+      if (attempt === 2 || !/destroyed|navigation/.test(error.message)) throw error;
+      await page.waitForLoadState('domcontentloaded');
+    }
+  }
+  assert(turned === 'on', 'helper did not turn on');
   await page.context().close();
 }
 
