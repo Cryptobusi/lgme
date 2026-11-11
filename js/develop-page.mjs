@@ -72,8 +72,10 @@ form.addEventListener('submit', async (event) => {
   }
   rememberContext(localStorage, { skill: payload.skill, time: payload.time, category: payload.category, handle: context.handle });
   if (!signedIn()) {
-    sessionStorage.setItem(RETURN_KEY, `${location.pathname}${location.search}`);
-    location.assign('/gym#/register');
+    const back = `${location.pathname}${location.search}`;
+    sessionStorage.setItem(RETURN_KEY, back);
+    sessionStorage.setItem('lgme.demo.pending', JSON.stringify({ step: 'email', choice: 'IwanIT help develop', returnTo: back }));
+    location.assign('/?home=1');
     return;
   }
   const response = await fetch('/api/develop/want', {

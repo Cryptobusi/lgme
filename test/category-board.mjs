@@ -87,8 +87,8 @@ try {
   await page.locator('#want-confirm').scrollIntoViewIfNeeded();
   await page.screenshot({ path: '/opt/cursor/artifacts/develop-want-390.png' });
   await page.locator('#want-confirm').click();
-  await page.waitForURL(/\/gym/);
-  assert(page.url().includes('#/register'), page.url());
+  await page.locator('#demo-email').waitFor();
+  assert(page.url().includes('home=1'), page.url());
   await page.goto(`${base}/develop?category=Campus`, { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => localStorage.setItem('lgme-gym.seat', 'mina'));
   await page.reload({ waitUntil: 'domcontentloaded' });

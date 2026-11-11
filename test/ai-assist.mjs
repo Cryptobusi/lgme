@@ -164,7 +164,8 @@ async function launch(view) {
     await page.screenshot({ path: '/opt/cursor/artifacts/ai-one-tap-phone.png' });
   }
   if (view.standalone) {
-    await page.waitForURL(/\/gym/, { timeout: 8000 });
+    await page.locator('.entry-picker').waitFor();
+    assert(page.url().includes('/gym') === false, 'installed home left the category screen');
     assert(page.lgmeWrites.length === 0, `installed open posted ${page.lgmeWrites.join(' ')}`);
   } else if (!view.offline) {
     const before = await sent(page);

@@ -155,6 +155,10 @@ function paintDisclaimer() {
     const choice = state.choice || pending?.choice || '';
     saveDemo(localStorage, { disclaimer: true });
     writePending(null);
+    if (pending?.returnTo && pending.returnTo.startsWith('/')) {
+      location.assign(pending.returnTo);
+      return;
+    }
     if (choice && NEEDS_ACCOUNT.has(choice)) {
       state.choice = choice;
       paintGuide();
@@ -187,7 +191,7 @@ function paintCode() {
     if (!body.ok) { status.textContent = body.error || body.waiting || 'Not verified.'; return; }
     saveDemo(localStorage, { emailHash: body.emailHash || 'demo', disclaimer: false, at: new Date().toISOString() });
     localStorage.setItem('lgme-gym.seat', 'demo');
-    writePending({ step: 'disclaimer', choice: state.choice });
+    writePending({ step: 'disclaimer', choice: state.choice, returnTo: readPending()?.returnTo || '' });
     state.email = '';
     state.step = 'disclaimer';
     paintDisclaimer();
@@ -217,7 +221,7 @@ function paintEmail() {
     if (!body.ok) { status.textContent = body.error || body.waiting || 'Email sign-in is not connected yet.'; return; }
     state.email = email.value.trim();
     state.step = 'code';
-    writePending({ step: 'code', email: state.email, choice: state.choice });
+    writePending({ step: 'code', email: state.email, choice: state.choice, returnTo: readPending()?.returnTo || '' });
     paintCode();
   });
   root.replaceChildren(el('section', { id: 'demo-email-step' }, [
