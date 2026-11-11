@@ -41,7 +41,10 @@
     .plan-pick { display:flex; gap:0.7rem; overflow-x:auto; scroll-snap-type:x mandatory; }
     .plan-card { min-width:86%; scroll-snap-align:start; }
     .plan-card pre { white-space:pre-wrap; }
-    #personal-page.has-page-photo { background-size:cover; background-position:center; }
+    #personal-page.has-page-photo { position:relative; background-size:cover; background-position:center; color:#f4f1e8; }
+    #personal-page.has-page-photo::before { content:""; position:absolute; inset:0; background:rgba(12,16,12,0.82); pointer-events:none; }
+    #personal-page.has-page-photo > * { position:relative; z-index:1; background:#0c100c; color:#f4f1e8; padding:0.15rem 0.4rem; }
+    #personal-page.has-page-photo a { color:#f4f1e8; }
     @media (min-width: 900px) {
       .plan-pick { display:grid; grid-template-columns:1fr 1fr 1fr; overflow:visible; }
       .plan-card { min-width:0; }
