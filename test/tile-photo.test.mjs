@@ -47,5 +47,5 @@ test('the first screen names every category and keeps the photo on the phone', (
   assert.equal(sitemap.includes('https://lgme.app/milestones'), true);
   assert.equal(sitemap.includes('https://lgme.app/campus'), true);
   assert.equal(csp.includes("img-src 'self' data: blob:"), true);
-  assert.equal(text('sw.js').includes('lgme-v165'), true);
+  assert.equal(text('sw.js').includes('lgme-v166'), true);
 });

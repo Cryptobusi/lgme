@@ -1,6 +1,6 @@
 import { CHOICES, DISCLAIMER, countByCategory, draftFor, examplePosts, markSeen, newSince, readDemo, readPosts, readSeen, saveDemo } from './demo-onboard.mjs';
 import { COLLECT_LABEL, SHARE_LABEL, readHealthConsent, writeHealthConsent } from './health-safeguards.mjs';
-import { AI_ENABLE, deviceContext, draftWithHelper, localAiReady, pickHelperSync, showHelperNote } from './one-tap.mjs';
+import { AI_ENABLE, deviceContext, draftWithHelper, pickHelperSync, showHelperNote } from './one-tap.mjs';
 import { ensureDeviceKey } from './device-sign.mjs';
 
 const root = document.getElementById('demo-root');
@@ -79,7 +79,7 @@ function begin(choice) {
     return;
   }
   state.choice = choice;
-  if (accountReady() && (navigator.onLine === false || !localAiReady())) {
+  if (accountReady() && navigator.onLine === false) {
     const flag = document.getElementById('ai-flag');
     if (flag) flag.hidden = false;
     return;
@@ -120,7 +120,7 @@ function paintGuide() {
   const confirm = el('button', { type: 'button', class: 'primary', id: 'demo-confirm' }, ['Confirm']);
   confirm.addEventListener('click', async () => {
     if (state.busy) return;
-    if (navigator.onLine === false || !localAiReady()) {
+    if (navigator.onLine === false) {
       note.textContent = AI_ENABLE;
       return;
     }

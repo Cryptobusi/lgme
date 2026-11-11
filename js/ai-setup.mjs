@@ -12,9 +12,9 @@ export function aiSetupSteps(ua = '') {
       can: false,
       title: 'Samsung Internet',
       steps: [
-        'Samsung Internet does not include the on-device model this app uses.',
-        'You can still browse.',
-        'To use the helper, open lgme in Chrome.'
+        'Samsung Internet does not include the built-in model.',
+        'You can try the on-device model. It stays on this phone and turns on only after a short warmup passes.',
+        'If the warmup does not pass, you can still browse and confirm by hand. Chrome can use its built-in model.'
       ]
     };
   }
@@ -24,9 +24,9 @@ export function aiSetupSteps(ua = '') {
       can: false,
       title: 'Firefox',
       steps: [
-        'Firefox does not include the on-device model this app uses.',
-        'You can still browse.',
-        'To use the helper, open lgme in Chrome on a computer or an Android phone.'
+        'Firefox does not include the built-in model.',
+        'You can try the on-device model. It stays on this phone and turns on only after a short warmup passes.',
+        'If the warmup does not pass, you can still browse and confirm by hand. Chrome can use its built-in model.'
       ]
     };
   }
@@ -36,9 +36,9 @@ export function aiSetupSteps(ua = '') {
       can: false,
       title: 'Safari',
       steps: [
-        'Safari on iPhone, iPad, and Mac does not include the on-device model this app uses.',
-        'You can still browse.',
-        'To use the helper, open lgme in Chrome on a computer or an Android phone.'
+        'Safari on iPhone, iPad, and Mac does not include the built-in model.',
+        'You can try the on-device model. It stays on this phone and turns on only after a short warmup passes.',
+        'If the warmup does not pass, you can still browse and confirm by hand.'
       ]
     };
   }
