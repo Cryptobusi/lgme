@@ -69,7 +69,7 @@ async function run(width, height, tier) {
     if (tier !== 'browser') {
       await page.goto(`${base}/`, { waitUntil: 'domcontentloaded' });
       await page.locator('#ai-dock').waitFor();
-      assert(/built-in AI/i.test(await page.locator('#ai-log').innerText()), 'enable notice');
+      assert(/AI off|AI on/i.test(await page.locator('#ai-switch').innerText()), 'enable notice');
       console.log(`PASS ${width} ${tier} notice`);
       await page.context().close();
       return;

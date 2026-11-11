@@ -34,9 +34,9 @@ body.has-site-nav { padding-top: 3.25rem; scroll-padding-top: 4rem; }
 html.has-site-nav body:has(#exchange-overview),
 body.has-site-nav:has(#exchange-overview) { padding-top: 0; }
 html.has-site-nav body:has(#exchange-overview) .launch-bar { margin-top: 3.25rem; }
-html.has-site-nav body { padding-bottom: calc(20rem + env(safe-area-inset-bottom)); }
-html.has-site-nav :is(button, a, input, textarea, select, label) { scroll-margin-top: 5rem; scroll-margin-bottom: 20rem; }
-html.has-site-nav body:has(nav[aria-label="Gym"]) { padding-bottom: calc(17rem + env(safe-area-inset-bottom)); }
+html.has-site-nav body { padding-bottom: calc(8rem + env(safe-area-inset-bottom)); }
+html.has-site-nav :is(button, a, input, textarea, select, label) { scroll-margin-top: 5rem; scroll-margin-bottom: 10rem; }
+html.has-site-nav body:has(nav[aria-label="Gym"]) { padding-bottom: calc(11rem + env(safe-area-inset-bottom)); }
 #ai-dock {
   position: fixed;
   inset: auto 0 0 0;
@@ -45,22 +45,32 @@ html.has-site-nav body:has(nav[aria-label="Gym"]) { padding-bottom: calc(17rem +
   bottom: 0;
   width: auto;
   height: auto;
+  max-height: 25vh;
   max-width: none;
   margin: 0;
   z-index: 45;
   box-sizing: border-box;
-  padding: 0.4rem 0.7rem calc(0.45rem + env(safe-area-inset-bottom));
+  padding: 0.35rem 0.7rem calc(0.35rem + env(safe-area-inset-bottom));
   background-color: #0c100c;
   background-image: none;
   color: #f4f1e8;
   border: 0;
   border-top: 3px solid #F97316;
-  overflow: visible;
+  overflow: hidden;
 }
+#ai-dock:not(.is-open):not(.has-field) #ai-chips,
+#ai-dock:not(.is-open):not(.has-field) #ai-ask,
+#ai-dock:not(.is-open):not(.has-field) #ai-log,
+#ai-dock:not(.is-open):not(.has-field) .ai-actions { display: none; }
+#ai-head { margin-left: auto; font-size: 0.75rem; font-weight: 700; color: #8d938c; }
+#ai-head.is-on { color: #8fd6a8; }
+#ai-switch.is-on { background: #146c43; color: #fff; border-color: #146c43; }
+#ai-switch.is-on::before { content: ''; display: inline-block; width: 0.55rem; height: 0.55rem; margin-right: 0.35rem; border-radius: 50%; background: #b7f0c8; vertical-align: middle; }
+#ai-switch:not(.is-on) { background: #3a3f3a; color: #f4f1e8; }
 body:has(nav[aria-label="Gym"]) #ai-dock { bottom: calc(4.5rem + env(safe-area-inset-bottom)); }
 .ai-top { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.6rem; margin: 0 0 0.15rem; }
 .ai-label { margin: 0; font-size: 0.72rem; letter-spacing: 0.16em; font-weight: 700; color: #F97316; }
-.ai-setup-link { min-height: 44px; display: inline-flex; align-items: center; color: #f4f1e8; }
+.ai-setup-link { min-height: 32px; display: inline-flex; align-items: center; color: #f4f1e8; }
 #app-reset-note { margin: 0 0 0.2rem; font-weight: 700; }
 #ai-dock.is-off #ai-log,
 #ai-dock.is-off #ai-flag,
@@ -77,7 +87,7 @@ body:has(nav[aria-label="Gym"]) #ai-dock { bottom: calc(4.5rem + env(safe-area-i
 #ai-dock.has-field #ai-ask,
 #ai-dock.has-field .ai-actions { display: none; }
 #ai-chips { display: flex; flex-wrap: nowrap; gap: 0.35rem; min-height: 44px; max-height: 44px; margin: 0 0 0.25rem; overflow-x: auto; }
-#ai-dock.has-field #ai-chips { flex-wrap: wrap; max-height: none; overflow: visible; }
+#ai-dock.has-field #ai-chips { flex-wrap: nowrap; max-height: 44px; overflow-x: auto; }
 .ai-chip { flex: 0 0 auto; white-space: nowrap; min-height: 44px; padding: 0.35rem 0.8rem; border-radius: 999px; border: 1px solid #c6a15b; background: #f4f1e8; color: #1a1408; font: inherit; font-weight: 700; }
 #ai-ask {
   box-sizing: border-box;
@@ -100,20 +110,17 @@ body:has(nav[aria-label="Gym"]) #ai-dock { bottom: calc(4.5rem + env(safe-area-i
 .tap-chip { min-height: 44px; font: inherit; font-weight: 700; border-radius: 999px; border: 1px solid #c6a15b; background: #f4f1e8; color: #1a1408; padding: 0.35rem 0.8rem; }
 #ai-flag { margin: 0 0 0.2rem; font-size: 0.82rem; line-height: 1.3; }
 #ai-log {
-  box-sizing: content-box;
+  box-sizing: border-box;
   margin: 0;
-  height: calc(1.45em * 3);
-  line-height: 1.45;
-  overflow-x: hidden;
-  overflow-y: scroll;
-  white-space: pre-wrap;
+  height: 22px;
+  line-height: 22px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   font: inherit;
   font-size: 16px;
-  line-height: 22px;
-  height: 66px;
   padding: 0;
 }
-#ai-dock.is-open #ai-log { height: 40vh; }
 @media (max-height: 500px) {
   #ai-log, #ai-flag { display: none; }
 }

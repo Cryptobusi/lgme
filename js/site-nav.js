@@ -1,6 +1,6 @@
 (function () {
   var EPOCH = '2';
-  var CURRENT = { 'lgme-v174': 1, 'lgme-gym-v80': 1 };
+  var CURRENT = { 'lgme-v175': 1, 'lgme-gym-v81': 1 };
   function keep(name) {
     if (!name) return true;
     if (name === 'lgme.reset.epoch' || name === 'lgme.reset.note' || name === 'lgme.device.key' || name === 'lgme-gym.seat' || name === 'lgme.health.book' || name === 'lgme.health.email' || name === 'lgme.health.plan' || name === 'lgme.health.contact' || name === 'lgme.health.contactGrants' || name === 'lgme.health.consent') return true;
@@ -70,8 +70,12 @@
     home.id = 'site-home';
     home.href = '/?home=1';
     home.textContent = 'Home';
+    var mark = document.createElement('span');
+    mark.id = 'ai-head';
+    mark.textContent = 'AI off';
     bar.appendChild(back);
     bar.appendChild(home);
+    bar.appendChild(mark);
     document.body.prepend(bar);
   }
   document.documentElement.classList.add('has-site-nav');

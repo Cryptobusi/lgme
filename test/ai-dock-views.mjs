@@ -57,24 +57,20 @@ async function check(page, label, shot) {
     open.setAttribute('aria-expanded', 'false');
     open.textContent = 'Open';
   });
-  const box = await page.locator('#ai-log').evaluate((node) => {
-    const style = getComputedStyle(node);
-    const dock = getComputedStyle(node.closest('#ai-dock'));
-    const label = getComputedStyle(document.querySelector('.ai-label'));
+  const box = await page.locator('#ai-dock').evaluate((node) => {
+    const dock = getComputedStyle(node);
+    const ink = getComputedStyle(node.querySelector('#ai-switch'));
     return {
-      height: node.clientHeight,
-      scroll: node.scrollHeight,
-      line: parseFloat(style.lineHeight),
-      text: node.textContent,
+      height: node.getBoundingClientRect().height,
+      text: document.getElementById('ai-log').textContent,
       dock: dock.backgroundColor,
-      ink: style.color,
-      label: label.color
+      ink: ink.color,
+      label: ink.color
     };
   });
   const problems = [];
-  if (box.height + 1 < box.line * 3) problems.push(`clipped ${box.height}/${box.line}`);
-  if (box.scroll <= box.height + 4) problems.push('not scrollable');
-  if (!/Explain|Turn on/.test(box.text)) problems.push('empty prompt');
+  if (box.height > window.innerHeight * 0.25) problems.push(`tall ${box.height}`);
+  if (!/Ask here|AI off|AI on/.test(box.text)) problems.push('empty prompt');
   if (shot) await page.screenshot({ path: shot, timeout: 8000, animations: 'disabled' });
   const parse = (value) => {
     const match = String(value).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);

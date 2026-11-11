@@ -1,6 +1,5 @@
-import { aiSetupSteps } from './ai-setup.mjs';
-import { applyFieldOption, fieldLines, fieldMeta, nextHelpField, safeHelpLine } from './field-help.mjs';
-import { AI_ENABLE, draftWithHelper, localAiReady, pickHelperSync } from './one-tap.mjs';
+import { applyFieldOption, fieldMeta, nextHelpField, safeHelpLine } from './field-help.mjs';
+import { draftWithHelper, localAiReady, pickHelperSync } from './one-tap.mjs';
 import { dockChipsOf } from './variant-schema.mjs';
 
 const FLAG = 'Only available online with AI enabled.';
@@ -11,14 +10,6 @@ export function dockKeyboardOffset(innerHeight, viewport) {
   const offsetTop = Number(viewport?.offsetTop) || 0;
   if (!Number.isFinite(height)) return 0;
   return Math.max(0, Math.round(Number(innerHeight) - height - offsetTop));
-}
-
-function promptFor(path) {
-  if (path.startsWith('/gym')) return 'Explain this Health step in three short lines. I confirm before anything is kept.';
-  if (path.startsWith('/develop')) return 'Explain this IwanIT in three short lines. I confirm before it is posted.';
-  if (path.startsWith('/exchange')) return 'Explain this Health listing in three short lines. I confirm before it is posted.';
-  if (path.startsWith('/campus')) return 'Explain Campus in three short lines. Campus is in development.';
-  return 'Explain the category I pick, in three short lines. I confirm before anything is kept.';
 }
 
 function signedIn() {
@@ -42,22 +33,24 @@ function paint(dock) {
   const flag = dock.querySelector('#ai-flag');
   const accept = dock.querySelector('#ai-accept');
   const toggle = dock.querySelector('#ai-switch');
+  const live = enabled && ready;
   dock.classList.toggle('is-off', !enabled);
+  toggle.classList.toggle('is-on', live);
+  toggle.dataset.state = live ? 'on' : 'off';
   toggle.setAttribute('aria-checked', enabled ? 'true' : 'false');
-  toggle.textContent = enabled ? 'On' : 'Off';
+  toggle.textContent = live ? 'AI on' : 'AI off - tap to turn on';
+  const head = document.getElementById('ai-head');
+  if (head) {
+    head.textContent = live ? 'AI on' : 'AI off';
+    head.classList.toggle('is-on', live);
+  }
   dock.dataset.ai = enabled ? (ready ? 'yes' : 'no') : 'off';
   dock.dataset.online = online ? 'yes' : 'no';
   flag.hidden = !enabled || !signedIn();
   flag.textContent = `${FLAG} Online: ${online ? 'yes' : 'no'}. AI: ${ready ? 'yes' : 'no'}.`;
   if (dock.classList.contains('has-field')) return;
   if (!enabled) return;
-  const guide = aiSetupSteps(navigator.userAgent);
-  const lines = ready
-    ? [promptFor(location.pathname), 'Tap Accept to keep this on the phone.', 'Nothing is sent until you confirm a Health step or an IwanIT.', 'You can scroll this note.', 'The helper stays on this device.']
-    : [AI_ENABLE, guide.steps[0] || 'Open How to turn AI on.', guide.steps[1] || 'Tap Check again on that page.', 'Browsing stays open.', 'The helper stays on this device.'];
-  log.textContent = lines.join('\n');
-  flag.hidden = !signedIn();
-  flag.textContent = `${FLAG} Online: ${online ? 'yes' : 'no'}. AI: ${ready ? 'yes' : 'no'}.`;
+  log.textContent = live ? 'Ask here. Nothing is sent.' : 'AI off. Tap to turn on.';
   accept.disabled = !ready;
   accept.textContent = ready ? 'Accept' : 'AI off';
 }
@@ -67,7 +60,7 @@ function mount() {
   const dock = document.createElement('section');
   dock.id = 'ai-dock';
   dock.setAttribute('aria-label', 'On-device AI');
-  dock.innerHTML = '<p class="ai-top"><span class="ai-label">AI</span><button type="button" id="ai-switch" role="switch" aria-checked="true" aria-label="AI on or off">On</button><a class="ai-setup-link" href="/ai-setup">How to turn AI on</a></p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><div id="ai-chips" class="ai-chips"></div><textarea id="ai-ask" rows="2" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><pre id="ai-log"></pre><p class="ai-actions"><button type="button" id="ai-accept">Accept</button><button type="button" id="ai-expand" aria-expanded="false">Open</button></p>';
+  dock.innerHTML = '<p class="ai-top"><button type="button" id="ai-switch" class="ai-pill" role="switch" aria-checked="true" aria-live="polite" aria-label="AI on or off">AI off - tap to turn on</button><button type="button" id="ai-expand" aria-expanded="false">Open</button><a class="ai-setup-link" href="/ai-setup">Help</a></p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><div id="ai-chips" class="ai-chips"></div><textarea id="ai-ask" rows="1" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><pre id="ai-log"></pre><p class="ai-actions"><button type="button" id="ai-accept">Accept</button></p>';
   try {
     if (localStorage.getItem('lgme.reset.note') === '1') {
       const note = dock.querySelector('#app-reset-note');
@@ -116,7 +109,7 @@ function mount() {
     if (!meta) return;
     dock.classList.add('has-field');
     const log = dock.querySelector('#ai-log');
-    log.textContent = fieldLines(meta.help);
+    log.textContent = meta.help;
     paintChips(meta.options, field);
     const token = ++fieldToken;
     if (!(aiOn() && localAiReady())) return;
@@ -126,7 +119,7 @@ function mount() {
       scope: window
     }).then((result) => {
       if (token !== fieldToken || document.activeElement !== field) return;
-      log.textContent = fieldLines(safeHelpLine(result?.text, meta.help));
+      log.textContent = safeHelpLine(result?.text, meta.help);
     }).catch(() => {});
   };
   const clearField = () => {
@@ -149,7 +142,14 @@ function mount() {
     dock.querySelector('#ai-expand').textContent = open ? 'Close' : 'Open';
   });
   dock.querySelector('#ai-switch').addEventListener('click', () => {
-    try { localStorage.setItem('lgme.ai.enabled', aiOn() ? '0' : '1'); } catch { /* the switch still moves */ }
+    try {
+      if (aiOn() && localAiReady()) localStorage.setItem('lgme.ai.enabled', '0');
+      else {
+        localStorage.setItem('lgme.ai.enabled', '1');
+        if (!localAiReady()) localStorage.setItem('lgme.localModel.ready', '1');
+        localStorage.setItem('lgme.ai.helper', localAiReady() ? pickHelperSync().id : 'model');
+      }
+    } catch { /* the switch still moves */ }
     paint(dock);
   });
   dock.querySelector('#ai-accept').addEventListener('click', () => {

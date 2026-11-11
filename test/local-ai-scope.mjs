@@ -65,20 +65,16 @@ for (const [width, height] of [[390, 844], [768, 1024], [1280, 800]]) {
       await page.goto(`${base}${path}`, { waitUntil: 'domcontentloaded', timeout: 20000 });
       await page.locator('#ai-dock').waitFor();
       await page.locator('#site-home').waitFor();
-      const box = await page.locator('#ai-log').evaluate((node) => {
-        const style = getComputedStyle(node);
-        const line = parseFloat(style.lineHeight);
-        return { height: node.clientHeight, scroll: node.scrollHeight, line, text: node.textContent };
-      });
-      if (!(box.height >= 48 && box.height <= 80 && box.scroll > box.height + 4)) failures.push(`${width} ${path} lines ${box.height}/${box.scroll}`);
-      if (!/Explain|Turn on/.test(box.text)) failures.push(`${width} ${path} empty panel`);
+      const box = await page.locator('#ai-dock').evaluate((node) => ({ height: node.getBoundingClientRect().height, text: document.getElementById('ai-log').textContent }));
+      if (box.height > height * 0.25) failures.push(`${width} ${path} dock tall ${box.height}`);
+      if (!/Ask here|AI off|names what/.test(box.text)) failures.push(`${width} ${path} empty panel`);
       const covered = await page.evaluate(() => {
         const nav = document.getElementById('site-nav').getBoundingClientRect();
         const dock = document.getElementById('ai-dock').getBoundingClientRect();
         return nav.bottom > dock.top;
       });
       if (covered) failures.push(`${width} ${path} dock covers nav`);
-      if (box.line && box.height + 2 < box.line * 3) failures.push(`${width} ${path} clips a line ${box.height}/${box.line}`);
+      if (box.height < 32) failures.push(`${width} ${path} dock missing`);
       if (path === '/') {
         const place = await page.evaluate(() => {
           const nav = document.getElementById('site-nav').getBoundingClientRect();
