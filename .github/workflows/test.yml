@@ -32,5 +32,6 @@ jobs:
       - run: node test/passkey-signin-ui.mjs
       - run: node test/new-marks-ui.mjs
       - run: node test/dock-prompt-ui.mjs
+      - run: node test/notice-slim-ui.mjs
       - run: node test/category-actions-ui.mjs
       - run: node test/my-version-ui.mjs

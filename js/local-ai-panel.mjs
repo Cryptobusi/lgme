@@ -149,13 +149,17 @@ function mount() {
     paint(dock);
   };
   const SIZES = ['compact', 'normal', 'tall'];
-  const applySize = (next) => {
+  const applySize = (next, persist = true) => {
     const size = SIZES.includes(next) ? next : 'normal';
     dock.classList.remove('is-compact', 'is-normal', 'is-tall');
     dock.classList.add(`is-${size}`);
+    if (!persist) return;
     try { localStorage.setItem('lgme.dock.size', size); } catch { /* the size still shows */ }
   };
-  try { applySize(localStorage.getItem('lgme.dock.size') || 'normal'); } catch { applySize('normal'); }
+  try {
+    const saved = localStorage.getItem('lgme.dock.size');
+    applySize(saved || (document.getElementById('testnet-notice') ? 'compact' : 'normal'), false);
+  } catch { applySize('normal', false); }
   const runPrompt = () => {
     const text = ask.value.trim();
     const log = dock.querySelector('#ai-log');

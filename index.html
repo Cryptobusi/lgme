@@ -53,6 +53,13 @@
     html.has-site-nav body:has(#testnet-notice) { padding-top: calc(3.25rem + var(--notice-h)); }
     body:has(#testnet-notice) #site-nav { top: var(--notice-h); }
     body:has(#testnet-notice) .menu-toggle { top: calc(3.25rem + var(--notice-h)); }
+    html.top-compact { --notice-h: 3.25rem; }
+    html.top-tall { --notice-h: 8rem; }
+    html.notice-slim { --notice-h: 2.25rem; }
+    html.notice-slim #testnet-notice { white-space: nowrap; }
+    html.notice-slim #notice-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #testnet-notice button { min-height: 32px; min-width: 32px; margin-left: 0.25rem; border: 0; border-radius: 8px; background: #fff; color: #1a1408; font: inherit; font-weight: 700; }
+    #notice-text { min-width: 0; }
     body {
       background: var(--bg);
       color: var(--fg);
@@ -370,9 +377,11 @@
     .demo-badge { margin: 0.25rem; }
     #demo-saved { margin: 0.4rem 0; font-weight: 700; }
   </style>
+  <script src="/js/notice-boot.js"></script>
 </head>
 <body>
-  <p id="testnet-notice" role="note">Notice: back in testnet for troubleshooting. Keep learning, earning, never boring.</p>
+  <p id="testnet-notice" role="note"><span id="notice-text">Notice: back in testnet for troubleshooting. Keep learning, earning, never boring.</span><button type="button" id="notice-smaller" aria-label="Shorter top bar">A-</button><button type="button" id="notice-larger" aria-label="Taller top bar">A+</button><button type="button" id="notice-x" aria-label="Hide the notice">x</button></p>
+  <script src="/js/notice-bar.js"></script>
   <script src="/js/home-entry.js"></script>
   <script src="/js/site-nav.js"></script>
   <script type="module" src="/js/tile-fresh.mjs"></script>
