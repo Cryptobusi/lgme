@@ -16,6 +16,7 @@ import { loadPersonalImages, resolveImage, slotForListing, viewerId } from './pe
 import { fetchLgmePrice as quoteLgme } from './lgme-price.mjs';
 import { ensureDeviceKey, signDevice } from './device-sign.mjs';
 import { REPAIR_STATUSES } from './repair-follow.mjs';
+import { DEV_TEAM_HREF, HELP_NOTE, helpMail } from './category-help.mjs';
 
 const sessionKeys = new Map();
 const sessionCrypto = new Map();
@@ -3498,9 +3499,16 @@ async function renderMarket(peers, seat) {
     chip('IwanIT', marketQuery.kind === 'IwanIT', () => { marketQuery.kind = 'IwanIT'; render(); }),
     chip('IprovIT', marketQuery.kind === 'IprovIT', () => { marketQuery.kind = 'IprovIT'; render(); })
   ]);
-  const pills = h('div', { class: 'chips' }, [
+  const pills = h('div', { class: 'chips', id: 'market-categories' }, [
     chip('All', !marketQuery.category, () => { marketQuery.category = ''; render(); }),
     ...CATEGORIES.map((item) => chip(item, marketQuery.category === item, () => { marketQuery.category = item; render(); }))
+  ]);
+  const marketName = marketQuery.category || 'Exchange';
+  const marketHelp = h('p', { id: 'market-help' }, [
+    `${HELP_NOTE} `,
+    h('a', { id: 'help-develop', href: helpMail(marketName) }, ['Help develop this']),
+    ' · ',
+    h('a', { href: DEV_TEAM_HREF }, ['Join the developer team'])
   ]);
   const viewer = viewerId(localStorage);
   const personal = viewer ? await loadPersonalImages(viewer, localStorage) : null;
@@ -3538,13 +3546,14 @@ async function renderMarket(peers, seat) {
   const filters = h('details', {}, [h('summary', {}, ['Filters']), form]);
   panel.replaceChildren(
     h('h2', {}, ['Market']),
-    h('p', { class: 'muted' }, [`Ad-free. ${me ? me.name : 'You'} · Peer standing ${standing ? standing.standing : ''}. Nothing here is a paid placement. Beta.`]),
+    h('p', { class: 'muted' }, [`Ad-free. ${me ? me.name : 'You'} · Peer standing ${standing ? standing.standing : ''}. Nothing here is a paid placement. Example listings stay labeled.`]),
     kinds,
     pills,
+    marketHelp,
     filters,
     feed.length || grid.childElementCount ? grid : h('div', { class: 'empty', id: 'listings-empty' }, [
       h('img', { src: '/images/photos/neighborhood-640.webp', alt: 'A quiet path, waiting for a listing', width: '640', height: '420', loading: 'lazy', style: 'width:100%;max-height:140px;object-fit:cover;border-radius:10px' }),
-      h('p', {}, ['No listings match. List one, or clear the filters.'])
+      h('p', {}, ['No listings match. Example listings stay labeled. A new listing is not open yet.'])
     ]),
     follow,
     !marketQuery.kind || marketQuery.kind === 'IwanIT' ? wantedMatchSection(seat) : null,
@@ -3937,30 +3946,7 @@ async function renderList(seat) {
   ]);
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
-    if (busy) return;
-    busy = true;
-    try {
-      const item = catalog.find((row) => row.id === reference.value);
-      const created = await sim.createListing(store, seat, {
-        ...listDraft,
-        amount: amount.value,
-        referenceId: item ? item.id : null,
-        referenceAvg: item ? item.avg_value_usd : null
-      });
-      if (!created.ok) { setStatus(created.error, 'bad'); return; }
-      if (listDraft.mediaBytes) {
-        const made = await sim.recordMedia(store, seat, { bytes: listDraft.mediaBytes, mime: listDraft.mediaMime, duration: listDraft.mediaDuration || 0, listingId: created.listing.id });
-        const peer = await store.get(seat);
-        if (made.ok && peer?.privateKeyJwk) await saveMediaFile(seat, peer.privateKeyJwk, made.hash, listDraft.mediaBytes, listDraft.mediaMime);
-      }
-      listDraft = { photo: '', photoHash: '', title: '', category: 'Goods', condition: 'Good', pickup: 'Pickup', circle: '', area: '', amount: '', referenceId: '' };
-      listStep = 1;
-      openListingId = created.listing.id;
-      setStatus('Listed and signed. The photo stayed on this device. Beta.', 'ok');
-      location.hash = 'market';
-    } finally {
-      busy = false;
-    }
+    setStatus(`${HELP_NOTE} Nothing was listed.`, 'bad');
   });
   panel.replaceChildren(h('h2', {}, ['List']), steps, h('p', { class: 'muted' }, ['The value is in $lgme. A dollar figure is only a suggestion from the reference list.']), referenceCatalogCard(), form);
 }

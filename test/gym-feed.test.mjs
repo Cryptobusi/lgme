@@ -52,8 +52,8 @@ test('the community feed keeps private numbers off and sorts by time', () => {
   const home = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   assert.equal(home.includes('data-entry="health"'), true);
   assert.equal(home.includes('Gym beta'), true);
-  assert.equal(home.indexOf('data-entry="health"') < home.indexOf('View only, coming next'), true);
-  assert.equal(home.includes('Health is the live category'), true);
+  assert.equal(home.indexOf('data-entry="health"') < home.indexOf('Coming soon. Help us build this category.'), true);
+  assert.equal(home.includes('Health is in beta'), true);
   assert.equal(home.includes('>Health</span>'), true);
   assert.equal(home.includes('>Campus</span>'), true);
   assert.equal(home.includes('>Neighbor help</span>'), true);

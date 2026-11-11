@@ -1,5 +1,6 @@
 import { deedCreditSplit } from './commons-split.mjs';
 import { VIEW_ONLY_MESSAGE } from './view-only-api.mjs';
+import { closedTrade } from './category-help.mjs';
 
 export const LISTINGS_TOPIC = '0.0.11397293';
 export const LISTINGS_OPERATOR = '0.0.11281203';
@@ -65,6 +66,9 @@ export function claimedStatus(handle) {
 
 export function publicExchangeListing(spec = {}) {
   if (String(spec.category || '').trim().toLowerCase() !== 'exchange') {
+    return { ok: false, status: 403, viewOnly: true, error: VIEW_ONLY_MESSAGE };
+  }
+  if (closedTrade(spec)) {
     return { ok: false, status: 403, viewOnly: true, error: VIEW_ONLY_MESSAGE };
   }
   const action = spec.action === 'update' ? 'update' : spec.action === 'listing' ? 'listing' : '';

@@ -278,7 +278,13 @@
     .photo-actions label, .photo-actions button { font: inherit; font-size: 0.85rem; font-weight: 700; min-height: 44px; border-radius: 999px; border: 1px solid #1a1408; background: rgba(244, 241, 232, 0.94); color: #1a1408; padding: 0.35rem 0.8rem; }
     .photo-status { position: relative; z-index: 1; margin: 0; padding: 0 0.8rem 0.7rem; font-size: 0.85rem; font-weight: 600; text-align: center; }
     #health-photo { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-    .entry-tile .badge { display: block; font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; text-align: center; }
+    .entry-tile .badge { display: block; font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; text-align: center; }
+    .entry-tile .tile-open { position: relative; z-index: 2; color: inherit; text-decoration: none; min-height: 44px; width: 100%; display: flex; align-items: center; justify-content: center; }
+    .entry-tile .tile-soon, .entry-tile .help-develop, .entry-tile .dev-team { position: relative; z-index: 2; }
+    .entry-tile .tile-soon { margin: 0.15rem 0.4rem; font-size: 1rem; font-weight: 600; text-align: center; line-height: 1.3; }
+    .entry-tile .help-develop, .entry-tile .dev-team { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; margin: 0.15rem 0.3rem 0.45rem; padding: 0.35rem 0.75rem; border-radius: 999px; font-size: 1rem; font-weight: 700; text-decoration: none; }
+    .entry-tile .help-develop { background: #f4f1e8; color: #1c1b19; }
+    .entry-tile .dev-team { color: #f4f1e8; text-decoration: underline; font-weight: 600; }
     .tile-name { display: block; font-size: 1.15rem; line-height: 1.2; text-align: center; }
     .entry-tile.health .tile-note { position: relative; z-index: 1; margin: 0; padding: 0 0.8rem 0.7rem; text-align: center; font-size: 0.92rem; font-weight: 600; }
     .entry-tile.health .tile-note a { color: inherit; }
@@ -308,7 +314,7 @@
 <body>
   <script src="/js/home-entry.js"></script>
   <section class="entry-picker" aria-label="Categories">
-    <p class="beta-banner" role="status">Health is the live category. Exchange listings are open on Hedera testnet. The other categories are view only.</p>
+    <p class="beta-banner" role="status">Health is in beta. The other categories are open to view. Posting there is not active yet.</p>
     <section class="card" id="install-lgme">
       <h2>Install</h2>
       <p id="install-lgme-text">Install lgme, then open it from the icon. A returning member goes straight to Health.</p>
@@ -317,7 +323,7 @@
     <h2>Categories</h2>
     <div class="entry-grid">
       <div class="entry-tile health has-photo" id="health-tile" data-image-slot="tile-health">
-        <a class="health-open" data-entry="health" href="/gym"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 5.6-7 10-7 10z"/></svg><span class="badge">Live</span><span class="tile-name">Health</span></a>
+        <a class="health-open" data-entry="health" href="/gym"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 5.6-7 10-7 10z"/></svg><span class="badge">Beta</span><span class="tile-name">Health</span></a>
         <p class="tile-note">Local AI is available. <a href="/helper">AI helper</a> · <a href="/ai-help">AI help</a></p>
         <p class="tile-note"><a class="cta" id="start-health" href="/gym#/start">Start Health</a></p>
         <div class="photo-actions">
@@ -327,12 +333,42 @@
         </div>
         <p id="health-photo-status" class="photo-status" role="status"></p>
       </div>
-      <a class="entry-tile preview has-photo" data-entry="campus" data-image-slot="tile-campus" href="/campus"><span class="badge">View only, coming next</span><span class="tile-name">Campus</span></a>
-      <a class="entry-tile preview has-photo" data-entry="neighbor" data-image-slot="tile-neighbor" href="/neighbors"><span class="badge">View only, coming next</span><span class="tile-name">Neighbor help</span></a>
-      <a class="entry-tile preview has-photo" data-entry="hosts" data-image-slot="tile-hosts" href="/hosts"><span class="badge">View only, coming next</span><span class="tile-name">Hosts</span></a>
-      <a class="entry-tile preview has-photo" data-entry="circles" data-image-slot="tile-circles" href="/circles"><span class="badge">View only, coming next</span><span class="tile-name">Circles</span></a>
-      <a class="entry-tile preview has-photo" data-entry="stories" data-image-slot="tile-stories" href="/stories"><span class="badge">View only, coming next</span><span class="tile-name">Stories</span></a>
-      <a class="entry-tile has-photo" data-entry="exchange" data-image-slot="tile-exchange" href="/exchange"><span class="badge">Testnet</span><span class="tile-name">Exchange</span></a>
+      <article class="entry-tile preview has-photo" data-entry="campus" data-image-slot="tile-campus">
+        <a class="tile-open" href="/campus"><span class="tile-name">Campus</span></a>
+        <p class="tile-soon">Coming soon. Help us build this category.</p>
+        <a class="help-develop" href="mailto:cryptovanities@gmail.com?subject=Help%20develop%20lgme.app%3A%20Campus&amp;body=I%20want%20to%20help%20build%20the%20Campus%20category%20on%20lgme.app.">Help develop this</a>
+        <a class="dev-team" href="/hosts#dev-interest">Join the developer team</a>
+      </article>
+      <article class="entry-tile preview has-photo" data-entry="neighbor" data-image-slot="tile-neighbor">
+        <a class="tile-open" href="/neighbors"><span class="tile-name">Neighbor help</span></a>
+        <p class="tile-soon">Coming soon. Help us build this category.</p>
+        <a class="help-develop" href="mailto:cryptovanities@gmail.com?subject=Help%20develop%20lgme.app%3A%20Neighbor%20help&amp;body=I%20want%20to%20help%20build%20the%20Neighbor%20help%20category%20on%20lgme.app.">Help develop this</a>
+        <a class="dev-team" href="/hosts#dev-interest">Join the developer team</a>
+      </article>
+      <article class="entry-tile preview has-photo" data-entry="hosts" data-image-slot="tile-hosts">
+        <a class="tile-open" href="/hosts"><span class="tile-name">Hosts</span></a>
+        <p class="tile-soon">Coming soon. Help us build this category.</p>
+        <a class="help-develop" href="mailto:cryptovanities@gmail.com?subject=Help%20develop%20lgme.app%3A%20Hosts&amp;body=I%20want%20to%20help%20build%20the%20Hosts%20category%20on%20lgme.app.">Help develop this</a>
+        <a class="dev-team" href="/hosts#dev-interest">Join the developer team</a>
+      </article>
+      <article class="entry-tile preview has-photo" data-entry="circles" data-image-slot="tile-circles">
+        <a class="tile-open" href="/circles"><span class="tile-name">Circles</span></a>
+        <p class="tile-soon">Coming soon. Help us build this category.</p>
+        <a class="help-develop" href="mailto:cryptovanities@gmail.com?subject=Help%20develop%20lgme.app%3A%20Circles&amp;body=I%20want%20to%20help%20build%20the%20Circles%20category%20on%20lgme.app.">Help develop this</a>
+        <a class="dev-team" href="/hosts#dev-interest">Join the developer team</a>
+      </article>
+      <article class="entry-tile preview has-photo" data-entry="stories" data-image-slot="tile-stories">
+        <a class="tile-open" href="/stories"><span class="tile-name">Stories</span></a>
+        <p class="tile-soon">Coming soon. Help us build this category.</p>
+        <a class="help-develop" href="mailto:cryptovanities@gmail.com?subject=Help%20develop%20lgme.app%3A%20Stories&amp;body=I%20want%20to%20help%20build%20the%20Stories%20category%20on%20lgme.app.">Help develop this</a>
+        <a class="dev-team" href="/hosts#dev-interest">Join the developer team</a>
+      </article>
+      <article class="entry-tile has-photo" data-entry="exchange" data-image-slot="tile-exchange">
+        <a class="tile-open" href="/exchange"><span class="tile-name">Exchange</span></a>
+        <p class="tile-soon">Coming soon. Help us build this category.</p>
+        <a class="help-develop" href="mailto:cryptovanities@gmail.com?subject=Help%20develop%20lgme.app%3A%20Exchange&amp;body=I%20want%20to%20help%20build%20the%20Exchange%20category%20on%20lgme.app.">Help develop this</a>
+        <a class="dev-team" href="/hosts#dev-interest">Join the developer team</a>
+      </article>
     </div>
     <p><a href="/milestones">Next milestones</a></p>
   </section>

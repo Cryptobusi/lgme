@@ -2,6 +2,7 @@ import { EXCLUDED_NOTE, HOST_KINDS, NEIGHBOR_DEEDS, addMatchingHour, catalogFor,
 import { EXPLAINER, EXPLAINER_TITLE, ROLES, interestRecord } from './community-interest.mjs';
 import { ensureDeviceKey, signDevice } from './device-sign.mjs';
 import { mountSeedBoard } from './seed-board.mjs';
+import { DEV_TEAM_HREF, HELP_NOTE, helpMail } from './category-help.mjs';
 
 const page = document.body.dataset.page;
 const root = document.getElementById('pair');
@@ -20,6 +21,15 @@ function el(tag, attrs = {}, children = []) {
 }
 
 function save() { writeBook(book); draw(); }
+
+function categoryHelp(name) {
+  return el('p', { id: 'category-help' }, [
+    `${HELP_NOTE} `,
+    el('a', { id: 'help-develop', href: helpMail(name) }, ['Help develop this']),
+    ' · ',
+    el('a', { href: DEV_TEAM_HREF }, ['Join the developer team'])
+  ]);
+}
 
 function explainer() {
   return el('article', { class: 'card', id: 'upcoming-communities' }, [
@@ -111,6 +121,7 @@ function drawNeighbors() {
   const view = el('div', {}, [
     el('p', { class: 'kicker' }, ['Neighbor help']),
     el('h1', {}, ['Everyday mutual help']),
+    categoryHelp('Neighbor help'),
     el('p', { id: 'excluded-note' }, [EXCLUDED_NOTE])
   ]);
   for (const deed of NEIGHBOR_DEEDS) {
@@ -145,6 +156,7 @@ function drawHosts() {
   const view = el('div', {}, [
     el('p', { class: 'kicker' }, ['Hosts']),
     el('h1', {}, ['Host a circle']),
+    categoryHelp('Hosts'),
     explainer(),
     interestForm('developer'),
     interestForm('host'),
@@ -220,6 +232,7 @@ function drawCircles() {
   const view = el('div', {}, [
     el('p', { class: 'kicker' }, ['Circles']),
     el('h1', {}, ['A circle']),
+    categoryHelp('Circles'),
     explainer(),
     interestForm('developer'),
     interestForm('host'),
@@ -258,6 +271,7 @@ function drawStories() {
   const view = el('div', {}, [
     el('p', { class: 'kicker' }, ['Stories']),
     el('h1', {}, ['Stories']),
+    categoryHelp('Stories'),
     el('p', {}, ['Not written to Hedera. You can withdraw a story anytime.']),
     el('label', {}, ['Draft', text]),
     el('label', {}, ['Audience', audience]),

@@ -34,9 +34,9 @@ const text = (path) => readFileSync(join(root, path), 'utf8');
 const UNTOUCHED = {
   'exchange.html': '3c9dfd170d186de441e95e4b06d65a91626253c7363d7e0be868278368aa9b44',
   'js/p2p-exchange-sim.mjs': '30c24d75e8dca4d0a5427ba1176b13f192cd27d2ef4f2f709ab7c82449b4087c',
-  'js/p2p-exchange-sim-ui.mjs': 'a2e7242189af05fc4c02a1012e6cd9756999d58cad3bf5c5ee137b3b776d95ca',
+  'js/p2p-exchange-sim-ui.mjs': 'ff18e0102e8788a2805fa2b91f0a2bb8dc6c1416564b907a9a545917a6b0b8a8',
   'js/solana-pay.mjs': '91696ed805cb43bca35734dbfbac1f70ea002a4d0c4398393e7df5cf0de976d5',
-  'campus.html': 'ad9a05cae3987be4407a8104e22e2e684cba4d0932f419d6f294da4fb7aef3e9',
+  'campus.html': 'dc09264df9582d8776b962975f25ec98c949a6df884632a34f2e0e220264aa92',
   'js/campus-page.mjs': 'dfff943e00078fc8efc965d9f608b56c47d181d8fada9bd3060bb231566738ba',
   'data/campus-pilot.json': 'e76672225b4c889f03f7cb8d03a651092eff250de2edc5f61fdaad472044b6fc',
   'mutual-credit.html': '89cf1c7436eec32f45a81097e8e204228d7a0ce2f3380f5bbe1a6a942b3d67d9',

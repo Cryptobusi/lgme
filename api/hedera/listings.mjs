@@ -3,6 +3,7 @@ import { guardRequest, json, readBody, readEnv } from '../lib/http.mjs';
 import { listingTransition } from '../../js/input-schema.mjs';
 import { tradeMove, tradeTypeOf } from '../../js/trade-types.mjs';
 import { VIEW_ONLY_MESSAGE } from '../../js/view-only-api.mjs';
+import { closedTrade } from '../../js/category-help.mjs';
 import { verifyDevice } from '../../js/device-sign.mjs';
 import { HOUR_LIMIT, LISTINGS_OPERATOR, LISTINGS_TOPIC, publicExchangeListing } from '../../js/exchange-listing.mjs';
 import { interestRecord } from '../../js/community-interest.mjs';
@@ -249,7 +250,7 @@ export default async function handler(req, res) {
       : { ok: false, error: tx.error || 'The payment was not confirmed on Solana mainnet.' };
     if (!confirmed.ok) return json(res, 400, { ok: false, error: confirmed.error });
   }
-  if (String(payload.category || '').toLowerCase() !== 'exchange') {
+  if (String(payload.category || '').toLowerCase() !== 'exchange' || closedTrade(payload)) {
     return json(res, 403, { ok: false, viewOnly: true, error: VIEW_ONLY_MESSAGE });
   }
   const signed = await verifyDevice(body.publicJwk, payload, body.sig);

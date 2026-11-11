@@ -15,11 +15,14 @@ test('only Health stays writable and every opening tile has a name', () => {
   assert.equal(healthWrite(''), true);
   assert.equal(healthWrite('campus'), false);
   assert.equal(healthWrite('exchange'), false);
-  assert.equal(home.includes('<span class="badge">Live</span><span class="tile-name">Health</span>'), true);
+  assert.equal(home.includes('<span class="badge">Beta</span><span class="tile-name">Health</span>'), true);
+  assert.equal(home.includes('>Live</span>'), false);
+  assert.equal(home.includes('>Testnet</span>'), false);
   for (const name of ['Campus', 'Neighbor help', 'Hosts', 'Circles', 'Stories', 'Exchange']) {
     assert.equal(home.includes(`<span class="tile-name">${name}</span>`), true, name);
-    assert.equal(home.includes('View only, coming next'), true);
+    assert.equal(home.includes(encodeURIComponent(`Help develop lgme.app: ${name}`)), true, name);
   }
+  assert.equal(home.includes('Coming soon. Help us build this category.'), true);
   assert.equal(home.includes('href="/helper"'), true);
   assert.equal(home.includes('href="/ai-help"'), true);
   assert.equal(text('js/gym-app.mjs').includes('href="/neighbors"'), false);
@@ -28,11 +31,11 @@ test('only Health stays writable and every opening tile has a name', () => {
     assert.equal(text(file).includes('/js/view-only.js'), true, file);
   }
   assert.equal(text('exchange.html').includes('/js/view-only.js'), false);
-  assert.equal(text('index.html').includes('<span class="badge">Testnet</span><span class="tile-name">Exchange</span>'), true);
+  assert.equal(text('index.html').includes('cryptovanities@gmail.com'), true);
   assert.equal(text('gym.html').includes('/js/view-only.js'), false);
   assert.equal(text('api/hedera/listings.mjs').includes('VIEW_ONLY_MESSAGE'), true);
   assert.equal(text('api/hedera/topic.mjs').includes('VIEW_ONLY_MESSAGE'), true);
   assert.equal(text('api/hedera/queue.mjs').includes('healthWrite'), true);
   assert.equal(text('api/gym/dispute.mjs').includes('VIEW_ONLY_MESSAGE'), false);
-  assert.equal(text('sw.js').includes('lgme-v151'), true);
+  assert.equal(text('sw.js').includes('lgme-v152'), true);
 });
