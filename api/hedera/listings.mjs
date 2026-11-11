@@ -82,7 +82,7 @@ export default async function handler(req, res) {
         missing: ['SHARED_LISTINGS_TESTNET=on']
       });
     }
-    const response = await fetch(`https://testnet.mirrornode.hedera.com/api/v1/topics/${LISTINGS_TOPIC}/messages?limit=40&order=asc`);
+    const response = await fetch(`https://testnet.mirrornode.hedera.com/api/v1/topics/${LISTINGS_TOPIC}/messages?limit=100&order=desc`);
     if (!response.ok) return json(res, 502, { ok: false, listings: [], error: 'The testnet mirror did not answer.' });
     const body = await response.json();
     const book = await bookOf(store);

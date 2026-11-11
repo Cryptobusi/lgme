@@ -4,6 +4,8 @@ import { VIEW_ONLY_MESSAGE } from './view-only-api.mjs';
 export const LISTINGS_TOPIC = '0.0.11397293';
 export const LISTINGS_OPERATOR = '0.0.11281203';
 export const UNCLAIMED = 'Test item - unclaimed';
+export const AUTHOR_STATUS = 'Test author - unclaimed';
+export const EXAMPLE_STATUS = 'Example transaction - test, until claimed';
 export const HOUR_LIMIT = 10;
 
 const BANNED = /@|https?:|\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b|\blatitude\b|\blongitude\b/i;
@@ -80,6 +82,14 @@ export function publicExchangeListing(spec = {}) {
   const tags = [...new Set((Array.isArray(spec.tags) ? spec.tags : []).map((tag) => String(tag).toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 24)).filter(Boolean))].slice(0, 4);
   const photoHash = String(spec.photoHash || '').toLowerCase();
   if (photoHash && !/^[0-9a-f]{64}$/.test(photoHash)) return { ok: false, status: 400, error: 'Send the photo hash only. The photo stays on the phone.' };
+  const receiptHash = String(spec.receiptHash || '').toLowerCase();
+  if (receiptHash && !/^[0-9a-f]{64}$/.test(receiptHash)) return { ok: false, status: 400, error: 'Send the receipt hash only.' };
+  const authorHandle = String(spec.authorHandle || '').trim().toLowerCase();
+  if (authorHandle && !HANDLE.test(authorHandle)) return { ok: false, status: 400, error: 'The test author handle is not usable.' };
+  const summary = clean(spec.summary, 140);
+  const place = clean(spec.place, 40);
+  const side = spec.side === 'request' ? 'request' : spec.side === 'offer' ? 'offer' : '';
+  const group = clean(spec.group, 24).toLowerCase().replace(/[^a-z0-9-]/g, '');
   let status = clean(spec.status, 80);
   if (action === 'update') {
     if (spec.role !== 'trainer' && spec.role !== 'author') {
@@ -91,7 +101,7 @@ export function publicExchangeListing(spec = {}) {
   } else if (!status) {
     status = UNCLAIMED;
   }
-  const allowed = status === UNCLAIMED || status === claimedStatus('repair-extraordinaire') || /^Claimed by [a-z0-9-]{1,32}$/.test(status);
+  const allowed = status === UNCLAIMED || status === AUTHOR_STATUS || status === EXAMPLE_STATUS || status === claimedStatus('repair-extraordinaire') || /^Claimed by [a-z0-9-]{1,32}$/.test(status);
   if (!allowed) return { ok: false, status: 400, error: 'Use the test status or a claim.' };
   const given = spec.rate && typeof spec.rate === 'object' ? spec.rate : null;
   const rate = given
@@ -111,6 +121,12 @@ export function publicExchangeListing(spec = {}) {
     status,
     provider: action === 'update' ? (provider || handle) : (status.startsWith('Claimed by ') ? status.slice('Claimed by '.length) : ''),
     photoHash,
+    ...(receiptHash ? { receiptHash } : {}),
+    ...(authorHandle ? { authorHandle } : {}),
+    ...(summary ? { summary } : {}),
+    ...(place ? { place } : {}),
+    ...(side ? { side } : {}),
+    ...(group ? { group } : {}),
     topic: LISTINGS_TOPIC,
     payer: LISTINGS_OPERATOR
   };

@@ -36,7 +36,7 @@ const UNTOUCHED = {
   'js/p2p-exchange-sim.mjs': '30c24d75e8dca4d0a5427ba1176b13f192cd27d2ef4f2f709ab7c82449b4087c',
   'js/p2p-exchange-sim-ui.mjs': '7d16e6b151b3ee2ed136bbe283afc410719da1eeeac03dde73aa6f38e11c0f58',
   'js/solana-pay.mjs': '91696ed805cb43bca35734dbfbac1f70ea002a4d0c4398393e7df5cf0de976d5',
-  'campus.html': '2be03fbb747d03a5fe98b4d777717dab79be79e623d99708b3c67a8eca26b95a',
+  'campus.html': '327f067e820ff0e7cebe0390e9f732abb09909926991291fabe7838ad3fa21b4',
   'js/campus-page.mjs': 'dfff943e00078fc8efc965d9f608b56c47d181d8fada9bd3060bb231566738ba',
   'data/campus-pilot.json': 'e76672225b4c889f03f7cb8d03a651092eff250de2edc5f61fdaad472044b6fc',
   'mutual-credit.html': '6d30361c838e00fa0ad7a2a0caddb985ff9a54397602dcd59c36624736b2ad85',

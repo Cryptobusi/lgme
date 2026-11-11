@@ -1,6 +1,7 @@
 import { EXCLUDED_NOTE, HOST_KINDS, NEIGHBOR_DEEDS, addMatchingHour, catalogFor, checkIn, createCircle, createHost, draftStory, hostSteward, joinHost, postDeed, publicCounts, publicStories, publishStory, readBook, verifyDeed, withdrawStory, writeBook } from './pairing.mjs';
 import { EXPLAINER, EXPLAINER_TITLE, ROLES, interestRecord } from './community-interest.mjs';
 import { ensureDeviceKey, signDevice } from './device-sign.mjs';
+import { mountSeedBoard } from './seed-board.mjs';
 
 const page = document.body.dataset.page;
 const root = document.getElementById('pair');
@@ -102,6 +103,8 @@ function draw() {
   else if (page === 'hosts') drawHosts();
   else if (page === 'circles') drawCircles();
   else drawStories();
+  const group = { neighbors: 'neighbor', hosts: 'hosts', circles: 'circles', stories: 'stories' }[page];
+  if (group) mountSeedBoard(root, group);
 }
 
 function drawNeighbors() {
