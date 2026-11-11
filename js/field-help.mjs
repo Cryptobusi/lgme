@@ -1,7 +1,10 @@
+import { helpOverride } from './variant-schema.mjs';
+
 export function fieldMeta(field) {
   if (!field || typeof field.getAttribute !== 'function') return null;
   if (field.closest && field.closest('#ai-dock')) return null;
-  const help = String(field.getAttribute('data-help') || '').trim();
+  const custom = helpOverride(field.id || field.getAttribute?.('id'));
+  const help = custom || String(field.getAttribute('data-help') || '').trim();
   const options = String(field.getAttribute('data-options') || '').split('|').map((item) => item.trim()).filter(Boolean);
   if (!help && !options.length) return null;
   return { help: help || 'Fill this in. It stays on this phone until you confirm.', options };

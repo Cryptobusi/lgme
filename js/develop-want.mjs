@@ -74,8 +74,8 @@ export async function notifyOwner(env, notice, { fetchImpl = globalThis.fetch, p
       body: JSON.stringify({
         from,
         to,
-        subject: `IwanIT: ${notice.category}`,
-        text: `${notice.title}\n${notice.at}\n${notice.link}`
+        subject: notice.subject || `IwanIT: ${notice.category}`,
+        text: `${notice.title}\n${notice.at}\n${notice.link}${notice.variant ? `\n\n${JSON.stringify(notice.variant)}` : ''}`
       })
     });
     result.email = response.ok === true;

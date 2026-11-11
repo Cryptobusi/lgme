@@ -1,6 +1,7 @@
 import { aiSetupSteps } from './ai-setup.mjs';
 import { applyFieldOption, fieldLines, fieldMeta, nextHelpField, safeHelpLine } from './field-help.mjs';
 import { AI_ENABLE, draftWithHelper, localAiReady, pickHelperSync } from './one-tap.mjs';
+import { dockChipsOf } from './variant-schema.mjs';
 
 const FLAG = 'Only available online with AI enabled.';
 const AI_CHIPS = ['Log a workout', 'Make an IdidIt receipt', 'What can I do here?'];
@@ -132,10 +133,10 @@ function mount() {
     if (fieldMeta(active)) return;
     fieldToken += 1;
     dock.classList.remove('has-field');
-    paintChips(AI_CHIPS, null);
+    paintChips(dockChipsOf() || AI_CHIPS, null);
     paint(dock);
   };
-  paintChips(AI_CHIPS, null);
+  paintChips(dockChipsOf() || AI_CHIPS, null);
   document.addEventListener('focusin', (event) => { showField(event.target); });
   document.addEventListener('focusout', () => { setTimeout(clearField, 0); });
   ask.addEventListener('pointerup', () => { ask.focus(); });

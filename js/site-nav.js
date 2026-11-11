@@ -1,6 +1,6 @@
 (function () {
   var EPOCH = '2';
-  var CURRENT = { 'lgme-v173': 1, 'lgme-gym-v79': 1 };
+  var CURRENT = { 'lgme-v174': 1, 'lgme-gym-v80': 1 };
   function keep(name) {
     if (!name) return true;
     if (name === 'lgme.reset.epoch' || name === 'lgme.reset.note' || name === 'lgme.device.key' || name === 'lgme-gym.seat' || name === 'lgme.health.book' || name === 'lgme.health.email' || name === 'lgme.health.plan' || name === 'lgme.health.contact' || name === 'lgme.health.contactGrants' || name === 'lgme.health.consent') return true;

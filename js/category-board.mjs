@@ -1,6 +1,7 @@
 import { CATEGORIES } from './category-help.mjs';
 import { ACTIONS, countLabel, nearDuplicates } from './category-evolve.mjs';
 import { listingsFor } from './category-listings.mjs';
+import { readActive } from './variant-schema.mjs';
 import { draftWithHelper, localAiReady, pickHelperSync } from './one-tap.mjs';
 
 const NAME_OPTIONS = 'Night walks|Tool library|Study hour';
@@ -57,15 +58,19 @@ export function mountCategoryBoard(root = document.getElementById('category-boar
     detail: null,
     form: '',
     proposals: [],
+    offers: [],
     message: '',
     matches: []
   };
 
   const paint = () => {
     const current = categoryOf(state);
+    const active = readActive();
+    if (active?.theme) root.dataset.theme = active.theme;
     const promoted = state.proposals.filter((row) => row.kind === 'category' && row.status === 'promoted');
+    const ordered = active ? active.order.map((id) => ACTIONS.find((item) => item.id === id)).filter(Boolean) : ACTIONS;
     const actions = [
-      ...ACTIONS,
+      ...ordered.map((action) => ({ ...action, name: active?.extras?.[action.id] ? `${action.name} · ${active.extras[action.id]}` : action.name })),
       ...state.proposals.filter((row) => row.kind === 'listing' && row.status === 'promoted' && row.category === current.id).map((row) => ({ id: row.id, name: row.name, aria: `${row.name}, Early / In development` }))
     ];
     const buttons = actions.map((action) => {
@@ -99,6 +104,16 @@ export function mountCategoryBoard(root = document.getElementById('category-boar
         button.addEventListener('click', () => { state.detail = row; paint(); });
         list.append(button);
       }
+      if (current.id === 'health' && state.action === 'ihavit') {
+        for (const offer of state.offers) {
+          const button = el('button', { type: 'button', class: 'category-row' }, ['Custom setup offered', el('span', {}, [`${offer.name} · ${offer.authorId}`])]);
+          button.addEventListener('click', () => {
+            state.detail = { title: 'Custom setup offered', line: `${offer.name}. ${offer.purpose} Author: ${offer.authorId}. Not written on chain.` };
+            paint();
+          });
+          list.append(button);
+        }
+      }
     }
     const more = el('button', { type: 'button', id: 'category-more' }, ['See more']);
     more.addEventListener('click', () => {
@@ -109,7 +124,7 @@ export function mountCategoryBoard(root = document.getElementById('category-boar
     listingNew.addEventListener('click', () => { state.form = 'listing'; state.matches = []; state.message = ''; paint(); });
     const chips = el('div', { id: 'category-chips', 'aria-label': 'Other categories' });
     const others = [
-      ...CATEGORIES.filter((item) => item.id !== current.id),
+      ...CATEGORIES.filter((item) => item.id !== current.id && (!active?.chips || active.chips.includes(item.id))),
       ...promoted.filter((row) => row.name.toLowerCase() !== current.name.toLowerCase()).map((row) => ({ id: row.id, name: row.name, proposed: false, early: true })),
       ...state.proposals.filter((row) => row.kind === 'category' && row.status === 'proposed').map((row) => ({ id: row.id, name: row.name, proposed: true }))
     ];
@@ -135,16 +150,12 @@ export function mountCategoryBoard(root = document.getElementById('category-boar
     create.addEventListener('click', () => { state.form = 'category'; state.matches = []; state.message = ''; state.openProposal = ''; paint(); });
     chips.append(create);
     const status = el('p', { id: 'category-status', role: 'status' }, [state.message]);
-    const pieces = [
-      el('h2', {}, [current.name]),
-      el('p', {}, [current.id === 'health' ? 'Health is open.' : 'Early / In development. Browse only.']),
-      el('div', { class: 'category-actions' }, buttons),
-      list,
-      more,
-      listingNew,
-      status,
-      chips
-    ];
+    const title = el('h2', {}, [current.name]);
+    const blurb = el('p', {}, [current.id === 'health' ? 'Health is open.' : 'Early / In development. Browse only.', ' ', el('a', { href: '/customize' }, ['Customize'])]);
+    const actionsWrap = el('div', { class: 'category-actions' }, buttons);
+    const pieces = active?.home === 'chips-first'
+      ? [title, blurb, chips, actionsWrap, list, more, listingNew, status]
+      : [title, blurb, actionsWrap, list, more, listingNew, status, chips];
     if (state.openProposal) pieces.push(proposalCard(state, paint));
     if (state.form) pieces.push(formCard(state, paint));
     root.replaceChildren(...pieces);
@@ -155,6 +166,12 @@ export function mountCategoryBoard(root = document.getElementById('category-boar
     const next = Array.isArray(body?.proposals) ? body.proposals : [];
     if (JSON.stringify(next) === JSON.stringify(state.proposals)) return;
     state.proposals = next;
+    paint();
+  }).catch(() => {});
+  fetch('/api/versions').then((response) => response.json()).then((body) => {
+    const offers = Array.isArray(body?.offers) ? body.offers : [];
+    if (!offers.length) return;
+    state.offers = offers;
     paint();
   }).catch(() => {});
 }
