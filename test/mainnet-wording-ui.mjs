@@ -34,14 +34,14 @@ for (const [width, height] of [[390, 844], [768, 1024], [1280, 800]]) {
   });
   await context.route('**/*', (route) => route.request().url().includes('fonts.g') ? route.abort() : route.continue());
   const page = await context.newPage();
-  await page.goto(`${base}/`, { waitUntil: 'domcontentloaded' });
-  const plan = await page.locator('p.note', { hasText: 'Mainnet is a later plan' }).innerText();
-  const later = await page.locator('p.muted', { hasText: 'Sending that fingerprint' }).innerText();
-  if (!plan.includes('Mainnet is a later plan and is off.')) failures.push(`${width} missing later plan`);
-  if (!later.includes('Mainnet is off.')) failures.push(`${width} missing mainnet off`);
-  if (/Hedera|testnet topic|daily job/.test(`${plan} ${later}`)) failures.push(`${width} still names a network write`);
-  await page.locator('p.note', { hasText: 'Mainnet is a later plan' }).scrollIntoViewIfNeeded();
-  await page.screenshot({ path: `/opt/cursor/artifacts/mainnet-plan-${width}.png`, timeout: 8000, animations: 'disabled' });
+  await page.goto(`${base}/gym`, { waitUntil: 'domcontentloaded' });
+  const anchor = await page.locator('#health-anchor').innerText();
+  if (anchor !== 'Health hashes are anchored on Hedera mainnet. Health data itself is never written on chain.') failures.push(`${width} missing Health anchor`);
+  const home = await page.goto(`${base}/`, { waitUntil: 'domcontentloaded' }).then(() => page.locator('body').innerText());
+  if (/Mainnet|mainnet/.test(home)) failures.push(`${width} homepage says mainnet`);
+  await page.goto(`${base}/gym`, { waitUntil: 'domcontentloaded' });
+  await page.locator('#health-anchor').scrollIntoViewIfNeeded();
+  await page.screenshot({ path: `/opt/cursor/artifacts/health-anchor-${width}.png`, timeout: 8000, animations: 'disabled' });
   await context.close();
 }
 await browser.close();
