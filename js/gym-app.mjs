@@ -29,7 +29,8 @@ import { paintHealthAnchor } from './health-anchor.mjs';
 import { addReview, approveLimitRaise, breakSplit, intakeParts, intakeStatusText, publicIntake, requestLimitRaise, reviewHash } from './intake.mjs';
 import { changeSteward, groupSteward, isGroupAdmin, isTrainer, majoritySteward, queueFor, routeSteward, setTrainer, sponsorIds, stewardEligible, trainingOffer } from './steward.mjs';
 import { deleteHelper, helperFile, loadHelper, saveHelper } from './helper-store.mjs';
-import { ensureDeviceKey, intakeSharePayload, randomInvite, signDevice } from './device-sign.mjs';
+import { ensureDeviceKey, intakeSharePayload, randomInvite, sha256Hex, signDevice } from './device-sign.mjs';
+import { IDIDIT_CHIPS, IDIDIT_NAME, submitIdidIt } from './ididit-draft.mjs';
 import { renderProtocol } from './intake-view.mjs';
 import { DISCLAIMER, DISCLAIMER_EDITION, SANDBOX_LABEL, confirmOutcome, failMediation, messageFromMirror, openDispute, publicDispute, rehearsalMembers, requestPanel, setShareConsent, signVerdict } from './dispute.mjs';
 import { mountDeviceCard } from './device-card.mjs';
@@ -138,6 +139,7 @@ async function renderClub() {
   panel.append(el('p', {}, ['A workout mints no credit. Support comes from another member, a barter, or the front desk. A $lgme gift keeps 5% for the Floor and 5% for the App development fund.']));
   if (!mine && mode === 'real') {
     panel.append(el('p', {}, [el('a', { href: '#/register' }, ['Join Health'])]));
+    panel.append(el('button', { type: 'button', id: 'gym-ididit', onClick: () => go('/ididit') }, [IDIDIT_NAME]));
   } else if (mine) {
     panel.append(await renderBoard());
     panel.append(el('button', { type: 'button', class: 'primary', onClick: () => go('/train') }, ['Start a session']));
@@ -1102,6 +1104,16 @@ function covenantFields(text) {
   return { host, inputs };
 }
 
+function chipRow(id, labels, onPick) {
+  const row = el('div', { class: 'tap-chips', id });
+  for (const label of labels) {
+    const button = el('button', { type: 'button', class: 'tap-chip' }, [label]);
+    button.addEventListener('click', () => onPick(label));
+    row.append(button);
+  }
+  return row;
+}
+
 function agreeBox(key, label) {
   const input = el('input', { type: 'checkbox' });
   input.checked = signup.agree[key] === true;
@@ -1250,7 +1262,14 @@ function emailJoinCard() {
   } }, ['Verify and continue']);
   host.append(el('label', {}, ['Email', email]));
   host.append(el('label', {}, ['Code', code]));
-  host.append(send, verify, result);
+  const phone = el('button', { type: 'button', class: 'primary', id: 'join-phone', onClick: async () => {
+    const key = await ensureDeviceKey(localStorage);
+    const emailHash = await sha256Hex(`lgme phone ${key.publicJwk.x}.${key.publicJwk.y}`);
+    saveEmailSession(localStorage, { email: '', emailHash, x: key.publicJwk.x, y: key.publicJwk.y, at: new Date().toISOString() });
+    signup.step = 1;
+    render();
+  } }, ['Continue on this phone']);
+  host.append(send, verify, phone, result);
   queueMicrotask(async () => {
     let status = { enabled: false };
     try { status = await (await fetch('/api/email/status')).json(); } catch { status = { enabled: false }; }
@@ -1303,6 +1322,10 @@ async function renderRegister() {
     return box;
   }
   if (signup.step === 1) {
+    if (!signup.primary) signup.primary = 'Walking group';
+    if (!signup.secondary) signup.secondary = 'A session';
+    if (!signup.legalName) signup.legalName = 'On this phone';
+    if (!signup.signature) signup.signature = 'This device';
     const text = await covenantBody();
     const sections = covenantSections(text);
     if (!sections.ok) { box.append(el('p', {}, [sections.error])); return box; }
@@ -1318,6 +1341,11 @@ async function renderRegister() {
     signature.value = signup.signature;
     date.type = 'date';
     date.value = signup.date;
+    box.append(chipRow('offer-chips', ['Walking group', 'Strength', 'Mobility'], (label) => { primary.value = label; signup.primary = label; }));
+    box.append(chipRow('support-chips', ['A session', 'A check-in', 'Stretching'], (label) => { secondary.value = label; signup.secondary = label; }));
+    box.append(chipRow('name-chips', ['On this phone'], (label) => { legal.value = label; signup.legalName = label; }));
+    box.append(chipRow('sign-chips', ['This device'], (label) => { signature.value = label; signup.signature = label; }));
+    box.append(el('p', { class: 'muted' }, ['Other: type in a field below if none of the options fit.']));
     box.append(el('section', { class: 'card' }, [
       el('h3', {}, ['Preamble']),
       el('div', { class: 'covenant-scroll' }, [sections.preamble]),
@@ -1346,6 +1374,12 @@ async function renderRegister() {
       el('p', {}, [DISCLAIMER_EDITION + '. ', el('a', { href: '/disclaimer' }, ['Read the disclaimer'])]),
       agreeBox('disclaimer', 'I understand. Use is voluntary, and this does not replace a court.')
     ]));
+    const agreeAll = el('button', { type: 'button', id: 'agree-all' }, ['I agree to all sections']);
+    agreeAll.addEventListener('click', () => {
+      for (const key of ['preamble', 'articles', 'section2', 'health', 'disclaimer']) signup.agree[key] = true;
+      box.querySelectorAll('label.check input').forEach((input) => { input.checked = true; });
+    });
+    box.append(agreeAll);
     box.append(el('button', { type: 'button', class: 'primary', onClick: () => {
       signup.primary = primary.value.trim();
       signup.secondary = secondary.value.trim();
@@ -1370,19 +1404,28 @@ async function renderRegister() {
     rendered.host.id = 'intake-form';
     const blanks = rendered.blanks;
     const checks = rendered.checks;
-    if (signup.primary) blanks[4].value = signup.primary;
-    if (signup.secondary) blanks[9].value = signup.secondary;
-    if (signup.applicantName) blanks[2].value = signup.applicantName;
-    if (signup.name) blanks[3].value = signup.name;
-    if (signup.date) blanks[1].value = signup.date;
+    const fill = (index, value) => { if (blanks[index] && value) blanks[index].value = value; };
+    if (!signup.applicantName) signup.applicantName = 'On this phone';
+    if (!signup.trackRecord) signup.trackRecord = 'I walk';
+    if (!signup.name) signup.name = 'health-phone';
+    fill(4, signup.primary);
+    fill(9, signup.secondary);
+    fill(2, signup.applicantName);
+    fill(3, signup.name);
+    fill(1, signup.date);
+    fill(14, signup.trackRecord);
     box.append(el('p', {}, [el('a', { href: '/gym/intake-protocol' }, ['Intake protocol'])]));
+    box.append(chipRow('intake-chips', ['On this phone', 'I walk', 'I lift', 'I stretch'], (label) => {
+      if (label === 'On this phone') { signup.applicantName = label; fill(2, label); }
+      else { signup.trackRecord = label; fill(14, label); }
+    }));
     box.append(rendered.host);
     box.append(el('button', { type: 'button', class: 'primary', onClick: () => {
-      signup.applicantName = blanks[2].value.trim();
-      signup.name = signup.name || blanks[3].value.trim();
-      signup.primary = blanks[4].value.trim();
-      signup.secondary = blanks[9].value.trim();
-      signup.trackRecord = blanks[14].value.trim();
+      signup.applicantName = blanks[2]?.value.trim() || signup.applicantName;
+      signup.name = signup.name || blanks[3]?.value.trim();
+      signup.primary = blanks[4]?.value.trim() || signup.primary;
+      signup.secondary = blanks[9]?.value.trim() || signup.secondary;
+      signup.trackRecord = blanks[14]?.value.trim() || signup.trackRecord;
       signup.confirmed = checks[10].checked;
       if (!signup.primary || !signup.secondary) { status('Both offerings are required.'); return; }
       if (!signup.applicantName || !signup.trackRecord) { status('Add your name and one track record. They stay on this phone.'); return; }
@@ -1390,9 +1433,11 @@ async function renderRegister() {
       render();
     } }, ['Next']));
   } else if (signup.step === 3) {
-    const name = el('input', { maxlength: '40', placeholder: 'Handle' });
+    const name = el('input', { id: 'handle-other', maxlength: '40', placeholder: 'Other handle' });
+    if (!signup.name) signup.name = 'health-phone';
     name.value = signup.name;
-    box.append(el('label', {}, ['Handle. Other members see this. Your legal name stays on this phone.', name]));
+    box.append(chipRow('handle-chips', ['health-phone', 'walker'], (label) => { signup.name = label; name.value = label; }));
+    box.append(el('label', {}, ['Other handle. Other members see this. Your legal name stays on this phone.', name]));
     box.append(el('button', { type: 'button', class: 'primary', onClick: () => {
       const clean = name.value.trim();
       if (clean.length < 2) { status('Add a handle.'); return; }
@@ -1401,6 +1446,7 @@ async function renderRegister() {
       render();
     } }, ['Next']));
   } else if (signup.step === 4) {
+    if (!signup.kinds.length) signup.kinds = ['minutes', 'sessions', 'health'];
     const boxes = PROGRESS_KINDS.map((kind) => {
       const input = el('input', { type: 'checkbox', value: kind.id });
       input.checked = signup.kinds.includes(kind.id);
@@ -1843,6 +1889,7 @@ async function renderDashboard() {
   const sponsored = locals.filter((peer) => peer.id !== mine.id && (peer.covenant?.sponsors || []).some((row) => row.handle === mine.id));
   const view = el('div', {}, [
     el('p', {}, [el('a', { href: '/?picker=1' }, ['All categories']), ' · ', el('a', { href: '/gym/covenant' }, ['Member Covenant']), ' · ', el('a', { href: '#/personalize' }, ['Personalize']), ' · ', el('a', { href: '#/dispute' }, ['Dispute rehearsal'])]),
+    el('button', { type: 'button', id: 'gym-ididit', onClick: () => go('/ididit') }, [IDIDIT_NAME]),
     setupReminder(mine),
     covenantPanel(mine, locals),
     sponsored.length ? el('section', { class: 'card', id: 'sponsored-members' }, [
@@ -2022,11 +2069,33 @@ async function renderDispute() {
   ]);
 }
 
+async function renderIdidIt() {
+  const title = el('input', { id: 'gym-ididit-other', maxlength: '80', value: IDIDIT_CHIPS[0] });
+  const statusLine = el('p', { id: 'ididit-status', role: 'status' });
+  const confirm = el('button', { type: 'button', class: 'primary', id: 'gym-ididit-confirm' }, ['Confirm']);
+  confirm.addEventListener('click', async () => {
+    confirm.disabled = true;
+    const result = await submitIdidIt(title.value);
+    statusLine.textContent = result.ok
+      ? `Recorded on testnet. ${result.transactionId || result.sequenceNumber || ''}`
+      : (result.error || 'The receipt stayed on this phone.');
+    confirm.disabled = false;
+  });
+  return el('section', { id: 'ididit-done' }, [
+    el('h2', {}, [IDIDIT_NAME]),
+    chipRow('gym-ididit-chips', IDIDIT_CHIPS, (label) => { title.value = label; }),
+    el('label', {}, ['Other', title]),
+    confirm,
+    statusLine
+  ]);
+}
+
 async function render() {
   const path = route();
   const panel = document.getElementById('gym-panel');
   if (!panel) return;
   let view;
+  try {
   if (path.startsWith('/card/')) view = await renderMember(path.slice(6), true);
   else if (path.startsWith('/people/')) view = await renderMember(path.slice(8), false);
   else if (path === '/people') view = await renderPeople();
@@ -2043,9 +2112,13 @@ async function render() {
   } else if (path === '/page') view = await personalPageView({ storage: localStorage, status, go, mine: await seat(), signedGym, peerStore: store });
   else if (path === '/start' && registered && mode !== 'demo') view = await renderDashboard();
   else if (path === '/helper') view = await renderHelperHome();
+  else if (path === '/ididit') view = await renderIdidIt();
   else if (path === '/register' || path === '/start') view = await renderRegister();
   else if (registered && (path === '/' || path === '/me')) view = await renderDashboard();
   else view = await renderClub();
+  } catch {
+    view = el('p', { id: 'gym-status', role: 'status' }, ['This step did not open. Tap Join Health and try the prefilled options.']);
+  }
   panel.replaceChildren(view);
   const people = await books();
   if (people.length) panel.prepend(actingAs(people));

@@ -2,6 +2,7 @@ import { CHOICES, DISCLAIMER, countByCategory, draftFor, examplePosts, markSeen,
 import { COLLECT_LABEL, SHARE_LABEL, readHealthConsent, writeHealthConsent } from './health-safeguards.mjs';
 import { AI_ENABLE, deviceContext, draftWithHelper, pickHelperSync, showHelperNote } from './one-tap.mjs';
 import { ensureDeviceKey } from './device-sign.mjs';
+import { IDIDIT_CHIPS, IDIDIT_NAME, submitIdidIt } from './ididit-draft.mjs';
 
 const root = document.getElementById('demo-root');
 if (!root) throw new Error('missing demo root');
@@ -121,11 +122,20 @@ function paintGuide() {
   confirm.addEventListener('click', async () => {
     if (state.busy) return;
     if (navigator.onLine === false) {
-      note.textContent = AI_ENABLE;
+      note.textContent = 'You are offline. The draft stays on this phone until you are back online.';
       return;
     }
     state.busy = true;
     confirm.disabled = true;
+    if (state.choice === IDIDIT_NAME) {
+      const result = await submitIdidIt(title.value);
+      state.busy = false;
+      root.replaceChildren(el('section', { id: 'ididit-done' }, [
+        el('h2', {}, [IDIDIT_NAME]),
+        el('p', { id: 'ididit-status' }, [result.ok ? `Recorded on testnet. ${result.transactionId || result.sequenceNumber || ''}` : (result.error || 'The receipt stayed on this phone.')])
+      ]));
+      return;
+    }
     const raw = String(ctx.category || '').toLowerCase();
     const named = { campus: 'Campus', exchange: 'Exchange', neighbor: 'Neighbor help', hosts: 'Hosts', circles: 'Circles', stories: 'Stories', health: 'Health' }[raw] || 'Health';
     saveDemo(localStorage, { choice: state.choice });
@@ -146,10 +156,22 @@ function paintGuide() {
     paintHome();
     root.replaceChildren(el('p', { id: 'browse-only' }, ['Only Health can list, trade, or record a receipt. Other categories are in development. Use IwanIT to take part.']));
   });
+  const chips = el('div', { class: 'tap-chips', id: 'ididit-chips' });
+  if (state.choice === IDIDIT_NAME) {
+    for (const label of IDIDIT_CHIPS) {
+      const chip = el('button', { type: 'button', class: 'tap-chip' }, [label]);
+      chip.addEventListener('click', () => {
+        title.value = label;
+        body.value = `${label}. Confirmed on this phone.`;
+      });
+      chips.append(chip);
+    }
+  }
   root.replaceChildren(el('section', { id: 'demo-guide' }, [
     note,
     el('h2', {}, [state.choice]),
-    el('label', { for: 'demo-title' }, ['Title. ', el('span', { class: 'demo-help' }, [base.titleHelp])]),
+    chips,
+    el('label', { for: 'demo-title' }, ['Title. ', el('span', { class: 'demo-help' }, [base.titleHelp]), ' Other']),
     title,
     el('label', { for: 'demo-note' }, ['Note. ', el('span', { class: 'demo-help' }, [base.noteHelp])]),
     body,
@@ -297,12 +319,21 @@ function paintEmail() {
     writePending({ step: 'code', email: state.email, choice: state.choice, returnTo: readPending()?.returnTo || '' });
     paintCode();
   });
+  const phone = el('button', { type: 'button', class: 'primary', id: 'demo-phone' }, ['Continue on this phone']);
+  phone.addEventListener('click', () => {
+    saveDemo(localStorage, { disclaimer: false, emailHash: 'phone' });
+    localStorage.setItem('lgme-gym.seat', 'demo');
+    writePending({ step: 'disclaimer', choice: state.choice, returnTo: readPending()?.returnTo || '' });
+    state.step = 'disclaimer';
+    paintDisclaimer();
+  });
   root.replaceChildren(el('section', { id: 'demo-email-step' }, [
     el('h2', {}, ['Demo sign-in']),
     el('p', {}, ['Email and a 6-digit code. That is the whole sign-in.']),
     el('label', { for: 'demo-email' }, ['Email']),
     email,
     button,
+    phone,
     status
   ]));
 }

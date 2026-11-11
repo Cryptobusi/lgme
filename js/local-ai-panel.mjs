@@ -2,6 +2,7 @@ import { aiSetupSteps } from './ai-setup.mjs';
 import { AI_ENABLE, localAiReady, pickHelperSync } from './one-tap.mjs';
 
 const FLAG = 'Only available online with AI enabled.';
+const AI_CHIPS = ['Log a workout', 'Make an IdidIt receipt', 'What can I do here?'];
 
 function promptFor(path) {
   if (path.startsWith('/gym')) return 'Explain this Health step in three short lines. I confirm before anything is kept.';
@@ -55,7 +56,7 @@ function mount() {
   dock.id = 'ai-dock';
   dock.setAttribute('aria-label', 'On-device AI');
   dock.setAttribute('popover', 'manual');
-  dock.innerHTML = '<p class="ai-top"><span class="ai-label">AI</span><button type="button" id="ai-switch" role="switch" aria-checked="true" aria-label="AI on or off">On</button><a class="ai-setup-link" href="/ai-setup">How to turn AI on</a></p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><pre id="ai-log" tabindex="0"></pre><p class="ai-actions"><button type="button" id="ai-accept">Accept</button><button type="button" id="ai-expand" aria-expanded="false">Open</button></p>';
+  dock.innerHTML = '<p class="ai-top"><span class="ai-label">AI</span><button type="button" id="ai-switch" role="switch" aria-checked="true" aria-label="AI on or off">On</button><a class="ai-setup-link" href="/ai-setup">How to turn AI on</a></p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><div id="ai-chips" class="ai-chips"></div><textarea id="ai-ask" rows="2" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><pre id="ai-log"></pre><p class="ai-actions"><button type="button" id="ai-accept">Accept</button><button type="button" id="ai-expand" aria-expanded="false">Open</button></p>';
   try {
     if (localStorage.getItem('lgme.reset.note') === '1') {
       const note = dock.querySelector('#app-reset-note');
@@ -75,6 +76,20 @@ function mount() {
   document.addEventListener('toggle', (event) => {
     if (event.target && event.target.tagName === 'DIALOG') lift();
   }, true);
+  const ask = dock.querySelector('#ai-ask');
+  const chips = dock.querySelector('#ai-chips');
+  for (const label of AI_CHIPS) {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'ai-chip';
+    chip.textContent = label;
+    chip.addEventListener('click', () => {
+      ask.value = label;
+      ask.focus();
+    });
+    chips.append(chip);
+  }
+  ask.addEventListener('pointerup', () => { ask.focus(); });
   paint(dock);
   dock.querySelector('#ai-expand').addEventListener('click', () => {
     const open = dock.classList.toggle('is-open');
