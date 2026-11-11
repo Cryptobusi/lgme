@@ -410,6 +410,15 @@ button.plus {
   justify-content: center;
 }
 
+dialog[open] {
+  position: fixed;
+  top: 4.5rem;
+  left: 50%;
+  z-index: 40;
+  margin: 0;
+  transform: translateX(-50%);
+}
+
 dialog {
   width: min(40rem, calc(100vw - 1.25rem));
   max-height: 92vh;

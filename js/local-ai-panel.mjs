@@ -42,8 +42,20 @@ function mount() {
   const dock = document.createElement('section');
   dock.id = 'ai-dock';
   dock.setAttribute('aria-label', 'On-device AI');
+  dock.setAttribute('popover', 'manual');
   dock.innerHTML = '<p class="ai-label">AI</p><p id="ai-flag" hidden></p><pre id="ai-log" tabindex="0"></pre><p class="ai-actions"><button type="button" id="ai-accept">Accept</button><button type="button" id="ai-expand" aria-expanded="false">Open</button></p>';
   document.body.append(dock);
+  const lift = () => {
+    if (typeof dock.showPopover !== 'function') return;
+    try {
+      if (dock.matches(':popover-open')) dock.hidePopover();
+      dock.showPopover();
+    } catch { /* the bar stays in the page */ }
+  };
+  lift();
+  document.addEventListener('toggle', (event) => {
+    if (event.target && event.target.tagName === 'DIALOG') lift();
+  }, true);
   paint(dock);
   dock.querySelector('#ai-expand').addEventListener('click', () => {
     const open = dock.classList.toggle('is-open');

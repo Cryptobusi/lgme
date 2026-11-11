@@ -32,7 +32,7 @@ test('the gym beta is a separate installable page', () => {
   assert.equal(text('sitemap.xml').includes('https://lgme.app/gym'), true);
   assert.equal(text('help.html').includes('Chat text is not written to Hedera.'), true);
   assert.equal(text('glossary.html').includes('App development fund'), true);
-  assert.equal(worker.includes('lgme-v160'), true);
+  assert.equal(worker.includes('lgme-v161'), true);
   assert.equal(worker.includes('key.startsWith("lgme-v")'), true);
   assert.equal(gymWorker.includes("key.startsWith('lgme-gym-')"), true);
   assert.equal(gymWorker.includes('lgme-v80'), false);

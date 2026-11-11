@@ -830,7 +830,7 @@ export function boot(doc = document, storage = globalThis.localStorage) {
     };
     renderStep();
     const dialog = $('stepper-dialog');
-    if (!dialog.open) dialog.showModal();
+    if (!dialog.open) dialog.show();
     const selected = dialog.querySelector('[role="radio"][aria-checked="true"]');
     if (selected) selected.focus();
   }
@@ -857,7 +857,7 @@ export function boot(doc = document, storage = globalThis.localStorage) {
     }
     if (target.closest('#configure-permission')) {
       const dialog = $('consent-dialog');
-      if (!dialog.open) dialog.showModal();
+      if (!dialog.open) dialog.show();
       return;
     }
     const changeView = target.closest('[data-view]');
@@ -882,7 +882,7 @@ export function boot(doc = document, storage = globalThis.localStorage) {
       $('tape-record').textContent = tape.dataset.tapeTitle;
       $('tape-hash').textContent = tape.dataset.tape;
       const dialog = $('tape-dialog');
-      if (!dialog.open) dialog.showModal();
+      if (!dialog.open) dialog.show();
       return;
     }
     const why = target.closest('[data-why]');
@@ -1017,7 +1017,7 @@ export function boot(doc = document, storage = globalThis.localStorage) {
   $('tape-close').addEventListener('click', () => $('tape-dialog').close());
   $('reset-open').addEventListener('click', () => {
     const dialog = $('reset-dialog');
-    if (!dialog.open) dialog.showModal();
+    if (!dialog.open) dialog.show();
   });
   $('reset-cancel').addEventListener('click', () => $('reset-dialog').close());
   $('reset-confirm').addEventListener('click', () => {
@@ -1035,7 +1035,7 @@ export function boot(doc = document, storage = globalThis.localStorage) {
 
   render();
   setInterval(paintClock, 30000);
-  if (state.consent == null && !$('consent-dialog').open) $('consent-dialog').showModal();
+  if (state.consent == null && !$('consent-dialog').open) $('consent-dialog').show();
 }
 
 if (typeof document !== 'undefined' && document.getElementById && document.getElementById('my-picture-app')) {

@@ -38,15 +38,23 @@ html.has-site-nav body { padding-bottom: calc(12.5rem + env(safe-area-inset-bott
 html.has-site-nav body:has(nav[aria-label="Gym"]) { padding-bottom: calc(17rem + env(safe-area-inset-bottom)); }
 #ai-dock {
   position: fixed;
+  inset: auto 0 0 0;
   left: 0;
   right: 0;
   bottom: 0;
+  width: auto;
+  height: auto;
+  max-width: none;
+  margin: 0;
   z-index: 45;
   box-sizing: border-box;
   padding: 0.4rem 0.7rem calc(0.45rem + env(safe-area-inset-bottom));
-  background: #10150f;
+  background-color: #0c100c;
+  background-image: none;
   color: #f4f1e8;
+  border: 0;
   border-top: 3px solid #F97316;
+  overflow: visible;
 }
 body:has(nav[aria-label="Gym"]) #ai-dock { bottom: calc(4.5rem + env(safe-area-inset-bottom)); }
 .ai-label { margin: 0 0 0.15rem; font-size: 0.72rem; letter-spacing: 0.16em; font-weight: 700; color: #F97316; }

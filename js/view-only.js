@@ -12,7 +12,7 @@
   }
 
   function skip(node) {
-    return Boolean(node.closest('nav, .tabbar, .tools, .menu-toggle, .view-switch, .deskmenu'));
+    return Boolean(node.closest('#ai-dock, nav, .tabbar, .tools, .menu-toggle, .view-switch, .deskmenu'));
   }
 
   function lock(root) {
