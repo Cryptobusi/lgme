@@ -1,5 +1,5 @@
 #category-board {
-  min-height: 28rem;
+  min-height: 48rem;
   margin: 0.6rem 0 1rem;
   color: #f4f1e8;
 }
@@ -68,5 +68,6 @@
 }
 #category-status { min-height: 1.4rem; font-weight: 700; }
 @media (min-width: 800px) {
+  #category-board { min-height: 40rem; }
   .category-actions { grid-template-columns: 1fr 1fr 1fr; }
 }
