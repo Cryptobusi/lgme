@@ -1,15 +1,4 @@
-import { OVERVIEW_KEY, rowsFor, tallyExchange } from './exchange-overview.mjs';
-
-const LABELS = {
-  health: 'Health',
-  mental: 'Mental exercise',
-  campus: 'Campus',
-  neighbor: 'Neighbor help',
-  hosts: 'Hosts',
-  circles: 'Circles',
-  stories: 'Stories',
-  other: 'Other'
-};
+import { OVERVIEW_KEY, tallyExchange } from './exchange-overview.mjs';
 
 function el(tag, attrs = {}, children = []) {
   const node = document.createElement(tag);
@@ -63,69 +52,44 @@ function mirrorTime(value) {
   return date.toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
 }
 
-const TITLES = {
-  ...LABELS,
-  pool: 'Membership pool',
-  setup: 'Setup receivables',
-  repair: 'Repair Extraordinaire',
-  developers: 'Developer team',
-  'hosts-interest': 'Host interest',
-  examples: 'Example transactions',
-  'flow-listed': 'Listed',
-  'flow-matched': 'Matched',
-  'flow-confirmed': 'Confirmed',
-  'flow-receipt': 'IdidIt receipt'
-};
-
-function tile(href, kicker, value, note, chart) {
-  const children = [
-    el('p', { class: 'kicker' }, [kicker]),
-    el('p', { class: 'overview-num' }, [String(value)]),
-    el('p', { class: 'muted' }, [note])
-  ];
-  if (chart) children.push(chart);
-  return el('a', { class: 'overview-tile', href }, children);
-}
-
-function remember(payload, repair) {
+function remember(payload) {
   try {
-    localStorage.setItem(OVERVIEW_KEY, JSON.stringify({ at: new Date().toISOString(), payload, repair }));
+    localStorage.setItem(OVERVIEW_KEY, JSON.stringify({ at: new Date().toISOString(), payload }));
   } catch { /* a private window still shows the live numbers */ }
-}
-
-function repairCounts(repair) {
-  if (!repair) return null;
-  return { items: (repair.items || []).map((row) => ({ status: row.status || 'unknown' })) };
 }
 
 function recalled() {
   try { return JSON.parse(localStorage.getItem(OVERVIEW_KEY) || 'null'); } catch { return null; }
 }
 
-export function renderOverview(host, payload, { cachedAt = '', offline = false, repair = null } = {}) {
+function countLine(health) {
+  return [
+    `${health.testOffers} test offers`,
+    `${health.realOffers} real offers`,
+    `${health.testRequests} test requests`,
+    `${health.realRequests} real requests`,
+    `${health.testClaimed} test claimed`,
+    `${health.realClaimed} real claimed`,
+    `${health.testFinished} test finished`,
+    `${health.realFinished} real finished`
+  ].join(' · ');
+}
+
+export function renderOverview(host, payload, { cachedAt = '', offline = false } = {}) {
   const view = tallyExchange(payload);
-  const detailKey = decodeURIComponent(location.hash.replace(/^#overview=/, ''));
+  const health = view.health;
+  const total = health.testOffers + health.realOffers + health.testRequests + health.realRequests;
   const open = location.hash.startsWith('#overview=');
-  const grid = el('div', { class: 'overview-grid' });
-  const order = ['health', 'mental', 'campus', 'neighbor', 'hosts', 'circles', 'stories', 'other'];
-  const names = Object.keys(view.groups).sort((a, b) => {
-    const rank = (name) => { const index = order.indexOf(name); return index === -1 ? order.length : index; };
-    return rank(a) - rank(b) || a.localeCompare(b);
-  });
-  for (const name of names) {
-    const bucket = view.groups[name];
-    grid.append(tile(
-      `#overview=${encodeURIComponent(name)}`,
-      LABELS[name] || name,
-      bucket.offers + bucket.requests,
-      `${bucket.offers} offers · ${bucket.requests} requests · ${bucket.testUnclaimed} test unclaimed · ${bucket.claimed} claimed test · ${bucket.real} real`,
-      bars([
-        { label: 'test unclaimed', value: bucket.testUnclaimed, className: 'bar-test' },
-        { label: 'claimed test', value: bucket.claimed, className: 'bar-claimed' },
-        { label: 'real', value: bucket.real, className: 'bar-real' }
-      ])
-    ));
-  }
+  const detailKey = decodeURIComponent(location.hash.replace(/^#overview=/, ''));
+  const tile = el('a', { class: 'overview-tile', href: '#overview=health' }, [
+    el('p', { class: 'kicker' }, ['Health']),
+    el('p', { class: 'overview-num' }, [String(total)]),
+    el('p', { class: 'muted' }, [countLine(health)]),
+    bars([
+      { label: 'test', value: health.testOffers + health.testRequests, className: 'bar-test' },
+      { label: 'real', value: health.realOffers + health.realRequests, className: 'bar-real' }
+    ])
+  ]);
   const flow = el('div', { class: 'overview-flow' });
   for (const step of [
     ['listed', '1 Listed', view.flow.listed],
@@ -138,54 +102,33 @@ export function renderOverview(host, payload, { cachedAt = '', offline = false, 
       el('span', {}, [step[1]])
     ]));
   }
-  const pool = view.pool;
-  const extras = el('div', { class: 'overview-grid' });
-  extras.append(tile('#overview=pool', 'Membership pool', pool ? `US$${Number(pool.inUsd || 0).toFixed(2)} in` : 'US$0.00 in', pool ? `Out US$${Number(pool.outUsd || 0).toFixed(2)}. Covers ${pool.covers || 0}. Sponsor offers waiting ${pool.offers || 0}.` : 'No pool total in this snapshot.'));
-  const setupUsd = view.setup.usd > 0 ? ` US$${view.setup.usd.toFixed(2)} still due.` : '';
-  extras.append(tile('#overview=setup', 'Setup receivables', view.setup.due + view.setup.paid, `${view.setup.due} due · ${view.setup.paid} paid.${setupUsd} Totals only.`));
-  const repairCounts = {};
-  for (const row of repair?.items || []) repairCounts[row.status] = (repairCounts[row.status] || 0) + 1;
-  const repairNote = repair ? Object.entries(repairCounts).map(([status, count]) => `${status} ${count}`).join(' · ') || 'No repair follow-through yet.' : 'Repair follow-through did not answer.';
-  extras.append(tile('#overview=repair', 'Repair Extraordinaire', (repair?.items || []).length, repairNote));
-  extras.append(tile('#overview=developers', 'Developer team', view.developers, 'Pending review. No names in this count.'));
-  extras.append(tile('#overview=hosts-interest', 'Host interest', view.hosts, 'Pending review. No names in this count.'));
-  extras.append(tile('#overview=examples', 'Example transactions', view.examples.length, 'Test, until a real actor claims the role.'));
   const when = mirrorTime(view.latest?.time);
   const stamp = el('p', { class: 'muted', id: 'overview-source' }, [
     offline
       ? (cachedAt ? `Offline snapshot from ${mirrorTime(String(new Date(cachedAt).getTime() / 1000))}. ` : 'No cached snapshot on this phone yet. ')
       : 'Live mirror. ',
-    `Last message ${view.latest ? view.latest.sequence : 'none'} at ${when}. Network ${view.network || 'unknown'}. `,
+    `Last message ${view.latest ? view.latest.sequence : 'none'} at ${when}. Network ${view.network || 'unknown'}. Counts only. Health details stay off this board. `,
     el('a', { href: '/disclaimer' }, ['Disclaimer'])
   ]);
   const detail = el('div', { id: 'overview-detail' });
   if (open) {
-    if (detailKey === 'repair') {
-      detail.append(el('h2', {}, ['Repair Extraordinaire']));
-      detail.append(el('p', {}, [repairNote]));
-    } else {
-      const rows = rowsFor(payload, detailKey);
-      detail.append(el('h2', {}, [TITLES[detailKey] || detailKey]));
-      detail.append(el('p', { class: 'muted' }, [`${rows.length} on this mirror snapshot. Counts only. No ranking.`]));
-      const list = el('ol', { class: 'overview-timeline' });
-      for (const row of rows) {
-        const item = row.item || {};
-        list.append(el('li', {}, [
-          el('a', { href: `https://hashscan.io/testnet/topic/${view.topicId}/message/${row.sequenceNumber}` }, [`Message ${row.sequenceNumber}`]),
-          ` · ${detailKey === 'setup' || detailKey === 'developers' || detailKey === 'hosts-interest' ? (item.offer || item.kind || 'record') : (item.title || item.id || item.kind)} · ${String(item.status || item.kind || '').replace(/^Claimed by .+$/, 'Claimed')}${item.kind === 'pool' ? ` · in US$${Number(item.inUsd || 0).toFixed(2)} out US$${Number(item.outUsd || 0).toFixed(2)}` : ''}${item.kind === 'receivable' || item.kind === 'receivable-paid' ? ` · US$${Number(item.usd || 0).toFixed(2)}` : ''}${item.receiptHash ? ` · receipt ${String(item.receiptHash).slice(0, 12)}` : ''}`
-        ]));
-      }
-      if (!rows.length) list.append(el('li', {}, ['Nothing in this slice of the mirror.']));
-      detail.append(list);
-    }
+    const titles = {
+      health: 'Health',
+      'flow-listed': 'Listed',
+      'flow-matched': 'Matched',
+      'flow-confirmed': 'Confirmed',
+      'flow-receipt': 'IdidIt receipt'
+    };
+    detail.append(el('h2', {}, [titles[detailKey] || 'Health']));
+    detail.append(el('p', {}, [countLine(health)]));
+    detail.append(el('p', { class: 'muted' }, [`Listed ${view.flow.listed}. Matched ${view.flow.matched}. Confirmed ${view.flow.confirmed}. IdidIt receipt ${view.flow.receipt}. Counts only. No names and no health notes.`]));
   }
   host.replaceChildren(
     el('h2', {}, ['Exchange status']),
     stamp,
     detail,
     flow,
-    grid,
-    extras
+    el('div', { class: 'overview-grid' }, [tile])
   );
 }
 
@@ -196,7 +139,6 @@ async function mountOverview(host) {
   let payload = null;
   let cachedAt = '';
   let offline = false;
-  let repair = null;
   const saved = recalled();
   try {
     const response = await fetch('/api/hedera/listings', { cache: 'no-store' });
@@ -205,16 +147,9 @@ async function mountOverview(host) {
   if (!payload) {
     offline = true;
     payload = saved?.payload || { listings: [], network: 'testnet' };
-    repair = saved?.repair || null;
     cachedAt = saved?.at || '';
-  } else {
-    try {
-      const response = await fetch('/api/exchange/repair', { cache: 'no-store' });
-      if (response.ok) repair = repairCounts(await response.json());
-    } catch { /* the card says the follow-through did not answer */ }
-    remember(payload, repair || saved?.repair || null);
-  }
-  const draw = () => renderOverview(host, payload, { cachedAt, offline, repair });
+  } else remember(payload);
+  const draw = () => renderOverview(host, payload, { cachedAt, offline });
   draw();
   window.addEventListener('hashchange', draw);
 }
