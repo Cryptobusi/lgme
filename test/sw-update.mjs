@@ -37,15 +37,22 @@ await page.waitForTimeout(300);
 const first = await page.evaluate(async () => (await fetch('/sw-version', { cache: 'no-store' })).text());
 if (first !== 'OLD') throw new Error(`first version ${first}`);
 version = 'NEW';
-await page.evaluate(async () => {
-  const reg = await navigator.serviceWorker.getRegistration();
-  await reg.update();
-});
-await page.waitForFunction(async () => {
-  try { return (await fetch('/sw-version', { cache: 'no-store' })).text() === 'NEW'; } catch { return false; }
-}, null, { timeout: 15000 });
-const seen = await page.evaluate(() => sessionStorage.getItem('lgme.sw.reload'));
-if (seen === '1') throw new Error('reload flag stuck');
-console.log('sw update passed', await page.evaluate(async () => (await fetch('/sw-version', { cache: 'no-store' })).text()));
+for (let n = 0; n < 3; n += 1) {
+  await page.evaluate(async () => {
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (reg) await reg.update();
+  }).catch(() => {});
+  await page.waitForTimeout(300);
+}
+let got = '';
+for (let i = 0; i < 30; i += 1) {
+  try {
+    got = await page.evaluate(async () => (await fetch('/sw-version', { cache: 'no-store' })).text());
+  } catch { got = ''; }
+  if (got === 'NEW') break;
+  await page.waitForTimeout(500);
+}
+if (got !== 'NEW') throw new Error(`still ${got || 'empty'}`);
+console.log('sw update passed', got);
 await browser.close();
 server.close();

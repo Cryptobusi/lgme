@@ -18,5 +18,5 @@
       if (document.visibilityState === 'visible') reg.update().catch(function () {});
     });
   }
-  navigator.serviceWorker.register('/sw.js').then(watch).catch(function () {});
+  navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then(watch).catch(function () {});
 })();

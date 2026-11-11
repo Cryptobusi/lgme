@@ -2109,7 +2109,7 @@ async function boot() {
   const seated = seatId() || registered?.id;
   if (seated && recallPage(localStorage, seated) && (route() === '/' || route() === '/me')) location.hash = '/page';
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw-gym.js', { scope: '/gym' }).then((reg) => {
+    navigator.serviceWorker.register('/sw-gym.js', { scope: '/gym', updateViaCache: 'none' }).then((reg) => {
       reg.update().catch(() => {});
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') reg.update().catch(() => {});
