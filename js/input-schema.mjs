@@ -292,7 +292,7 @@ export const ROUTES = Object.freeze([
   { path: '/api/exchange/repair', method: 'GET,POST', auth: 'device signature', goes: 'KV' },
   { path: '/api/hedera/status', method: 'GET', auth: 'none', goes: 'testnet and mainnet mirror read' },
   { path: '/api/hedera/mirror', method: 'GET', auth: 'none', goes: 'testnet mirror read' },
-  { path: '/api/hedera/queue', method: 'POST', auth: 'device signature', goes: 'KV then testnet hash' },
+  { path: '/api/hedera/queue', method: 'POST', auth: 'device signature', goes: 'KV then a Health hash' },
   { path: '/api/hedera/anchor', method: 'POST', auth: 'cron secret', goes: 'testnet topic' },
   { path: '/api/hedera/cron', method: 'GET,POST', auth: 'cron secret', goes: 'testnet topic' },
   { path: '/api/hedera/topic', method: 'POST', auth: 'admin flags', goes: 'refuses until flags' },

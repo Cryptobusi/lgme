@@ -8,7 +8,9 @@ import { SEED_LISTINGS } from '../js/exchange-listing.mjs';
 import {
   MAINNET_CLOSED,
   dailyHbarCap,
+  healthMainnetReady,
   mainnetPayloadAllowed,
+  networkDryRun,
   prepareMainnetListing,
   resolveHederaNetwork,
   rollbackSwitch,
@@ -22,6 +24,14 @@ test('mainnet stays closed, previews stay on testnet, and the key is never read'
   assert.equal(resolveHederaNetwork({ HEDERA_NETWORK: 'mainnet', VERCEL_ENV: 'preview' }).network, 'testnet');
   assert.equal(resolveHederaNetwork({ HEDERA_NETWORK: 'mainnet', VERCEL_ENV: 'production' }).open, false);
   assert.equal(resolveHederaNetwork({ HEDERA_NETWORK: 'mainnet', VERCEL_ENV: 'production' }).reason, MAINNET_CLOSED);
+  assert.equal(healthMainnetReady({ HEDERA_NETWORK: 'mainnet', VERCEL_ENV: 'production', HEDERA_MAINNET_OPERATOR_KEY: 'do-not-read' }), false);
+  assert.equal(healthMainnetReady({ HEDERA_NETWORK: 'mainnet', VERCEL_ENV: 'preview', HEDERA_MAINNET_OPERATOR_ID: '0.0.1273453', HEDERA_MAINNET_OPERATOR_KEY: 'present', HEDERA_MAINNET_HEALTH_TOPIC_ID: '0.0.10955014' }), false);
+  const healthEnv = { HEDERA_NETWORK: 'mainnet', VERCEL_ENV: 'production', HEDERA_MAINNET_OPERATOR_ID: '0.0.1273453', HEDERA_MAINNET_OPERATOR_KEY: 'present', HEDERA_MAINNET_HEALTH_TOPIC_ID: '0.0.10955014' };
+  assert.equal(healthMainnetReady(healthEnv), true);
+  assert.equal(networkDryRun(healthEnv).mainnetWrites, true);
+  assert.equal(networkDryRun(healthEnv).dailyCapHbar, 1);
+  assert.equal(networkDryRun(healthEnv).rollback.value, 'testnet');
+  assert.equal(networkDryRun({ HEDERA_NETWORK: 'mainnet', VERCEL_ENV: 'preview' }).mainnetWrites, false);
   const refused = await submitLeaves({ HEDERA_NETWORK: 'mainnet', VERCEL_ENV: 'production', HEDERA_MAINNET_OPERATOR_KEY: 'do-not-read' }, ['a'.repeat(64)], '2026-11-11');
   assert.equal(refused.ok, false);
   assert.equal(refused.error, MAINNET_CLOSED);

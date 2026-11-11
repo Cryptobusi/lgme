@@ -2,11 +2,11 @@
 
 This note is not a public page. `docs/` is in `.vercelignore`, and this file is not in the sitemap.
 
-Hedera writes stay on testnet. `HEDERA_NETWORK` is not set to mainnet by this prep.
+Health hashes use mainnet when production `HEDERA_NETWORK` is `mainnet` and `HEDERA_MAINNET_HEALTH_TOPIC_ID` is set. Previews stay on testnet. Listings, examples, and other categories do not write to mainnet.
 
 ## One-time Health setup
 
-`POST /api/hedera/mainnet-setup` with the owner header creates the keyed Health topic if it is missing and writes one hash. It does not print the operator key. General mainnet writes stay closed until `HEDERA_NETWORK` is `mainnet` on production.
+`POST /api/hedera/mainnet-setup` with the owner header creates the keyed Health topic if it is missing and writes one hash. It does not print the operator key. The gym queue and the daily job then send Health hashes to that topic. Only the fee Hedera charges counts toward the 1 HBAR daily cap.
 
 ## Switch back
 

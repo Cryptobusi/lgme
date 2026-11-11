@@ -2,8 +2,6 @@ import { acceptHelpWant, listHelpWants } from '../../js/develop-want.mjs';
 import { guardRequest, json, readBody, readEnv } from '../lib/http.mjs';
 import { redisRest } from '../../js/redis-env.mjs';
 import { upstashStore } from '../lib/upstash.mjs';
-import { resolveHederaNetwork } from '../../js/hedera-network.mjs';
-
 const memory = {
   bag: new Map(),
   async get(key) { return this.bag.has(key) ? this.bag.get(key) : null; },
@@ -21,9 +19,6 @@ function admin(req, env) {
 
 export default async function handler(req, res) {
   const env = readEnv();
-  if (resolveHederaNetwork(env).network === 'mainnet') {
-    return json(res, 403, { ok: false, error: 'Mainnet writes are closed.' });
-  }
   const redis = redisRest(env);
   const store = redis.configured ? upstashStore(redis.url, redis.token) : memory;
   const url = new URL(req.url || '/', 'http://localhost');

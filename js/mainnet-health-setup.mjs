@@ -1,7 +1,8 @@
 import { sha256Hex } from './device-sign.mjs';
+import { merkleRootOf } from './clearing.mjs';
 import { mainnetOperatorKey } from './hedera-operator.mjs';
 import { FORBIDDEN_TOPIC } from './hedera-anchor-core.mjs';
-import { chainPayloadSafe, dailyHbarCap, MAINNET_OPERATOR, TINYBAR } from './hedera-network.mjs';
+import { chainPayloadSafe, dailyHbarCap, mainnetPayloadAllowed, MAINNET_OPERATOR, TINYBAR } from './hedera-network.mjs';
 
 export const TOPIC_MEMO = 'lgme Health mainnet hash';
 export const CREATE_MAX_HBAR = 0.5;
@@ -62,6 +63,79 @@ async function topicFromCreates(fetchImpl, accountId) {
     if (found) return found;
   }
   return '';
+}
+
+export async function submitHealthMainnetHash(env = {}, leaves, day, { store = null, sdk, fetchImpl = globalThis.fetch, now = new Date() } = {}) {
+  const clean = (leaves || []).map((leaf) => String(leaf || '').toLowerCase()).filter((leaf) => /^[0-9a-f]{64}$/.test(leaf));
+  if (!clean.length) return { ok: false, error: 'Send the tape leaf hashes.' };
+  const root = await merkleRootOf(clean);
+  const body = { version: 1, network: 'mainnet', day: String(day || '').slice(0, 10), root, leafCount: clean.length };
+  const privacy = chainPayloadSafe(body);
+  if (!privacy.ok) return { ok: false, error: privacy.error };
+  const shape = mainnetPayloadAllowed(body);
+  if (!shape.ok) return { ok: false, error: shape.error };
+  const topicId = String(env.HEDERA_MAINNET_HEALTH_TOPIC_ID || '').trim();
+  if (!topicId || topicId === FORBIDDEN_TOPIC) return { ok: false, error: 'Topic 0.0.489104 is refused. Nothing was sent.' };
+  const spentDay = now.toISOString().slice(0, 10);
+  const spent = Number(store ? await store.get(spentKey(spentDay)) : 0) || 0;
+  const capTiny = Math.round(dailyHbarCap(env) * TINYBAR);
+  if (spent >= capTiny) {
+    return { ok: false, status: 429, error: 'Mainnet fee cap reached. Writes are refused until tomorrow.', capHbar: dailyHbarCap(env), hbarSpent: 0 };
+  }
+  const library = sdk || await import('@hashgraph/sdk');
+  let operator;
+  try {
+    operator = await mainnetOperatorKey(library, env, fetchImpl);
+  } catch (error) {
+    return { ok: false, status: 400, error: error.public ? error.message : 'The mainnet operator key could not be used. Nothing was sent.' };
+  }
+  const accountId = String(env.HEDERA_MAINNET_OPERATOR_ID || '').trim();
+  const client = library.Client.forMainnet();
+  client.setOperator(library.AccountId.fromString(accountId), operator);
+  if (library.Hbar) client.setMaxTransactionFee(new library.Hbar(MESSAGE_MAX_HBAR));
+  try {
+    const submitted = await new library.TopicMessageSubmitTransaction({
+      topicId,
+      message: JSON.stringify(body)
+    }).setMaxTransactionFee(new library.Hbar(MESSAGE_MAX_HBAR)).execute(client);
+    let record;
+    try {
+      record = await submitted.getRecord(client);
+    } catch (error) {
+      const tiny = tinybarsOf(error?.record?.transactionFee);
+      if (tiny && store) await store.set(spentKey(spentDay), spent + tiny);
+      return {
+        ok: false,
+        status: 502,
+        hederaStatus: String(error?.status?.toString?.() || ''),
+        error: error?.status ? `Hedera returned ${error.status.toString()}.` : 'The Health hash was not written.',
+        hbarSpent: hbarOf(tiny),
+        capHbar: dailyHbarCap(env),
+        transactionId: error?.transactionId?.toString?.() || submitted.transactionId?.toString?.() || '',
+        topicId
+      };
+    }
+    const tiny = tinybarsOf(record.transactionFee);
+    if (tiny && store) await store.set(spentKey(spentDay), spent + tiny);
+    const sequence = record.receipt.topicSequenceNumber.toString();
+    const transactionId = submitted.transactionId?.toString?.() || record.transactionId?.toString?.() || '';
+    return {
+      ok: true,
+      status: 200,
+      network: 'mainnet',
+      topicId,
+      transactionId,
+      sequenceNumber: sequence,
+      consensusTimestamp: record.consensusTimestamp?.toString?.() || '',
+      root,
+      hbarSpent: hbarOf(tiny),
+      capHbar: dailyHbarCap(env),
+      hashscan: `https://hashscan.io/mainnet/transaction/${encodeURIComponent(transactionId)}`,
+      mirror: `https://mainnet.mirrornode.hedera.com/api/v1/topics/${topicId}/messages/${sequence}`
+    };
+  } finally {
+    client.close?.();
+  }
 }
 
 export async function runHealthMainnetSetup(env = {}, { store = null, sdk, fetchImpl = globalThis.fetch, now = new Date() } = {}) {

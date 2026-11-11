@@ -4,7 +4,8 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import handler from '../api/hedera/mainnet-setup.mjs';
-import { adminTokenOk, healthSetupMessage, runHealthMainnetSetup, TOPIC_MEMO } from '../js/mainnet-health-setup.mjs';
+import { submitLeaves } from '../js/hedera-submit.mjs';
+import { adminTokenOk, healthSetupMessage, runHealthMainnetSetup, submitHealthMainnetHash, TOPIC_MEMO } from '../js/mainnet-health-setup.mjs';
 import { chainPayloadSafe, mainnetPayloadAllowed } from '../js/hedera-network.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -54,7 +55,7 @@ function sdkFor(calls) {
       }
     },
     TopicMessageSubmitTransaction: class {
-      constructor(spec) { calls.message = spec.message; }
+      constructor(spec) { calls.message = spec.message; calls.topicId = spec.topicId; }
       setMaxTransactionFee(fee) { calls.messageMax = fee.value; return this; }
       async execute() {
         calls.actions.push('message');
@@ -151,8 +152,38 @@ test('a refused topic create returns the Hedera status and the charged fee', asy
   assert.equal(JSON.stringify(result).includes(SECRET), false);
 });
 
+test('a Health app hash uses the mainnet topic and the charged fee', async () => {
+  const calls = { actions: [] };
+  const store = memory();
+  await store.set('hedera:mainnet:spent:2026-11-11', 45_513_121);
+  const healthEnv = { ...env, HEDERA_NETWORK: 'mainnet', HEDERA_MAINNET_HEALTH_TOPIC_ID: '0.0.10955014' };
+  const deps = { store, sdk: sdkFor(calls), fetchImpl, now: new Date('2026-11-11T16:30:00.000Z') };
+  const result = await submitLeaves(healthEnv, ['ab'.repeat(32)], '2026-11-11', deps);
+  assert.equal(result.ok, true);
+  assert.equal(result.network, 'mainnet');
+  assert.equal(result.topicId, '0.0.10955014');
+  assert.equal(calls.topicId, '0.0.10955014');
+  assert.equal(calls.messageMax, 0.05);
+  assert.equal(calls.actions.includes('create'), false);
+  assert.equal(result.hbarSpent, 0.0005);
+  assert.equal(await store.get('hedera:mainnet:spent:2026-11-11'), 45_563_121);
+  const message = JSON.parse(calls.message);
+  assert.equal(message.root, 'ab'.repeat(32));
+  assert.equal(message.network, 'mainnet');
+  assert.equal(JSON.stringify(message).includes('diagnosis'), false);
+  assert.equal(JSON.stringify(result).includes(SECRET), false);
+  await store.set('hedera:mainnet:spent:2026-11-11', 100_000_000);
+  const refused = await submitHealthMainnetHash(healthEnv, ['ab'.repeat(32)], '2026-11-11', { ...deps, sdk: sdkFor({ actions: [] }) });
+  assert.equal(refused.ok, false);
+  assert.match(refused.error, /cap/);
+});
+
 test('the setup source does not print the operator key', () => {
   const source = readFileSync(join(root, 'api/hedera/mainnet-setup.mjs'), 'utf8') + readFileSync(join(root, 'js/mainnet-health-setup.mjs'), 'utf8');
   assert.equal(source.includes('console.log'), false);
   assert.equal(source.includes('forTestnet'), false);
+  const submit = readFileSync(join(root, 'js/hedera-submit.mjs'), 'utf8');
+  assert.equal(submit.includes('HEDERA_MAINNET_OPERATOR_KEY'), false);
+  assert.equal(submit.includes('forMainnet'), false);
+  assert.equal(readFileSync(join(root, 'api/develop/want.mjs'), 'utf8').includes('Mainnet writes are closed'), false);
 });

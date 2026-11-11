@@ -2,7 +2,8 @@ import { merkleRootOf } from './clearing.mjs';
 import { anchorMessage, hashscanMessage, hederaReadiness, topicAllowed } from './hedera-anchor-core.mjs';
 import { testnetOperatorKey } from './hedera-operator.mjs';
 import { LISTINGS_OPERATOR, LISTINGS_TOPIC } from './exchange-listing.mjs';
-import { MAINNET_CLOSED, chainPayloadSafe, isMockExample, mainnetPayloadAllowed, mockWriteAllowed, resolveHederaNetwork, spendGuard } from './hedera-network.mjs';
+import { submitHealthMainnetHash } from './mainnet-health-setup.mjs';
+import { MAINNET_CLOSED, chainPayloadSafe, healthMainnetReady, isMockExample, mainnetPayloadAllowed, mockWriteAllowed, resolveHederaNetwork, spendGuard } from './hedera-network.mjs';
 
 const memory = [];
 
@@ -65,7 +66,8 @@ function mainnetClosed(env, body) {
   return { ok: false, error: MAINNET_CLOSED };
 }
 
-export async function submitLeaves(env, leaves, day) {
+export async function submitLeaves(env, leaves, day, deps = {}) {
+  if (healthMainnetReady(env)) return submitHealthMainnetHash(env, leaves, day, deps);
   const closed = mainnetClosed(env);
   if (closed) return closed;
   const ready = hederaReadiness(env);

@@ -8,14 +8,16 @@ export default async function handler(req, res) {
   const ready = hederaReadiness(env);
   const dry = networkDryRun(env);
   const balance = await operatorBalanceAlert();
-  return json(res, ready.enabled ? 200 : 503, {
-    ok: ready.enabled,
-    enabled: ready.enabled,
+  const mainnetWrites = dry.mainnetWrites === true;
+  const enabled = ready.enabled || mainnetWrites;
+  return json(res, enabled ? 200 : 503, {
+    ok: enabled,
+    enabled,
     network: dry.network,
     asked: dry.asked,
-    mainnetWrites: false,
-    wording: ready.wording,
-    topicId: ready.topicId || '',
+    mainnetWrites,
+    wording: mainnetWrites ? 'Health hashes are written on Hedera mainnet. Health data is not written.' : ready.wording,
+    topicId: mainnetWrites ? String(env.HEDERA_MAINNET_HEALTH_TOPIC_ID || '').trim() : (ready.topicId || ''),
     dailyCapHbar: dry.dailyCapHbar,
     rollback: dry.rollback,
     operatorAlert: balance.alert

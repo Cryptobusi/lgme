@@ -77,13 +77,23 @@ export function rollbackSwitch() {
   };
 }
 
+export function healthMainnetReady(env = {}) {
+  const picked = resolveHederaNetwork(env);
+  if (picked.network !== 'mainnet') return false;
+  const topic = String(env.HEDERA_MAINNET_HEALTH_TOPIC_ID || '').trim();
+  if (!/^\d+\.\d+\.\d+$/.test(topic) || topic === '0.0.489104') return false;
+  const account = String(env.HEDERA_MAINNET_OPERATOR_ID || '').trim();
+  if (account !== MAINNET_OPERATOR || !String(env.HEDERA_MAINNET_OPERATOR_KEY || '').trim()) return false;
+  return true;
+}
+
 export function networkDryRun(env = {}) {
   const picked = resolveHederaNetwork(env);
   return {
     asked: String(env.HEDERA_NETWORK || 'testnet').trim().toLowerCase() || 'testnet',
     network: picked.network,
     open: picked.open,
-    mainnetWrites: false,
+    mainnetWrites: healthMainnetReady(env),
     rollback: rollbackSwitch(),
     dailyCapHbar: dailyHbarCap(env)
   };

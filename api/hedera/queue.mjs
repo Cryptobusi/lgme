@@ -32,7 +32,7 @@ export default async function handler(req, res) {
   const queued = await queueHash(store, { hash, day: payload.day });
   if (!queued.ok) return json(res, 400, queued);
   try {
-    const anchored = await submitLeaves(env, [hash], payload.day || '');
+    const anchored = await submitLeaves(env, [hash], payload.day || '', { store });
     return json(res, anchored.ok ? 200 : 202, { ...anchored, queued: true, hash });
   } catch {
     return json(res, 202, { ok: true, queued: true, anchored: false, hash, wording: 'Queued. The daily job writes the hash. Health data is not written.' });
