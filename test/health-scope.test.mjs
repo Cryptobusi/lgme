@@ -55,5 +55,5 @@ test('the shell bumps the reset epoch and refuses a non-health write', () => {
   assert.equal(nav.includes("var EPOCH = '2'"), true);
   assert.equal(nav.includes('lgme.device.key'), true);
   assert.equal(nav.includes('lgme-sim:peer:'), true);
-  assert.equal(readFileSync(join(root, 'sw.js'), 'utf8').includes('lgme-v170'), true);
+  assert.equal(readFileSync(join(root, 'sw.js'), 'utf8').includes('lgme-v171'), true);
 });

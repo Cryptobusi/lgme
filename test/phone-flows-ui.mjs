@@ -47,6 +47,13 @@ await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
 const base = `http://127.0.0.1:${server.address().port}`;
 mkdirSync('/opt/cursor/artifacts', { recursive: true });
 const failures = [];
+const index = readFileSync(join(root, 'index.html'), 'utf8');
+const gym = readFileSync(join(root, 'gym/index.html'), 'utf8');
+const dockSource = readFileSync(join(root, 'js/local-ai-panel.mjs'), 'utf8');
+if (!index.includes('interactive-widget=resizes-content')) failures.push('home viewport');
+if (!gym.includes('interactive-widget=resizes-content')) failures.push('gym viewport');
+if (/ai-ask[^>]*inputmode=["']none["']/.test(dockSource) || /ai-ask[^>]*readonly/.test(dockSource)) failures.push('ask box blocks the keyboard');
+if (dockSource.includes('showPopover') || dockSource.includes('hidePopover')) failures.push('dock popover can blur the keyboard');
 
 async function fresh(browser) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true });
@@ -128,6 +135,19 @@ async function ididitGym(page) {
   if (!/Recorded on testnet/.test(text)) failures.push(`gym receipt ${text}`);
 }
 
+function standaloneScript() {
+  localStorage.setItem('lgme.reset.epoch', '2');
+  localStorage.setItem('lgme.exchange.splashSeen', '1');
+  localStorage.setItem('lgme.ai.enabled', '1');
+  const original = window.matchMedia.bind(window);
+  window.matchMedia = (query) => {
+    if (String(query).includes('display-mode') && String(query).includes('standalone')) {
+      return { matches: true, media: query, onchange: null, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {}, dispatchEvent() { return false; } };
+    }
+    return original(query);
+  };
+}
+
 async function dock(page, shot) {
   await page.goto(`${base}/`, { waitUntil: 'domcontentloaded' });
   const ask = page.locator('#ai-ask');
@@ -151,6 +171,38 @@ async function dock(page, shot) {
   }
 }
 
+async function dockStandalone(browser, shot) {
+  const context = await browser.newContext({
+    viewport: { width: 412, height: 915 },
+    hasTouch: true,
+    isMobile: true,
+    userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36'
+  });
+  await context.addInitScript(standaloneScript);
+  const page = await context.newPage();
+  await page.goto(`${base}/gym`, { waitUntil: 'domcontentloaded' });
+  const standalone = await page.evaluate(() => window.matchMedia('(display-mode: standalone)').matches);
+  if (!standalone) failures.push('standalone display mode did not match');
+  const ask = page.locator('#ai-ask');
+  await ask.waitFor();
+  await page.waitForFunction(() => typeof window.__lgmeDeferSwReload === 'function');
+  await ask.click();
+  await page.evaluate(() => window.dispatchEvent(new Event('resize')));
+  const focused = await page.evaluate(() => document.activeElement && document.activeElement.id === 'ai-ask');
+  if (!focused) failures.push('standalone resize blurred the dock input');
+  const defer = await page.evaluate(() => typeof window.__lgmeDeferSwReload === 'function' && window.__lgmeDeferSwReload());
+  if (!defer) failures.push('service worker update would reload while the dock is focused');
+  await page.evaluate(() => document.getElementById('ai-ask').blur());
+  const later = await page.evaluate(() => window.__lgmeDeferSwReload());
+  if (later) failures.push('service worker update stayed deferred after leaving the dock');
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.locator('#ai-ask').click();
+  const again = await page.evaluate(() => document.activeElement && document.activeElement.id === 'ai-ask');
+  if (!again) failures.push('dock input did not focus after the app reloaded');
+  if (shot) await page.screenshot({ path: '/opt/cursor/artifacts/ai-dock-android-412.png', timeout: 8000, animations: 'disabled' });
+  await context.close();
+}
+
 async function check(browserType, name, launch) {
   const browser = await browserType.launch(launch);
   const shot = name === 'chromium';
@@ -166,6 +218,7 @@ async function check(browserType, name, launch) {
   const fourth = await fresh(browser);
   await dock(fourth.page, shot);
   await fourth.context.close();
+  if (name === 'chromium') await dockStandalone(browser, shot);
   await browser.close();
 }
 
