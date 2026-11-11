@@ -52,7 +52,7 @@ function quote(extra = {}) {
   };
 }
 
-test('the wisdom page carries the maxims, the checklist, and the empty daily file', () => {
+test('the wisdom page carries the maxims, the checklist, and the daily file', () => {
   const page = text('wisdom.html').replace(/&amp;/g, '&');
   const home = text('index.html');
   const help = text('help.html');
@@ -83,7 +83,11 @@ test('the wisdom page carries the maxims, the checklist, and the empty daily fil
   assert.equal(/<script(?![^>]*\bsrc=)/i.test(page), false);
   const file = JSON.parse(text('data/wisdom-excerpts.json'));
   assert.equal(file.note, EXCERPT_NOTE);
-  assert.deepEqual(file.excerpts, []);
+  assert.equal(file.excerpts.length, 3);
+  assert.deepEqual(file.excerpts.map((row) => row.date), ['2026-11-11', '2026-11-11', '2026-11-11']);
+  assert.deepEqual(file.excerpts.map((row) => row.kind), ['original', 'original', 'quote']);
+  assert.equal(file.excerpts.every((row) => Object.keys(row).every((key) => EXCERPT_FIELDS.includes(key))), true);
+  assert.equal(file.excerpts[2].sourceUrl, 'https://www.gutenberg.org/cache/epub/205/pg205.txt');
   assert.deepEqual(EXCERPT_FIELDS, ['date', 'text', 'theme', 'forTheApp', 'source', 'sourceUrl', 'kind']);
   const navStart = home.indexOf('id="main-nav"');
   const nav = home.slice(navStart, home.indexOf('</nav>', navStart));
@@ -93,7 +97,7 @@ test('the wisdom page carries the maxims, the checklist, and the empty daily fil
   assert.equal(help.includes('5% to the Floor and 5% to the App development fund'), true);
   assert.equal(glossary.includes('Sober Poverty'), true);
   assert.equal(glossary.includes('App development fund'), true);
-  assert.equal(worker.includes('lgme-v162'), true);
+  assert.equal(worker.includes('lgme-v163'), true);
   assert.equal(worker.includes('/data/wisdom-excerpts.json'), true);
   assert.equal(text('js/p2p-exchange-sim-ui.mjs').match(/fetch\(/g).length, 8);
   assert.equal(text('health-club.html').includes('The gift clears its own ledger'), true);

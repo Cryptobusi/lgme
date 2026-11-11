@@ -1,4 +1,30 @@
 {
   "note": "New excerpts are added daily.",
-  "excerpts": []
+  "excerpts": [
+    {
+      "date": "2026-11-11",
+      "kind": "original",
+      "theme": "Walking",
+      "text": "Walk the distance before you pay to shorten it. A body that has carried itself across town knows what a mile costs, and a price that hides the mile is a price you are free to refuse.",
+      "forTheApp": "For the app: the Health session Start screen offers \"I walked here\" as an optional intent a member can attach to the receipt. It is never counted, ranked or tracked as distance.",
+      "source": "lgme.app desk"
+    },
+    {
+      "date": "2026-11-11",
+      "kind": "original",
+      "theme": "Gift that clears its own ledger",
+      "text": "A true gift clears its own ledger. Give the hour, let the record show it happened, and let the line close at zero. What is owed gets named; what is given gets let go.",
+      "forTheApp": "For the app: the deed Confirm step offers a \"Gift, clears at zero\" choice that records the act on the tape but creates no claim, no credit and no reminder to repay.",
+      "source": "lgme.app desk"
+    },
+    {
+      "date": "2026-11-11",
+      "kind": "quote",
+      "theme": "Voluntary simplicity",
+      "text": "Our life is frittered away by detail. An honest man has hardly need to count more than his ten fingers, or in extreme cases he may add his ten toes, and lump the rest. Simplicity, simplicity, simplicity!",
+      "forTheApp": "For the app: keep the Health dashboard to the few numbers a member can count on their hands, and put everything else behind one tap rather than on the first screen.",
+      "source": "Henry David Thoreau, Walden (1854)",
+      "sourceUrl": "https://www.gutenberg.org/cache/epub/205/pg205.txt"
+    }
+  ]
 }
