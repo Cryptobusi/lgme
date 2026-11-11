@@ -77,8 +77,8 @@ await again.addInitScript(() => {
 });
 const next = await again.newPage();
 await next.goto(`${base}/gym`, { waitUntil: 'domcontentloaded' });
-for (const name of ['IdidIt, verified receipt', 'IwantIT, ask for a deed', 'IhavIT, offer a deed']) {
-  await next.getByRole('button', { name, exact: true }).click();
+for (const name of [/^IdidIt/, /^IwantIT/, /^IhavIT/]) {
+  await next.getByRole('button', { name }).first().click();
 }
 await next.locator('#category-create').click();
 const signin = await next.locator('#demo-email, #join-email, #demo-code').count();

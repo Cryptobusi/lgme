@@ -110,9 +110,9 @@ for (const [width, height] of [[390, 844], [1280, 800]]) {
   const { context, page } = await open(browser, width, height);
   try {
     await page.goto(`${base}/gym`, { waitUntil: 'domcontentloaded' });
-    const idid = page.getByRole('button', { name: 'IdidIt, verified receipt' });
-    const want = page.getByRole('button', { name: 'IwantIT, ask for a deed' });
-    const have = page.getByRole('button', { name: 'IhavIT, offer a deed' });
+    const idid = page.getByRole('button', { name: /^IdidIt/ });
+    const want = page.getByRole('button', { name: /^IwantIT/ });
+    const have = page.getByRole('button', { name: /^IhavIT/ });
     await idid.waitFor();
     for (const button of [idid, want, have]) {
       const box = await button.boundingBox();
@@ -124,7 +124,7 @@ for (const [width, height] of [[390, 844], [1280, 800]]) {
     });
     check(contrast.bg !== contrast.fg, `${width} action contrast`);
     if (width === 390) await shot(page, '.category-actions', '/opt/cursor/artifacts/category-actions-390.png');
-    await tap(page, '#category-board .category-actions button[aria-label="IwantIT, ask for a deed"]');
+    await tap(page, '#category-board .category-actions button:has-text("IwantIT")');
     await page.locator('#category-list .category-row').first().waitFor();
     const titles = await page.locator('#category-list .category-row').allTextContents();
     check(titles.length >= 5, `${width} fewer than 5 listings`);

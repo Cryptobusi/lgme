@@ -395,7 +395,7 @@ if (pending?.step === 'code' && pending.email) {
 } else if (member?.disclaimer === false) {
   state.choice = pending?.choice || '';
   paintDisclaimer();
-} else if (!accountReady() && (ask || (pending?.step === 'email' && pending.choice))) {
+} else if (ask || (pending?.step === 'email' && pending.choice)) {
   state.choice = pending?.choice || 'Health';
   paintEmail();
 } else if (pending?.step === 'guide' && pending.choice && accountReady()) {

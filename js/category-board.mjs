@@ -2,6 +2,7 @@ import { CATEGORIES } from './category-help.mjs';
 import { ACTIONS, countLabel, nearDuplicates } from './category-evolve.mjs';
 import { listingsFor } from './category-listings.mjs';
 import { readActive } from './variant-schema.mjs';
+import { actionCount, applyBadge, categoryCount, loadSeen, markCategory, markSeen } from './new-marks.mjs';
 import { draftWithHelper, localAiReady, pickHelperSync } from './one-tap.mjs';
 
 const NAME_OPTIONS = 'Night walks|Tool library|Study hour';
@@ -59,6 +60,7 @@ export function mountCategoryBoard(root = document.getElementById('category-boar
     form: '',
     proposals: [],
     offers: [],
+    seen: {},
     message: '',
     matches: []
   };
@@ -75,11 +77,18 @@ export function mountCategoryBoard(root = document.getElementById('category-boar
     ];
     const buttons = actions.map((action) => {
       const button = el('button', { type: 'button', 'aria-label': action.aria || action.name, 'aria-pressed': state.action === action.id ? 'true' : 'false' }, [action.name]);
+      const known = action.id === 'ididit' || action.id === 'iwantit' || action.id === 'ihavit';
+      const count = known ? actionCount(current.id, action.id, state.seen) : 0;
+      const short = action.id === 'ididit' ? 'IdidIt' : action.name;
+      applyBadge(button, count, short);
+      if (!count && action.aria) button.setAttribute('aria-label', action.aria);
       button.addEventListener('click', () => {
         state.action = action.id;
         state.detail = null;
         state.form = '';
         state.message = '';
+        if (known) markSeen(state.seen, `action:${current.id}:${action.id}`).then((seen) => { state.seen = seen; });
+        state.seen = { ...state.seen, [`action:${current.id}:${action.id}`]: new Date().toISOString() };
         paint();
       });
       return button;
@@ -130,7 +139,9 @@ export function mountCategoryBoard(root = document.getElementById('category-boar
     ];
     for (const item of others) {
       const label = item.early ? `${item.name} Early / In development` : item.proposed ? `${item.name} Proposed` : item.name;
+      const chipCount = item.proposed ? 0 : categoryCount(item.id, state.seen);
       const button = el('button', { type: 'button' }, [label]);
+      if (!item.proposed) applyBadge(button, chipCount, item.name);
       button.addEventListener('click', () => {
         if (item.proposed) {
           state.form = '';
@@ -140,6 +151,7 @@ export function mountCategoryBoard(root = document.getElementById('category-boar
           state.action = '';
           state.detail = null;
           state.openProposal = '';
+          state.seen = markCategory(state.seen, item.id);
         }
         state.message = '';
         paint();
@@ -168,6 +180,7 @@ export function mountCategoryBoard(root = document.getElementById('category-boar
     state.proposals = next;
     paint();
   }).catch(() => {});
+  loadSeen().then((seen) => { state.seen = seen; paint(); });
   fetch('/api/versions').then((response) => response.json()).then((body) => {
     const offers = Array.isArray(body?.offers) ? body.offers : [];
     if (!offers.length) return;

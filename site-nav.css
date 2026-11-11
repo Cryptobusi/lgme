@@ -62,6 +62,10 @@ html.has-site-nav body:has(nav[aria-label="Gym"]) { padding-bottom: calc(11rem +
 #ai-dock:not(.is-open):not(.has-field) #ai-ask,
 #ai-dock:not(.is-open):not(.has-field) #ai-log,
 #ai-dock:not(.is-open):not(.has-field) .ai-actions { display: none; }
+.new-badge { position: absolute; top: 0.15rem; right: 0.2rem; min-width: 1.35rem; height: 1.35rem; padding: 0 0.2rem; border-radius: 999px; background: #1a1408; color: #fff; font-size: 0.75rem; font-weight: 700; line-height: 1.35rem; text-align: center; visibility: hidden; }
+.is-new > .new-badge, .is-new.new-badge { visibility: visible; }
+#category-board button, .entry-tile { position: relative; }
+#category-board button.is-new, .entry-tile.is-new > a, a.is-new { background: #F97316; color: #1a1408; }
 #ai-head { margin-left: auto; font-size: 0.75rem; font-weight: 700; color: #8d938c; }
 #ai-head.is-on { color: #8fd6a8; }
 #ai-switch.is-on { background: #146c43; color: #fff; border-color: #146c43; }
