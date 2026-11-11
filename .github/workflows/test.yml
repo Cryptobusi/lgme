@@ -24,3 +24,4 @@ jobs:
       - run: node test/sw-update.mjs
       - run: node test/ai-dock-views.mjs
       - run: node test/health-reset-ui.mjs
+      - run: node test/mainnet-wording-ui.mjs
