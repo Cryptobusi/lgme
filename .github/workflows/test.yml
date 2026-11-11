@@ -14,3 +14,4 @@ jobs:
       - run: npm install --no-save playwright@1.49.1
       - run: npx playwright install --with-deps chromium
       - run: node test/dashboard-layout.mjs
+      - run: node test/ai-assist.mjs

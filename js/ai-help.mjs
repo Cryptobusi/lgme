@@ -7,7 +7,7 @@ export const ASK_EXAMPLES = Object.freeze([
   'Translate my listing'
 ]);
 
-const PRIVATE = /\b(signature|legal name|covenant|health|mood|sleep|pain|diagnos|latitude|longitude|\bgps\b|photo|raw evidence)\b/i;
+const PRIVATE = /\b(signature|legal name|covenant|health|mood|sleep|pain|diagnos\w*|latitude|longitude|gps|photo|raw evidence)\b/i;
 
 export function shareExcerpt(notes, chosen) {
   const source = String(chosen == null || chosen === '' ? notes : chosen).replace(/\s+/g, ' ').trim();

@@ -10,7 +10,7 @@ import { DEMO_CLUB, DEMO_NAME, MODE_KEY, chatKey, demoStore, realStore, seedDemo
 import { LOCAL_CHAT_NOTE, chatStatus, publicChatMessage } from './gym-sync.mjs';
 import { BOARD_NOTE, PROGRESS_KINDS, boardCards, chooseProgress, manualEntry, progressRows, sharePreview } from './gym-progress.mjs';
 import { communityFeed } from './gym-feed.mjs';
-import { OPT_IN_COPY, answerLocal, deleteDownloadedModel, detectEngine, isOn, setOn, unloadLocalModel } from './local-ai.mjs';
+import { OPT_IN_COPY, answerLocal, deleteDownloadedModel, isOn, setOn, unloadLocalModel } from './local-ai.mjs';
 import { draftHealthInvite, inviteShares, parseJoinSearch, readJoin, rememberJoin } from './health-invite.mjs';
 import { deedCreditOf, fetchPool, sendPoolAction } from './membership-pool-page.mjs';
 import { holdFromChat } from './equipment-referral.mjs';
@@ -755,6 +755,7 @@ async function renderGroups() {
         status(held.card?.error || 'Nothing was sent. You choose whether to share these details.');
         return;
       }
+      if (!mine) { status('Choose who is acting. Nothing was sent.'); return; }
       const built = publicChatMessage({ text: text.value, handle: mine?.name || 'Member', code: code.value, example: mode === 'demo', at: new Date().toISOString() });
       if (!built.ok) { status(built.error); return; }
       const prior = readChat();
@@ -900,9 +901,8 @@ function localAiCard(peer) {
         host.append(note, turn);
       } }, ['Show what turning on means']));
     } else {
-      const engine = detectEngine();
-      lines.push(el('p', {}, [`Engine: ${engine.label}.`]));
-      if (engine.id === 'rules') lines.push(el('p', { class: 'muted' }, ['No model was downloaded.']));
+      lines.push(el('p', {}, ['Engine: Offline helper.']));
+      lines.push(el('p', { class: 'muted' }, ['No model was downloaded. Ask stays on this phone.']));
       const question = el('textarea', { id: 'local-ai-question', maxlength: '400', placeholder: 'Ask, or ask for a draft' });
       const out = el('p', {});
       const equip = el('div', { id: 'equipment-card' });
@@ -921,22 +921,35 @@ function localAiCard(peer) {
         try { covers = Number((await fetchPool()).covers) || 0; } catch { covers = 0; }
         const draft = draftHealthInvite({ question: question.value, inviter: peer?.id || '', credit, poolCovers: covers });
         if (draft.ok) {
+          const actions = inviteActions(draft);
           if (draft.reserve) {
-            const reserved = await sendPoolAction({
-              handle: draft.from,
-              action: 'pool-sponsor',
-              category: 'exchange',
-              credit,
-              at: new Date().toISOString(),
-              nonce: crypto.randomUUID()
+            const reserve = el('button', { type: 'button', id: 'invite-reserve' }, ['Reserve this cover']);
+            reserve.addEventListener('click', async () => {
+              let reserved = { ok: false };
+              try {
+                reserved = await sendPoolAction({
+                  handle: draft.from,
+                  action: 'pool-sponsor',
+                  category: 'exchange',
+                  credit,
+                  at: new Date().toISOString(),
+                  nonce: crypto.randomUUID()
+                });
+              } catch {
+                reserved = { ok: false, error: 'The cover was not reserved. Nothing was sent.' };
+              }
+              if (!reserved.ok) { out.textContent = reserved.error || 'The cover was not reserved. Nothing was sent.'; return; }
+              reserve.disabled = true;
+              reserve.textContent = 'Cover reserved on your confirmation. The invite is still not sent.';
             });
-            if (!reserved.ok) { out.textContent = reserved.error || 'The cover was not reserved.'; return; }
+            actions.append(el('p', { id: 'invite-reserve-note' }, ['Sponsoring reserves credit only after you confirm. The invite is still not sent.']));
+            actions.append(reserve);
           }
-          out.replaceChildren(inviteActions(draft));
+          out.replaceChildren(actions);
           return;
         }
         if (/\binvite\b/i.test(question.value)) { out.textContent = draft.error || 'The invite stayed on this phone.'; return; }
-        const result = await answerLocal({ question: question.value, progressLines: progressLines(peer) });
+        const result = await answerLocal({ question: question.value, progressLines: progressLines(peer), engine: 'rules' });
         out.textContent = `${result.text} Engine: ${result.label}. Not sent.`;
       } }, ['Ask']));
       lines.push(equip);
@@ -1231,7 +1244,11 @@ async function renderRegister() {
     el('h2', {}, ['Join Health']),
     el('p', {}, [el('a', { href: '/gym/covenant' }, ['Member Covenant']), ' · ', el('a', { href: '/gym/health-data' }, ['Consumer health data'])])
   ]);
-  if (invite) box.append(el('p', { id: 'join-invite' }, [`Invite ${invite.invite}.`]));
+  if (invite) {
+    const choice = invite.fee === 'pool' ? 'Use the pool' : invite.fee === 'sponsor' ? (invite.from ? `Sponsored by ${invite.from}` : 'A sponsor') : 'Pay it yourself';
+    box.append(el('p', { id: 'join-invite' }, [`Invite ${invite.invite}.`]));
+    box.append(el('p', { id: 'join-fee-preset' }, [`Setup fee: ${choice}. It is preselected on the fee step after email and the age confirmation. Nothing is paid from this screen.`]));
+  }
   if (!joinEmailDone(localStorage)) {
     signup.step = 0;
     box.append(emailJoinCard());

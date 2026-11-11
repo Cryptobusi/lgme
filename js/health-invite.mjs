@@ -111,11 +111,15 @@ export function readJoin(storage) {
 }
 
 export function feePreset(join, pool = {}) {
+  const coversKnown = pool.covers != null && pool.covers !== '';
   if (join?.fee === 'pool' && Number(pool.covers) >= 1) {
     return { fee: 'pool', selected: 'use-pool', label: 'Use the pool', note: 'This invite uses the pool.' };
   }
   if (join?.fee === 'sponsor' && join.from) {
     return { fee: 'sponsor', selected: 'accept-cover', label: `Sponsored by ${join.from}`, note: `Sponsored by ${join.from}.` };
+  }
+  if (join?.fee === 'pool' && !coversKnown) {
+    return { fee: 'pool', selected: 'use-pool', label: 'Use the pool', note: 'This invite uses the pool. Nothing is taken until you confirm.' };
   }
   if (join?.fee === 'pool') {
     return { fee: 'pool', selected: 'pay-now', label: 'Pay now', note: 'The pool cannot cover a setup fee right now.' };

@@ -4404,7 +4404,7 @@ async function renderSources() {
 function glossaryTable() {
   const rows = [
     ['Tape / Constitutive Record', 'Public Ledger / Verified Receipt', 'An immutable proof of completed work everyone can inspect.'],
-    ['Third Seat', 'The person's seat', 'The Third Seat is your seat, held by you alone, with equal standing beside the state and the firm. You may decline any exchange at no cost, no unpublished rule can bind you, and any hold on your exchange must give a reason and can be challenged, decided within 7 days or it lapses. Holds the law requires are cited, recorded, and kept no broader or longer than the law demands.'],
+    ['Third Seat', "The person's seat", 'The Third Seat is your seat, held by you alone, with equal standing beside the state and the firm. You may decline any exchange at no cost, no unpublished rule can bind you, and any hold on your exchange must give a reason and can be challenged, decided within 7 days or it lapses. Holds the law requires are cited, recorded, and kept no broader or longer than the law demands.'],
     ['Quiet Print', 'Hidden Issuance / Shadow Dilution', 'Creating money or promises off-schedule behind closed doors.'],
     ['Floor', 'Basic Needs Reserve', 'Food, shelter, and essentials secured prior to speculative spending.'],
     ['Issue / Named Bill', 'Peer Promise / Mutual Credit', 'A non-cash IOU directly tied to human effort, not speculative debt.']

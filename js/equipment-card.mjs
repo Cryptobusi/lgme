@@ -93,13 +93,17 @@ export function mountEquipmentCard(host, card, { onStatus } = {}) {
       ...fields,
       at: new Date().toISOString()
     };
-    const response = await fetch('/api/exchange/repair', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ handle: seat, publicJwk: key.publicJwk, payload, sig: await signDevice(key.privateJwk, payload) })
-    });
-    const body = await response.json().catch(() => ({}));
-    onStatus?.(body.ok ? 'Requested. The Exchange item is linked. Nothing was emailed.' : (body.error || 'The request stayed on this phone.'));
+    try {
+      const response = await fetch('/api/exchange/repair', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ handle: seat, publicJwk: key.publicJwk, payload, sig: await signDevice(key.privateJwk, payload) })
+      });
+      const body = await response.json().catch(() => ({}));
+      onStatus?.(body.ok ? 'Requested. The Exchange item is linked. Nothing was emailed.' : (body.error || 'The request stayed on this phone.'));
+    } catch {
+      onStatus?.('Nothing was sent. The network did not answer.');
+    }
   } }, ['Request this']);
   host.replaceChildren(el('article', { class: 'card', id: 'equipment-referral' }, [
     el('img', { id: 'repair-card-image', src: '/assets/img/repair-extraordinaire.webp', alt: 'Person exercising on a treadmill: The Repair Extraordinaire, equipment repair', width: '356', height: '480', loading: 'lazy', style: 'width:100%;height:180px;object-fit:contain;border-radius:10px;background:#efe8dc' }),

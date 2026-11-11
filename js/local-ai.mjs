@@ -125,7 +125,10 @@ export async function deleteDownloadedModel() {
   }
 }
 
-export async function answerLocal({ question, progressLines = [], scope = globalThis, onProgress } = {}) {
+export async function answerLocal({ question, progressLines = [], scope = globalThis, onProgress, engine } = {}) {
+  if (engine === 'rules' || scope.navigator?.onLine === false) {
+    return { engine: 'rules', label: 'Offline helper', text: offlineAnswer(question, progressLines) };
+  }
   const prompt = `${question}\n\nProgress on this phone: ${(progressLines || []).join(' ') || 'none'}`;
   const wanted = detectEngine(scope);
   if (wanted.id === 'browser') {

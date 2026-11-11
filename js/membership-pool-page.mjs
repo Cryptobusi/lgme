@@ -190,6 +190,21 @@ export async function renderMembershipPool(host, handle) {
 export function mountPoolUse({ handle, storage, status, invite, note }) {
   const button = el('button', { type: 'button', id: 'use-pool', hidden: true }, ['Use the pool']);
   const offer = el('button', { type: 'button', id: 'accept-cover', hidden: true }, ['Accept the next-member cover']);
+  const initial = feePreset(invite, {});
+  if (note && initial.note) note.textContent = initial.note;
+  if (initial.selected === 'use-pool') {
+    button.hidden = false;
+    button.classList.add('primary');
+  }
+  if (initial.selected === 'accept-cover') {
+    offer.hidden = false;
+    offer.classList.add('primary');
+    offer.textContent = initial.label;
+  }
+  queueMicrotask(() => {
+    const pay = document.getElementById('pay-now');
+    if (pay) pay.classList.toggle('primary', initial.selected === 'pay-now');
+  });
   async function refresh() {
     const saved = readSetup(storage, handle);
     if (saved?.status === 'paid') {

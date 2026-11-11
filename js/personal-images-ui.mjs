@@ -68,14 +68,18 @@ export function mountImageSlots(host, { memberId, images, status, save }) {
         await commit({ ...current, [slot.id]: next.choice }, `${slot.label} uses ${select.selectedOptions[0]?.textContent || 'that picture'}.`);
       } }, ['Use this picture']),
       el('label', {}, ['Describe a picture for the on-device helper', describe]),
-      el('button', { type: 'button', id: `suggest-image-${slot.id}`, onClick: async () => {
+      el('button', { type: 'button', id: `suggest-image-${slot.id}`, onClick: () => {
         const suggested = suggestBuiltin(describe.value);
-        suggestion.textContent = suggested.ok ? `${suggested.sentence} Nothing was sent.` : suggested.error;
-        if (!suggested.ok) return;
-        const next = choiceFor(slot.id, { source: 'suggest', builtin: suggested.builtin, note: describe.value.trim() });
-        if (!next.ok) { status(next.error); return; }
-        await commit({ ...current, [slot.id]: next.choice }, suggested.sentence);
+        suggestion.dataset.builtin = suggested.ok ? suggested.builtin : '';
+        suggestion.textContent = suggested.ok ? `${suggested.sentence} Nothing was sent. Confirm to keep it on this phone.` : suggested.error;
       } }, ['Suggest']),
+      el('button', { type: 'button', id: `confirm-image-${slot.id}`, onClick: async () => {
+        const builtin = suggestion.dataset.builtin || '';
+        if (!builtin) { status('Suggest a picture first. Nothing was saved.'); return; }
+        const next = choiceFor(slot.id, { source: 'suggest', builtin, note: describe.value.trim() });
+        if (!next.ok) { status(next.error); return; }
+        await commit({ ...current, [slot.id]: next.choice }, 'Kept on this phone. Nothing was sent.');
+      } }, ['Keep this suggestion']),
       suggestion,
       el('button', { type: 'button', id: `reset-image-${slot.id}`, onClick: async () => {
         const next = { ...current };

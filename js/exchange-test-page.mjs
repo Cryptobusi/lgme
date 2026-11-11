@@ -113,11 +113,15 @@ export async function mountExchangeTest(host) {
       photoHash: item.photoHash || '',
       at: new Date().toISOString()
     };
-    const sent = await postListing(payload);
-    status.textContent = sent.result.ok
-      ? `Claimed. Transaction ${sent.result.transactionId}.`
-      : (sent.result.error || 'The claim was not written.');
-    if (sent.result.ok) await refresh();
+    try {
+      const sent = await postListing(payload);
+      status.textContent = sent.result.ok
+        ? `Claimed. Transaction ${sent.result.transactionId}.`
+        : (sent.result.error || 'The claim was not written.');
+      if (sent.result.ok) await refresh();
+    } catch {
+      status.textContent = 'Nothing was posted. The network did not answer.';
+    }
   }
 
   function showDraft(draft) {
@@ -146,11 +150,15 @@ export async function mountExchangeTest(host) {
           photoHash,
           at: new Date().toISOString()
         };
-        const sent = await postListing(payload);
-        status.textContent = sent.result.ok
-          ? `Posted. Transaction ${sent.result.transactionId}. ${sent.result.hashscan}`
-          : (sent.result.error || 'Nothing was posted.');
-        if (sent.result.ok) await refresh();
+        try {
+          const sent = await postListing(payload);
+          status.textContent = sent.result.ok
+            ? `Posted. Transaction ${sent.result.transactionId}. ${sent.result.hashscan}`
+            : (sent.result.error || 'Nothing was posted.');
+          if (sent.result.ok) await refresh();
+        } catch {
+          status.textContent = 'Nothing was posted. The network did not answer.';
+        }
       } }, ['Confirm and post'])
     );
   }
@@ -177,7 +185,7 @@ export async function mountExchangeTest(host) {
   host.replaceChildren(
     poolHost,
     el('h2', {}, ['Testnet listings']),
-    el('p', { class: 'muted' }, ['Exchange testing writes to Hedera testnet topic 0.0.11397293. Account 0.0.11281203 pays each message. The topic has no admin key, so no submit key was added. No email, phone, or photo bytes go on the topic.']),
+    el('p', { class: 'muted' }, ['A listing draft stays on this phone. Nothing is posted until you confirm. No email, phone, or photo bytes are included.']),
     status,
     role,
     list,

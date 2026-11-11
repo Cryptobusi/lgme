@@ -79,7 +79,7 @@ export function thumbtackLink() {
 export function equipmentReferral(text, extra = {}) {
   if (!isEquipmentQuestion(text) && extra.force !== true) return { ok: true, equipment: false, sent: false };
   const details = gatherEquipment(text, extra);
-  if (PRIVATE.test(`${details.item} ${details.brandModel} ${details.symptom} ${details.tried}`)) {
+  if (PRIVATE.test(String(text || '')) || PRIVATE.test(`${details.item} ${details.brandModel} ${details.symptom} ${details.tried}`)) {
     return { ok: false, equipment: true, sent: false, error: 'Leave the phone number and links out of the details. The draft adds the support address.' };
   }
   return {
