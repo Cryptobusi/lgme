@@ -40,29 +40,23 @@ function chart(buckets) {
   svg.setAttribute('viewBox', '0 0 320 140');
   svg.setAttribute('class', 'dash-chart');
   svg.setAttribute('role', 'img');
-  const stages = [
-    ['listed', '#9A3412'],
-    ['matched', '#146c43'],
-    ['confirmed', '#1d4e89'],
-    ['receipt', '#6b4f2a']
-  ];
-  const max = Math.max(1, ...buckets.flatMap((row) => stages.map(([stage]) => row.test[stage] + row.real[stage])));
+  const stages = ['listed', 'matched', 'confirmed', 'receipt'];
+  const colors = { listed: '#9A3412', matched: '#146c43', confirmed: '#1d4e89', receipt: '#6b4f2a' };
+  const max = Math.max(1, ...buckets.flatMap((row) => stages.flatMap((stage) => [row.test[stage], row.real[stage]])));
   const step = buckets.length > 1 ? 300 / (buckets.length - 1) : 300;
-  stages.forEach(([stage, color], index) => {
-    const points = buckets.map((row, i) => {
-      const value = row.test[stage] + row.real[stage];
-      const x = 10 + i * step;
-      const y = 120 - (value / max) * 100 - index;
-      return `${x},${y}`;
-    }).join(' ');
-    const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
-    line.setAttribute('points', points);
-    line.setAttribute('fill', 'none');
-    line.setAttribute('stroke', color);
-    line.setAttribute('stroke-width', '2');
-    svg.append(line);
-  });
-  svg.setAttribute('aria-label', 'Listed, matched, confirmed, and receipt counts over the selected period. Test and real are both included.');
+  for (const kind of ['test', 'real']) {
+    stages.forEach((stage) => {
+      const points = buckets.map((row, i) => `${10 + i * step},${120 - (row[kind][stage] / max) * 100}`).join(' ');
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+      line.setAttribute('points', points);
+      line.setAttribute('fill', 'none');
+      line.setAttribute('stroke', kind === 'test' ? '#5c574e' : colors[stage]);
+      line.setAttribute('stroke-width', kind === 'test' ? '1.5' : '2.5');
+      if (kind === 'test') line.setAttribute('stroke-dasharray', '4 3');
+      svg.append(line);
+    });
+  }
+  svg.setAttribute('aria-label', 'Dashed gray lines are test counts. Solid lines are real counts for listed, matched, confirmed, and receipts.');
   return svg;
 }
 
@@ -160,6 +154,7 @@ export function renderOverview(host, payload, { cachedAt = '', offline = false, 
     detail,
     cards,
     viewMode === 'personal' && !personal ? el('p', {}) : chart(report.buckets),
+    viewMode === 'category' ? el('p', { class: 'muted' }, ['Dashed gray is test. Solid color is real.']) : el('p', {}),
     el('h3', {}, [viewMode === 'personal' ? 'Your activities' : 'Activity mix']),
     mixBars(report.mix)
   );
