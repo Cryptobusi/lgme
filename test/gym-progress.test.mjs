@@ -62,7 +62,7 @@ test('a member picks 3 to 5 categories and the share card has no location', () =
   assert.equal(text('help.html').includes('My progress stays on this phone'), true);
   assert.equal(text('glossary.html').includes('Health meter'), true);
   assert.equal(text('glossary.html').includes('My progress'), true);
-  assert.equal(text('sw.js').includes('lgme-v172'), true);
+  assert.equal(text('sw.js').includes('lgme-v173'), true);
   const shared = publicProgressCard({ ...preview, lat: 38.9, photos: ['x'] });
   assert.equal(shared.ok, false);
   const clean = publicProgressCard(preview);
