@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { healthChainMessage, healthExamplePosts } from '../js/health-examples.mjs';
 import { check, fields, listingTransition, originAllowed, parseStrictJson, ROUTES } from '../js/input-schema.mjs';
+import { TRADE_TYPES, tradeMove } from '../js/trade-types.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const attacks = [
@@ -49,14 +50,35 @@ test('listing transitions reject illegal moves and allow a claim', () => {
       cases += 1;
       const result = listingTransition(from, to);
       const backward = rank(to) > 0 && rank(from) > rank(to) && !to.startsWith('Claimed by');
-      const closed = /declined|cancelled/.test(from) && !to.startsWith('Claimed by');
-      const claimed = from.startsWith('Claimed by');
+      const closed = /declined|cancelled/.test(from) && from !== to && !to.startsWith('Claimed by');
+      const claimed = from.startsWith('Claimed by') && from !== to;
       if (backward || closed || claimed) assert.equal(result.ok, false, `${from} -> ${to}`);
+      if (from === to) assert.equal(result.ok, true, from);
     }
   }
+  for (const from of TRADE_TYPES) {
+    for (const to of TRADE_TYPES) {
+      cases += 1;
+      const result = tradeMove(from, to);
+      if (from === to) assert.equal(result.ok, true, `${from} -> ${to}`);
+      if (from === 'declined' && to !== 'declined') assert.equal(result.ok, false);
+      if (from === 'disputed-open' && to !== 'disputed-open' && to !== 'disputed-resolved') assert.equal(result.ok, false);
+      if (to === 'pool-sponsored' && !['confirmed', 'receipt', 'pool-sponsored'].includes(from)) assert.equal(result.ok, false, `${from} -> pool`);
+    }
+  }
+  assert.equal(tradeMove('listed', 'circle-rsvp').ok, true);
+  assert.equal(tradeMove('circle-rsvp', 'circle-checkin').ok, true);
+  assert.equal(tradeMove('circle-checkin', 'attester-suggest').ok, true);
+  assert.equal(tradeMove('confirmed', 'self-paid').ok, true);
+  assert.equal(tradeMove('receipt', 'pool-sponsored').ok, true);
+  assert.equal(tradeMove('partial', 'receipt').ok, true);
+  assert.equal(tradeMove('repeat', 'listed').ok, true);
+  assert.equal(tradeMove('cancelled', 'expired').ok, true);
+  assert.equal(tradeMove('disputed-resolved', 'listed').ok, false);
   assert.equal(listingTransition('Test item - unclaimed', 'Claimed by mina-vale').ok, true);
   assert.equal(listingTransition('', 'Test item - unclaimed').ok, true);
-  assert.equal(cases, stages.length * stages.length);
+  assert.equal(listingTransition('Test item - declined', 'Test item - declined').ok, true);
+  assert.equal(cases, stages.length * stages.length + TRADE_TYPES.length * TRADE_TYPES.length);
 });
 
 test('chain payloads, email codes, and headers do not leak personal data', async () => {

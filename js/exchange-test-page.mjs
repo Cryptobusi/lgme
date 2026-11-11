@@ -78,7 +78,7 @@ export async function mountExchangeTest(host) {
         : (thumbs[item.id] || (String(item.title || '').includes('Repair') ? ['/assets/img/repair-extraordinaire.webp', 'Person exercising on a treadmill: The Repair Extraordinaire, equipment repair'] : null));
       const poolLine = item.id === POOL_ID
         ? `In US$${Number(item.inUsd || 0).toFixed(2)}. Out US$${Number(item.outUsd || 0).toFixed(2)}. Covers ${item.covers || 0}.`
-        : `${item.status}. ${item.service}. ${item.place || ''} ${item.durationMin || 0} min. ${item.summary || ''}`;
+        : `${item.type || item.status}. ${item.pay === 'pool' ? 'Pool' : item.pay === 'self' ? 'Self' : ''} ${item.service}. ${item.durationMin || 0} min. ${item.summary || ''}`;
       return el('article', { class: 'card', id: `mirror-${item.id}` }, [
         thumb ? el('img', { src: thumb[0], alt: thumb[1], width: '356', height: '480', loading: 'lazy', style: thumb[0].includes('repair-extraordinaire') ? 'width:100%;height:180px;object-fit:contain;background:#efe8dc;border-radius:10px' : 'width:100%;height:140px;object-fit:cover;border-radius:10px' }) : null,
         el('h3', {}, [item.title || item.id]),

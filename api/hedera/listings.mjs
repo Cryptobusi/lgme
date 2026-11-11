@@ -1,6 +1,7 @@
 import { OPERATOR_RULES, sharedListingsEnabled, withinRate } from '../../js/shared-listings.mjs';
 import { guardRequest, json, readBody, readEnv } from '../lib/http.mjs';
 import { listingTransition } from '../../js/input-schema.mjs';
+import { tradeMove, tradeTypeOf } from '../../js/trade-types.mjs';
 import { VIEW_ONLY_MESSAGE } from '../../js/view-only-api.mjs';
 import { verifyDevice } from '../../js/device-sign.mjs';
 import { HOUR_LIMIT, LISTINGS_OPERATOR, LISTINGS_TOPIC, publicExchangeListing } from '../../js/exchange-listing.mjs';
@@ -230,6 +231,10 @@ export default async function handler(req, res) {
   if (!stage.ok) return json(res, 503, { ok: false, error: 'The testnet record could not be read. Nothing was written.' });
   const move = listingTransition(stage.status, built.body.status);
   if (!move.ok) return json(res, 400, { ok: false, error: move.error });
+  if (payload.type) {
+    const typed = tradeMove(stage.type, payload.type);
+    if (!typed.ok) return json(res, 400, { ok: false, error: typed.error });
+  }
   if (payload.hashOnly === true) {
     const chain = healthChainMessage({ ...payload, receiptHash: payload.receiptHash || built.body.receiptHash });
     if (!chain.ok) return json(res, 400, { ok: false, error: chain.error });
@@ -281,11 +286,12 @@ export default async function handler(req, res) {
 }
 
 async function priorListingStatus(id) {
-  if (!id) return { ok: true, status: '' };
+  if (!id) return { ok: true, status: '', type: '' };
   const response = await fetch(`https://testnet.mirrornode.hedera.com/api/v1/topics/${LISTINGS_TOPIC}/messages?limit=100&order=desc`);
-  if (!response.ok) return { ok: false, status: '' };
+  if (!response.ok) return { ok: false, status: '', type: '' };
   const body = await response.json();
   let status = '';
+  let type = '';
   let sequence = -1;
   for (const row of body.messages || []) {
     let item = null;
@@ -293,6 +299,7 @@ async function priorListingStatus(id) {
     if (item?.id !== id || Number(row.sequence_number) < sequence) continue;
     sequence = Number(row.sequence_number);
     status = String(item.status || '');
+    type = tradeTypeOf(item);
   }
-  return { ok: true, status };
+  return { ok: true, status, type };
 }

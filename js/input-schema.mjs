@@ -156,7 +156,7 @@ export function listingTransition(from, to) {
   const prev = String(from || '');
   const next = String(to || '');
   if (!next) return fail('That status is missing.');
-  if (!prev) return { ok: true };
+  if (!prev || prev === next) return { ok: true };
   if (prev.startsWith('Claimed by')) return fail('That listing is already claimed.');
   if (next.startsWith('Claimed by')) return { ok: true };
   if (/declined|cancelled/.test(prev)) return fail('That listing is closed.');

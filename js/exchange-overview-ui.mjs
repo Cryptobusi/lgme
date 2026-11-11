@@ -2,6 +2,25 @@ import { OVERVIEW_KEY } from './exchange-overview.mjs';
 import { mergeHealthExamples } from './health-examples.mjs';
 import { categoryReport, personalReport, readPersonalBook } from './health-dashboard.mjs';
 
+const TYPE_LABEL = {
+  declined: 'No',
+  cancelled: 'Stop',
+  expired: 'Late',
+  'disputed-open': 'Dispute',
+  'disputed-resolved': 'Settled',
+  partial: 'Part',
+  repeat: 'Again',
+  'circle-rsvp': 'RSVP',
+  'circle-checkin': 'Check-in',
+  'attester-suggest': 'Attest',
+  'pool-sponsored': 'Pool',
+  'self-paid': 'Self'
+};
+
+function typeLine(types = {}) {
+  return Object.entries(TYPE_LABEL).filter(([key]) => types[key]).map(([key, label]) => `${label} ${types[key]}`).join(' · ');
+}
+
 let viewMode = 'category';
 let span = 'day';
 
@@ -104,7 +123,7 @@ export function renderOverview(host, payload, { cachedAt = '', offline = false, 
   }
   const detail = el('div', { id: 'overview-detail', class: 'dash-detail' });
   if (open) {
-    detail.append(el('p', {}, [`${detailKey}. Counts only. Dashed gray is test. Solid is real.`]));
+    detail.append(el('p', {}, [`${detailKey}. Counts only. Dashed gray is test. Solid is real. ${typeLine(report.types)}`]));
     const list = el('ol', { class: 'overview-timeline' });
     const rows = viewMode === 'personal' && personal
       ? personal.sessions.map((row) => `${row.activity || 'Health'} · ${row.minutes || 0} min`)
@@ -117,7 +136,7 @@ export function renderOverview(host, payload, { cachedAt = '', offline = false, 
     head,
     el('p', { class: 'dash-meta', id: 'overview-source' }, [
       offline ? 'Offline snapshot. ' : 'Testnet. ',
-      `${examples} examples. `,
+      `${examples} examples. ${typeLine(report.types)} `,
       el('a', { href: '/disclaimer' }, ['Disclaimer'])
     ]),
     cards,

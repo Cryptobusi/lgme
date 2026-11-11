@@ -1,5 +1,6 @@
 import { isHealthListing } from './exchange-overview.mjs';
 import { HEALTH_EXAMPLES } from './health-examples.mjs';
+import { tradeTypeOf, typeCounts } from './trade-types.mjs';
 
 const ACTIVITY = new Map(HEALTH_EXAMPLES.map((row) => [row.id, row.title]));
 const SERVICE_LABEL = {
@@ -53,7 +54,8 @@ export function healthEvents(listings = []) {
       minutes: Number(item.durationMin) > 0 ? Number(item.durationMin) : 0,
       usd: Number(item.usd) > 0 ? Number(item.usd) : 0,
       activity: activityOf(item),
-      closed: /declined|cancelled|^Test item - open$/i.test(String(item.status || ''))
+      trade: tradeTypeOf(item),
+      closed: /declined|cancelled|expired|^Test item - open$/i.test(`${item.status || ''} ${item.type || ''}`) || /declined|cancelled|expired|disputed/.test(tradeTypeOf(item))
     });
   }
   return events;
@@ -186,6 +188,7 @@ export function categoryReport(listings = [], { span = 'day', now = Date.now() }
     decline: rate(declined, listed),
     timing: medianHours(events),
     examples: current.filter((row) => row.id.startsWith('hx-')).length,
+    types: typeCounts(current),
     mix: [...mix.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([label, count]) => ({ label, count }))
   };
 }

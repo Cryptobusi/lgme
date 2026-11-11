@@ -28,6 +28,7 @@ test('the category report keeps test and real apart and hides people', () => {
   ], { span: 'day', now: now + day });
   assert.equal(Math.round(timed.timing.listedToMatched), 24);
   assert.equal(Math.round(timed.timing.matchedToConfirmed), 24);
+  assert.equal(report.types.declined, 1);
   assert.equal(JSON.stringify(report).includes('trainer'), false);
   assert.equal(JSON.stringify(report).includes('mina'), false);
   const dashboard = readFileSync(join(root, 'js/health-dashboard.mjs'), 'utf8');
