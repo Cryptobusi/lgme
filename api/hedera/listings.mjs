@@ -11,6 +11,8 @@ import { rpc } from '../../js/solana-pay.mjs';
 import { redisRest } from '../../js/redis-env.mjs';
 import { upstashStore } from '../lib/upstash.mjs';
 import { allowRate } from '../../js/gym-kv.mjs';
+import { visibleTestExamples } from '../../js/hedera-network.mjs';
+import { TEST_EXAMPLE_SNAPSHOT } from '../../js/test-example-snapshot.mjs';
 
 function adminSee(req, env) {
   const token = String(env.INTEREST_ADMIN || '');
@@ -100,6 +102,8 @@ export default async function handler(req, res) {
       topicId: LISTINGS_TOPIC,
       payer: LISTINGS_OPERATOR,
       listings,
+      testExamples: visibleTestExamples(listings, TEST_EXAMPLE_SNAPSHOT),
+      examplesFrom: 'testnet',
       posted: book.posted,
       pool,
       rules: OPERATOR_RULES,

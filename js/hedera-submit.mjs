@@ -2,7 +2,7 @@ import { merkleRootOf } from './clearing.mjs';
 import { anchorMessage, hashscanMessage, hederaReadiness, topicAllowed } from './hedera-anchor-core.mjs';
 import { testnetOperatorKey } from './hedera-operator.mjs';
 import { LISTINGS_OPERATOR, LISTINGS_TOPIC } from './exchange-listing.mjs';
-import { MAINNET_CLOSED, mainnetPayloadAllowed, resolveHederaNetwork, spendGuard } from './hedera-network.mjs';
+import { MAINNET_CLOSED, chainPayloadSafe, isMockExample, mainnetPayloadAllowed, mockWriteAllowed, resolveHederaNetwork, spendGuard } from './hedera-network.mjs';
 
 const memory = [];
 
@@ -48,8 +48,13 @@ export async function markAnchored(store, hashes) {
 function mainnetClosed(env, body) {
   const picked = resolveHederaNetwork(env);
   if (picked.network !== 'mainnet') return null;
-  const privacy = body ? mainnetPayloadAllowed(body) : { ok: true };
+  if (body && (isMockExample(body) || !mockWriteAllowed(picked.network) && isMockExample(body))) {
+    return { ok: false, error: 'Test examples stay on the testnet record. Nothing was written to mainnet.' };
+  }
+  const privacy = body ? chainPayloadSafe(body) : { ok: true };
   if (!privacy.ok) return { ok: false, error: privacy.error };
+  const shape = body ? mainnetPayloadAllowed(body) : { ok: true };
+  if (!shape.ok) return { ok: false, error: shape.error };
   const guard = spendGuard({
     network: 'mainnet',
     spentTinybar: Number(env.HEDERA_MAINNET_SPENT_TINYBAR) || 0,

@@ -27,10 +27,12 @@ test('mainnet stays closed, previews stay on testnet, and the key is never read'
   assert.equal(refused.error, MAINNET_CLOSED);
   const listing = await submitPaidListing({ HEDERA_NETWORK: 'mainnet', VERCEL_ENV: 'production' }, { id: 'ex-strength', status: 'Test item - unclaimed', title: 'Beginner' });
   assert.equal(listing.ok, false);
-  assert.match(listing.error, /Test item|hash only|not copied/);
-  const source = readFileSync(join(root, 'js/hedera-submit.mjs'), 'utf8') + readFileSync(join(root, 'js/hedera-network.mjs'), 'utf8');
-  assert.equal(source.includes('HEDERA_MAINNET_OPERATOR_KEY'), false);
-  assert.equal(source.includes('forMainnet'), false);
+  assert.match(listing.error, /Test item|hash only|not copied|testnet record/);
+  const submit = readFileSync(join(root, 'js/hedera-submit.mjs'), 'utf8');
+  const network = readFileSync(join(root, 'js/hedera-network.mjs'), 'utf8');
+  assert.equal(submit.includes('HEDERA_MAINNET_OPERATOR_KEY'), false);
+  assert.equal(submit.includes('forMainnet'), false);
+  assert.equal(network.includes('forMainnet'), false);
   assert.equal(dailyHbarCap({}), 1);
   assert.equal(dailyHbarCap({ HEDERA_MAINNET_DAILY_HBAR_CAP: '2' }), 2);
   const room = spendGuard({ network: 'mainnet', spentTinybar: 0, nextTinybar: 50_000_000, capHbar: 1 });

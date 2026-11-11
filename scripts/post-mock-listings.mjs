@@ -1,5 +1,11 @@
 import { generateDeviceKey, signDevice } from '../js/device-sign.mjs';
 import { authorPayloads, examplePayloads, mockListings } from '../js/mock-catalog.mjs';
+import { mockWriteAllowed } from '../js/hedera-network.mjs';
+
+if (!mockWriteAllowed(process.env.HEDERA_NETWORK || 'testnet')) {
+  console.log('Mock listings are not written to mainnet. Nothing was posted.');
+  process.exit(0);
+}
 
 const endpoint = 'https://lgme.app/api/hedera/listings';
 const keys = new Map();
