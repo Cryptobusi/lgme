@@ -2,6 +2,7 @@ import { CHOICES, DISCLAIMER, countByCategory, draftFor, examplePosts, markSeen,
 import { COLLECT_LABEL, SHARE_LABEL, readHealthConsent, writeHealthConsent } from './health-safeguards.mjs';
 import { AI_ENABLE, deviceContext, draftWithHelper, pickHelperSync, showHelperNote } from './one-tap.mjs';
 import { ensureDeviceKey } from './device-sign.mjs';
+import { saveEmailSession } from './health-email.mjs';
 import { IDIDIT_CHIPS, IDIDIT_NAME, submitIdidIt } from './ididit-draft.mjs';
 
 const root = document.getElementById('demo-root');
@@ -285,6 +286,7 @@ function paintCode() {
     const body = await response.json().catch(() => ({}));
     if (!body.ok) { status.textContent = body.error || body.waiting || 'Not verified.'; return; }
     saveDemo(localStorage, { emailHash: body.emailHash || 'demo', disclaimer: false, at: new Date().toISOString() });
+    saveEmailSession(localStorage, { email: state.email, emailHash: body.emailHash || 'demo', x: key.publicJwk.x, y: key.publicJwk.y, at: new Date().toISOString() });
     localStorage.setItem('lgme-gym.seat', 'demo');
     writePending({ step: 'disclaimer', choice: state.choice, returnTo: readPending()?.returnTo || '' });
     state.email = '';
@@ -320,8 +322,10 @@ function paintEmail() {
     paintCode();
   });
   const phone = el('button', { type: 'button', class: 'primary', id: 'demo-phone' }, ['Continue on this phone']);
-  phone.addEventListener('click', () => {
+  phone.addEventListener('click', async () => {
+    const key = await ensureDeviceKey(localStorage);
     saveDemo(localStorage, { disclaimer: false, emailHash: 'phone' });
+    saveEmailSession(localStorage, { email: '', emailHash: 'phone', x: key.publicJwk.x, y: key.publicJwk.y, at: new Date().toISOString() });
     localStorage.setItem('lgme-gym.seat', 'demo');
     writePending({ step: 'disclaimer', choice: state.choice, returnTo: readPending()?.returnTo || '' });
     state.step = 'disclaimer';
@@ -366,7 +370,7 @@ if (pending?.step === 'code' && pending.email) {
 } else if (member?.disclaimer === false) {
   state.choice = pending?.choice || '';
   paintDisclaimer();
-} else if (ask || (pending?.step === 'email' && pending.choice)) {
+} else if (!accountReady() && (ask || (pending?.step === 'email' && pending.choice))) {
   state.choice = pending?.choice || 'Health';
   paintEmail();
 } else if (pending?.step === 'guide' && pending.choice && accountReady()) {

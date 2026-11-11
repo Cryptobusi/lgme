@@ -28,5 +28,6 @@ jobs:
       - run: node test/health-consent-ui.mjs
       - run: node test/model-fallback-ui.mjs
       - run: node test/phone-flows-ui.mjs
+      - run: node test/session-persist-ui.mjs
       - run: node test/category-actions-ui.mjs
       - run: node test/my-version-ui.mjs

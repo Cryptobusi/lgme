@@ -1,6 +1,7 @@
 export const DEMO_KEY = 'lgme.demo.member';
 export const POSTS_KEY = 'lgme.demo.posts';
 export const SEEN_KEY = 'lgme.demo.seen';
+export const SESSION_MS = 30 * 24 * 60 * 60 * 1000;
 
 export const CHOICES = Object.freeze([
   'IwantIT',
@@ -18,17 +19,25 @@ export const DISCLAIMER = Object.freeze([
   '$lgme is pegged to US$ when a price is shown.'
 ]);
 
-export function readDemo(storage) {
+export function readDemo(storage, now = Date.now()) {
   try {
     const saved = JSON.parse(storage.getItem(DEMO_KEY) || 'null');
-    return saved?.demo === true ? saved : null;
+    if (saved?.demo !== true) return null;
+    if (saved.until && Number(saved.until) < now) {
+      storage.removeItem(DEMO_KEY);
+      return null;
+    }
+    saved.until = now + SESSION_MS;
+    storage.setItem(DEMO_KEY, JSON.stringify(saved));
+    return saved;
   } catch {
     return null;
   }
 }
 
-export function saveDemo(storage, patch) {
-  const next = { demo: true, handle: 'demo', at: new Date().toISOString(), ...readDemo(storage), ...patch, email: undefined };
+export function saveDemo(storage, patch, now = Date.now()) {
+  const prior = (() => { try { return JSON.parse(storage.getItem(DEMO_KEY) || 'null'); } catch { return null; } })();
+  const next = { demo: true, handle: 'demo', at: new Date(now).toISOString(), until: now + SESSION_MS, ...(prior?.demo === true ? prior : {}), ...patch, email: undefined };
   storage.setItem(DEMO_KEY, JSON.stringify(next));
   return next;
 }
