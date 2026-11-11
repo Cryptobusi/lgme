@@ -11,8 +11,9 @@ import { rpc } from '../../js/solana-pay.mjs';
 import { redisRest } from '../../js/redis-env.mjs';
 import { upstashStore } from '../lib/upstash.mjs';
 import { allowRate } from '../../js/gym-kv.mjs';
-import { visibleTestExamples } from '../../js/hedera-network.mjs';
+import { chainPayloadSafe, visibleTestExamples } from '../../js/hedera-network.mjs';
 import { TEST_EXAMPLE_SNAPSHOT } from '../../js/test-example-snapshot.mjs';
+import { healthChainMessage, presentHealthExample } from '../../js/health-examples.mjs';
 
 function adminSee(req, env) {
   const token = String(env.INTEREST_ADMIN || '');
@@ -93,7 +94,7 @@ export default async function handler(req, res) {
       consensusTimestamp: row.consensus_timestamp,
       sequenceNumber: row.sequence_number,
       payer: row.payer_account_id || LISTINGS_OPERATOR,
-      item: decodeMessage(row.message)
+      item: presentHealthExample(decodeMessage(row.message))
     })).filter((row) => row.item);
     return json(res, 200, {
       ok: true,
@@ -223,6 +224,13 @@ export default async function handler(req, res) {
     ? publicSetupReceivable({ ...payload, handle: payload.handle || body.handle })
     : publicExchangeListing({ ...payload, handle: payload.handle || body.handle });
   if (!built.ok) return json(res, built.status || 400, { ok: false, viewOnly: built.viewOnly === true, error: built.error || VIEW_ONLY_MESSAGE });
+  if (payload.hashOnly === true) {
+    const chain = healthChainMessage({ ...payload, receiptHash: payload.receiptHash || built.body.receiptHash });
+    if (!chain.ok) return json(res, 400, { ok: false, error: chain.error });
+    const privacy = chainPayloadSafe(chain.body);
+    if (!privacy.ok) return json(res, 400, { ok: false, error: privacy.error });
+    built.body = chain.body;
+  }
   if (payload.action === 'receivable-paid' && payload.signature && !payload.reference) {
     const tx = await rpc('mainnet-beta', 'getTransaction', [payload.signature, { encoding: 'jsonParsed', maxSupportedTransactionVersion: 0, commitment: 'finalized' }]);
     const confirmed = tx.ok && tx.result

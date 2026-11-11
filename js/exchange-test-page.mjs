@@ -55,7 +55,7 @@ export async function mountExchangeTest(host) {
     rows.sort((a, b) => (b.item?.pinned === true) - (a.item?.pinned === true));
     list.replaceChildren(...(rows.length ? rows.map((row) => {
       const item = row.item || {};
-      const claim = item.status === UNCLAIMED || item.status === AUTHOR_STATUS || item.status === EXAMPLE_STATUS
+      const claim = item.status === UNCLAIMED || item.status === AUTHOR_STATUS || item.status === EXAMPLE_STATUS || /^Test item - /.test(item.status || '')
         ? el('button', { type: 'button', id: `claim-${item.id}`, onClick: () => claimItem(item) }, ['Claim as provider'])
         : null;
       const thumbs = {

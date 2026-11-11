@@ -1,4 +1,5 @@
 import { OVERVIEW_KEY, tallyExchange } from './exchange-overview.mjs';
+import { mergeHealthExamples } from './health-examples.mjs';
 
 function el(tag, attrs = {}, children = []) {
   const node = document.createElement(tag);
@@ -76,7 +77,7 @@ function countLine(health) {
 }
 
 export function renderOverview(host, payload, { cachedAt = '', offline = false } = {}) {
-  const view = tallyExchange(payload);
+  const view = tallyExchange({ ...payload, listings: mergeHealthExamples(payload?.listings || []) });
   const health = view.health;
   const total = health.testOffers + health.realOffers + health.testRequests + health.realRequests;
   const open = location.hash.startsWith('#overview=');

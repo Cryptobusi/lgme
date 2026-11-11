@@ -7,5 +7,20 @@ export const TEST_EXAMPLE_SNAPSHOT = Object.freeze([
   { id: 'author-remy-cole', service: 'author', status: 'Test author - unclaimed', title: 'Remy Cole' },
   { id: 'example-hour-trade', service: 'example', status: 'Example transaction - test, until claimed', title: 'Tutoring for yard help' },
   { id: 'example-mental', service: 'example', status: 'Example transaction - test, until claimed', title: 'Mental exercise, both confirmed' },
-  { id: 'example-over-100', service: 'example', status: 'Example transaction - test, until claimed', title: 'Over 100 dollars, three attestations' }
+  { id: 'example-over-100', service: 'example', status: 'Example transaction - test, until claimed', title: 'Over 100 dollars, three attestations' },
+  { id: 'hx-walk', service: 'walk', status: 'Test item - unclaimed', title: 'Walking group', path: 'offer-listed' },
+  { id: 'hx-strength', service: 'strength', status: 'Test item - unclaimed', title: 'Strength session', path: 'request-listed' },
+  { id: 'hx-yoga', service: 'mobility', status: 'Test item - matched', title: 'Yoga hour', path: 'hour-trade' },
+  { id: 'hx-swim', service: 'cardio', status: 'Test item - confirmed', title: 'Swimming session', path: 'usd-trade' },
+  { id: 'hx-cycle', service: 'bike', status: 'Test item - confirmed', title: 'Cycling session', path: 'mental-rate' },
+  { id: 'hx-stretch', service: 'mobility', status: 'Test item - matched', title: 'Stretching and mobility', path: 'trainer-confirm' },
+  { id: 'hx-nutrition', service: 'plan', status: 'Test item - receipt', title: 'Nutrition coaching', path: 'ididit' },
+  { id: 'hx-meal', service: 'health', status: 'Test item - receipt', title: 'Meal prep', path: 'pool-sponsor' },
+  { id: 'hx-sleep', service: 'health', status: 'Test item - confirmed', title: 'Sleep routine check-in', path: 'self-paid' },
+  { id: 'hx-breath', service: 'mental', status: 'Test item - declined', title: 'Meditation and breathwork', path: 'declined' },
+  { id: 'hx-physio', service: 'mobility', status: 'Test item - cancelled', title: 'Rehab exercise session', path: 'cancelled-expired' },
+  { id: 'hx-dance', service: 'cardio', status: 'Test item - open', title: 'Dance fitness', path: 'disputed-open' },
+  { id: 'hx-hike', service: 'walk', status: 'Test item - partial', title: 'Hiking session', path: 'partial' },
+  { id: 'hx-balance', service: 'mobility', status: 'Test item - repeat', title: 'Balance and fall prevention', path: 'repeat' },
+  { id: 'hx-checkin', service: 'health', status: 'Test item - receipt', title: 'Group check-in buddy', path: 'circle-attest' }
 ]);

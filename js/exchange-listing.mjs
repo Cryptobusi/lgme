@@ -101,7 +101,7 @@ export function publicExchangeListing(spec = {}) {
   } else if (!status) {
     status = UNCLAIMED;
   }
-  const allowed = status === UNCLAIMED || status === AUTHOR_STATUS || status === EXAMPLE_STATUS || status === claimedStatus('repair-extraordinaire') || /^Claimed by [a-z0-9-]{1,32}$/.test(status);
+  const allowed = status === UNCLAIMED || status === AUTHOR_STATUS || status === EXAMPLE_STATUS || status === claimedStatus('repair-extraordinaire') || /^Claimed by [a-z0-9-]{1,32}$/.test(status) || /^Test item - (unclaimed|matched|confirmed|receipt|declined|cancelled|open|partial|repeat)$/.test(status);
   if (!allowed) return { ok: false, status: 400, error: 'Use the test status or a claim.' };
   const given = spec.rate && typeof spec.rate === 'object' ? spec.rate : null;
   const rate = given

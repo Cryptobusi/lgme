@@ -55,15 +55,22 @@ export function tallyExchange(payload = {}) {
     if (!isHealthListing(item)) continue;
     const status = String(item.status || '');
     const claimed = status.startsWith('Claimed by');
-    const finished = isFinished(item, status);
-    const test = !claimed && (/test|unclaimed/i.test(status) || item.test === true);
+    const stage = /receipt/i.test(status) || isFinished(item, status)
+      ? 'receipt'
+      : /confirmed/i.test(status)
+        ? 'confirmed'
+        : (/matched|partial/i.test(status) || claimed)
+          ? 'matched'
+          : 'listed';
+    const finished = stage === 'receipt';
+    const test = !claimed && (/test|unclaimed|declined|cancelled|open|partial|repeat|matched|confirmed|receipt/i.test(status) || item.test === true);
     const request = item.side === 'request';
     if (request) {
       if (test) health.testRequests += 1;
       else health.realRequests += 1;
     } else if (test) health.testOffers += 1;
     else health.realOffers += 1;
-    if (claimed) {
+    if (claimed || stage === 'matched') {
       if (test) health.testClaimed += 1;
       else health.realClaimed += 1;
       flow.matched += 1;
@@ -73,7 +80,7 @@ export function tallyExchange(payload = {}) {
       else health.realFinished += 1;
       flow.receipt += 1;
     }
-    if (/confirmed/i.test(`${status} ${item.summary || ''}`)) flow.confirmed += 1;
+    if (stage === 'confirmed' || /confirmed/i.test(`${status} ${item.summary || ''}`)) flow.confirmed += 1;
     flow.listed += 1;
   }
   return {
