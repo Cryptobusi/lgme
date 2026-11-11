@@ -82,6 +82,7 @@ export function presentHealthExample(item = {}) {
     group: 'health',
     service: item.service || extra.service,
     side: item.side || extra.side,
+    durationMin: item.durationMin || 45,
     status: item.status || extra.status,
     path: item.path || extra.path,
     authorHandle: extra.author,
