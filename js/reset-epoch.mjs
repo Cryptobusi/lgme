@@ -9,7 +9,8 @@ const KEEP_EXACT = new Set([
   'lgme.health.email',
   'lgme.health.plan',
   'lgme.health.contact',
-  'lgme.health.contactGrants'
+  'lgme.health.contactGrants',
+  'lgme.health.consent'
 ]);
 
 export function keepKey(name) {

@@ -21,6 +21,9 @@
     ol { padding-left:1.2rem; }
     li { margin:0.7rem 0; }
     .muted { color:var(--muted); }
+    textarea, button { font:inherit; }
+    textarea { width:100%; min-height:6rem; padding:0.6rem; border-radius:12px; border:1px solid var(--line); background:#10150f; color:var(--fg); }
+    button { min-height:48px; padding:0.7rem 0.9rem; border-radius:12px; border:1px solid var(--gold); background:var(--gold); color:#1a1408; }
   </style>
 </head>
 <body>
@@ -41,10 +44,18 @@
       <li><strong>Log the lesson.</strong> Record what happened, who was told, and what changes so the same path is closed. Keep that log with the operator, not in the member’s workout book.</li>
     </ol>
     <p>Contact for a suspected breach: <a href="mailto:desk@lgme.app">desk@lgme.app</a>.</p>
+    <form id="report-problem">
+      <label for="report-note">Report a problem</label>
+      <textarea id="report-note" maxlength="280" rows="4"></textarea>
+      <p><button type="submit">Send to the owner</button></p>
+      <p id="report-status" role="status"></p>
+    </form>
   </section>
 </main>
 <footer>
-  <a href="/gym/health-data">Consumer health data</a>
+  <a href="/gym/health-data">Health data notice</a>
 </footer>
+<script type="module" src="/js/report-problem.mjs"></script>
+<script src="/js/site-nav.js"></script>
 </body>
 </html>

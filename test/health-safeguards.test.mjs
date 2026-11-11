@@ -74,6 +74,9 @@ test('the notice, breach plan, and gym pages carry no ad or analytics scripts', 
   assert.equal(plan.includes('60 days'), true);
   assert.equal(plan.includes('500'), true);
   assert.equal(plan.includes('Draft pending counsel review'), true);
+  assert.equal(plan.includes('id="report-problem"'), true);
+  assert.equal(text('docs/breach-response-plan.md').includes('Draft pending counsel review'), true);
+  assert.equal(text('docs/breach-response-plan.md').includes('60 days'), true);
   assert.equal(text('gym.html').includes('href="/gym/health-data"'), true);
   assert.equal(text('help.html').includes('/gym/health-data'), true);
   assert.equal(text('sitemap.xml').includes('https://lgme.app/gym/health-data'), true);
@@ -82,6 +85,6 @@ test('the notice, breach plan, and gym pages carry no ad or analytics scripts', 
   assert.equal(text('js/health-safeguards.mjs').includes(SHARE_LABEL), true);
   assert.equal(text('js/gym-app.mjs').includes('COLLECT_LABEL'), true);
   assert.equal(text('js/gym-app.mjs').includes('SHARE_LABEL'), true);
-  assert.equal(text('sw.js').includes('lgme-v164'), true);
-  assert.equal(text('sw-gym.js').includes('lgme-gym-v72'), true);
+  assert.equal(text('sw.js').includes('lgme-v165'), true);
+  assert.equal(text('sw-gym.js').includes('lgme-gym-v73'), true);
 });
