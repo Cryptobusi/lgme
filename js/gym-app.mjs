@@ -5,6 +5,7 @@ import { MAXIMS, rotationFor } from './wisdom.mjs';
 import { commonsSplit } from './commons-split.mjs';
 import { mountEmailCheck } from './email-check.mjs';
 import { PASSKEY_COPY, PASSKEY_FALLBACK, passkeySupported, unlockWithPasskey } from './passkey-unlock.mjs';
+import { removeFingerprint } from './passkey-signin.mjs';
 import { barsSvg, memberStats, publicCard } from './gym-charts.mjs';
 import { DEMO_CLUB, DEMO_NAME, MODE_KEY, chatKey, demoStore, realStore, seedDemoChat, seedDemoClub } from './gym-demo.mjs';
 import { LOCAL_CHAT_NOTE, chatStatus, publicChatMessage } from './gym-sync.mjs';
@@ -1051,6 +1052,10 @@ async function renderMore() {
       const result = await unlockWithPasskey();
       status(result.ok ? 'Passkey checked. The passphrase still locks the book.' : result.error);
     } }, ['Use passkey']),
+    el('button', { type: 'button', id: 'passkey-remove', onClick: async () => {
+      try { await removeFingerprint(); status('Fingerprint removed from this phone.'); }
+      catch (error) { status(error.message || 'The fingerprint stayed.'); }
+    } }, ['Remove fingerprint']),
     el('p', { id: 'gym-status', role: 'status' }, [])
   ]);
 }
