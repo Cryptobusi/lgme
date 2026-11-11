@@ -29,7 +29,7 @@ import { changeSteward, groupSteward, isGroupAdmin, isTrainer, majoritySteward, 
 import { deleteHelper, helperFile, loadHelper, saveHelper } from './helper-store.mjs';
 import { ensureDeviceKey, intakeSharePayload, randomInvite, signDevice } from './device-sign.mjs';
 import { renderProtocol } from './intake-view.mjs';
-import { DISCLAIMER, SANDBOX_LABEL, confirmOutcome, failMediation, messageFromMirror, openDispute, publicDispute, rehearsalMembers, requestPanel, setShareConsent, signVerdict } from './dispute.mjs';
+import { DISCLAIMER, DISCLAIMER_EDITION, SANDBOX_LABEL, confirmOutcome, failMediation, messageFromMirror, openDispute, publicDispute, rehearsalMembers, requestPanel, setShareConsent, signVerdict } from './dispute.mjs';
 import { mountDeviceCard } from './device-card.mjs';
 
 let mode = localStorage.getItem(MODE_KEY) === 'demo' ? 'demo' : 'real';
@@ -1287,7 +1287,7 @@ async function renderRegister() {
     box.append(el('section', { id: 'signup-disclaimer', class: 'card' }, [
       el('h3', {}, ['Disclaimer']),
       ...DISCLAIMER.map((line) => el('p', {}, [line])),
-      el('p', {}, [el('a', { href: '/disclaimer' }, ['Read the disclaimer'])]),
+      el('p', {}, [DISCLAIMER_EDITION + '. ', el('a', { href: '/disclaimer' }, ['Read the disclaimer'])]),
       agreeBox('disclaimer', 'I understand. Use is voluntary, and this does not replace a court.')
     ]));
     box.append(el('button', { type: 'button', class: 'primary', onClick: () => {
@@ -1956,7 +1956,7 @@ async function renderDispute() {
   return el('section', { id: 'dispute-flow' }, [
     el('h2', {}, ['Dispute rehearsal']),
     ...DISCLAIMER.map((line) => el('p', {}, [line])),
-    el('p', {}, [el('a', { href: '/disclaimer' }, ['Read the disclaimer'])]),
+    el('p', {}, [DISCLAIMER_EDITION + '. ', el('a', { href: '/disclaimer' }, ['Read the disclaimer'])]),
     el('label', { class: 'check' }, [box, 'I understand. Use is voluntary, and this does not replace a court.']),
     choices.length ? el('label', {}, ['Other member', who]) : el('p', {}, ['Another member has to be on this phone.']),
     el('label', {}, ['What happened. This stays on the phone.', note]),

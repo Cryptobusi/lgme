@@ -21,6 +21,7 @@ export const VOLUNTARY = 'Use of lgme.app is 100% voluntary.';
 export const NO_COVERAGE = 'No liability coverage of any kind is provided by the app, its authors, stewards, trainers, sponsors, attesters, or panelists.';
 export const FORUM = 'Disputes are resolved by mutual agreement between the people involved, with the Third Seat as each person\'s own seat (per the 13-clause Third Seat article), unless local jurisdiction statutes govern the civil duties involved.';
 export const DRAFT_MARK = 'Not legal advice. Draft pending counsel review.';
+export const DISCLAIMER_EDITION = 'Live beta v.5 · November 10, 2026';
 export const VERDICT_CHOICES = Object.freeze(['write-down', 'nullification', 'no-change']);
 export const DISCLAIMER = Object.freeze([VOLUNTARY, NO_COVERAGE, FORUM, NOT_A_COURT, REHEARSAL_COPY]);
 

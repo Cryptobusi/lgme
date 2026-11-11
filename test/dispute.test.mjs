@@ -8,7 +8,7 @@ import { generateDeviceKey, signDevice } from '../js/device-sign.mjs';
 import { emptyGymKv, gymMutate } from '../js/gym-kv.mjs';
 import {
   DISCLAIMER,
-  DRAFT_MARK,
+  DISCLAIMER_EDITION,
   FORUM,
   LATER_MIN,
   NO_COVERAGE,
@@ -229,9 +229,11 @@ test('the disclaimer is on the dispute page, help, the glossary, and sign-up', (
   const glossary = text('glossary.html');
   const gym = text('js/gym-app.mjs');
   const home = text('index.html');
-  for (const line of [VOLUNTARY, NO_COVERAGE, FORUM, NOT_A_COURT, REHEARSAL_COPY, DRAFT_MARK, ...DISCLAIMER]) {
+  for (const line of [VOLUNTARY, NO_COVERAGE, FORUM, NOT_A_COURT, REHEARSAL_COPY, ...DISCLAIMER]) {
     assert.equal(page.includes(line), true, line);
   }
+  assert.equal(page.includes(DISCLAIMER_EDITION), true);
+  assert.equal(page.includes('Draft pending counsel review'), false);
   assert.equal(help.includes(VOLUNTARY), true);
   assert.equal(help.includes(NOT_A_COURT), true);
   assert.equal(glossary.includes('100% voluntary'), true);
@@ -239,8 +241,10 @@ test('the disclaimer is on the dispute page, help, the glossary, and sign-up', (
   assert.equal(glossary.includes('>Did<'), false);
   assert.equal(gym.includes('signup-disclaimer'), true);
   assert.equal(gym.includes('dispute-disclaimer'), true);
+  assert.equal(gym.includes('DISCLAIMER_EDITION'), true);
   assert.equal(home.includes('href="/disclaimer"'), true);
   assert.equal(text('gym.html').includes('href="/disclaimer"'), true);
-  assert.equal(text('sw.js').includes('lgme-v148'), true);
+  assert.equal(text('sitemap.xml').includes('https://lgme.app/disclaimer'), true);
+  assert.equal(text('sw.js').includes('lgme-v149'), true);
   assert.equal(page.includes('$Trust'), false);
 });
