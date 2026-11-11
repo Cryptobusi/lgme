@@ -39,6 +39,12 @@ const failures = [];
 const page = await context.newPage();
 await page.goto(`${base}/gym`, { waitUntil: 'domcontentloaded' });
 await page.locator('#ai-ask').waitFor();
+const chip = await page.locator('.ai-chip').first().evaluate((node) => {
+  const box = node.getBoundingClientRect();
+  return { h: box.height, size: parseFloat(getComputedStyle(node).fontSize) };
+});
+if (chip.h < 24 || chip.h > 32 || chip.size < 13 || chip.size > 14) failures.push(`chip ${chip.h}/${chip.size}`);
+if (!(await page.locator('#ai-chip-hint').isVisible())) failures.push('chip hint missing');
 await page.locator('#ai-ask').fill('log a workout');
 await page.locator('#ai-ask').press('Enter');
 await page.locator('#gym-ididit-other').waitFor();

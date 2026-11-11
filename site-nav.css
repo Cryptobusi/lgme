@@ -87,9 +87,11 @@ body:has(nav[aria-label="Gym"]) #ai-dock { bottom: calc(4.5rem + env(safe-area-i
 #ai-dock.has-field #ai-chips { order: 3; }
 #ai-dock.has-field #ai-ask,
 #ai-dock.has-field .ai-actions { display: none; }
-#ai-chips { display: flex; flex-wrap: nowrap; gap: 0.35rem; min-height: 44px; max-height: 44px; margin: 0 0 0.25rem; overflow-x: auto; }
-#ai-dock.has-field #ai-chips { flex-wrap: nowrap; max-height: 44px; overflow-x: auto; }
-.ai-chip { flex: 0 0 auto; white-space: nowrap; min-height: 44px; padding: 0.35rem 0.8rem; border-radius: 999px; border: 1px solid #c6a15b; background: #f4f1e8; color: #1a1408; font: inherit; font-weight: 700; }
+#ai-chip-row { position: relative; }
+#ai-chips { display: flex; flex-wrap: nowrap; gap: 0.5rem; min-height: 32px; max-height: 32px; margin: 0 0 0.25rem; padding-right: 1.2rem; overflow-x: auto; }
+#ai-dock.has-field #ai-chips { flex-wrap: nowrap; max-height: 32px; overflow-x: auto; }
+#ai-dock .ai-chip { flex: 0 0 auto; white-space: nowrap; min-height: 32px; min-width: 24px; height: 32px; padding: 0 0.5rem; border-radius: 999px; border: 1px solid #c6a15b; background: #f4f1e8; color: #1a1408; font: inherit; font-size: 14px; font-weight: 700; }
+#ai-chip-hint { position: absolute; right: 0; top: 0; width: 1.3rem; height: 32px; display: flex; align-items: center; justify-content: flex-end; color: #f4f1e8; pointer-events: none; background: linear-gradient(to right, transparent, #0c100c 60%); }
 #ai-ask {
   box-sizing: border-box;
   display: block;
