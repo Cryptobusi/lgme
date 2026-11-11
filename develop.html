@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Help develop a category · lgme</title>
+  <meta name="robots" content="noindex" />
+  <link rel="stylesheet" href="/preview.css" />
+  <style>
+    label { display: block; margin: 0.7rem 0 0.25rem; }
+    input, textarea { width: 100%; box-sizing: border-box; font: inherit; min-height: 44px; padding: 0.45rem 0.6rem; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--fg); }
+    textarea { min-height: 6rem; }
+    button { margin-top: 0.7rem; }
+    #want-status { min-height: 1.4rem; }
+  </style>
+</head>
+<body>
+  <p class="kicker"><a href="/">Categories</a></p>
+  <h1>Help develop this</h1>
+  <p>This is an IwanIT. One tap posts it after you confirm. Nothing is sent until then.</p>
+  <form id="want-form">
+    <label for="want-kind">Type</label>
+    <input id="want-kind" name="kind" value="IwanIT" readonly />
+    <label for="want-category">Category</label>
+    <input id="want-category" name="category" readonly />
+    <label for="want-title">Title</label>
+    <input id="want-title" name="title" maxlength="80" required />
+    <label for="want-body">Note</label>
+    <textarea id="want-body" name="body" maxlength="280" required></textarea>
+    <label for="want-skill">Skill, optional</label>
+    <input id="want-skill" name="skill" maxlength="80" />
+    <label for="want-time">Time, optional</label>
+    <input id="want-time" name="time" maxlength="40" />
+    <p><button type="button" id="want-suggest" hidden>Suggest wording</button></p>
+    <p><button type="submit" id="want-confirm">Confirm IwanIT</button></p>
+    <p id="want-status" role="status"></p>
+  </form>
+  <script type="module" src="/js/develop-page.mjs"></script>
+</body>
+</html>

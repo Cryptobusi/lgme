@@ -2,7 +2,7 @@ import { EXCLUDED_NOTE, HOST_KINDS, NEIGHBOR_DEEDS, addMatchingHour, catalogFor,
 import { EXPLAINER, EXPLAINER_TITLE, ROLES, interestRecord } from './community-interest.mjs';
 import { ensureDeviceKey, signDevice } from './device-sign.mjs';
 import { mountSeedBoard } from './seed-board.mjs';
-import { DEV_TEAM_HREF, HELP_NOTE, helpMail } from './category-help.mjs';
+import { DEV_TEAM_HREF, helpPath } from './category-help.mjs';
 
 const page = document.body.dataset.page;
 const root = document.getElementById('pair');
@@ -24,8 +24,7 @@ function save() { writeBook(book); draw(); }
 
 function categoryHelp(name) {
   return el('p', { id: 'category-help' }, [
-    `${HELP_NOTE} `,
-    el('a', { id: 'help-develop', href: helpMail(name) }, ['Help develop this']),
+    el('a', { id: 'help-develop', href: helpPath(name) }, ['Help develop this']),
     ' · ',
     el('a', { href: DEV_TEAM_HREF }, ['Join the developer team'])
   ]);

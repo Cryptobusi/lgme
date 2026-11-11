@@ -2071,6 +2071,12 @@ async function boot() {
   const incoming = parseJoinSearch(location.search);
   if (incoming.ok) rememberJoin(sessionStorage, incoming);
   if (readJoin(sessionStorage) && !registered && (route() === '/' || route() === '')) location.hash = '/register';
+  const developBack = sessionStorage.getItem('lgme.develop.return') || '';
+  if (developBack.startsWith('/develop?') && (seatId() || registered)) {
+    sessionStorage.removeItem('lgme.develop.return');
+    location.assign(developBack);
+    return;
+  }
   const seated = seatId() || registered?.id;
   if (seated && recallPage(localStorage, seated) && (route() === '/' || route() === '/me')) location.hash = '/page';
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw-gym.js', { scope: '/gym' }).catch(() => {});

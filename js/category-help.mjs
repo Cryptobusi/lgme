@@ -1,21 +1,45 @@
-export const HELP_MAIL = 'cryptovanities@gmail.com';
-export const HELP_NOTE = 'Coming soon. Help us build this category.';
+export const HELP_PATH = '/develop';
 export const DEV_TEAM_HREF = '/hosts#dev-interest';
 
-const CLOSED = new Set([
-  'campus', 'neighbor', 'neighbors', 'hosts', 'host', 'circles', 'circle', 'stories', 'story',
+export const CATEGORIES = Object.freeze([
+  { id: 'health', name: 'Health', href: '/gym', badge: 'Beta' },
+  { id: 'campus', name: 'Campus', href: '/campus', badge: 'Early' },
+  { id: 'neighbor', name: 'Neighbor help', href: '/neighbors', badge: 'Early' },
+  { id: 'hosts', name: 'Hosts', href: '/hosts', badge: 'Early' },
+  { id: 'circles', name: 'Circles', href: '/circles', badge: 'Early' },
+  { id: 'stories', name: 'Stories', href: '/stories', badge: 'Early' },
+  { id: 'exchange', name: 'Exchange', href: '/exchange', badge: 'Early' }
+]);
+
+const OPEN = new Set([
+  'exchange', 'health', 'campus', 'neighbor', 'neighbors', 'hosts', 'circles', 'stories',
   'goods', 'services', 'household', 'food', 'tools'
 ]);
 
-export function helpMail(name) {
-  const label = String(name || 'this category').replace(/\s+/g, ' ').trim() || 'this category';
-  const subject = `Help develop lgme.app: ${label}`;
-  const body = `I want to help build the ${label} category on lgme.app.`;
-  return `mailto:${HELP_MAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+export function categoryByName(name) {
+  const text = String(name || '').trim().toLowerCase();
+  return CATEGORIES.find((item) => item.id === text || item.name.toLowerCase() === text) || null;
 }
 
-export function closedTrade(spec = {}) {
-  const names = [spec.category, spec.group, spec.service, spec.market, spec.listCategory]
-    .map((value) => String(value || '').trim().toLowerCase());
-  return names.some((name) => CLOSED.has(name));
+export function categoryOpen(name) {
+  return OPEN.has(String(name || 'exchange').trim().toLowerCase());
+}
+
+export function helpPath(name) {
+  const item = categoryByName(name);
+  const label = item?.name || String(name || '').trim();
+  return `${HELP_PATH}?category=${encodeURIComponent(label)}`;
+}
+
+export function helpDraft(name) {
+  const item = categoryByName(name);
+  const label = item?.name || 'Health';
+  return {
+    kind: 'IwanIT',
+    category: label,
+    title: `I want to help develop ${label}`,
+    body: `I can help build the ${label} category.`,
+    skill: '',
+    time: ''
+  };
 }

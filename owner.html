@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Owner notices · lgme</title>
+  <meta name="robots" content="noindex" />
+  <link rel="stylesheet" href="/preview.css" />
+  <style>
+    #owner-badge { display: inline-block; min-width: 1.6rem; min-height: 1.6rem; padding: 0.2rem 0.45rem; border-radius: 999px; background: #c6a15b; color: #1c1b19; font-weight: 700; text-align: center; }
+    article { margin: 0.7rem 0; }
+    input { font: inherit; min-height: 44px; padding: 0.4rem 0.6rem; }
+    button { min-height: 44px; }
+  </style>
+</head>
+<body>
+  <p class="kicker"><a href="/">Desk</a></p>
+  <h1>Owner notices <span id="owner-badge" aria-label="Notice count">0</span></h1>
+  <p>Category, title, time, and link only.</p>
+  <form id="owner-gate">
+    <label for="owner-token">Owner code</label>
+    <input id="owner-token" type="password" autocomplete="current-password" />
+    <button type="submit">Show notices</button>
+  </form>
+  <div id="owner-list"></div>
+  <p id="owner-status" role="status"></p>
+  <script type="module" src="/js/owner-inbox.mjs"></script>
+</body>
+</html>

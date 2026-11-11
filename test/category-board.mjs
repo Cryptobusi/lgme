@@ -6,6 +6,8 @@ const { chromium } = loaded.chromium ? loaded : loaded.default;
 
 const root = new URL('..', import.meta.url).pathname;
 const types = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.webmanifest': 'application/manifest+json' };
+const wants = [];
+const sentMail = [];
 function fileFor(pathname) {
   let rel = decodeURIComponent(pathname);
   if (rel.includes('..')) return '';
@@ -17,11 +19,32 @@ function fileFor(pathname) {
   if (existsSync(`${full}.html`)) return `${full}.html`;
   return '';
 }
-const server = createServer((req, res) => {
+function readBody(req) {
+  return new Promise((resolve) => {
+    const chunks = [];
+    req.on('data', (chunk) => chunks.push(chunk));
+    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+  });
+}
+const server = createServer(async (req, res) => {
   const url = new URL(req.url, 'http://127.0.0.1');
-  if (url.pathname.startsWith('/api/')) {
+  if (url.pathname === '/api/develop/want' && req.method === 'POST') {
+    const body = JSON.parse(await readBody(req) || '{}');
+    if (JSON.stringify(body).includes('@') || body.email) {
+      res.writeHead(400, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, error: 'Leave out email addresses and links.' }));
+      return;
+    }
+    const notice = { category: body.category, title: body.title, at: new Date().toISOString(), link: `/develop?category=${encodeURIComponent(body.category || '')}` };
+    wants.push(notice);
+    sentMail.push({ to: 'owner-from-env', subject: `IwanIT: ${body.category}`, text: `${body.title}\n${notice.at}\n${notice.link}` });
     res.writeHead(200, { 'content-type': 'application/json' });
-    res.end(JSON.stringify({ ok: true, listings: [], topicId: '0.0.11397293' }));
+    res.end(JSON.stringify({ ok: true, duplicate: false, notified: true, item: { kind: 'IwanIT', category: body.category, title: body.title, at: notice.at }, notice }));
+    return;
+  }
+  if (url.pathname === '/api/develop/want') {
+    res.writeHead(200, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ ok: true, count: wants.length, notices: wants }));
     return;
   }
   const path = fileFor(url.pathname);
@@ -36,55 +59,71 @@ const names = ['Campus', 'Neighbor help', 'Hosts', 'Circles', 'Stories', 'Exchan
 const failures = [];
 function assert(ok, message) { if (!ok) throw new Error(message); }
 
-for (const [width, height] of [[390, 844], [768, 1024], [1280, 800]]) {
-  const context = await browser.newContext({ viewport: { width, height } });
-  const page = await context.newPage();
-  await page.addInitScript(() => {
-    localStorage.setItem('lgme.exchange.splashSeen', '1');
-    localStorage.setItem('lgme.exchange.introSeen', '1');
-  });
-  await page.route('**/*', (route) => route.request().url().startsWith(base) ? route.continue() : route.abort());
+const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+const page = await context.newPage();
+await page.route('**/*', (route) => route.request().url().startsWith(base) ? route.continue() : route.abort());
+try {
+  await page.goto(`${base}/?picker=1`, { waitUntil: 'domcontentloaded' });
+  const badges = await page.locator('.entry-picker .badge').evaluateAll((nodes) => nodes.map((node) => node.textContent.trim()));
+  assert(badges[0] === 'Beta' && badges.slice(1).every((badge) => badge === 'Early'), badges.join('|'));
+  assert((await page.content()).includes('mailto:') === false, 'mailto on the home screen');
+  assert((await page.content()).includes('cryptovanities') === false, 'address on the home screen');
+  for (const name of names) {
+    const tile = page.locator('[data-entry]').filter({ hasText: name }).first();
+    const href = await tile.locator('.help-develop').getAttribute('href');
+    assert(href === `/develop?category=${encodeURIComponent(name)}`, href);
+    const open = await tile.locator('.tile-open').getAttribute('href');
+    assert(open.startsWith('/'), open);
+  }
+  mkdirSync('/opt/cursor/artifacts', { recursive: true });
+  await page.locator('#health-tile').scrollIntoViewIfNeeded();
+  await page.screenshot({ path: '/opt/cursor/artifacts/categories-home-390.png' });
+  await page.locator('[data-entry="campus"] .help-develop').click();
+  await page.waitForURL(/\/develop\?category=Campus/);
+  assert(await page.locator('#want-kind').inputValue() === 'IwanIT', 'kind');
+  assert(await page.locator('#want-category').inputValue() === 'Campus', 'category');
+  assert(await page.locator('#want-title').inputValue() === 'I want to help develop Campus', 'title');
+  await page.locator('#want-confirm').scrollIntoViewIfNeeded();
+  await page.screenshot({ path: '/opt/cursor/artifacts/develop-want-390.png' });
+  await page.locator('#want-confirm').click();
+  await page.waitForURL(/\/gym/);
+  assert(page.url().includes('#/register'), page.url());
+  await page.goto(`${base}/develop?category=Campus`, { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => localStorage.setItem('lgme-gym.seat', 'mina'));
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.locator('#want-confirm').click();
+  await page.waitForFunction(() => /Posted/.test(document.getElementById('want-status')?.textContent || ''));
+  assert(sentMail.length === 1 && sentMail[0].subject === 'IwanIT: Campus', 'notify');
+  assert(sentMail[0].text.includes('@') === false, 'mail body has an address');
+  await page.goto(`${base}/owner`, { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => document.getElementById('owner-badge')?.textContent === '1');
+  await page.screenshot({ path: '/opt/cursor/artifacts/owner-notice-390.png' });
+  console.log('PASS 390');
+} catch (error) {
+  failures.push(error.message);
+  console.log('FAIL', error.message);
+}
+await context.close();
+
+for (const [width, height] of [[768, 1024], [1280, 800]]) {
+  const wide = await browser.newContext({ viewport: { width, height } });
+  const desk = await wide.newPage();
+  await desk.route('**/*', (route) => route.request().url().startsWith(base) ? route.continue() : route.abort());
   try {
-    await page.goto(`${base}/?picker=1`, { waitUntil: 'domcontentloaded' });
-    await page.locator('#health-tile').scrollIntoViewIfNeeded();
-    const badges = await page.locator('.entry-picker .badge').evaluateAll((nodes) => nodes.map((node) => node.textContent.trim()));
-    assert(badges.length === 1 && badges[0] === 'Beta', `${width} badges ${badges.join('|')}`);
-    const health = await page.locator('[data-entry="health"]').getAttribute('href');
-    assert(health === '/gym', `${width} health link`);
-    for (const name of names) {
-      const tile = page.locator(`[data-entry]`).filter({ hasText: name }).first();
-      const open = await tile.locator('.tile-open').getAttribute('href');
-      const mail = await tile.locator('.help-develop').getAttribute('href');
-      const dev = await tile.locator('.dev-team').getAttribute('href');
-      assert(open && open.startsWith('/'), `${width} ${name} link`);
-      const parsed = new URL(mail);
-      assert(parsed.protocol === 'mailto:' && parsed.pathname === 'cryptovanities@gmail.com', `${width} ${name} mail`);
-      assert(parsed.searchParams.get('subject') === `Help develop lgme.app: ${name}`, `${width} ${name} subject`);
-      assert(dev === '/hosts#dev-interest', `${width} ${name} team`);
-      const tap = await tile.locator('.help-develop').boundingBox();
-      assert(tap && tap.height >= 44, `${width} ${name} tap ${tap && tap.height}`);
-    }
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
-    assert(overflow === false, `${width} home overflow`);
-    if (width === 390 || width === 1280) {
-      mkdirSync('/opt/cursor/artifacts', { recursive: true });
-      await page.screenshot({ path: `/opt/cursor/artifacts/categories-home-${width}.png` });
-    }
-    await page.goto(`${base}/campus`, { waitUntil: 'domcontentloaded' });
-    await page.locator('#category-help').scrollIntoViewIfNeeded();
-    const campusMail = new URL(await page.locator('#help-develop').getAttribute('href'));
-    assert(campusMail.searchParams.get('subject') === 'Help develop lgme.app: Campus', `${width} campus subject`);
-    assert((await page.locator('#seed-board, #category-help').count()) >= 1, `${width} campus view`);
-    if (width === 390 || width === 1280) {
-      await page.screenshot({ path: `/opt/cursor/artifacts/categories-campus-${width}.png` });
-    }
+    await desk.goto(`${base}/?picker=1`, { waitUntil: 'domcontentloaded' });
+    const overflow = await desk.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+    assert(overflow === false, `${width} overflow`);
+    const count = await desk.locator('.help-develop').count();
+    assert(count === 6, `${width} help buttons ${count}`);
+    if (width === 1280) await desk.screenshot({ path: '/opt/cursor/artifacts/categories-home-1280.png' });
     console.log(`PASS ${width}`);
   } catch (error) {
     failures.push(`${width}: ${error.message}`);
-    console.log(`FAIL ${width}: ${error.message}`);
+    console.log(`FAIL ${width}`, error.message);
   }
-  await context.close();
+  await wide.close();
 }
+
 await browser.close();
 server.close();
 if (failures.length) { console.log(failures.join('\n')); process.exit(1); }

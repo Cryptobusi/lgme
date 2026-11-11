@@ -23,9 +23,11 @@ test('Exchange listings stay on the confirmed topic and other categories are ref
   const open = publicExchangeListing(seedPayload(SEED_LISTINGS[0]));
   assert.equal(open.body.status, UNCLAIMED);
   const campus = publicExchangeListing({ ...seedPayload(SEED_LISTINGS[0]), category: 'campus' });
-  assert.equal(campus.ok, false);
-  assert.equal(campus.status, 403);
-  assert.equal(campus.error, VIEW_ONLY_MESSAGE);
+  assert.equal(campus.ok, true, campus.error);
+  assert.equal(campus.body.category, 'campus');
+  const closed = publicExchangeListing({ ...seedPayload(SEED_LISTINGS[0]), category: 'secret' });
+  assert.equal(closed.ok, false);
+  assert.equal(closed.error, VIEW_ONLY_MESSAGE);
   const leaked = publicExchangeListing({ ...seedPayload(SEED_LISTINGS[0]), title: 'Call tcare4me@gmail.com' });
   assert.equal(leaked.ok, false);
   const claim = publicExchangeListing({

@@ -16,7 +16,7 @@ import { loadPersonalImages, resolveImage, slotForListing, viewerId } from './pe
 import { fetchLgmePrice as quoteLgme } from './lgme-price.mjs';
 import { ensureDeviceKey, signDevice } from './device-sign.mjs';
 import { REPAIR_STATUSES } from './repair-follow.mjs';
-import { DEV_TEAM_HREF, HELP_NOTE, helpMail } from './category-help.mjs';
+import { DEV_TEAM_HREF, helpPath } from './category-help.mjs';
 
 const sessionKeys = new Map();
 const sessionCrypto = new Map();
@@ -3505,8 +3505,7 @@ async function renderMarket(peers, seat) {
   ]);
   const marketName = marketQuery.category || 'Exchange';
   const marketHelp = h('p', { id: 'market-help' }, [
-    `${HELP_NOTE} `,
-    h('a', { id: 'help-develop', href: helpMail(marketName) }, ['Help develop this']),
+    h('a', { id: 'help-develop', class: 'btn', href: helpPath(marketName) }, ['Help develop this']),
     ' · ',
     h('a', { href: DEV_TEAM_HREF }, ['Join the developer team'])
   ]);
@@ -3946,7 +3945,30 @@ async function renderList(seat) {
   ]);
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
-    setStatus(`${HELP_NOTE} Nothing was listed.`, 'bad');
+    if (busy) return;
+    busy = true;
+    try {
+      const item = catalog.find((row) => row.id === reference.value);
+      const created = await sim.createListing(store, seat, {
+        ...listDraft,
+        amount: amount.value,
+        referenceId: item ? item.id : null,
+        referenceAvg: item ? item.avg_value_usd : null
+      });
+      if (!created.ok) { setStatus(created.error, 'bad'); return; }
+      if (listDraft.mediaBytes) {
+        const made = await sim.recordMedia(store, seat, { bytes: listDraft.mediaBytes, mime: listDraft.mediaMime, duration: listDraft.mediaDuration || 0, listingId: created.listing.id });
+        const peer = await store.get(seat);
+        if (made.ok && peer?.privateKeyJwk) await saveMediaFile(seat, peer.privateKeyJwk, made.hash, listDraft.mediaBytes, listDraft.mediaMime);
+      }
+      listDraft = { photo: '', photoHash: '', title: '', category: 'Goods', condition: 'Good', pickup: 'Pickup', circle: '', area: '', amount: '', referenceId: '' };
+      listStep = 1;
+      openListingId = created.listing.id;
+      setStatus('Listed and signed on this phone. Testnet only. The photo stayed on this device.', 'ok');
+      location.hash = 'market';
+    } finally {
+      busy = false;
+    }
   });
   panel.replaceChildren(h('h2', {}, ['List']), steps, h('p', { class: 'muted' }, ['The value is in $lgme. A dollar figure is only a suggestion from the reference list.']), referenceCatalogCard(), form);
 }

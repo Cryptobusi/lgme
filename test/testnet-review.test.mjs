@@ -25,5 +25,5 @@ test('the testnet review stays unlisted, on the device, and unsent', () => {
   assert.equal(text('sitemap.xml').includes('testnet-review'), false);
   assert.equal(plan.includes('Mainnet writes stay off'), true);
   assert.equal(plan.includes('three attestations'), true);
-  assert.equal(text('sw.js').includes('lgme-v152'), true);
+  assert.equal(text('sw.js').includes('lgme-v153'), true);
 });
