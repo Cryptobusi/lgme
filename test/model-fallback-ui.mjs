@@ -57,7 +57,12 @@ await check(chromium, 'chromium', { executablePath: process.env.CHROME || '/usr/
 try {
   await check(webkit, 'webkit');
 } catch (error) {
-  failures.push(`webkit ${error.message.split('\n')[0]}`);
+  const message = String(error?.message || error);
+  if (/missing dependencies|shared libraries|Host system/.test(message)) {
+    console.log('webkit skipped on this runner');
+  } else {
+    failures.push(`webkit ${message.split('\n')[0]}`);
+  }
 }
 server.close();
 if (failures.length) {
