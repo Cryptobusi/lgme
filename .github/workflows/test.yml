@@ -11,3 +11,6 @@ jobs:
         with:
           node-version: '22'
       - run: node --test test/data-integrity.test.mjs test/health-examples.test.mjs test/health-dashboard.test.mjs test/exchange-overview.test.mjs test/hedera-network.test.mjs test/mainnet-prep.test.mjs
+      - run: npm install --no-save playwright@1.49.1
+      - run: npx playwright install --with-deps chromium
+      - run: node test/dashboard-layout.mjs

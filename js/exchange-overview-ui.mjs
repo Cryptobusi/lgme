@@ -16,12 +16,6 @@ function el(tag, attrs = {}, children = []) {
   return node;
 }
 
-function mirrorTime(value) {
-  const seconds = Number(String(value || '').split('.')[0]);
-  if (!Number.isFinite(seconds) || seconds < 1_000_000_000) return 'no message yet';
-  return new Date(seconds * 1000).toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
-}
-
 function remember(payload) {
   try { localStorage.setItem(OVERVIEW_KEY, JSON.stringify({ at: new Date().toISOString(), payload })); } catch { /* private window */ }
 }
@@ -35,53 +29,35 @@ function delta(value) {
   return value > 0 ? `+${value}` : String(value);
 }
 
-function chart(buckets) {
+function spark(buckets, stage) {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('viewBox', '0 0 320 140');
-  svg.setAttribute('class', 'dash-chart');
+  svg.setAttribute('viewBox', '0 0 80 16');
+  svg.setAttribute('class', 'spark');
   svg.setAttribute('role', 'img');
-  const stages = ['listed', 'matched', 'confirmed', 'receipt'];
-  const colors = { listed: '#9A3412', matched: '#146c43', confirmed: '#1d4e89', receipt: '#6b4f2a' };
-  const max = Math.max(1, ...buckets.flatMap((row) => stages.flatMap((stage) => [row.test[stage], row.real[stage]])));
-  const step = buckets.length > 1 ? 300 / (buckets.length - 1) : 300;
-  for (const kind of ['test', 'real']) {
-    stages.forEach((stage) => {
-      const points = buckets.map((row, i) => `${10 + i * step},${120 - (row[kind][stage] / max) * 100}`).join(' ');
-      const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
-      line.setAttribute('points', points);
-      line.setAttribute('fill', 'none');
-      line.setAttribute('stroke', kind === 'test' ? '#5c574e' : colors[stage]);
-      line.setAttribute('stroke-width', kind === 'test' ? '1.5' : '2.5');
-      if (kind === 'test') line.setAttribute('stroke-dasharray', '4 3');
-      svg.append(line);
-    });
-  }
-  svg.setAttribute('aria-label', 'Dashed gray lines are test counts. Solid lines are real counts for listed, matched, confirmed, and receipts.');
+  svg.setAttribute('aria-label', `${stage}. Dashed gray is test. Solid is real.`);
+  const test = buckets.map((row) => row.test[stage] || 0);
+  const real = buckets.map((row) => row.real[stage] || 0);
+  const max = Math.max(1, ...test, ...real);
+  const step = buckets.length > 1 ? 76 / (buckets.length - 1) : 76;
+  const draw = (series, className) => {
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+    line.setAttribute('class', className);
+    line.setAttribute('points', series.map((value, i) => `${2 + i * step},${14 - (value / max) * 12}`).join(' '));
+    svg.append(line);
+  };
+  draw(test, 'spark-test');
+  draw(real, `spark-real spark-${stage}`);
   return svg;
 }
 
-function mixBars(mix) {
-  const max = Math.max(1, ...mix.map((row) => row.count));
-  const list = el('div', { class: 'dash-mix' });
-  for (const row of mix) {
-    list.append(el('div', { class: 'dash-mix-row' }, [
-      el('span', {}, [row.label]),
-      el('span', { class: 'dash-mix-track' }, [
-        el('span', { class: 'dash-mix-fill', style: `width:${Math.round((row.count / max) * 100)}%` }, [])
-      ]),
-      el('span', {}, [String(row.count)])
-    ]));
-  }
-  if (!mix.length) list.append(el('p', { class: 'muted' }, ['No Health activity in this snapshot.']));
-  return list;
-}
-
-function kpi(href, label, value, note) {
-  return el('a', { class: 'overview-tile', href }, [
-    el('p', { class: 'kicker' }, [label]),
-    el('p', { class: 'overview-num' }, [value]),
-    el('p', { class: 'muted' }, [note])
-  ]);
+function kpi(href, label, value, note, graphic) {
+  const children = [
+    el('small', {}, [label]),
+    el('b', {}, [value]),
+    el('small', {}, [note])
+  ];
+  if (graphic) children.push(graphic);
+  return el('a', { class: 'dash-kpi', href }, children);
 }
 
 function formatHours(value) {
@@ -98,68 +74,54 @@ export function renderOverview(host, payload, { cachedAt = '', offline = false, 
     : categoryReport(listings, { span });
   const open = location.hash.startsWith('#overview=');
   const detailKey = decodeURIComponent(location.hash.replace(/^#overview=/, ''));
-  const toggles = el('div', { class: 'dash-toggle', role: 'group', 'aria-label': 'Dashboard view' }, [
-    el('button', { type: 'button', 'aria-pressed': viewMode === 'category' ? 'true' : 'false', onClick: () => { viewMode = 'category'; onChange(); } }, ['Category']),
-    el('button', { type: 'button', 'aria-pressed': viewMode === 'personal' ? 'true' : 'false', onClick: () => { viewMode = 'personal'; onChange(); } }, ['Mine'])
+  const examples = new Set(listings.map((row) => row.item?.id).filter((id) => String(id || '').startsWith('hx-'))).size;
+  const head = el('div', { class: 'dash-head' }, [
+    el('h2', {}, ['Health']),
+    el('div', { class: 'dash-toggle', role: 'group', 'aria-label': 'View and period' }, [
+      el('button', { type: 'button', 'aria-pressed': viewMode === 'category' ? 'true' : 'false', onClick: () => { viewMode = 'category'; onChange(); } }, ['All']),
+      el('button', { type: 'button', 'aria-pressed': viewMode === 'personal' ? 'true' : 'false', onClick: () => { viewMode = 'personal'; onChange(); } }, ['Mine']),
+      ...['day', 'week', 'month'].map((name) => el('button', { type: 'button', 'aria-pressed': span === name ? 'true' : 'false', onClick: () => { span = name; onChange(); } }, [name]))
+    ])
   ]);
-  const periods = el('div', { class: 'dash-toggle', role: 'group', 'aria-label': 'Time span' }, ['day', 'week', 'month'].map((name) => (
-    el('button', { type: 'button', 'aria-pressed': span === name ? 'true' : 'false', onClick: () => { span = name; onChange(); } }, [name])
-  )));
   const cards = el('div', { class: 'dash-kpis' });
   if (viewMode === 'personal' && !personal) {
-    cards.append(el('p', {}, ['Sign in on this device to see your own Health record. It stays on this phone and is not sent.']));
+    cards.append(el('p', { class: 'dash-meta' }, ['Sign in on this device. Your Health record stays on this phone.']));
   } else if (viewMode === 'personal') {
-    cards.append(kpi('#overview=offers', 'Offers', String(report.offers), 'On this device'));
-    cards.append(kpi('#overview=requests', 'Requests', String(report.requests), 'On this device'));
-    cards.append(kpi('#overview=hours', 'Hours', formatHours(report.hours), 'Given and received'));
-    cards.append(kpi('#overview=receipts', 'Receipts', String(report.receipts), `${report.attestations} attestations`));
-    cards.append(kpi('#overview=credit', 'Credit', String(report.credit), 'Balance on this device'));
+    cards.append(kpi('#overview=offers', 'Offers', String(report.offers), 'device'));
+    cards.append(kpi('#overview=requests', 'Requests', String(report.requests), 'device'));
+    cards.append(kpi('#overview=hours', 'Hours', formatHours(report.hours), 'yours', spark(report.buckets, 'listed')));
+    cards.append(kpi('#overview=receipts', 'Receipts', String(report.receipts), `${report.attestations} attest`));
+    cards.append(kpi('#overview=credit', 'Credit', String(report.credit), 'device'));
   } else {
-    cards.append(kpi('#overview=listed', 'Listed', String(report.listed.value), `${delta(report.listed.delta)} vs prior. Test ${report.listed.test}, real ${report.listed.real}.`));
-    cards.append(kpi('#overview=matched', 'Matched', String(report.matched.value), `${delta(report.matched.delta)} vs prior. Test ${report.matched.test}, real ${report.matched.real}.`));
-    cards.append(kpi('#overview=confirmed', 'Confirmed', String(report.confirmed.value), `${delta(report.confirmed.delta)} vs prior.`));
-    cards.append(kpi('#overview=receipt', 'IdidIt receipts', String(report.receipt.value), `${delta(report.receipt.delta)} vs prior.`));
-    cards.append(kpi('#overview=hours', 'Hours', formatHours(report.hours), `Offers ${report.offers}. Requests ${report.requests}.`));
-    cards.append(kpi('#overview=usd', 'US$ traded', `US$${report.usd.toFixed(2)}`, 'Only amounts on the public record.'));
-    cards.append(kpi('#overview=timing', 'Listed to matched', formatHours(report.timing.listedToMatched), `Matched to confirmed ${formatHours(report.timing.matchedToConfirmed)}.`));
-    cards.append(kpi('#overview=rates', 'Completion', report.completion == null ? '—' : `${report.completion}%`, `Decline or dispute ${report.decline == null ? '—' : `${report.decline}%`}.`));
+    cards.append(kpi('#overview=listed', 'List', String(report.listed.value), delta(report.listed.delta), spark(report.buckets, 'listed')));
+    cards.append(kpi('#overview=matched', 'Match', String(report.matched.value), delta(report.matched.delta), spark(report.buckets, 'matched')));
+    cards.append(kpi('#overview=confirmed', 'Confirm', String(report.confirmed.value), delta(report.confirmed.delta), spark(report.buckets, 'confirmed')));
+    cards.append(kpi('#overview=receipt', 'Receipt', String(report.receipt.value), delta(report.receipt.delta), spark(report.buckets, 'receipt')));
+    cards.append(kpi('#overview=hours', 'Hours', formatHours(report.hours), `${report.offers}/${report.requests}`));
+    cards.append(kpi('#overview=usd', 'US$', `$${report.usd.toFixed(0)}`, 'public'));
+    cards.append(kpi('#overview=timing', 'Time', formatHours(report.timing.listedToMatched), formatHours(report.timing.matchedToConfirmed)));
+    cards.append(kpi('#overview=rates', 'Done', report.completion == null ? '—' : `${report.completion}%`, report.decline == null ? '—' : `${report.decline}%`));
   }
-  const detail = el('div', { id: 'overview-detail' });
+  const detail = el('div', { id: 'overview-detail', class: 'dash-detail' });
   if (open) {
-    detail.append(el('h2', {}, [detailKey]));
-    if (viewMode === 'category') {
-      detail.append(el('p', { class: 'muted' }, ['Counts only. No names.']));
-      const list = el('ol', { class: 'overview-timeline' });
-      for (const row of report.mix) list.append(el('li', {}, [`${row.label}: ${row.count}`]));
-      if (!report.mix.length) list.append(el('li', {}, ['Nothing in this slice.']));
-      detail.append(list);
-    } else if (personal) {
-      detail.append(el('p', { class: 'muted' }, ['Your record on this device. It is not uploaded.']));
-      const list = el('ol', { class: 'overview-timeline' });
-      for (const row of personal.sessions) list.append(el('li', {}, [`${row.activity || 'Health'} · ${row.side || 'offer'} · ${row.minutes || 0} min`]));
-      if (!personal.sessions.length) list.append(el('li', {}, ['No sessions saved on this device yet.']));
-      detail.append(list);
-    }
+    detail.append(el('p', {}, [`${detailKey}. Counts only. Dashed gray is test. Solid is real.`]));
+    const list = el('ol', { class: 'overview-timeline' });
+    const rows = viewMode === 'personal' && personal
+      ? personal.sessions.map((row) => `${row.activity || 'Health'} · ${row.minutes || 0} min`)
+      : report.mix.map((row) => `${row.label}: ${row.count}`);
+    for (const line of rows) list.append(el('li', {}, [line]));
+    if (!rows.length) list.append(el('li', {}, ['Nothing in this slice.']));
+    detail.append(list);
   }
-  const when = mirrorTime(payload?.listings?.reduce((best, row) => {
-    const time = Number(String(row.consensusTimestamp || '').split('.')[0]);
-    return time > best ? time : best;
-  }, 0) || '');
   host.replaceChildren(
-    el('h2', {}, ['Health']),
-    el('p', { class: 'muted', id: 'overview-source' }, [
-      offline ? (cachedAt ? `Offline snapshot from ${mirrorTime(String(new Date(cachedAt).getTime() / 1000))}. ` : 'No cached snapshot on this phone yet. ') : 'Live mirror. ',
-      `Last message time ${when}. Network ${payload?.network || 'testnet'}. ${new Set(listings.map((row) => row.item?.id).filter((id) => String(id || '').startsWith('hx-'))).size} test Health examples on this record. `,
+    head,
+    el('p', { class: 'dash-meta', id: 'overview-source' }, [
+      offline ? 'Offline snapshot. ' : 'Testnet. ',
+      `${examples} examples. `,
       el('a', { href: '/disclaimer' }, ['Disclaimer'])
     ]),
-    toggles,
-    periods,
-    detail,
     cards,
-    viewMode === 'personal' && !personal ? el('p', {}) : chart(report.buckets),
-    viewMode === 'category' ? el('p', { class: 'muted' }, ['Dashed gray is test. Solid color is real.']) : el('p', {}),
-    el('h3', {}, [viewMode === 'personal' ? 'Your activities' : 'Activity mix']),
-    mixBars(report.mix)
+    detail
   );
 }
 

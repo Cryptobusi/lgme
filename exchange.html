@@ -39,7 +39,7 @@
     .muted { color:var(--muted); }
     .kicker { margin:0; font-size:0.72rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--accent-text); }
     .wrap { padding:1rem max(1rem, env(safe-area-inset-right)) 0 max(1rem, env(safe-area-inset-left)); }
-    .sim-banner { margin:0; padding:0.55rem 1rem; background:var(--accent); color:var(--accent-ink); font-weight:600; font-size:0.92rem; line-height:1.35; }
+    .sim-banner { margin:0; padding:0.55rem 1rem; background:var(--accent); color:var(--accent-ink); font-weight:600; font-size:0.92rem; line-height:1.35; overflow-wrap:anywhere; }
     .rules { display:grid; gap:0.75rem; margin:1rem 0 1.2rem; }
     .card, .row, .seat, .panel, .tx { background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); }
     .card { padding:0.9rem 1rem; }
@@ -73,13 +73,25 @@
     .badge { display:inline-block; margin-left:0.35rem; font-size:0.68rem; font-weight:600; letter-spacing:0.04em; text-transform:uppercase; border-radius:999px; padding:0.12rem 0.45rem; vertical-align:middle; }
     .badge-verified { background:#F97316; color:#1c1b19; }
     .badge-unverified { background:transparent; color:var(--accent-text); border:1px solid #F97316; }
-    .dash-kpis { display:grid; grid-template-columns:1fr; gap:0.5rem; margin:0.6rem 0; }
-    .dash-toggle { display:flex; flex-wrap:wrap; gap:0.4rem; margin:0.45rem 0; }
-    .dash-chart { width:100%; height:140px; background:var(--panel); border:1px solid var(--line); border-radius:12px; }
-    .dash-mix { display:grid; gap:0.35rem; margin-top:0.4rem; }
-    .dash-mix-row { display:grid; grid-template-columns:7.5rem 1fr auto; gap:0.45rem; align-items:center; min-height:44px; }
-    .dash-mix-track { display:block; height:10px; background:var(--line); border-radius:999px; }
-    .dash-mix-fill { display:block; height:10px; background:var(--accent-text); border-radius:999px; }
+    .dash-slot { padding-top:0.35rem; padding-bottom:0; }
+    #exchange-overview.dash { padding:0.35rem 0.45rem 0.45rem; }
+    .dash-head { display:flex; flex-wrap:wrap; align-items:center; gap:0.35rem; min-height:44px; }
+    .dash h2 { font-size:1rem; line-height:1.2; margin:0; }
+    .dash-toggle { display:flex; flex-wrap:wrap; gap:0.25rem; margin-left:auto; }
+    .dash-toggle button { min-height:44px; min-width:44px; padding:0 0.4rem; font-size:12px; line-height:1.2; }
+    .dash-meta { font-size:12px; line-height:1.3; margin:0 0 0.25rem; }
+    .dash-kpis { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:0.3rem; }
+    .dash-kpis > p { grid-column:1 / -1; min-height:44px; margin:0; }
+    .dash-kpi { display:flex; flex-direction:column; justify-content:center; min-height:44px; padding:0.2rem 0.35rem 0.15rem; text-decoration:none; color:var(--fg); background:var(--panel); border:1px solid var(--line); border-radius:10px; font-size:12px; line-height:1.2; overflow:hidden; }
+    .dash-kpi b { font-size:1rem; font-weight:600; }
+    .dash-kpi small { color:var(--muted); font-size:12px; }
+    .spark { width:100%; height:16px; display:block; }
+    .spark-test { fill:none; stroke:#5c574e; stroke-width:1.25; stroke-dasharray:3 2; }
+    .spark-listed { fill:none; stroke:#9A3412; stroke-width:1.75; }
+    .spark-matched { fill:none; stroke:#146c43; stroke-width:1.75; }
+    .spark-confirmed { fill:none; stroke:#1d4e89; stroke-width:1.75; }
+    .spark-receipt { fill:none; stroke:#6b4f2a; stroke-width:1.75; }
+    .dash-detail { font-size:12px; margin:0.3rem 0 0; }
     .overview-grid { display:grid; grid-template-columns:1fr; gap:0.5rem; margin:0.6rem 0; }
     .overview-tile, .overview-flow a { display:block; min-height:44px; text-decoration:none; color:var(--fg); background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:0.65rem 0.7rem; }
     .overview-num { margin:0.15rem 0; font-size:1.35rem; font-weight:600; color:var(--fg); }
@@ -91,8 +103,16 @@
     .overview-flow a { display:grid; align-content:center; }
     .overview-timeline { margin:0.4rem 0 0; padding-left:1.1rem; }
     .overview-timeline a { color:var(--accent-text); }
+    @media (prefers-color-scheme: dark) {
+      .spark-test { stroke:#c8c3b8; }
+      .spark-listed { stroke:#FDBA74; }
+      .spark-matched { stroke:#b7e0c2; }
+      .spark-confirmed { stroke:#9ec1e8; }
+      .spark-receipt { stroke:#e6d3a3; }
+    }
     @media (min-width:800px) {
-      .dash-kpis, .overview-grid { grid-template-columns:repeat(4, minmax(0, 1fr)); }
+      .dash-kpis { grid-template-columns:repeat(8, minmax(0, 1fr)); }
+      .overview-grid { grid-template-columns:repeat(4, minmax(0, 1fr)); }
       .overview-flow { grid-template-columns:repeat(4, minmax(0, 1fr)); }
       .overview-bars { display:block; }
     }
@@ -216,6 +236,9 @@
 <body>
 
   <p class="launch-bar"><a class="install-launch" data-install-launch href="/exchange">Install &amp; launch</a></p>
+  <div class="wrap dash-slot">
+    <section id="exchange-overview" class="card dash" aria-label="Exchange status"></section>
+  </div>
   <p class="give-banner" role="note"><span>Real donations &amp; grants accepted</span> <a href="/lgme-coin#give">Give via soBeIT</a> <a href="/lgme-coin#give">How to give</a> <a href="/grants">Grants</a></p>
   <div id="splash" class="splash" role="dialog" aria-label="lgme" hidden>
     <div class="splash-card">
@@ -242,7 +265,6 @@
     </nav>
     <p class="kicker">lgme · BETA <button type="button" id="deep-theory" data-deep-theory aria-pressed="false">Deep theory</button> <button type="button" id="install-app" data-install hidden>Install</button> <a class="quiet-link" href="#help">Help</a></p>
     <h1>Exchange</h1>
-    <section id="exchange-overview" class="card" aria-label="Exchange status"></section>
     <section id="exchange-test" class="card"></section>
     <p class="muted"><a href="/helper">Set up my own AI helper</a></p>
     <p class="muted lede">Beta. List an item, sign an offer, and settle real $lgme from your own Solana wallet. Each person keeps their own book. A floor stays senior, and a refusal moves nothing.</p>
