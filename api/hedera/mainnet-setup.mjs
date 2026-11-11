@@ -22,6 +22,7 @@ function publicBody(result) {
     root: result.root || '',
     hashscan: result.hashscan || '',
     mirror: result.mirror || '',
+    hederaStatus: result.hederaStatus || '',
     error: result.error || ''
   };
 }
@@ -37,7 +38,7 @@ export default async function handler(req, res) {
   try {
     const result = await runHealthMainnetSetup(env, { store });
     return json(res, result.status || (result.ok ? 200 : 400), publicBody(result));
-  } catch {
-    return json(res, 502, { ok: false, error: 'The mainnet setup did not finish. Nothing else was sent.' });
+  } catch (error) {
+    return json(res, 502, { ok: false, hederaStatus: error?.hederaStatus || error?.status?.toString?.() || '', error: error?.public ? error.message : 'The mainnet setup did not finish.' });
   }
 }

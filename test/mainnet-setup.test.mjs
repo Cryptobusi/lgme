@@ -43,6 +43,7 @@ function sdkFor(calls) {
       setTopicMemo(memo) { calls.memo = memo; return this; }
       setAdminKey() { return this; }
       setSubmitKey() { return this; }
+      setMaxTransactionFee(fee) { calls.createMax = fee.value; return this; }
       async execute() {
         calls.actions.push('create');
         return {
@@ -54,6 +55,7 @@ function sdkFor(calls) {
     },
     TopicMessageSubmitTransaction: class {
       constructor(spec) { calls.message = spec.message; }
+      setMaxTransactionFee(fee) { calls.messageMax = fee.value; return this; }
       async execute() {
         calls.actions.push('message');
         return {
@@ -107,6 +109,8 @@ test('the Health setup writes one hash to a keyed topic and stays under the cap'
   assert.equal(first.topicId, '0.0.555001');
   assert.equal(first.transactionId, '0.0.1273453@1700000001.000000000');
   assert.equal(calls.memo, TOPIC_MEMO);
+  assert.equal(calls.createMax, 0.5);
+  assert.equal(calls.messageMax, 0.05);
   assert.deepEqual(calls.actions, ['create', 'message']);
   assert.equal(first.hbarSpent, 0.0105);
   assert.equal(JSON.stringify(first).includes(SECRET), false);
@@ -114,10 +118,37 @@ test('the Health setup writes one hash to a keyed topic and stays under the cap'
   assert.equal(again.already, true);
   assert.equal(again.hbarSpent, 0);
   const blocked = memory();
-  await blocked.set('hedera:mainnet:spent:2026-11-11', 95_000_000);
+  await blocked.set('hedera:mainnet:spent:2026-11-11', 100_000_000);
   const refused = await runHealthMainnetSetup(env, { store: blocked, sdk: sdkFor({ actions: [] }), fetchImpl, now: new Date('2026-11-11T12:00:00.000Z') });
   assert.equal(refused.ok, false);
   assert.match(refused.error, /cap/);
+});
+
+test('a refused topic create returns the Hedera status and the charged fee', async () => {
+  const calls = { actions: [] };
+  const failing = sdkFor(calls);
+  failing.TopicCreateTransaction = class extends failing.TopicCreateTransaction {
+    async execute() {
+      calls.actions.push('create');
+      return {
+        transactionId: { toString: () => '0.0.1273453@1794412456.080385961' },
+        getReceipt: async () => {
+          const error = new Error('receipt status');
+          error.status = { toString: () => 'INSUFFICIENT_TX_FEE' };
+          error.transactionId = { toString: () => '0.0.1273453@1794412456.080385961' };
+          error.record = { transactionFee: { toTinybars: () => 151018 } };
+          throw error;
+        }
+      };
+    }
+  };
+  const store = memory();
+  const result = await runHealthMainnetSetup(env, { store, sdk: failing, fetchImpl, now: new Date('2026-11-11T12:00:00.000Z') });
+  assert.equal(result.ok, false);
+  assert.equal(result.hederaStatus, 'INSUFFICIENT_TX_FEE');
+  assert.equal(result.hbarSpent, 0.00151018);
+  assert.equal(calls.actions.includes('message'), false);
+  assert.equal(JSON.stringify(result).includes(SECRET), false);
 });
 
 test('the setup source does not print the operator key', () => {

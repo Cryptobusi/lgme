@@ -4,7 +4,8 @@ import { FORBIDDEN_TOPIC } from './hedera-anchor-core.mjs';
 import { chainPayloadSafe, dailyHbarCap, MAINNET_OPERATOR, TINYBAR } from './hedera-network.mjs';
 
 export const TOPIC_MEMO = 'lgme Health mainnet hash';
-const RESERVE_TINYBAR = 20_000_000;
+export const CREATE_MAX_HBAR = 0.5;
+export const MESSAGE_MAX_HBAR = 0.05;
 const TOPIC_KEY = 'hedera:mainnet:health-topic';
 const SETUP_KEY = 'hedera:mainnet:health-setup';
 
@@ -89,7 +90,7 @@ export async function runHealthMainnetSetup(env = {}, { store = null, sdk, fetch
   }
   const spent = Number(store ? await store.get(spentKey(day)) : 0) || 0;
   const capTiny = Math.round(dailyHbarCap(env) * TINYBAR);
-  if (spent + RESERVE_TINYBAR > capTiny) {
+  if (spent >= capTiny) {
     return { ok: false, status: 429, error: 'Mainnet fee cap reached. Writes are refused until tomorrow.', capHbar: dailyHbarCap(env) };
   }
   const built = await healthSetupMessage(day);
@@ -103,12 +104,25 @@ export async function runHealthMainnetSetup(env = {}, { store = null, sdk, fetch
   }
   const client = library.Client.forMainnet();
   client.setOperator(library.AccountId.fromString(accountId), operator);
-  if (library.Hbar) client.setMaxTransactionFee(new library.Hbar(0.2));
+  if (library.Hbar) client.setMaxTransactionFee(new library.Hbar(CREATE_MAX_HBAR));
   let spentNow = spent;
   const noteSpend = async (fee) => {
-    spentNow += tinybarsOf(fee);
+    const tiny = tinybarsOf(fee);
+    if (!tiny) return 0;
+    spentNow += tiny;
     if (store) await store.set(spentKey(day), spentNow);
+    return tiny;
   };
+  const failed = (error, extra = {}) => ({
+    ok: false,
+    status: 502,
+    hederaStatus: String(error?.status?.toString?.() || error?.hederaStatus || ''),
+    error: error?.public ? error.message : (error?.status ? `Hedera returned ${error.status.toString()}.` : 'The mainnet setup did not finish.'),
+    hbarSpent: hbarOf(spentNow - spent),
+    capHbar: dailyHbarCap(env),
+    transactionId: error?.transactionId?.toString?.() || extra.transactionId || '',
+    topicId: extra.topicId || ''
+  });
   try {
     let topicId = await topicOnMirror(fetchImpl, String(env.HEDERA_MAINNET_HEALTH_TOPIC_ID || '').trim());
     if (!topicId) topicId = await topicOnMirror(fetchImpl, await rememberedTopic(store));
@@ -119,22 +133,39 @@ export async function runHealthMainnetSetup(env = {}, { store = null, sdk, fetch
         .setTopicMemo(TOPIC_MEMO)
         .setAdminKey(operator.publicKey)
         .setSubmitKey(operator.publicKey)
+        .setMaxTransactionFee(new library.Hbar(CREATE_MAX_HBAR))
         .execute(client);
-      const receipt = await createdTx.getReceipt(client);
-      const record = await createdTx.getRecord(client);
+      let receipt;
+      let record;
+      try {
+        receipt = await createdTx.getReceipt(client);
+        record = await createdTx.getRecord(client);
+      } catch (error) {
+        await noteSpend(error?.record?.transactionFee);
+        return failed(error, { transactionId: createdTx.transactionId?.toString?.() || '' });
+      }
+      await noteSpend(record.transactionFee);
       topicId = receipt.topicId.toString();
       if (topicId === FORBIDDEN_TOPIC) {
-        return { ok: false, status: 400, error: 'Topic 0.0.489104 is refused. Nothing else was sent.' };
+        return { ok: false, status: 400, error: 'Topic 0.0.489104 is refused. Nothing else was sent.', hederaStatus: '' };
       }
       created = true;
-      await noteSpend(record.transactionFee);
       if (store) await store.set(TOPIC_KEY, topicId);
+      if (spentNow >= capTiny) {
+        return { ok: false, status: 429, created: true, topicId, error: 'Mainnet fee cap reached. The hash was not written.', capHbar: dailyHbarCap(env), hbarSpent: hbarOf(spentNow - spent), hederaStatus: '' };
+      }
     }
     const submitted = await new library.TopicMessageSubmitTransaction({
       topicId,
       message: built.message
-    }).execute(client);
-    const record = await submitted.getRecord(client);
+    }).setMaxTransactionFee(new library.Hbar(MESSAGE_MAX_HBAR)).execute(client);
+    let record;
+    try {
+      record = await submitted.getRecord(client);
+    } catch (error) {
+      await noteSpend(error?.record?.transactionFee);
+      return failed(error, { topicId, transactionId: submitted.transactionId?.toString?.() || '' });
+    }
     await noteSpend(record.transactionFee);
     const sequence = record.receipt.topicSequenceNumber.toString();
     const transactionId = submitted.transactionId?.toString?.() || record.transactionId?.toString?.() || '';
