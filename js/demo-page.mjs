@@ -105,8 +105,8 @@ function paintGuide() {
   state.draft = base;
   const note = el('p', { id: 'demo-helper' });
   showHelperNote(note, helper);
-  const title = el('input', { id: 'demo-title', maxlength: '80', value: base.title });
-  const body = el('textarea', { id: 'demo-note', maxlength: '280' });
+  const title = el('input', { id: 'demo-title', maxlength: '80', value: base.title, 'data-help': 'This is the title of the draft. It stays on this phone until you confirm.', 'data-options': state.choice === IDIDIT_NAME ? IDIDIT_CHIPS.join('|') : '' });
+  const body = el('textarea', { id: 'demo-note', maxlength: '280', 'data-help': 'This is the note for the draft. It stays on this phone until you confirm.', 'data-options': state.choice === IDIDIT_NAME ? IDIDIT_CHIPS.join('|') : 'A short note|On this phone' });
   body.value = base.note;
   const explain = el('button', { type: 'button', id: 'demo-explain' }, ['Explain']);
   explain.addEventListener('click', async () => {
@@ -233,8 +233,8 @@ function paintDisclaimer() {
 }
 
 function paintHealthConsent() {
-  const collect = el('input', { type: 'checkbox', id: 'collect-health' });
-  const share = el('input', { type: 'checkbox', id: 'share-health' });
+  const collect = el('input', { type: 'checkbox', id: 'collect-health', 'data-help': 'This keeps notes on this phone. It is not a medical record and is not written on chain.', 'data-options': 'Yes' });
+  const share = el('input', { type: 'checkbox', id: 'share-health', 'data-help': 'Sharing is optional and stays off unless you check it. This is not a medical record.', 'data-options': 'Yes' });
   const status = el('p', { id: 'health-consent-status', role: 'status' });
   const note = el('p', { id: 'health-consent-note' }, ['Health notes stay on this phone. Only a hash can leave, and only after you confirm a Health step.']);
   const button = el('button', { type: 'button', class: 'primary', id: 'age-confirm' }, ['I am 18 or older']);
@@ -271,7 +271,7 @@ function paintHealthConsent() {
 }
 
 function paintCode() {
-  const code = el('input', { id: 'demo-code', inputmode: 'numeric', maxlength: '6', autocomplete: 'one-time-code' });
+  const code = el('input', { id: 'demo-code', inputmode: 'numeric', maxlength: '6', autocomplete: 'one-time-code', 'data-help': 'Type the 6-digit code from the email. It stays on this phone.' });
   const status = el('p', { id: 'demo-status', role: 'status' });
   const button = el('button', { type: 'button', class: 'primary', id: 'demo-verify' }, ['Verify']);
   button.addEventListener('click', async () => {
@@ -302,7 +302,7 @@ function paintCode() {
 }
 
 function paintEmail() {
-  const email = el('input', { id: 'demo-email', type: 'email', maxlength: '120', autocomplete: 'email' });
+  const email = el('input', { id: 'demo-email', type: 'email', maxlength: '120', autocomplete: 'email', 'data-help': 'A 6-digit code can be sent here. You can also continue on this phone. The address is not written on chain.' });
   const status = el('p', { id: 'demo-status', role: 'status' });
   const button = el('button', { type: 'button', class: 'primary', id: 'demo-send' }, ['Send code']);
   button.addEventListener('click', async () => {

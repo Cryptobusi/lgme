@@ -1,5 +1,6 @@
 import { aiSetupSteps } from './ai-setup.mjs';
-import { AI_ENABLE, localAiReady, pickHelperSync } from './one-tap.mjs';
+import { applyFieldOption, fieldLines, fieldMeta, nextHelpField, safeHelpLine } from './field-help.mjs';
+import { AI_ENABLE, draftWithHelper, localAiReady, pickHelperSync } from './one-tap.mjs';
 
 const FLAG = 'Only available online with AI enabled.';
 const AI_CHIPS = ['Log a workout', 'Make an IdidIt receipt', 'What can I do here?'];
@@ -45,6 +46,7 @@ function paint(dock) {
   toggle.textContent = enabled ? 'On' : 'Off';
   dock.dataset.ai = enabled ? (ready ? 'yes' : 'no') : 'off';
   dock.dataset.online = online ? 'yes' : 'no';
+  if (dock.classList.contains('has-field')) return;
   if (!enabled) return;
   const guide = aiSetupSteps(navigator.userAgent);
   const lines = ready
@@ -81,17 +83,61 @@ function mount() {
   window.addEventListener('resize', placeDock);
   const ask = dock.querySelector('#ai-ask');
   const chips = dock.querySelector('#ai-chips');
-  for (const label of AI_CHIPS) {
-    const chip = document.createElement('button');
-    chip.type = 'button';
-    chip.className = 'ai-chip';
-    chip.textContent = label;
-    chip.addEventListener('click', () => {
-      ask.value = label;
-      ask.focus();
-    });
-    chips.append(chip);
-  }
+  let fieldToken = 0;
+  const paintChips = (labels, field) => {
+    chips.replaceChildren();
+    for (const label of labels) {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'ai-chip';
+      chip.textContent = label;
+      if (field) {
+        chip.addEventListener('pointerdown', (event) => { event.preventDefault(); });
+        chip.addEventListener('click', () => {
+          applyFieldOption(field, label);
+          const next = nextHelpField(field);
+          if (next) next.focus();
+          else field.focus();
+        });
+      } else {
+        chip.addEventListener('click', () => {
+          ask.value = label;
+          ask.focus();
+        });
+      }
+      chips.append(chip);
+    }
+  };
+  const showField = (field) => {
+    const meta = fieldMeta(field);
+    if (!meta) return;
+    dock.classList.add('has-field');
+    const log = dock.querySelector('#ai-log');
+    log.textContent = fieldLines(meta.help);
+    paintChips(meta.options, field);
+    const token = ++fieldToken;
+    if (!(aiOn() && localAiReady())) return;
+    draftWithHelper(pickHelperSync(), {
+      template: meta.help,
+      prompt: `One short sentence. No medical advice. Explain why this field is needed: ${meta.help}`,
+      scope: window
+    }).then((result) => {
+      if (token !== fieldToken || document.activeElement !== field) return;
+      log.textContent = fieldLines(safeHelpLine(result?.text, meta.help));
+    }).catch(() => {});
+  };
+  const clearField = () => {
+    const active = document.activeElement;
+    if (active && active.closest && active.closest('#ai-dock')) return;
+    if (fieldMeta(active)) return;
+    fieldToken += 1;
+    dock.classList.remove('has-field');
+    paintChips(AI_CHIPS, null);
+    paint(dock);
+  };
+  paintChips(AI_CHIPS, null);
+  document.addEventListener('focusin', (event) => { showField(event.target); });
+  document.addEventListener('focusout', () => { setTimeout(clearField, 0); });
   ask.addEventListener('pointerup', () => { ask.focus(); });
   paint(dock);
   dock.querySelector('#ai-expand').addEventListener('click', () => {

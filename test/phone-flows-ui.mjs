@@ -203,6 +203,49 @@ async function dockStandalone(browser, shot) {
   await context.close();
 }
 
+async function fieldDock(browser) {
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    hasTouch: true,
+    isMobile: true,
+    userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36'
+  });
+  await context.addInitScript(() => {
+    localStorage.setItem('lgme.reset.epoch', '2');
+    localStorage.setItem('lgme.ai.enabled', '0');
+    const original = window.matchMedia.bind(window);
+    window.matchMedia = (query) => String(query).includes('display-mode') && String(query).includes('standalone')
+      ? { matches: true, media: query, onchange: null, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {}, dispatchEvent() { return false; } }
+      : original(query);
+  });
+  const page = await context.newPage();
+  await page.goto(`${base}/gym#/ididit`, { waitUntil: 'domcontentloaded' });
+  const field = page.locator('#gym-ididit-other');
+  await field.click();
+  const before = await page.evaluate(() => document.activeElement && document.activeElement.id);
+  await page.locator('#ai-log').waitFor();
+  const log = await page.locator('#ai-log').innerText();
+  if (!/names what you finished/.test(log)) failures.push(`field help missing ${log}`);
+  if (/diagnos|treatment|cure/i.test(log)) failures.push('field help makes a medical claim');
+  const still = await page.evaluate(() => document.activeElement && document.activeElement.id);
+  if (still !== before) failures.push('showing help stole focus');
+  const options = await page.locator('#ai-chips .ai-chip').allTextContents();
+  if (!options.includes('I finished a walk') || !options.includes('I did the session')) failures.push(`field options missing ${options.join('|')}`);
+  await page.screenshot({ path: '/opt/cursor/artifacts/field-dock-390.png', timeout: 8000, animations: 'disabled' });
+  await page.locator('#ai-chips').getByRole('button', { name: 'I finished a walk', exact: true }).click();
+  if (await field.inputValue() !== 'I finished a walk') failures.push('option did not fill the field');
+  const focused = await page.evaluate(() => document.activeElement && document.activeElement.id === 'gym-ididit-other');
+  if (!focused) failures.push('keyboard field was not focused after the only option set');
+  await page.goto(`${base}/develop?category=Health`, { waitUntil: 'domcontentloaded' });
+  const title = page.locator('#want-title');
+  await title.click();
+  await page.locator('#ai-chips').getByRole('button', { name: 'I can help test', exact: true }).click();
+  if (await title.inputValue() !== 'I can help test') failures.push('IwanIT option did not fill the title');
+  const next = await page.evaluate(() => document.activeElement && document.activeElement.id);
+  if (next !== 'want-body') failures.push(`focus did not move to the next field (${next})`);
+  await context.close();
+}
+
 async function check(browserType, name, launch) {
   const browser = await browserType.launch(launch);
   const shot = name === 'chromium';
@@ -218,7 +261,10 @@ async function check(browserType, name, launch) {
   const fourth = await fresh(browser);
   await dock(fourth.page, shot);
   await fourth.context.close();
-  if (name === 'chromium') await dockStandalone(browser, shot);
+  if (name === 'chromium') {
+    await dockStandalone(browser, shot);
+    await fieldDock(browser);
+  }
   await browser.close();
 }
 

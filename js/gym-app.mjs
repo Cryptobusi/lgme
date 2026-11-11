@@ -994,10 +994,10 @@ function localAiCard(peer) {
 
 function healthSettings(peer) {
   const needsAge = peer.healthConsent?.adult !== true;
-  const adult = el('input', { type: 'checkbox', id: 'settings-age' });
-  const collect = el('input', { type: 'checkbox', id: 'settings-collect' });
-  const share = el('input', { type: 'checkbox', id: 'settings-share' });
-  const shareName = el('input', { type: 'checkbox', id: 'settings-share-name' });
+  const adult = el('input', { type: 'checkbox', id: 'settings-age', 'data-help': 'This confirms you are 18 or older before notes stay on this phone.', 'data-options': 'Yes' });
+  const collect = el('input', { type: 'checkbox', id: 'settings-collect', 'data-help': 'This keeps notes on this phone. It is not a medical record and is not written on chain.', 'data-options': 'Yes' });
+  const share = el('input', { type: 'checkbox', id: 'settings-share', 'data-help': 'Sharing is optional and stays off unless you check it. This is not a medical record.', 'data-options': 'Yes' });
+  const shareName = el('input', { type: 'checkbox', id: 'settings-share-name', 'data-help': 'Your name stays on this phone unless you choose to share it.', 'data-options': 'Yes' });
   collect.checked = peer.healthConsent?.collect === true;
   share.checked = peer.healthConsent?.share === true;
   shareName.checked = peer.healthConsent?.shareName === true;
@@ -1236,8 +1236,8 @@ function emailJoinCard() {
   const host = el('section', { class: 'card', id: 'health-email' });
   host.append(el('h3', {}, ['Email']));
   host.append(el('p', {}, ['A new member verifies an email once, before the covenant. This device keeps that check. Later visits use the device key and the passkey. No phone number and no ID check.']));
-  const email = el('input', { id: 'join-email', type: 'email', maxlength: '120', placeholder: 'name@email.com', autocomplete: 'email' });
-  const code = el('input', { id: 'join-code', inputmode: 'numeric', maxlength: '6', placeholder: '6-digit code', autocomplete: 'one-time-code' });
+  const email = el('input', { id: 'join-email', type: 'email', maxlength: '120', placeholder: 'name@email.com', autocomplete: 'email', 'data-help': 'A code can be sent here so this phone can join. The address is not written on chain.', 'data-options': '' });
+  const code = el('input', { id: 'join-code', inputmode: 'numeric', maxlength: '6', placeholder: '6-digit code', autocomplete: 'one-time-code', 'data-help': 'The 6-digit code from the email, if you asked for one. You can also continue on this phone.' });
   const result = el('p', { id: 'join-email-result' });
   const send = el('button', { type: 'button', id: 'join-send', onClick: async () => {
     result.textContent = 'Sending…';
@@ -1336,11 +1336,21 @@ async function renderRegister() {
     const signature = fields.inputs[3];
     const date = fields.inputs[4];
     primary.value = signup.primary;
+    primary.setAttribute('data-help', 'Your main offering. Other members can see this. Your legal name stays on this phone.');
+    primary.setAttribute('data-options', 'Walking group|Strength|Mobility');
     secondary.value = signup.secondary;
+    secondary.setAttribute('data-help', 'A second offering, also shown as a name only.');
+    secondary.setAttribute('data-options', 'A session|A check-in|Stretching');
     legal.value = signup.legalName;
+    legal.setAttribute('data-help', 'Your legal name stays on this phone. It is not published.');
+    legal.setAttribute('data-options', 'On this phone');
     signature.value = signup.signature;
+    signature.setAttribute('data-help', 'Your signature stays on this phone. It is not written on chain.');
+    signature.setAttribute('data-options', 'This device');
     date.type = 'date';
     date.value = signup.date;
+    date.setAttribute('data-help', 'The date of this agreement. It stays on this phone.');
+    date.setAttribute('data-options', signup.date);
     box.append(chipRow('offer-chips', ['Walking group', 'Strength', 'Mobility'], (label) => { primary.value = label; signup.primary = label; }));
     box.append(chipRow('support-chips', ['A session', 'A check-in', 'Stretching'], (label) => { secondary.value = label; signup.secondary = label; }));
     box.append(chipRow('name-chips', ['On this phone'], (label) => { legal.value = label; signup.legalName = label; }));
@@ -1433,7 +1443,7 @@ async function renderRegister() {
       render();
     } }, ['Next']));
   } else if (signup.step === 3) {
-    const name = el('input', { id: 'handle-other', maxlength: '40', placeholder: 'Other handle' });
+    const name = el('input', { id: 'handle-other', maxlength: '40', placeholder: 'Other handle', 'data-help': 'A short name other members see. Your legal name stays on this phone.', 'data-options': 'health-phone|walker' });
     if (!signup.name) signup.name = 'health-phone';
     name.value = signup.name;
     box.append(chipRow('handle-chips', ['health-phone', 'walker'], (label) => { signup.name = label; name.value = label; }));
@@ -1479,10 +1489,10 @@ async function renderRegister() {
 }
 
 function ageGateCard(invite) {
-  const adult = el('input', { type: 'checkbox', id: 'age-gate' });
-  const collect = el('input', { type: 'checkbox', id: 'collect-health' });
-  const share = el('input', { type: 'checkbox', id: 'share-health' });
-  const shareName = el('input', { type: 'checkbox', id: 'share-name' });
+  const adult = el('input', { type: 'checkbox', id: 'age-gate', 'data-help': 'This confirms you are 18 or older before notes stay on this phone.', 'data-options': 'Yes' });
+  const collect = el('input', { type: 'checkbox', id: 'collect-health', 'data-help': 'This keeps notes on this phone. It is not a medical record and is not written on chain.', 'data-options': 'Yes' });
+  const share = el('input', { type: 'checkbox', id: 'share-health', 'data-help': 'Sharing is optional and stays off unless you check it. This is not a medical record.', 'data-options': 'Yes' });
+  const shareName = el('input', { type: 'checkbox', id: 'share-name', 'data-help': 'Your name stays on this phone unless you choose to share it.', 'data-options': 'Yes' });
   const handle = invite ? el('input', { id: 'invite-handle', maxlength: '40', placeholder: 'Handle' }) : null;
   return el('section', { class: 'card', id: 'health-gate' }, [
     el('h3', {}, ['Before you enter anything']),
@@ -2070,7 +2080,13 @@ async function renderDispute() {
 }
 
 async function renderIdidIt() {
-  const title = el('input', { id: 'gym-ididit-other', maxlength: '80', value: IDIDIT_CHIPS[0] });
+  const title = el('input', {
+    id: 'gym-ididit-other',
+    maxlength: '80',
+    value: IDIDIT_CHIPS[0],
+    'data-help': 'This names what you finished, on this phone.',
+    'data-options': IDIDIT_CHIPS.join('|')
+  });
   const statusLine = el('p', { id: 'ididit-status', role: 'status' });
   const confirm = el('button', { type: 'button', class: 'primary', id: 'gym-ididit-confirm' }, ['Confirm']);
   confirm.addEventListener('click', async () => {

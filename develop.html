@@ -28,13 +28,13 @@
     <label for="want-category">Category</label>
     <input id="want-category" name="category" readonly />
     <label for="want-title">Title</label>
-    <input id="want-title" name="title" maxlength="80" required />
+    <input id="want-title" name="title" maxlength="80" required data-help="This is the title of the IwanIT note. It tells the owner what you want to help build." data-options="I can help test|I can write plain words|I can try the phone flow" />
     <label for="want-body">Note</label>
-    <textarea id="want-body" name="body" maxlength="280" required></textarea>
+    <textarea id="want-body" name="body" maxlength="280" required data-help="A short note about how you can help. It is sent to the owner, not written on chain." data-options="I can try the steps on my phone.|I can point out unclear words."></textarea>
     <label for="want-skill">Skill, optional</label>
-    <input id="want-skill" name="skill" maxlength="80" />
+    <input id="want-skill" name="skill" maxlength="80" data-help="A skill you can offer. Optional. It goes to the owner with the IwanIT, not on chain." data-options="Testing|Plain words|Phone flows" />
     <label for="want-time">Time, optional</label>
-    <input id="want-time" name="time" maxlength="40" />
+    <input id="want-time" name="time" maxlength="40" data-help="When you can help. Optional. It is not written on chain." data-options="This week|An hour|Whenever" />
     <p id="want-suggest-row"><button type="button" id="want-suggest" hidden>Suggest wording</button></p>
     <p><button type="submit" id="want-confirm">Confirm IwanIT</button></p>
     <p id="want-status" role="status"></p>
