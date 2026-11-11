@@ -119,15 +119,19 @@ export function medianHours(events) {
   const byId = new Map();
   for (const event of events) {
     if (!event.id || !event.time) continue;
-    const row = byId.get(event.id) || { listed: 0, matched: 0, confirmed: 0 };
-    if (!row[event.stage] || event.time < row[event.stage]) row[event.stage] = event.time;
-    byId.set(event.id, row);
+    const list = byId.get(event.id) || [];
+    list.push(event);
+    byId.set(event.id, list);
   }
   const toMatch = [];
   const toConfirm = [];
-  for (const row of byId.values()) {
-    if (row.listed && row.matched && row.matched >= row.listed) toMatch.push((row.matched - row.listed) / 3600000);
-    if (row.matched && row.confirmed && row.confirmed >= row.matched) toConfirm.push((row.confirmed - row.matched) / 3600000);
+  for (const list of byId.values()) {
+    const ordered = list.slice().sort((a, b) => a.time - b.time || a.sequence - b.sequence);
+    const listed = ordered.find((row) => row.stage === 'listed');
+    const matched = ordered.find((row) => row.stage === 'matched' && (!listed || row.time >= listed.time));
+    const confirmed = ordered.find((row) => (row.stage === 'confirmed' || row.stage === 'receipt') && (!matched || row.time >= matched.time));
+    if (listed && matched) toMatch.push((matched.time - listed.time) / 3600000);
+    if (matched && confirmed) toConfirm.push((confirmed.time - matched.time) / 3600000);
   }
   return { listedToMatched: median(toMatch), matchedToConfirmed: median(toConfirm) };
 }
@@ -147,10 +151,16 @@ export function categoryReport(listings = [], { span = 'day', now = Date.now() }
   const half = Math.floor(buckets.length / 2);
   const previous = buckets.slice(0, half);
   const recent = buckets.slice(half);
+  const inSpan = (row, buckets) => buckets.some((bucket) => row.time >= bucket.start && row.time < bucket.start + spanMs(span));
   const kpi = (stage) => {
-    const nowCount = sumStage(recent, 'test', stage) + sumStage(recent, 'real', stage);
-    const thenCount = sumStage(previous, 'test', stage) + sumStage(previous, 'real', stage);
-    return { value: nowCount, delta: nowCount - thenCount, test: sumStage(recent, 'test', stage), real: sumStage(recent, 'real', stage) };
+    const nowRows = current.filter((row) => row.stage === stage && inSpan(row, recent));
+    const thenRows = current.filter((row) => row.stage === stage && inSpan(row, previous));
+    return {
+      value: nowRows.length,
+      delta: nowRows.length - thenRows.length,
+      test: nowRows.filter((row) => row.test).length,
+      real: nowRows.filter((row) => !row.test).length
+    };
   };
   const listed = current.length;
   const receipts = current.filter((row) => row.stage === 'receipt').length;
@@ -176,6 +186,7 @@ export function categoryReport(listings = [], { span = 'day', now = Date.now() }
     completion: rate(receipts, listed),
     decline: rate(declined, listed),
     timing: medianHours(events),
+    examples: current.filter((row) => row.id.startsWith('hx-')).length,
     mix: [...mix.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([label, count]) => ({ label, count }))
   };
 }

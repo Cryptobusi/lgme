@@ -85,7 +85,10 @@ function kpi(href, label, value, note) {
 }
 
 function formatHours(value) {
-  return value == null ? '—' : `${value} h`;
+  if (value == null) return '—';
+  if (value < 1 / 60) return `${Math.round(value * 3600)} s`;
+  if (value < 1) return `${Math.round(value * 60)} min`;
+  return `${value} h`;
 }
 
 export function renderOverview(host, payload, { cachedAt = '', offline = false, personal = null, onChange = () => {} } = {}) {
@@ -146,7 +149,7 @@ export function renderOverview(host, payload, { cachedAt = '', offline = false, 
     el('h2', {}, ['Health']),
     el('p', { class: 'muted', id: 'overview-source' }, [
       offline ? (cachedAt ? `Offline snapshot from ${mirrorTime(String(new Date(cachedAt).getTime() / 1000))}. ` : 'No cached snapshot on this phone yet. ') : 'Live mirror. ',
-      `Last message time ${when}. Network ${payload?.network || 'testnet'}. `,
+      `Last message time ${when}. Network ${payload?.network || 'testnet'}. ${new Set(listings.map((row) => row.item?.id).filter((id) => String(id || '').startsWith('hx-'))).size} test Health examples on this record. `,
       el('a', { href: '/disclaimer' }, ['Disclaimer'])
     ]),
     toggles,

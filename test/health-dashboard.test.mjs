@@ -21,6 +21,13 @@ test('the category report keeps test and real apart and hides people', () => {
   assert.equal(report.hours, 2.5);
   assert.equal(report.usd, 0);
   assert.equal(report.timing.listedToMatched, null);
+  const timed = categoryReport([
+    { sequenceNumber: 1, consensusTimestamp: String((now - 2 * day) / 1000), item: { id: 'hx-yoga', kind: 'listing', group: 'health', service: 'mobility', side: 'offer', status: 'Test item - unclaimed' } },
+    { sequenceNumber: 2, consensusTimestamp: String((now - day) / 1000), item: { id: 'hx-yoga', kind: 'listing', group: 'health', service: 'mobility', side: 'offer', status: 'Test item - matched' } },
+    { sequenceNumber: 3, consensusTimestamp: String(now / 1000), item: { id: 'hx-yoga', kind: 'listing', group: 'health', service: 'mobility', side: 'offer', status: 'Test item - confirmed' } }
+  ], { span: 'day', now: now + day });
+  assert.equal(timed.timing.listedToMatched, 24);
+  assert.equal(timed.timing.matchedToConfirmed, 24);
   assert.equal(JSON.stringify(report).includes('trainer'), false);
   assert.equal(JSON.stringify(report).includes('mina'), false);
   const dashboard = readFileSync(join(root, 'js/health-dashboard.mjs'), 'utf8');
