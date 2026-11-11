@@ -496,6 +496,36 @@ export function parseDexPairs(body) {
   }));
 }
 
+export const PUMP_POOL = '9iEVoGQtXxocKtREpJkcU2Li9JN6DpxbXHFimCnKj2TF';
+export const PUMP_PROGRAM = '6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P';
+
+function readU64(bytes, offset) {
+  let value = 0n;
+  for (let i = 0; i < 8; i += 1) value += BigInt(bytes[offset + i]) << BigInt(8 * i);
+  return value;
+}
+
+function bytesFromBase64(data) {
+  const binary = atob(String(data || ''));
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+export function parsePumpReserves(body) {
+  const value = body?.result?.value;
+  if (!value || value.owner !== PUMP_PROGRAM) return 0;
+  const encoded = Array.isArray(value.data) ? value.data[0] : '';
+  let bytes;
+  try { bytes = bytesFromBase64(encoded); } catch { return 0; }
+  if (bytes.length < 24) return 0;
+  const base = readU64(bytes, 8);
+  const quote = readU64(bytes, 16);
+  if (base <= 0n || quote <= 0n) return 0;
+  const price = Number(quote) / Number(base);
+  return price > 0 && price < 1 ? price : 0;
+}
+
 function sourceList(mint) {
   return [
     {
@@ -575,7 +605,14 @@ function spotSources(mint) {
     { id: 'dexscreener', url: `https://api.dexscreener.com/latest/dex/tokens/${mint}`, parse: parseDexPairs },
     { id: 'jupiter', url: `https://lite-api.jup.ag/price/v3?ids=${mint}`, parse: (body) => parseJupiterPrice(body, mint) },
     { id: 'birdeye', url: `https://public-api.birdeye.so/defi/price?address=${mint}`, parse: parseBirdeyePrice },
-    { id: 'geckoterminal', url: `https://api.geckoterminal.com/api/v2/networks/solana/tokens/${mint}/pools?page=1`, parse: parseGeckoPools }
+    { id: 'geckoterminal', url: `https://api.geckoterminal.com/api/v2/networks/solana/tokens/${mint}/pools?page=1`, parse: parseGeckoPools },
+    {
+      id: 'solana-reserves',
+      method: 'POST',
+      url: 'https://api.mainnet-beta.solana.com',
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getAccountInfo', params: [PUMP_POOL, { encoding: 'base64' }] }),
+      parse: parsePumpReserves
+    }
   ];
 }
 
@@ -599,7 +636,12 @@ async function quoteOne(fetchImpl, source, timeoutMs, at) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const response = await fetchImpl(source.url, { signal: controller.signal, headers: { accept: 'application/json' } });
+    const response = await fetchImpl(source.url, {
+      method: source.method || 'GET',
+      signal: controller.signal,
+      headers: { accept: 'application/json', ...(source.body ? { 'content-type': 'application/json' } : {}) },
+      ...(source.body ? { body: source.body } : {})
+    });
     const status = Number(response?.status);
     if (status === 304 && prior && at - prior.at < QUOTE_MS) return { source: source.id, price: prior.price };
     if (!response?.ok) {
