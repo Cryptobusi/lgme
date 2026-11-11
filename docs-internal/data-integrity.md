@@ -35,3 +35,5 @@ Headers: `origin` is checked when present. Cron uses `x-lgme-cron`. No auth cook
 Device storage: `lgme-gym.seat`, `lgme.health.book`, `lgme.health.email`, personal images, and the exchange snapshot. The personal Health book is not posted.
 
 API JSON: device envelopes (`handle`, `publicJwk`, `sig`, `payload`) and email `{email}` / `{email, code}`. Unknown JSON keys are rejected on email send. `__proto__`, duplicate keys, control characters, and oversized bodies are rejected on every body read.
+
+Gym progress cards and repair bodies use a per-key schema, including nested repair details, the rate suggestion, and each confirm side. Unknown keys, wrong types, and out-of-range numbers are rejected.

@@ -142,6 +142,113 @@ export const fields = {
   usd: { type: 'number', min: 0, max: 100000 }
 };
 
+const LABEL = /^[\p{L}\p{N} ._'’+\-/#()]{1,160}$/u;
+const NOTE = /^[\p{L}\p{N} ._'’+\-/#()?!]{0,280}$/u;
+const STAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
+
+export const gymCardSchema = {
+  type: 'object',
+  required: ['handle', 'category', 'number', 'unit', 'week'],
+  keys: {
+    handle: { type: 'string', min: 1, max: 40, pattern: LABEL },
+    category: { type: 'string', min: 1, max: 40, pattern: LABEL },
+    number: { type: 'number', min: 0, max: 100000 },
+    unit: { type: 'string', min: 1, max: 16, pattern: LABEL },
+    week: fields.day,
+    selfReported: { type: 'boolean' },
+    example: { type: 'boolean' },
+    line: { type: 'string', max: 160, pattern: NOTE }
+  }
+};
+
+export const repairDetailsSchema = {
+  type: 'object',
+  required: ['item', 'symptom'],
+  keys: {
+    item: { type: 'string', min: 1, max: 80, pattern: NOTE },
+    brandModel: { type: 'string', max: 80, pattern: NOTE },
+    symptom: { type: 'string', min: 1, max: 200, pattern: NOTE },
+    tried: { type: 'string', max: 160, pattern: NOTE }
+  }
+};
+
+const repairSideSchema = {
+  type: 'object',
+  required: ['handle', 'amount'],
+  keys: {
+    handle: { type: 'string', min: 1, max: 40, pattern: LABEL },
+    amount: { type: 'number', min: 0, max: 100000 }
+  }
+};
+
+export const repairConfirmsSchema = {
+  type: 'object',
+  keys: {
+    member: repairSideSchema,
+    provider: repairSideSchema
+  }
+};
+
+export const repairSuggestionSchema = {
+  type: 'object',
+  required: ['hourly', 'minutes', 'amount', 'skim', 'author', 'note'],
+  keys: {
+    hourly: { type: 'number', min: 0, max: 1000 },
+    minutes: { type: 'number', min: 15, max: 240 },
+    amount: { type: 'number', min: 0, max: 100000 },
+    skim: { type: 'number', min: 0, max: 100000 },
+    author: { type: 'number', min: 0, max: 100000 },
+    note: { type: 'string', max: 400 }
+  }
+};
+
+const repairCommon = {
+  handle: { type: 'string', min: 1, max: 40, pattern: LABEL },
+  origin: { type: 'enum', values: ['health'] },
+  at: { type: 'string', min: 20, max: 40, pattern: STAMP }
+};
+
+export const repairRequestSchema = {
+  type: 'object',
+  required: ['handle', 'action', 'origin', 'offerId', 'share', 'item', 'symptom', 'at'],
+  keys: {
+    ...repairCommon,
+    action: { type: 'enum', values: ['repair-request'] },
+    offerId: { type: 'enum', values: ['repair-extraordinaire'] },
+    share: { type: 'boolean' },
+    item: repairDetailsSchema.keys.item,
+    brandModel: repairDetailsSchema.keys.brandModel,
+    symptom: repairDetailsSchema.keys.symptom,
+    tried: repairDetailsSchema.keys.tried
+  }
+};
+
+export const repairStatusSchema = {
+  type: 'object',
+  required: ['handle', 'action', 'origin', 'id', 'status', 'at'],
+  keys: {
+    ...repairCommon,
+    action: { type: 'enum', values: ['repair-status'] },
+    id: fields.hash,
+    status: { type: 'enum', values: ['requested', 'contacted', 'scheduled', 'done', 'confirmed'] }
+  }
+};
+
+export const repairConfirmSchema = {
+  type: 'object',
+  required: ['handle', 'action', 'id', 'confirmed', 'side', 'amount'],
+  keys: {
+    handle: repairCommon.handle,
+    action: { type: 'enum', values: ['repair-confirm'] },
+    id: fields.hash,
+    confirmed: { type: 'boolean' },
+    side: { type: 'enum', values: ['member', 'provider'] },
+    amount: { type: 'number', min: 0, max: 100000 },
+    at: repairCommon.at,
+    origin: repairCommon.origin
+  }
+};
+
 export function originAllowed(origin) {
   if (!origin) return true;
   try {

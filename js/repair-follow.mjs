@@ -1,4 +1,5 @@
 import { canonicalDevice, sha256Hex, verifyDevice } from './device-sign.mjs';
+import { check, repairConfirmSchema, repairConfirmsSchema, repairDetailsSchema, repairRequestSchema, repairStatusSchema, repairSuggestionSchema } from './input-schema.mjs';
 import { deedCreditSplit } from './commons-split.mjs';
 import { ATTESTATION_NOTE, evaluateHold } from './high-value.mjs';
 import { VIEW_ONLY_MESSAGE } from './view-only-api.mjs';
@@ -33,16 +34,23 @@ export function suggestRepairRate(minutes = 60) {
 
 export function publicRepairDetails(spec = {}) {
   if (spec.share !== true) return { ok: false, error: 'Choose to share the details first. Nothing was sent.' };
+  const allowed = new Set(['share', 'item', 'brandModel', 'symptom', 'tried', 'photo', 'image', 'photos', 'handle', 'action', 'origin', 'offerId', 'at', 'durationMin']);
+  for (const key of Object.keys(spec)) {
+    if (!allowed.has(key)) return { ok: false, error: `Unknown field ${key}.` };
+  }
   if (spec.photo || spec.image || spec.photos) return { ok: false, error: 'Photos stay on this phone.' };
-  const item = clean(spec.item, 80);
-  const brandModel = clean(spec.brandModel, 80);
-  const symptom = clean(spec.symptom, 200);
-  const tried = clean(spec.tried, 160);
-  if (!item || !symptom) return { ok: false, error: 'Add the item and the symptom you want to share.' };
-  if (/https?:|data:image/i.test(`${item} ${brandModel} ${symptom} ${tried}`)) {
+  const details = {
+    item: clean(spec.item, 80),
+    brandModel: clean(spec.brandModel, 80),
+    symptom: clean(spec.symptom, 200),
+    tried: clean(spec.tried, 160)
+  };
+  const parsed = check(details, repairDetailsSchema, 'details');
+  if (!parsed.ok) return parsed;
+  if (/https?:|data:image/i.test(`${details.item} ${details.brandModel} ${details.symptom} ${details.tried}`)) {
     return { ok: false, error: 'Photos and links stay out of the shared details.' };
   }
-  return { ok: true, details: { item, brandModel, symptom, tried } };
+  return { ok: true, details };
 }
 
 export async function repairWrite(state, envelope) {
@@ -70,12 +78,17 @@ export async function repairWrite(state, envelope) {
 }
 
 async function createRequest(state, handle, payload) {
+  const parsed = check(payload, repairRequestSchema, 'repair');
+  if (!parsed.ok) return { ...parsed, status: 400 };
   if (payload.offerId !== OFFER_ID) return fail(400, 'That offer is not the standing repair service.');
   const details = publicRepairDetails(payload);
   if (!details.ok) return { ...details, status: 400 };
   const at = String(payload.at || new Date().toISOString());
   const id = await sha256Hex(canonicalDevice({ handle, offerId: OFFER_ID, details: details.details, at }));
   if (state.repairs.some((row) => row.id === id)) return { ok: true, item: state.repairs.find((row) => row.id === id), duplicate: true };
+  const suggestion = suggestRepairRate(payload.durationMin);
+  const suggested = check(suggestion, repairSuggestionSchema, 'suggestion');
+  if (!suggested.ok) return { ...suggested, status: 400 };
   const item = {
     id,
     offerId: OFFER_ID,
@@ -84,7 +97,7 @@ async function createRequest(state, handle, payload) {
     origin: 'health',
     status: 'requested',
     details: details.details,
-    suggestion: suggestRepairRate(payload.durationMin),
+    suggestion,
     confirms: {},
     settlement: '',
     hedera: false,
@@ -95,6 +108,8 @@ async function createRequest(state, handle, payload) {
 }
 
 function updateStatus(state, handle, payload) {
+  const parsed = check(payload, repairStatusSchema, 'repair');
+  if (!parsed.ok) return { ...parsed, status: 400 };
   const item = state.repairs.find((row) => row.id === payload.id);
   if (!item || item.origin !== 'health') return fail(404, 'No Health repair request on this book.');
   if (item.handle !== handle) return fail(403, 'Only the member who asked can update this request.');
@@ -105,6 +120,8 @@ function updateStatus(state, handle, payload) {
 }
 
 function confirmRate(state, handle, payload) {
+  const parsed = check(payload, repairConfirmSchema, 'repair');
+  if (!parsed.ok) return { ...parsed, status: 400 };
   const item = state.repairs.find((row) => row.id === payload.id);
   if (!item || item.origin !== 'health') return fail(404, 'No Health repair request on this book.');
   if (payload.confirmed !== true) return fail(400, 'Tap confirm. Nothing is recorded for you.');
@@ -112,7 +129,10 @@ function confirmRate(state, handle, payload) {
   if (side === 'member' && item.handle !== handle) return fail(403, 'The member who asked confirms their side.');
   const amount = Math.round(Number(payload.amount) * 100) / 100;
   if (!(amount > 0)) return fail(400, 'Enter the amount you confirm.');
-  item.confirms = { ...(item.confirms || {}), [side]: { handle, amount } };
+  const sideBody = { handle, amount };
+  const sideCheck = check(sideBody, repairConfirmsSchema.keys[side], side);
+  if (!sideCheck.ok) return { ...sideCheck, status: 400 };
+  item.confirms = { ...(item.confirms || {}), [side]: sideBody };
   const member = item.confirms.member;
   const provider = item.confirms.provider;
   if (!member || !provider) return { ok: true, item, waiting: true, recorded: false };

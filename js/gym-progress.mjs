@@ -1,4 +1,5 @@
 import { haversineMeters } from './exercise-record.mjs';
+import { check, gymCardSchema } from './input-schema.mjs';
 
 export const SHARE_LEVELS = Object.freeze(['me', 'groups', 'board']);
 export const BOARD_NOTE = 'Shared board starts when sync is on.';
@@ -185,41 +186,32 @@ export function sharePreview(peer, row) {
   };
 }
 
-const CARD_FIELDS = ['handle', 'category', 'number', 'unit', 'week', 'selfReported', 'example', 'line'];
 const PRIVATE_CARD = /@|https?:|\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b|\blatitude\b|\blongitude\b/i;
 
 export function publicProgressCard(spec = {}) {
-  const banned = ['lat', 'lon', 'photo', 'photos', 'points', 'healthNote', 'email', 'bundle', 'note'];
-  if (banned.some((key) => spec[key] != null && spec[key] !== '')) {
-    return { ok: false, error: 'That card includes a private field.' };
-  }
-  const handle = String(spec.handle || '').trim().slice(0, 40);
-  const category = String(spec.category || '').trim().slice(0, 40);
-  const unit = String(spec.unit || '').trim().slice(0, 16);
-  const week = String(spec.week || '');
-  const number = Number(spec.number);
-  const line = String(spec.line || '').trim().slice(0, 160);
-  if (!handle || !category || !unit || !/^\d{4}-\d{2}-\d{2}$/.test(week) || !Number.isFinite(number)) {
-    return { ok: false, error: 'A shared card needs a handle, category, number, unit, and week.' };
-  }
+  const parsed = check(spec, gymCardSchema, 'card');
+  if (!parsed.ok) return parsed;
+  const handle = spec.handle;
+  const category = spec.category;
+  const unit = spec.unit;
+  const line = String(spec.line || '');
   if (PRIVATE_CARD.test(`${handle} ${category} ${unit} ${line}`)) {
     return { ok: false, error: 'Leave out links, emails, phone numbers, and location.' };
   }
-  const card = {
-    handle,
-    category,
-    number,
-    unit,
-    week,
-    selfReported: spec.selfReported === true,
-    example: spec.example === true,
-    line,
-    hedera: false
+  return {
+    ok: true,
+    card: {
+      handle,
+      category,
+      number: spec.number,
+      unit,
+      week: spec.week,
+      selfReported: spec.selfReported === true,
+      example: spec.example === true,
+      line,
+      hedera: false
+    }
   };
-  for (const key of Object.keys(card)) {
-    if (!CARD_FIELDS.includes(key) && key !== 'hedera') delete card[key];
-  }
-  return { ok: true, card };
 }
 
 export function boardCards(peers, now = new Date()) {
