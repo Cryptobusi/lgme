@@ -1,5 +1,5 @@
 import { explainJoin } from './join-explain.mjs';
-import { draftWithHelper, pickHelperSync, refreshHelper, showHelperNote } from './one-tap.mjs';
+import { AI_ENABLE, draftWithHelper, pickHelperSync, refreshHelper, showHelperNote } from './one-tap.mjs';
 
 const KEY = 'lgme.exchange.onboardDraft';
 
@@ -83,7 +83,7 @@ function mountExplain() {
   showHelperNote(note, helper);
   refreshHelper(window, localStorage, (picked) => showHelperNote(note, picked));
   button.addEventListener('click', async () => {
-    if (!helper.ready) { answer.textContent = helper.note; return; }
+    if (!helper.ready) { answer.textContent = AI_ENABLE; return; }
     const template = explainJoin(question?.value || '').text;
     const result = await draftWithHelper(helper, {
       template,

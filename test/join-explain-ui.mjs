@@ -108,7 +108,7 @@ for (const [width, height] of sizes) {
         assert(box.hidden === false, `${label} no-AI path hidden`);
         await page.locator('#explain-join').click();
         await page.waitForFunction(() => /built-in AI/i.test(document.getElementById('explain-answer')?.textContent || ''));
-        assert(/built-in AI/i.test(await page.locator('#explain-note').innerText()), 'missing enable note');
+        assert(/On-device AI is off/i.test(await page.locator('#explain-note').innerText()), 'missing enable note');
         if (width === 390) {
           mkdirSync('/opt/cursor/artifacts', { recursive: true });
           await page.screenshot({ path: '/opt/cursor/artifacts/join-step2-phone-no-ai.png' });

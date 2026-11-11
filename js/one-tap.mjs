@@ -6,7 +6,7 @@ export const AI_ENABLE = 'Turn on the browser’s built-in AI. In Chrome, open s
 
 export function helperNote(id) {
   if (id === 'browser' || id === 'model') return 'Using: on-device AI';
-  return AI_ENABLE;
+  return 'On-device AI is off.';
 }
 
 function browserApi(scope) {
@@ -19,7 +19,7 @@ function hasBrowser(api) {
 
 export function pickHelperSync(scope = globalThis, storage = scope.localStorage) {
   const nav = scope.navigator || {};
-  const unavailable = { id: 'unavailable', ready: false, note: AI_ENABLE };
+  const unavailable = { id: 'unavailable', ready: false, note: helperNote('none') };
   if (nav.lgmeAi === 'off' || nav.lgmeAi === 'app') return unavailable;
   if (hasBrowser(browserApi(scope))) return { id: 'browser', ready: true, note: helperNote('browser') };
   try {
@@ -42,7 +42,7 @@ export function refreshHelper(scope = globalThis, storage = scope.localStorage, 
   };
   if (typeof api?.availability !== 'function' || !first.ready) return Promise.resolve(finish(first));
   return Promise.race([
-    Promise.resolve(api.availability()).then((state) => (state === 'available' || state === 'readily' ? { id: 'browser', ready: true, note: helperNote('browser') } : { id: 'unavailable', ready: false, note: AI_ENABLE })).catch(() => first),
+    Promise.resolve(api.availability()).then((state) => (state === 'available' || state === 'readily' ? { id: 'browser', ready: true, note: helperNote('browser') } : { id: 'unavailable', ready: false, note: helperNote('none') })).catch(() => first),
     new Promise((resolve) => { setTimeout(() => resolve(first), 250); })
   ]).then(finish);
 }
