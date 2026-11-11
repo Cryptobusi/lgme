@@ -12,6 +12,7 @@ import { BOARD_NOTE, PROGRESS_KINDS, boardCards, chooseProgress, manualEntry, pr
 import { communityFeed } from './gym-feed.mjs';
 import { OPT_IN_COPY, answerLocal, deleteDownloadedModel, isOn, setOn, unloadLocalModel } from './local-ai.mjs';
 import { draftHealthInvite, inviteShares, parseJoinSearch, readJoin, rememberJoin } from './health-invite.mjs';
+import { deviceContext, pickHelperSync, showHelperNote } from './one-tap.mjs';
 import { deedCreditOf, fetchPool, sendPoolAction } from './membership-pool-page.mjs';
 import { holdFromChat } from './equipment-referral.mjs';
 import { mountEquipmentCard } from './equipment-card.mjs';
@@ -887,11 +888,34 @@ function inviteActions(draft) {
   ]);
 }
 
+function inviteOneTap(peer) {
+  const helper = pickHelperSync();
+  const known = deviceContext();
+  const fee = known.fee || 'self';
+  const draft = draftHealthInvite({
+    question: fee === 'pool' ? 'Please send an invite from the pool' : 'Please send an invite',
+    inviter: peer?.id || known.handle || 'member',
+    poolCovers: fee === 'pool' ? 1 : 0
+  });
+  const note = el('p', { id: 'invite-one-note' });
+  showHelperNote(note, helper);
+  const text = el('p', { id: 'invite-one-draft' }, [draft.ok ? `${draft.note} Fee ${draft.fee}. ${draft.url}` : draft.error]);
+  const button = el('button', { type: 'button', id: 'invite-one-confirm' }, ['Confirm invite']);
+  const actions = el('div', { id: 'invite-one-actions' });
+  button.addEventListener('click', () => {
+    if (!draft.ok) { status(draft.error || 'Nothing was sent.'); return; }
+    actions.replaceChildren(inviteActions(draft));
+    status('Confirmed on this phone. Nothing is sent until you use your own share.');
+  });
+  return el('section', { id: 'invite-one-tap' }, [note, text, button, actions]);
+}
+
 function localAiCard(peer) {
   const host = el('section', { class: 'card', id: 'local-ai' });
   function draw() {
     const on = isOn(localStorage);
     const lines = [
+      inviteOneTap(peer),
       el('h3', {}, [`Local AI assistant: ${on ? 'On' : 'Off'}`])
     ];
     if (!on) {

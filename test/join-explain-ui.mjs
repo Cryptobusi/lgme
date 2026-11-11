@@ -104,8 +104,10 @@ for (const [width, height] of sizes) {
           await page.screenshot({ path: '/opt/cursor/artifacts/join-step2-phone-ai.png' });
         }
       } else {
-        assert(box.hidden === true, `${label} helper shown`);
-        assert(await page.locator('#explain-join').isVisible() === false, `${label} button visible`);
+        assert(box.hidden === false, `${label} no-AI path hidden`);
+        await page.locator('#explain-join').click();
+        await page.waitForFunction(() => /I do not sign you up/.test(document.getElementById('explain-answer')?.textContent || ''));
+        assert(/no AI/i.test(await page.locator('#explain-note').innerText()), 'missing no-AI note');
         if (width === 390) {
           mkdirSync('/opt/cursor/artifacts', { recursive: true });
           await page.screenshot({ path: '/opt/cursor/artifacts/join-step2-phone-no-ai.png' });

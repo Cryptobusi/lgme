@@ -1,5 +1,6 @@
 import { ASK_EXAMPLES, contributedCount, draftOffer, draftRequest, helpDraft, settleAiHelp, shareExcerpt } from './ai-help.mjs';
 import { mountEquipmentAsk } from './equipment-card.mjs';
+import { deviceContext, draftWithHelper, pickHelperSync, showHelperNote } from './one-tap.mjs';
 
 const state = {
   requester: 'river',
@@ -96,7 +97,21 @@ function draw() {
     draw();
   });
   const equip = el('div', { id: 'equipment-ask-host' });
+  const helper = pickHelperSync();
+  const known = deviceContext();
+  const template = `Please help with a short reply${known.handle ? ` for ${known.handle}` : ''}. Nothing is posted until I confirm.`;
+  const oneNote = el('p', { id: 'one-tap-note' }, []);
+  showHelperNote(oneNote, helper);
+  const oneDraft = el('p', { id: 'one-tap-draft' }, [template]);
+  const oneConfirm = el('button', { type: 'button', class: 'primary', id: 'one-tap-confirm' }, ['Confirm']);
+  oneConfirm.addEventListener('click', () => {
+    localStorage.setItem('lgme.aiHelp.oneTap', JSON.stringify({ text: oneDraft.textContent, at: new Date().toISOString() }));
+    status('Confirmed. The draft stays on this phone. Nothing was sent.');
+  });
+  draftWithHelper(helper, { template, prompt: `Draft a request for help in one sentence. ${template}`, scope: window })
+    .then((result) => { oneDraft.textContent = result.text; });
   const view = el('div', {}, [
+    el('article', { id: 'one-tap-ai', class: 'card' }, [oneNote, oneDraft, oneConfirm]),
     equip,
     el('p', { class: 'kicker' }, ['AI help']),
     el('h1', {}, ['Ask for AI help']),

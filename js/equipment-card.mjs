@@ -3,6 +3,7 @@ import { equipmentReferral, gatherEquipment } from './equipment-referral.mjs';
 import { OFFER_ID } from './repair-follow.mjs';
 import { preparePhoto, saveTilePhoto } from './health-tile-photo.mjs';
 import { loadPersonalImages, resolveImage, viewerId } from './personal-images.mjs';
+import { draftWithHelper, pickHelperSync } from './one-tap.mjs';
 
 const PHOTO_KEY = 'equipment-referral';
 
@@ -34,10 +35,31 @@ export function mountEquipmentAsk(host, { onStatus } = {}) {
     mountEquipmentCard(slot, card, { onStatus });
     onStatus?.('Nothing was sent. You choose whether to share these details.');
   } }, ['Ask about equipment']);
+  const quick = el('button', { type: 'button', id: 'one-tap-repair', onClick: async () => {
+    const helper = pickHelperSync();
+    const template = 'The equipment is broken and needs a tune.';
+    const result = await draftWithHelper(helper, { template, prompt: `Draft an equipment note. ${template}`, scope: window });
+    question.value = result.text;
+    let card = equipmentReferral(question.value);
+    if (!card.ok || !card.equipment) {
+      question.value = template;
+      card = equipmentReferral(question.value);
+    }
+    if (!card.ok || !card.equipment) { onStatus?.(card.error || 'Nothing was sent.'); return; }
+    mountEquipmentCard(slot, card, { onStatus });
+    const confirm = el('button', { type: 'button', class: 'primary', id: 'one-tap-repair-confirm', onClick: () => {
+      const box = document.getElementById('equipment-share');
+      if (box) box.checked = true;
+      document.getElementById('request-repair')?.click();
+    } }, ['Confirm repair draft']);
+    slot.append(confirm);
+    onStatus?.(`${helper.note}. Draft only. Nothing was sent.`);
+  } }, ['Draft a repair']);
   host.replaceChildren(
     el('h2', {}, ['Equipment']),
     el('p', { class: 'muted' }, ['An equipment question stays on this phone until you choose to share it.']),
     question,
+    quick,
     ask,
     slot
   );

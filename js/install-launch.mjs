@@ -1,3 +1,5 @@
+import { deviceContext, pickHelperSync, refreshHelper, showHelperNote } from './one-tap.mjs';
+
 const APP_PATH = '/exchange';
 const TIP = 'Share > Add to Home Screen';
 export const INSTALLED_WAIT_MS = 500;
@@ -125,6 +127,14 @@ export function bindInstallLaunch(doc, nav, win) {
   }
 
   hideForStandalone();
+  const note = doc.getElementById('helper-note');
+  const startNote = doc.getElementById('start-helper-note');
+  const helper = pickHelperSync(win, win.localStorage);
+  showHelperNote(note, helper);
+  showHelperNote(startNote, helper);
+  const known = deviceContext(win.localStorage, win.sessionStorage);
+  if (known.category === 'health' && controls[0] && !isStandalone(win, nav)) controls[0].setAttribute('href', '/gym');
+  refreshHelper(win, win.localStorage, (picked) => { showHelperNote(note, picked); showHelperNote(startNote, picked); });
   controls.forEach((control) => control.addEventListener('click', onClick));
   win.addEventListener('pageshow', () => { launched = false; });
   win.addEventListener('beforeinstallprompt', (event) => {

@@ -4,6 +4,7 @@ import { saveTilePhoto } from './health-tile-photo.mjs';
 import { loadPersonalImages, resolveImage, slotForListing, viewerId } from './personal-images.mjs';
 import { POOL_ID } from './membership-pool.mjs';
 import { renderMembershipPool } from './membership-pool-page.mjs';
+import { deviceContext, draftWithHelper, pickHelperSync } from './one-tap.mjs';
 
 function el(tag, attrs = {}, children = []) {
   const node = document.createElement(tag);
@@ -194,6 +195,17 @@ export async function mountExchangeTest(host) {
     note,
     speak,
     el('label', {}, ['Photo, optional', photo]),
+    el('button', { type: 'button', id: 'one-tap-listing', onClick: async () => {
+      const helper = pickHelperSync();
+      const known = deviceContext();
+      const template = `A 45 minute ${known.category || 'health'} session.`;
+      const result = await draftWithHelper(helper, { template, prompt: `Draft a session listing. ${template}`, scope: window });
+      note.value = result.text;
+      const drafted = draftExchangeListing(note.value);
+      if (!drafted.ok) { status.textContent = drafted.error; return; }
+      showDraft(drafted);
+      status.textContent = `${helper.note}. Draft only. Not posted.`;
+    } }, ['Draft with what I know']),
     el('button', { type: 'button', id: 'draft-upload', onClick: () => {
       const draft = draftExchangeListing(note.value);
       if (!draft.ok) { status.textContent = draft.error; draftHost.replaceChildren(); return; }

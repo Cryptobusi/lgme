@@ -283,6 +283,7 @@
     .entry-tile .tile-soon, .entry-tile .help-develop, .entry-tile .dev-team { position: relative; z-index: 2; }
     .entry-tile .tile-soon { margin: 0.15rem 0.4rem; font-size: 1rem; font-weight: 600; text-align: center; line-height: 1.3; }
     .entry-tile .help-develop, .entry-tile .dev-team { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; margin: 0.15rem 0.3rem 0.45rem; padding: 0.35rem 0.75rem; border-radius: 999px; font-size: 1rem; font-weight: 700; text-decoration: none; }
+    .helper-note { font-size: 0.875rem; font-weight: 600; }
     .entry-tile .help-develop { background: #f4f1e8; color: #1c1b19; }
     .entry-tile .dev-team { color: #f4f1e8; text-decoration: underline; font-weight: 600; }
     .tile-name { display: block; font-size: 1.15rem; line-height: 1.2; text-align: center; }
@@ -325,7 +326,7 @@
       <div class="entry-tile health has-photo" id="health-tile" data-image-slot="tile-health">
         <a class="health-open" data-entry="health" href="/gym"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 5.6-7 10-7 10z"/></svg><span class="badge">Beta</span><span class="tile-name">Health</span></a>
         <p class="tile-note">Local AI is available. <a href="/helper">AI helper</a> · <a href="/ai-help">AI help</a></p>
-        <p class="tile-note"><a class="cta" id="start-health" href="/gym#/start">Start Health</a></p>
+        <p class="tile-note"><a class="cta" id="start-health" href="/gym#/start">Start Health</a> <span id="start-helper-note" class="helper-note"></span></p>
         <div class="photo-actions">
           <label for="health-photo">Set background photo</label>
           <input id="health-photo" type="file" accept="image/*">
@@ -368,7 +369,7 @@
   </section>
   <script type="module" src="/js/health-tile-photo.mjs"></script>
   <script type="module" src="/js/personal-images-apply.mjs"></script>
-  <p class="launch-bar"><a class="install-launch" data-install-launch href="/exchange">Install &amp; launch</a></p>
+  <p class="launch-bar"><a class="install-launch" data-install-launch href="/exchange">Install &amp; launch</a> <span id="helper-note" class="helper-note"></span></p>
   <p class="give-banner" role="note"><span>Real donations &amp; grants accepted</span> <a href="/lgme-coin#give">Give via soBeIT</a> <a href="/lgme-coin#give">How to give</a> <a href="/grants">Grants</a></p>
   <aside class="agency" id="agency" aria-labelledby="agency-title">
     <p class="kicker">Reading</p>
@@ -517,6 +518,7 @@
           <label for="explain-question">Ask about these steps</label>
           <input id="explain-question" maxlength="200" autocomplete="off" />
           <button type="button" id="explain-join">Explain this to me</button>
+          <p id="explain-note" class="helper-note"></p>
           <p id="explain-answer" role="status"></p>
         </div>
       </article>

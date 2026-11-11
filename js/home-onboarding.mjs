@@ -1,5 +1,5 @@
-import { explainReady } from './device-capabilities.mjs';
 import { explainJoin } from './join-explain.mjs';
+import { draftWithHelper, pickHelperSync, refreshHelper, showHelperNote } from './one-tap.mjs';
 
 const KEY = 'lgme.exchange.onboardDraft';
 
@@ -77,13 +77,18 @@ function mountExplain() {
   const question = document.getElementById('explain-question');
   const answer = document.getElementById('explain-answer');
   if (!host || !button || !answer) return;
-  if (!explainReady(window).ok) {
-    host.hidden = true;
-    return;
-  }
   host.hidden = false;
-  button.addEventListener('click', () => {
-    const result = explainJoin(question?.value || '');
+  const note = document.getElementById('explain-note');
+  const helper = pickHelperSync();
+  showHelperNote(note, helper);
+  refreshHelper(window, localStorage, (picked) => showHelperNote(note, picked));
+  button.addEventListener('click', async () => {
+    const template = explainJoin(question?.value || '').text;
+    const result = await draftWithHelper(helper, {
+      template,
+      prompt: `Explain these steps in one short paragraph. ${template}`,
+      scope: window
+    });
     answer.textContent = result.text;
   });
 }
