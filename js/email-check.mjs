@@ -1,4 +1,5 @@
 import { ensureDeviceKey } from './device-sign.mjs';
+import { check, fields } from './input-schema.mjs';
 import { saveEmailSession } from './health-email.mjs';
 
 const WAITING = 'Email sign-in is coming. Nothing is sent until that step is connected. Google sign-in: later.';
@@ -56,6 +57,8 @@ export async function mountEmailCheck(host) {
     note.textContent = 'A code expires in 10 minutes. This device keeps the session. Your device key and passkey stay the second check. No phone number and no ID check. Google sign-in: later.';
   }
   send.addEventListener('click', async () => {
+    const emailCheck = check(email.value.trim().toLowerCase(), { ...fields.email, required: true }, 'email');
+    if (!emailCheck.ok) { result.textContent = emailCheck.error; return; }
     result.textContent = 'Sending…';
     const response = await fetch('/api/email/send', {
       method: 'POST',

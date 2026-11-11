@@ -1,6 +1,7 @@
 import { emailReadiness, clientIp, allowlistFrom } from '../../js/email-check-core.mjs';
 import { requestCode } from '../lib/email-flow.mjs';
-import { headerMap, json, readBody, readEnv } from '../lib/http.mjs';
+import { guardRequest, headerMap, json, readBody, readEnv } from '../lib/http.mjs';
+import { check, fields } from '../../js/input-schema.mjs';
 import { redisRest } from '../../js/redis-env.mjs';
 import { upstashStore } from '../lib/upstash.mjs';
 
@@ -27,6 +28,10 @@ export default async function handler(req, res) {
   const ready = emailReadiness(env);
   if (!ready.enabled) return json(res, 503, { ok: false, enabled: false, waiting: 'Email sign-in is coming. Nothing is sent until that step is connected.' });
   const body = await readBody(req);
+  if (guardRequest(req, res)) return;
+  const email = check(body.email, { ...fields.email, required: true }, 'email');
+  if (!email.ok) return json(res, 400, { ok: false, error: email.error });
+  if (Object.keys(body).some((key) => key !== 'email')) return json(res, 400, { ok: false, error: 'Unknown field.' });
   const redis = redisRest(env);
   const result = await requestCode(upstashStore(redis.url, redis.token), {
     email: body.email,

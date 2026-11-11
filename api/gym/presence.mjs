@@ -1,4 +1,4 @@
-import { readBody, json, readEnv } from '../lib/http.mjs';
+import { guardRequest, readBody, json, readEnv } from '../lib/http.mjs';
 import { upstashStore } from '../lib/upstash.mjs';
 import { redisRest } from '../../js/redis-env.mjs';
 import { gymChatReady } from '../../js/gym-sync.mjs';
@@ -40,6 +40,7 @@ export default async function handler(req, res) {
   const paced = allowRate(hits, ip);
   if (!paced.ok) return json(res, 429, paced);
   const body = await readBody(req);
+  if (guardRequest(req, res)) return;
   const book = emptyGymKv();
   book.members = (await store.get('gym:members')) || {};
   const auth = await authorizeDevice(book, body);

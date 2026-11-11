@@ -1,5 +1,6 @@
 import { OPERATOR_RULES, sharedListingsEnabled, withinRate } from '../../js/shared-listings.mjs';
-import { json, readBody, readEnv } from '../lib/http.mjs';
+import { guardRequest, json, readBody, readEnv } from '../lib/http.mjs';
+import { listingTransition } from '../../js/input-schema.mjs';
 import { VIEW_ONLY_MESSAGE } from '../../js/view-only-api.mjs';
 import { verifyDevice } from '../../js/device-sign.mjs';
 import { HOUR_LIMIT, LISTINGS_OPERATOR, LISTINGS_TOPIC, publicExchangeListing } from '../../js/exchange-listing.mjs';
@@ -116,6 +117,7 @@ export default async function handler(req, res) {
   const paced = allowRate(hits, `listings:${ip}`, Date.now(), 20);
   if (!paced.ok) return json(res, 429, paced);
   const body = await readBody(req);
+  if (guardRequest(req, res)) return;
   const payload = body.payload || {};
   if (POOL_ACTIONS.has(payload.action)) {
     const signed = await verifyDevice(body.publicJwk, payload, body.sig);
@@ -224,6 +226,10 @@ export default async function handler(req, res) {
     ? publicSetupReceivable({ ...payload, handle: payload.handle || body.handle })
     : publicExchangeListing({ ...payload, handle: payload.handle || body.handle });
   if (!built.ok) return json(res, built.status || 400, { ok: false, viewOnly: built.viewOnly === true, error: built.error || VIEW_ONLY_MESSAGE });
+  const stage = await priorListingStatus(built.body.id);
+  if (!stage.ok) return json(res, 503, { ok: false, error: 'The testnet record could not be read. Nothing was written.' });
+  const move = listingTransition(stage.status, built.body.status);
+  if (!move.ok) return json(res, 400, { ok: false, error: move.error });
   if (payload.hashOnly === true) {
     const chain = healthChainMessage({ ...payload, receiptHash: payload.receiptHash || built.body.receiptHash });
     if (!chain.ok) return json(res, 400, { ok: false, error: chain.error });
@@ -272,4 +278,21 @@ export default async function handler(req, res) {
   }].slice(-40);
   if (store) await store.set(BOOK, book);
   return json(res, 200, { ok: true, ...submitted, item: built.body, personal: false });
+}
+
+async function priorListingStatus(id) {
+  if (!id) return { ok: true, status: '' };
+  const response = await fetch(`https://testnet.mirrornode.hedera.com/api/v1/topics/${LISTINGS_TOPIC}/messages?limit=100&order=desc`);
+  if (!response.ok) return { ok: false, status: '' };
+  const body = await response.json();
+  let status = '';
+  let sequence = -1;
+  for (const row of body.messages || []) {
+    let item = null;
+    try { item = JSON.parse(Buffer.from(row.message || '', 'base64').toString('utf8')); } catch { item = null; }
+    if (item?.id !== id || Number(row.sequence_number) < sequence) continue;
+    sequence = Number(row.sequence_number);
+    status = String(item.status || '');
+  }
+  return { ok: true, status };
 }

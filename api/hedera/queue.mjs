@@ -1,4 +1,4 @@
-import { json, readBody, readEnv } from '../lib/http.mjs';
+import { guardRequest, json, readBody, readEnv } from '../lib/http.mjs';
 import { allowRate } from '../../js/gym-kv.mjs';
 import { verifyDevice } from '../../js/device-sign.mjs';
 import { redisRest } from '../../js/redis-env.mjs';
@@ -15,6 +15,7 @@ export default async function handler(req, res) {
   const paced = allowRate(hits, `queue:${ip}`, Date.now(), 20);
   if (!paced.ok) return json(res, 429, paced);
   const body = await readBody(req);
+  if (guardRequest(req, res)) return;
   const payload = body.payload || {};
   if (!healthWrite(payload.category)) return json(res, 403, { ok: false, viewOnly: true, error: VIEW_ONLY_MESSAGE });
   const hash = String(payload.hash || '').toLowerCase();

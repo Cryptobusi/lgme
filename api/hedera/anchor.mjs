@@ -2,7 +2,8 @@ import { merkleRootOf } from '../../js/clearing.mjs';
 import { anchorMessage, hashscanMessage, hederaReadiness, topicAllowed } from '../../js/hedera-anchor-core.mjs';
 import { cronAllowed } from '../../js/hedera-topic.mjs';
 import { testnetOperatorKey } from '../../js/hedera-operator.mjs';
-import { json, readBody, readEnv } from '../lib/http.mjs';
+import { guardRequest, json, readBody, readEnv } from '../lib/http.mjs';
+import { check, fields } from '../../js/input-schema.mjs';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return json(res, 405, { ok: false, error: 'Use POST.' });
@@ -15,6 +16,11 @@ export default async function handler(req, res) {
     return json(res, 503, { ok: false, enabled: false, missing: ready.missing, wording: ready.wording });
   }
   const body = await readBody(req);
+  if (guardRequest(req, res)) return;
+  if (body.day) {
+    const day = check(body.day, fields.day, 'day');
+    if (!day.ok) return json(res, 400, { ok: false, error: day.error });
+  }
   const sdk = await import('@hashgraph/sdk');
   const client = sdk.Client.forTestnet();
   let operator;

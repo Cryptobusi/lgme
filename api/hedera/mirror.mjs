@@ -1,4 +1,5 @@
 import { json, readEnv } from '../lib/http.mjs';
+import { check, fields } from '../../js/input-schema.mjs';
 import { ATTESTATION_TOPIC, readableTopic } from '../../js/hedera-topic.mjs';
 
 const TOPIC = ATTESTATION_TOPIC;
@@ -19,6 +20,8 @@ export default async function handler(req, res) {
   if (!allowed(ip)) return json(res, 429, { ok: false, error: 'Too many report checks from this network. Try again in a minute.' });
   const url = new URL(req.url || '/', 'https://lgme.app');
   const topic = url.searchParams.get('topic') || TOPIC;
+  const topicCheck = check(topic, { ...fields.hedera, required: true }, 'topic');
+  if (!topicCheck.ok) return json(res, 400, { ok: false, error: topicCheck.error });
   if (!readableTopic(topic, readEnv())) return json(res, 400, { ok: false, error: 'Only the legacy testnet topic 0.0.11397291, or HEDERA_TESTNET_TOPIC_ID, can be read.' });
   const response = await fetch(`https://testnet.mirrornode.hedera.com/api/v1/topics/${topic}/messages?limit=20&order=desc`);
   if (!response.ok) return json(res, 502, { ok: false, error: 'The testnet mirror did not answer.', topic });

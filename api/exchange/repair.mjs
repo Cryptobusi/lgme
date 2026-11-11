@@ -1,4 +1,4 @@
-import { readBody, json, readEnv } from '../lib/http.mjs';
+import { guardRequest, readBody, json, readEnv } from '../lib/http.mjs';
 import { upstashStore } from '../lib/upstash.mjs';
 import { redisRest } from '../../js/redis-env.mjs';
 import { gymChatReady } from '../../js/gym-sync.mjs';
@@ -20,6 +20,7 @@ export default async function handler(req, res) {
   if (req.method === 'GET') return json(res, 200, publicRepairFeed(book));
   if (req.method !== 'POST') return json(res, 405, { ok: false, error: 'Use GET or POST.' });
   const action = String((await peekAction(req)) || '');
+  if (guardRequest(req, res)) return;
   if (!ALLOWED_ACTIONS.has(action)) return json(res, 403, { ok: false, viewOnly: true, error: VIEW_ONLY_MESSAGE });
   const ip = String(req.headers?.['x-forwarded-for'] || 'local').split(',')[0].trim();
   const paced = allowRate(hits, ip);
