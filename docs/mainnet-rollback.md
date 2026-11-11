@@ -4,6 +4,10 @@ This note is not a public page. `docs/` is in `.vercelignore`, and this file is 
 
 Hedera writes stay on testnet. `HEDERA_NETWORK` is not set to mainnet by this prep.
 
+## One-time Health setup
+
+`POST /api/hedera/mainnet-setup` with the owner header creates the keyed Health topic if it is missing and writes one hash. It does not print the operator key. General mainnet writes stay closed until `HEDERA_NETWORK` is `mainnet` on production.
+
 ## Switch back
 
 1. Set `HEDERA_NETWORK` to `testnet` on production and preview.

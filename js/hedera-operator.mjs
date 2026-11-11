@@ -15,17 +15,15 @@ function parsersFor(type) {
   return ['fromStringECDSA', 'fromStringED25519', 'fromString'];
 }
 
-export async function testnetOperatorKey(sdk, env = {}, fetchImpl = globalThis.fetch) {
-  const secret = String(env.HEDERA_TESTNET_OPERATOR_KEY || '').trim();
-  const accountId = String(env.HEDERA_TESTNET_OPERATOR_ID || '').trim();
+async function operatorKeyFor(sdk, { secret, accountId, mirror, missing, unread, mismatch, fetchImpl }) {
   if (!secret || !accountId) {
-    const error = new Error('The testnet operator is not configured.');
+    const error = new Error(missing);
     error.public = true;
     throw error;
   }
-  const response = await fetchImpl(`https://testnet.mirrornode.hedera.com/api/v1/accounts/${accountId}`);
+  const response = await fetchImpl(mirror);
   if (!response?.ok) {
-    const error = new Error('The testnet account could not be read.');
+    const error = new Error(unread);
     error.public = true;
     throw error;
   }
@@ -46,9 +44,35 @@ export async function testnetOperatorKey(sdk, env = {}, fetchImpl = globalThis.f
     }
   }
   if (!matched) {
-    const error = new Error('The testnet operator key does not match this account.');
+    const error = new Error(mismatch);
     error.public = true;
     throw error;
   }
   return matched;
+}
+
+export async function testnetOperatorKey(sdk, env = {}, fetchImpl = globalThis.fetch) {
+  const accountId = String(env.HEDERA_TESTNET_OPERATOR_ID || '').trim();
+  return operatorKeyFor(sdk, {
+    secret: String(env.HEDERA_TESTNET_OPERATOR_KEY || '').trim(),
+    accountId,
+    mirror: `https://testnet.mirrornode.hedera.com/api/v1/accounts/${accountId}`,
+    missing: 'The testnet operator is not configured.',
+    unread: 'The testnet account could not be read.',
+    mismatch: 'The testnet operator key does not match this account.',
+    fetchImpl
+  });
+}
+
+export async function mainnetOperatorKey(sdk, env = {}, fetchImpl = globalThis.fetch) {
+  const accountId = String(env.HEDERA_MAINNET_OPERATOR_ID || '').trim();
+  return operatorKeyFor(sdk, {
+    secret: String(env.HEDERA_MAINNET_OPERATOR_KEY || '').trim(),
+    accountId,
+    mirror: `https://mainnet.mirrornode.hedera.com/api/v1/accounts/${accountId}`,
+    missing: 'The mainnet operator is not configured.',
+    unread: 'The mainnet account could not be read.',
+    mismatch: 'The mainnet operator key does not match this account.',
+    fetchImpl
+  });
 }

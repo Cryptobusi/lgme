@@ -1,0 +1,127 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import handler from '../api/hedera/mainnet-setup.mjs';
+import { adminTokenOk, healthSetupMessage, runHealthMainnetSetup, TOPIC_MEMO } from '../js/mainnet-health-setup.mjs';
+import { chainPayloadSafe, mainnetPayloadAllowed } from '../js/hedera-network.mjs';
+
+const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const SECRET = 'not-a-real-operator-key';
+
+function memory() {
+  const bag = new Map();
+  return {
+    async get(key) { return bag.has(key) ? bag.get(key) : null; },
+    async set(key, value) { bag.set(key, value); }
+  };
+}
+
+function response() {
+  return {
+    statusCode: 0,
+    body: '',
+    setHeader() {},
+    end(text) { this.body = text; }
+  };
+}
+
+function sdkFor(calls) {
+  const key = { publicKey: { toStringRaw: () => 'abc' } };
+  return {
+    Client: { forMainnet: () => ({ setOperator() {}, setMaxTransactionFee() {}, close() {} }) },
+    AccountId: { fromString: (id) => id },
+    Hbar: class { constructor(value) { this.value = value; } },
+    PrivateKey: {
+      fromStringED25519: () => key,
+      fromStringECDSA() { throw new Error('ecdsa'); },
+      fromString() { throw new Error('raw'); },
+      fromStringDer() { throw new Error('der'); }
+    },
+    TopicCreateTransaction: class {
+      setTopicMemo(memo) { calls.memo = memo; return this; }
+      setAdminKey() { return this; }
+      setSubmitKey() { return this; }
+      async execute() {
+        calls.actions.push('create');
+        return {
+          transactionId: { toString: () => '0.0.1273453@1700000000.000000000' },
+          getReceipt: async () => ({ topicId: { toString: () => '0.0.555001' } }),
+          getRecord: async () => ({ transactionFee: { toTinybars: () => 1_000_000 } })
+        };
+      }
+    },
+    TopicMessageSubmitTransaction: class {
+      constructor(spec) { calls.message = spec.message; }
+      async execute() {
+        calls.actions.push('message');
+        return {
+          transactionId: { toString: () => '0.0.1273453@1700000001.000000000' },
+          getRecord: async () => ({
+            transactionFee: { toTinybars: () => 50_000 },
+            receipt: { topicSequenceNumber: { toString: () => '1' } },
+            transactionId: { toString: () => '0.0.1273453@1700000001.000000000' }
+          })
+        };
+      }
+    }
+  };
+}
+
+function fetchImpl(url) {
+  if (String(url).includes('/accounts/')) {
+    return Promise.resolve({ ok: true, json: async () => ({ key: { _type: 'ED25519', key: 'abc' } }) });
+  }
+  return Promise.resolve({ ok: true, json: async () => ({ transactions: [] }) });
+}
+
+const env = {
+  VERCEL_ENV: 'production',
+  HEDERA_MAINNET_OPERATOR_ID: '0.0.1273453',
+  HEDERA_MAINNET_OPERATOR_KEY: SECRET,
+  OWNER_INBOX_TOKEN: 'inbox-token'
+};
+
+test('the setup route stays closed without the owner token', async () => {
+  assert.equal(adminTokenOk('', env), false);
+  assert.equal(adminTokenOk('other', env), false);
+  assert.equal(adminTokenOk('inbox-token', env), true);
+  const res = response();
+  await handler({ method: 'POST', headers: {} }, res);
+  assert.equal(res.statusCode, 401);
+  assert.equal(res.body.includes(SECRET), false);
+});
+
+test('the Health setup writes one hash to a keyed topic and stays under the cap', async () => {
+  const built = await healthSetupMessage('2026-11-11');
+  assert.equal(built.ok, true);
+  assert.equal(mainnetPayloadAllowed(built.body).ok, true);
+  assert.equal(chainPayloadSafe(built.body).ok, true);
+  assert.equal(JSON.stringify(built.body).includes('diagnosis'), false);
+  const calls = { actions: [] };
+  const store = memory();
+  const first = await runHealthMainnetSetup(env, { store, sdk: sdkFor(calls), fetchImpl, now: new Date('2026-11-11T12:00:00.000Z') });
+  assert.equal(first.ok, true);
+  assert.equal(first.created, true);
+  assert.equal(first.topicId, '0.0.555001');
+  assert.equal(first.transactionId, '0.0.1273453@1700000001.000000000');
+  assert.equal(calls.memo, TOPIC_MEMO);
+  assert.deepEqual(calls.actions, ['create', 'message']);
+  assert.equal(first.hbarSpent, 0.0105);
+  assert.equal(JSON.stringify(first).includes(SECRET), false);
+  const again = await runHealthMainnetSetup(env, { store, sdk: sdkFor({ actions: [] }), fetchImpl, now: new Date('2026-11-11T13:00:00.000Z') });
+  assert.equal(again.already, true);
+  assert.equal(again.hbarSpent, 0);
+  const blocked = memory();
+  await blocked.set('hedera:mainnet:spent:2026-11-11', 95_000_000);
+  const refused = await runHealthMainnetSetup(env, { store: blocked, sdk: sdkFor({ actions: [] }), fetchImpl, now: new Date('2026-11-11T12:00:00.000Z') });
+  assert.equal(refused.ok, false);
+  assert.match(refused.error, /cap/);
+});
+
+test('the setup source does not print the operator key', () => {
+  const source = readFileSync(join(root, 'api/hedera/mainnet-setup.mjs'), 'utf8') + readFileSync(join(root, 'js/mainnet-health-setup.mjs'), 'utf8');
+  assert.equal(source.includes('console.log'), false);
+  assert.equal(source.includes('forTestnet'), false);
+});
