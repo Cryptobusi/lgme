@@ -34,7 +34,8 @@ body.has-site-nav { padding-top: 3.25rem; scroll-padding-top: 4rem; }
 html.has-site-nav body:has(#exchange-overview),
 body.has-site-nav:has(#exchange-overview) { padding-top: 0; }
 html.has-site-nav body:has(#exchange-overview) .launch-bar { margin-top: 3.25rem; }
-html.has-site-nav body { padding-bottom: calc(12.5rem + env(safe-area-inset-bottom)); }
+html.has-site-nav body { padding-bottom: calc(20rem + env(safe-area-inset-bottom)); }
+html.has-site-nav :is(button, a, input, textarea, select, label) { scroll-margin-top: 5rem; scroll-margin-bottom: 20rem; }
 html.has-site-nav body:has(nav[aria-label="Gym"]) { padding-bottom: calc(17rem + env(safe-area-inset-bottom)); }
 #ai-dock {
   position: fixed;
@@ -66,12 +67,12 @@ body:has(nav[aria-label="Gym"]) #ai-dock { bottom: calc(4.5rem + env(safe-area-i
 #ai-dock.is-off #ai-chips,
 #ai-dock.is-off #ai-ask,
 #ai-dock.is-off .ai-actions { display: none; }
-#ai-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; min-height: 44px; margin: 0 0 0.25rem; }
+#ai-chips { display: flex; flex-wrap: nowrap; gap: 0.35rem; min-height: 44px; max-height: 44px; margin: 0 0 0.25rem; overflow-x: auto; }
 #ai-ask {
   box-sizing: border-box;
   display: block;
   width: 100%;
-  height: 66px;
+  height: 44px;
   min-height: 44px;
   margin: 0 0 0.25rem;
   padding: 0.35rem 0.5rem;
@@ -104,8 +105,6 @@ body:has(nav[aria-label="Gym"]) #ai-dock { bottom: calc(4.5rem + env(safe-area-i
 #ai-dock.is-open #ai-log { height: 40vh; }
 @media (max-height: 500px) {
   #ai-log, #ai-flag { display: none; }
-  #ai-ask { height: 44px; }
-  #ai-chips { flex-wrap: nowrap; overflow-x: auto; max-height: 44px; }
 }
 #ai-dock .ai-actions { display: flex; gap: 0.4rem; margin: 0.25rem 0 0; }
 #ai-dock button { min-height: 44px; min-width: 44px; font: inherit; font-weight: 700; border-radius: 999px; border: 1px solid #c6a15b; background: transparent; color: #f4f1e8; padding: 0.3rem 0.8rem; }
