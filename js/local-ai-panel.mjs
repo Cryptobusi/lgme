@@ -41,7 +41,7 @@ function paint(dock) {
   const guide = aiSetupSteps(navigator.userAgent);
   const lines = ready
     ? [promptFor(location.pathname), 'Tap Accept to keep this on the phone.', 'Nothing is sent until you confirm a Health step or an IwanIT.', 'You can scroll this note.', 'The helper stays on this device.']
-    : [guide.steps[0] || AI_ENABLE, guide.steps[1] || 'Open How to turn AI on.', 'Tap Check again on that page.', 'Browsing stays open.', 'The helper stays on this device.'];
+    : [AI_ENABLE, guide.steps[0] || 'Open How to turn AI on.', guide.steps[1] || 'Tap Check again on that page.', 'Browsing stays open.', 'The helper stays on this device.'];
   log.textContent = lines.join('\n');
   flag.hidden = !signedIn();
   flag.textContent = `${FLAG} Online: ${online ? 'yes' : 'no'}. AI: ${ready ? 'yes' : 'no'}.`;
