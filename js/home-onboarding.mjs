@@ -1,3 +1,6 @@
+import { explainReady } from './device-capabilities.mjs';
+import { explainJoin } from './join-explain.mjs';
+
 const KEY = 'lgme.exchange.onboardDraft';
 
 function show(step) {
@@ -68,6 +71,23 @@ document.getElementById('receipt-draft')?.addEventListener('submit', (event) => 
   show(4);
 });
 
+function mountExplain() {
+  const host = document.getElementById('join-explain');
+  const button = document.getElementById('explain-join');
+  const question = document.getElementById('explain-question');
+  const answer = document.getElementById('explain-answer');
+  if (!host || !button || !answer) return;
+  if (!explainReady(window).ok) {
+    host.hidden = true;
+    return;
+  }
+  host.hidden = false;
+  button.addEventListener('click', () => {
+    const result = explainJoin(question?.value || '');
+    answer.textContent = result.text;
+  });
+}
+
 const saved = readDraft();
 document.querySelectorAll('#circle-choices [data-circle]').forEach((button) => {
   if (button.dataset.circle === saved.circle) button.setAttribute('aria-pressed', 'true');
@@ -80,3 +100,4 @@ if (saved.what) {
   fillCard(saved);
 }
 show(1);
+mountExplain();

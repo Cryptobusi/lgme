@@ -230,6 +230,23 @@
     .card h2 { font-size: 1.35rem; margin: 0.2rem 0 0.4rem; }
     .steps { display: grid; gap: 0.7rem; margin: 0.6rem 0; }
     .steps article { border-top: 1px solid var(--line); padding-top: 0.7rem; }
+    .plain-steps { margin: 0.15rem 0 0.45rem; padding-left: 1.25rem; }
+    .plain-steps li { margin: 0.28rem 0; }
+    .join-explain { display: grid; gap: 0.4rem; margin-top: 0.35rem; }
+    .join-explain[hidden] { display: none; }
+    .join-explain label { font-size: 1rem; }
+    .join-explain input, .join-explain button {
+      font: inherit; min-height: 44px; box-sizing: border-box;
+    }
+    .join-explain input {
+      width: 100%; padding: 0.45rem 0.6rem; border: 1px solid var(--line);
+      border-radius: 8px; background: var(--bg); color: var(--fg);
+    }
+    .join-explain button {
+      text-align: left; padding: 0.55rem 0.8rem; border: 1px solid var(--line);
+      background: transparent; color: var(--fg); border-radius: 10px; cursor: pointer;
+    }
+    #explain-answer { margin: 0; }
     .note { font-size: 0.92rem; color: var(--muted); }
     .onboard { border: 1px solid var(--line); border-radius: 14px; padding: 1rem; margin-top: 1rem; }
     .onboard h2 { font-size: 1.5rem; }
@@ -456,10 +473,22 @@
         <h2>Log the Action</h2>
         <p class="muted">Name the deed, the other person, and the hours. Campus deeds earn credit, not coins. Earlier coin records on /pumpup are kept.</p>
       </article>
-      <article>
+      <article id="join-step-2">
         <p class="kicker">2</p>
-        <h2>Co-Sign &amp; Verify</h2>
-        <p class="muted">Send a link or a QR. The other person confirms in one tap with the code already on their phone.</p>
+        <h2>Both people say yes</h2>
+        <ol class="plain-steps" id="join-steps">
+          <li>You write what you did.</li>
+          <li>You send the other person a link.</li>
+          <li>They open it and tap yes.</li>
+          <li>The note stays on your phones until you both say yes.</li>
+          <li>Nothing is saved until you both agree.</li>
+        </ol>
+        <div class="join-explain" id="join-explain" hidden>
+          <label for="explain-question">Ask about these steps</label>
+          <input id="explain-question" maxlength="200" autocomplete="off" />
+          <button type="button" id="explain-join">Explain this to me</button>
+          <p id="explain-answer" role="status"></p>
+        </div>
       </article>
       <article>
         <p class="kicker">3</p>

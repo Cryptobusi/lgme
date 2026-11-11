@@ -20,6 +20,21 @@ export function pushReadiness({ ios, major, minor, standalone, notification, pus
   return { state: 'yes', detail: 'Push can be asked for on this device. Nothing is sent until you allow it.' };
 }
 
+export function explainReady(scope = globalThis) {
+  const nav = scope.navigator || {};
+  if (nav.lgmeAi === 'off') return { ok: false, tier: 'none', reason: 'No helper on this device.' };
+  const browser = scope.LanguageModel || scope.ai?.languageModel;
+  if (browser && (typeof browser.create === 'function' || typeof browser.prompt === 'function' || typeof browser.availability === 'function')) {
+    return { ok: true, tier: 'browser', reason: 'This browser has a built-in helper.' };
+  }
+  const profile = {
+    webgpu: nav.gpu?.requestAdapter ? 'yes' : 'no',
+    wasmSimd: wasmSimdSupported(scope) ? 'yes' : 'no'
+  };
+  const picked = pickAiTier(profile);
+  return { ok: true, tier: picked.tier, reason: picked.reason };
+}
+
 export function pickAiTier(profile) {
   if (profile.webgpu === 'yes') return { tier: 'on-device model', reason: 'WebGPU is available, so the larger on-device model can run here.' };
   if (profile.wasmSimd === 'yes') return { tier: 'smaller on-device model', reason: 'WASM SIMD is available. WebGPU is not, so the smaller tier is used.' };
