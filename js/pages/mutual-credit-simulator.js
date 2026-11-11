@@ -458,7 +458,7 @@ import { clearingWindow, merkleProofFor, merkleRootOf, verifyMerkleProof } from 
 **Date:** ${now}  
 **Label:** Beta  
 **Target Index:** hederica.com  
-**Consensus Engine:** Hedera Consensus Service (example topic 0.0.489104)  
+**Consensus Engine:** Local book. Nothing on this page is anchored or written to Hedera.
 **Clearing Engine:** Komunitin Mutual Credit Protocol   
 ---
 ## 1. System Parameters & Architecture
@@ -563,7 +563,7 @@ import { clearingWindow, merkleProofFor, merkleRootOf, verifyMerkleProof } from 
       const leaves = state.tape.filter((entry) => String(entry.at).slice(0, 10) === day).map((entry) => entry.hash);
       const root = await merkleRootOf(leaves);
       const node = document.getElementById('dayRoot');
-      if (node) node.textContent = `Day root ${root.slice(0, 16)}. A future Hedera anchor would publish this. Not written to Hedera.`;
+      if (node) node.textContent = `Day root ${root.slice(0, 16)}. Nothing on this page is anchored or written to Hedera.`;
       return { day, leaves, root };
     }
     async function netOut() {

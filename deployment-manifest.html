@@ -56,7 +56,7 @@
   <p class="kicker"><a href="/">lgme</a> · <a href="/hederica">Hederica</a> · Deployment</p>
   <h1>Deployment Manifest &amp; Index Spec</h1>
   <p class="muted"><strong>Domain Identifier:</strong> <code>lgme.hederica.com</code><br>
-  <strong>Consensus Layer:</strong> Hedera Consensus Service (HCS)<br>
+  <strong>Consensus Layer:</strong> Local book. Nothing on this page is anchored or written to Hedera.<br>
   <strong>Clearing Engine:</strong> Komunitin Mutual Credit Core (CES 2.0 compatible)<br>
   <strong>Security Model:</strong> Auto-Secure Client-Side Ed25519 Enclave (WebAuthn PRF)<br>
   <strong>Status:</strong> Indexed &amp; Staged for Deployment</p>
@@ -71,10 +71,10 @@
              [Bilateral Handshake]
            ┌───────────┴───────────┐
            ▼                       ▼
-  [Komunitin Ledger]       [Hedera Consensus]
-  - Port 2025 (Accounting)  - Topic ID: 0.0.489104
-  - Double-Entry Net       - Running Hash Sequencing
-  - Sum = 0 Invariant      - 3-5s Finality Anchor
+  [Komunitin Ledger]       [Local book]
+  - Port 2025 (Accounting)  - Nothing is anchored or written to Hedera
+  - Double-Entry Net       - Hash chain on this page
+  - Sum = 0 Invariant      - No mainnet write
            │                       │
            └───────────┬───────────┘
                        ▼

@@ -1,5 +1,5 @@
 (function () {
-  var MESSAGE = 'View only for now. Only Health can create, sign, post, credit, sync, or anchor.';
+  var MESSAGE = 'View only for now. Only Health can create, sign, post, credit, or sync.';
 
   function banner() {
     if (document.getElementById('view-only-banner')) return;

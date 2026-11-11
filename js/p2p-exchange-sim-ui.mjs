@@ -1733,7 +1733,7 @@ async function renderBooks(peers, seat) {
   panel.replaceChildren(
     h('h2', {}, [`${peer.name}'s book`]),
     windowBanner(),
-    h('p', { class: 'legend' }, [`Today's tape root ${dayRoot.slice(0, 16)}. A future Hedera anchor would publish this root. Not written to Hedera.`]),
+    h('p', { class: 'legend' }, [`Today's tape root ${dayRoot.slice(0, 16)}. Nothing on this page is anchored or written to Hedera.`]),
     hederaHost(peer),
     h('p', { class: 'muted' }, [`Tape · public ledger. Every line below is on this peer’s book. Credits and debits come only from settlements, payments, and rewards. The running balance is a replay. Key ${finger}. Limit ${rule.creditLimit}.`]),
     h('div', { class: 'nums' }, [
@@ -4573,7 +4573,7 @@ function showSplash() {
 }
 
 const WALK = [
-  ['Beta', 'This desk settles agreed $lgme from your own Solana wallet. It does not hold a seed phrase or send email. Exchange test listings are written to Hedera testnet topic 0.0.11397293 and paid by 0.0.11281203. You confirm a draft before it is posted.'],
+  ['Beta', 'This desk settles agreed $lgme from your own Solana wallet. It does not hold a seed phrase or send email. Nothing on this page is anchored or written to Hedera. You confirm a draft before it is posted.'],
   ['Separate books', 'Alice, Bob, and Charlie each keep their own tape. On one device you switch seats. On two devices you carry a signed message. There is no central ledger.'],
   ['Floor · basic needs reserve', 'Food, shelter, and essentials secured prior to speculative spending. A line that would spend that reserve is blocked and the block stays on the tape.'],
   ['Third Seat · your seat', 'The Third Seat is your seat, held by you alone, with equal standing beside the state and the firm. You may decline any exchange at no cost, no unpublished rule can bind you, and any hold on your exchange must give a reason and can be challenged, decided within 7 days or it lapses. Holds the law requires are cited, recorded, and kept no broader or longer than the law demands. Nothing moves. There is no penalty.'],

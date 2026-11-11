@@ -99,7 +99,7 @@
 <h2>What this Beta does</h2>
 <ol>
   <li>An agreed price is in US dollars. The app reads a live $lgme price and locks the token amount for 15 seconds. Both people see that amount before a wallet request is opened. If the quote expires, it is quoted again.</li>
-  <li>The locked price never moves more than 5% from the recent reference prices: the previous lock, one day, seven days, and thirty days. After a daily jump larger than 5%, that cap stays on the price from before the jump for seven days. $lgme is not a stablecoin.</li>
+  <li>The locked price never moves more than 5% from the recent reference prices: the previous lock, one day, seven days, and thirty days. After a daily jump larger than 5%, that cap stays on the price from before the jump for seven days. $lgme is pegged to US$. Values are set in US$ and converted at the live 3-second average.</li>
   <li>You pay the full price in $lgme from your own wallet. Mint <span class="muted">7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump</span>. The app holds no Solana key.</li>
   <li>The payment is pending until both parties attest. The payee checks the finalized transaction, then signs or refuses. A refusal has no penalty. One signature settles one invoice. A signature used twice is a double-spend and is not applied.</li>
   <li>Cash and Zelle are recorded only with proof: a Zelle confirmation, or a cash note or photo. The file stays on the phone. The tape stores the SHA-256 fingerprint. The payee attests or refuses. This app does not process the payment. Fiat may have statutory fees, reviewed per transaction.</li>
@@ -111,7 +111,7 @@
   <p>Every deal shows the Third Seat. The Third Seat is your seat, held by you alone, with a reason. The veto is a <strong>THIRD_SEAT_VETO</strong> line on both tapes. Nothing already settled moves. The count sits on the profile. The word is defined at <a href="https://www.egonomicanonymous.live/">egonomicanonymous.live</a>.</p>
   <p>Open IOUs accrue in a 7-day window, the same length as the price cap’s hold. At the close the desk nets what each side owes the other, then locks one US$ price for 15 seconds under the 5% cap. What is still open rolls to the next window, or becomes pay-in-terms. The payer chooses.</p>
   <p>When both sides owe each other, Net out proposes the smaller amount. Both attest with the 6-digit code. Either can refuse. A three-person cycle is kept for a later window close. It is not a button yet.</p>
-  <p>Each day, and each clearing window, the phone builds a SHA-256 Merkle root over the tape entries. That root is on the receipt and in an exported record. Prove entry writes an inclusion proof you can paste back and check. This root is what a future Hedera anchor would publish. It is not published now.</p>
+  <p>Each day, and each clearing window, the phone builds a SHA-256 Merkle root over the tape entries. That root is on the receipt and in an exported record. Prove entry writes an inclusion proof you can paste back and check. Nothing on this page is anchored or written to Hedera.</p>
 </div>
 <p>
   <a class="go" href="/exchange">Open the exchange</a>
