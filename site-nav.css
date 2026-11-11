@@ -1,11 +1,16 @@
 #site-nav {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 50;
   display: flex;
   gap: 0.5rem;
   align-items: center;
-  padding: 0.4rem 0.6rem;
+  box-sizing: border-box;
+  height: 3.25rem;
+  padding: 0.35rem 0.6rem;
+  padding-top: max(0.35rem, env(safe-area-inset-top));
   background: #0c100c;
   border-bottom: 1px solid #2c352b;
 }
@@ -24,4 +29,5 @@
   font-weight: 700;
   text-decoration: none;
 }
-body.has-site-nav { scroll-padding-top: 4rem; }
+body.has-site-nav { padding-top: 3.25rem; scroll-padding-top: 4rem; }
+body.has-site-nav:has(#exchange-overview) { padding-top: 0; }
