@@ -113,6 +113,9 @@ export function mountCategoryBoard(root = document.getElementById('category-boar
         button.addEventListener('click', () => { state.detail = row; paint(); });
         list.append(button);
       }
+      if (state.promptText && (state.action === 'iwantit' || state.action === 'ihavit')) {
+        list.append(el('p', { id: 'prompt-draft' }, [`Draft: ${state.promptText}`]));
+      }
       if (current.id === 'health' && state.action === 'ihavit') {
         for (const offer of state.offers) {
           const button = el('button', { type: 'button', class: 'category-row' }, ['Custom setup offered', el('span', {}, [`${offer.name} · ${offer.authorId}`])]);
@@ -173,7 +176,19 @@ export function mountCategoryBoard(root = document.getElementById('category-boar
     root.replaceChildren(...pieces);
   };
 
+  const takePrompt = () => {
+    try {
+      const draft = JSON.parse(sessionStorage.getItem('lgme.prompt.draft') || 'null');
+      if (!draft || (draft.kind !== 'iwantit' && draft.kind !== 'ihavit')) return;
+      state.action = draft.kind;
+      state.promptText = draft.text;
+      sessionStorage.removeItem('lgme.prompt.draft');
+      paint();
+    } catch { /* the board stays */ }
+  };
   paint();
+  takePrompt();
+  window.addEventListener('lgme-prompt', takePrompt);
   fetch('/api/categories').then((response) => response.json()).then((body) => {
     const next = Array.isArray(body?.proposals) ? body.proposals : [];
     if (JSON.stringify(next) === JSON.stringify(state.proposals)) return;

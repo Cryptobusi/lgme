@@ -2092,6 +2092,13 @@ async function renderIdidIt() {
     'data-help': 'This names what you finished, on this phone.',
     'data-options': IDIDIT_CHIPS.join('|')
   });
+  try {
+    const draft = JSON.parse(sessionStorage.getItem('lgme.prompt.draft') || 'null');
+    if (draft?.kind === 'ididit' && draft.text) {
+      title.value = String(draft.text).slice(0, 80);
+      sessionStorage.removeItem('lgme.prompt.draft');
+    }
+  } catch { /* the default title stays */ }
   const statusLine = el('p', { id: 'ididit-status', role: 'status' });
   const confirm = el('button', { type: 'button', class: 'primary', id: 'gym-ididit-confirm' }, ['Confirm']);
   confirm.addEventListener('click', async () => {

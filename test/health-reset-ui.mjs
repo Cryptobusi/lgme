@@ -93,7 +93,7 @@ await homePage.locator('.badge', { hasText: 'In development' }).first().waitFor(
 await homePage.screenshot({ path: '/opt/cursor/artifacts/health-first-390.png', timeout: 8000, animations: 'disabled' });
 await homePage.locator('#ai-switch').click();
 if (await homePage.locator('#ai-switch').getAttribute('aria-checked') !== 'false') failures.push('switch did not turn off');
-if (await homePage.locator('#ai-log').isVisible()) failures.push('draft stayed visible while AI is off');
+if (/Turn on the browser/.test(await homePage.locator('#ai-log').innerText())) failures.push('long setup stayed visible');
 await homePage.screenshot({ path: '/opt/cursor/artifacts/ai-toggle-off-390.png', timeout: 8000, animations: 'disabled' });
 await homePage.locator('#ai-switch').click();
 if (!/AI on/i.test(await homePage.locator('#ai-switch').innerText())) failures.push('pill did not turn on');
@@ -158,7 +158,7 @@ for (const [width, height] of [[390, 844], [768, 1024], [1280, 800]]) {
       const on = await page.locator('#ai-switch').getAttribute('aria-checked');
       if (on !== 'true') failures.push(`${width} ${path} switch ${on}`);
       await page.locator('#ai-switch').click();
-      if (await page.locator('#ai-log').isVisible()) failures.push(`${width} ${path} still open`);
+      if (/Turn on the browser/.test(await page.locator('#ai-log').innerText())) failures.push(`${width} ${path} long setup`);
       await page.locator('#ai-switch').click();
       if (await page.locator('#ai-switch').getAttribute('aria-checked') !== 'true') failures.push(`${width} ${path} did not turn on`);
     } catch (error) {
@@ -182,7 +182,7 @@ for (const path of ['/gym', '/tap-entry', '/my-picture']) {
   await app.goto(`${base}${path}`, { waitUntil: 'domcontentloaded' });
   await app.locator('#ai-switch').waitFor();
   await app.locator('#ai-switch').click();
-  if (await app.locator('#ai-log').isVisible()) failures.push(`pwa ${path} still open`);
+  if (/Turn on the browser/.test(await app.locator('#ai-log').innerText())) failures.push(`pwa ${path} long setup`);
   await app.locator('#ai-switch').click();
 }
 await installed.close();

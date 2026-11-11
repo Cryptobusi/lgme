@@ -76,11 +76,8 @@ body:has(nav[aria-label="Gym"]) #ai-dock { bottom: calc(4.5rem + env(safe-area-i
 .ai-label { margin: 0; font-size: 0.72rem; letter-spacing: 0.16em; font-weight: 700; color: #F97316; }
 .ai-setup-link { min-height: 32px; display: inline-flex; align-items: center; color: #f4f1e8; }
 #app-reset-note { margin: 0 0 0.2rem; font-weight: 700; }
-#ai-dock.is-off #ai-log,
 #ai-dock.is-off #ai-flag,
-#ai-dock.is-off #ai-chips,
-#ai-dock.is-off #ai-ask,
-#ai-dock.is-off .ai-actions { display: none; }
+#ai-dock.is-off #ai-accept { display: none; }
 #ai-dock.is-off.has-field #ai-log { display: block; }
 #ai-dock.is-off.has-field #ai-chips { display: flex; }
 #ai-dock.has-field { display: flex; flex-direction: column; }
@@ -128,6 +125,11 @@ body:has(nav[aria-label="Gym"]) #ai-dock { bottom: calc(4.5rem + env(safe-area-i
 @media (max-height: 500px) {
   #ai-log, #ai-flag { display: none; }
 }
+#ai-scroll { position: relative; overflow: auto; min-height: 6.5rem; max-height: 7.5rem; }
+#ai-dock.is-compact #ai-scroll { min-height: 4.5rem; max-height: 5.25rem; }
+#ai-dock.is-tall #ai-scroll { min-height: 10rem; max-height: min(40vh, 16rem); }
+#ai-scroll.is-over { -webkit-mask-image: linear-gradient(#000 60%, transparent); mask-image: linear-gradient(#000 60%, transparent); }
+#ai-more { margin: 0; font-size: 0.75rem; font-weight: 700; color: #F97316; }
 #ai-dock .ai-actions { display: flex; gap: 0.4rem; margin: 0.25rem 0 0; }
 #ai-dock button { min-height: 44px; min-width: 44px; font: inherit; font-weight: 700; border-radius: 999px; border: 1px solid #c6a15b; background: transparent; color: #f4f1e8; padding: 0.3rem 0.8rem; }
 #ai-accept:disabled { opacity: 0.7; }
