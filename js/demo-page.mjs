@@ -155,7 +155,7 @@ function paintCode() {
     });
     const body = await response.json().catch(() => ({}));
     if (!body.ok) { status.textContent = body.error || body.waiting || 'Not verified.'; return; }
-    saveDemo(localStorage, { emailHash: body.emailHash || 'demo', at: new Date().toISOString() });
+    saveDemo(localStorage, { emailHash: body.emailHash || 'demo', disclaimer: false, at: new Date().toISOString() });
     localStorage.setItem('lgme-gym.seat', 'demo');
     writePending(null);
     state.email = '';
@@ -209,7 +209,7 @@ if (!member) {
     state.email = pending.email;
     paintCode();
   } else paintEmail();
-} else if (!member.disclaimer) {
+} else if (member.disclaimer === false) {
   gate(true);
   paintDisclaimer();
 } else if (pending?.step === 'guide' && pending.choice && !member.choice) {
