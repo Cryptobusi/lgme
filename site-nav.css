@@ -29,5 +29,8 @@
   font-weight: 700;
   text-decoration: none;
 }
+html.has-site-nav body,
 body.has-site-nav { padding-top: 3.25rem; scroll-padding-top: 4rem; }
+html.has-site-nav body:has(#exchange-overview),
 body.has-site-nav:has(#exchange-overview) { padding-top: 0; }
+html.has-site-nav body:has(#exchange-overview) .launch-bar { margin-top: 3.25rem; }

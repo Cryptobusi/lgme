@@ -3,6 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/site-nav.css" />
+  <script src="/js/stable-screen.js"></script>
   <script src="/js/ui-view.js"></script>
   <link rel="stylesheet" href="/css/ui-view.css" />
   <link rel="manifest" href="/manifest.json" />
@@ -56,11 +58,12 @@
     a:hover { color: var(--gold); }
     .menu-toggle {
       position: sticky;
-      top: 0;
+      top: 3.25rem;
       z-index: 6;
       display: flex;
       align-items: center;
       width: 100%;
+      min-height: 44px;
       margin: 0 0 0.4rem;
       padding: 0.45rem 0;
       background: var(--bg);
@@ -93,6 +96,7 @@
       display: block;
       width: 100%;
       height: auto;
+      aspect-ratio: 16 / 9;
       margin: 0 0 1.75rem;
       background: #000;
       border: 1px solid #3d3424;
@@ -110,6 +114,7 @@
       color: #e4d3a2;
     }
     code { font-family: ui-monospace, monospace; font-size: 0.88em; color: var(--fg); background: var(--panel); padding: 0.08em 0.35em; border-radius: 4px; }
+    .ego { display: block; width: min(22rem, 100%); height: auto; aspect-ratio: 768 / 1152; }
     .coin {
       display: block;
       width: min(22rem, 100%);
@@ -310,7 +315,9 @@
       .entry-grid { grid-template-columns: repeat(4, 1fr); }
       .entry-tile.health { grid-column: span 2; }
     }
+    html.demo-gate body > *:not(#demo-root):not(#site-nav),
     body.demo-gate > *:not(#demo-root):not(#site-nav) { display: none !important; }
+    html.demo-member #demo-root { min-height: 24rem; }
     #demo-root { max-width: 40rem; margin: 0 auto; padding: 1rem; }
     #demo-root h2 { font-family: Newsreader, serif; font-weight: 500; }
     #demo-root input, #demo-root textarea, #demo-root button { font: inherit; min-height: 44px; }
@@ -675,7 +682,7 @@
     <h2>The system isn’t broken. It’s working exactly as intended.</h2>
     <p class="muted">Let’s make the economy work for everyone. <a href="https://lgme.app">$LGME</a></p>
     <div class="plates">
-      <a href="https://x.com/Trancesage/status/2111605929862967314"><img src="/unconstrained-ego.jpg" alt="Inequality isn’t a math error. It’s the unconstrained ego." /></a>
+      <a href="https://x.com/Trancesage/status/2111605929862967314"><img class="ego" src="/unconstrained-ego.jpg" width="768" height="1152" alt="Inequality isn’t a math error. It’s the unconstrained ego." /></a>
     </div>
     <p class="muted">Voice of <a href="https://x.com/Trancesage">@Trancesage</a>. The ego is on the plate. The full psychoanalytic breakdown is on <a href="https://www.egonomicanonymous.live/psychology">Psychology</a>.</p>
   </section>

@@ -5,7 +5,17 @@ import { ensureDeviceKey } from './device-sign.mjs';
 const root = document.getElementById('demo-root');
 if (!root) throw new Error('missing demo root');
 
-const state = { step: 'email', email: '', choice: '', draft: null };
+const PENDING = 'lgme.demo.pending';
+const state = { step: 'email', email: '', choice: '', draft: null, busy: false };
+
+function readPending() {
+  try { return JSON.parse(sessionStorage.getItem(PENDING) || 'null'); } catch { return null; }
+}
+
+function writePending(value) {
+  if (!value) sessionStorage.removeItem(PENDING);
+  else sessionStorage.setItem(PENDING, JSON.stringify(value));
+}
 
 function el(tag, attrs = {}, children = []) {
   const node = document.createElement(tag);
@@ -67,6 +77,9 @@ function paintGuide() {
   });
   const confirm = el('button', { type: 'button', class: 'primary', id: 'demo-confirm' }, ['Confirm']);
   confirm.addEventListener('click', async () => {
+    if (state.busy) return;
+    state.busy = true;
+    confirm.disabled = true;
     const post = { id: `me-${Date.now()}`, category: state.choice === 'Health' ? 'Health' : (ctx.category || 'Health'), title: title.value, at: new Date().toISOString(), example: false };
     if (state.choice !== 'Browse') savePost(localStorage, post);
     if (state.choice === 'IwanIT help develop') {
@@ -77,6 +90,7 @@ function paintGuide() {
       }).catch(() => {});
     }
     saveDemo(localStorage, { choice: state.choice });
+    writePending(null);
     if (state.choice === 'Health') { location.assign('/gym#/start'); return; }
     state.step = 'home';
     paintDashboard();
@@ -100,7 +114,12 @@ function paintChoice() {
     el('h2', {}, ['What do you want to do?']),
     el('div', { class: 'demo-choices' }, CHOICES.map((name) => {
       const button = el('button', { type: 'button', class: 'demo-choice' }, [name]);
-      button.addEventListener('click', () => { state.choice = name; state.step = 'guide'; paintGuide(); });
+      button.addEventListener('click', () => {
+        state.choice = name;
+        state.step = 'guide';
+        writePending({ step: 'guide', choice: name });
+        paintGuide();
+      });
       return button;
     }))
   ]));
@@ -108,7 +127,12 @@ function paintChoice() {
 
 function paintDisclaimer() {
   const button = el('button', { type: 'button', class: 'primary', id: 'demo-understand' }, ['I understand']);
-  button.addEventListener('click', () => { saveDemo(localStorage, { disclaimer: true }); state.step = 'choice'; paintChoice(); });
+  button.addEventListener('click', () => {
+    saveDemo(localStorage, { disclaimer: true });
+    writePending({ step: 'choice' });
+    state.step = 'choice';
+    paintChoice();
+  });
   root.replaceChildren(el('section', { id: 'demo-disclaimer' }, [
     el('h2', {}, ['Demo']),
     ...DISCLAIMER.map((line) => el('p', {}, [line])),
@@ -133,6 +157,8 @@ function paintCode() {
     if (!body.ok) { status.textContent = body.error || body.waiting || 'Not verified.'; return; }
     saveDemo(localStorage, { emailHash: body.emailHash || 'demo', at: new Date().toISOString() });
     localStorage.setItem('lgme-gym.seat', 'demo');
+    writePending(null);
+    state.email = '';
     state.step = 'disclaimer';
     paintDisclaimer();
   });
@@ -161,6 +187,7 @@ function paintEmail() {
     if (!body.ok) { status.textContent = body.error || body.waiting || 'Email sign-in is not connected yet.'; return; }
     state.email = email.value.trim();
     state.step = 'code';
+    writePending({ step: 'code', email: state.email });
     paintCode();
   });
   root.replaceChildren(el('section', { id: 'demo-email-step' }, [
@@ -175,10 +202,21 @@ function paintEmail() {
 
 const member = readDemo(localStorage);
 const force = new URLSearchParams(location.search).get('demo') === '1';
+const pending = readPending();
 if (!member) {
   gate(true);
-  paintEmail();
-} else if (force && !member.choice) {
+  if (pending?.step === 'code' && pending.email) {
+    state.email = pending.email;
+    paintCode();
+  } else paintEmail();
+} else if (!member.disclaimer) {
+  gate(true);
+  paintDisclaimer();
+} else if (pending?.step === 'guide' && pending.choice && !member.choice) {
+  gate(true);
+  state.choice = pending.choice;
+  paintGuide();
+} else if ((force || pending?.step === 'choice') && !member.choice) {
   gate(true);
   paintChoice();
 } else {

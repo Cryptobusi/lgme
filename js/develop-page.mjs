@@ -19,10 +19,10 @@ document.getElementById('want-body').value = context.handle
 if (context.skill) document.getElementById('want-skill').value = context.skill;
 if (context.time) document.getElementById('want-time').value = context.time;
 const helper = pickHelperSync();
-const helperNoteNode = document.createElement('p');
+const helperNoteNode = document.getElementById('want-helper') || document.createElement('p');
 helperNoteNode.id = 'want-helper';
 helperNoteNode.className = 'helper-note';
-form.before(helperNoteNode);
+if (!helperNoteNode.parentElement) form.before(helperNoteNode);
 showHelperNote(helperNoteNode, helper);
 refreshHelper(window, localStorage, (picked) => showHelperNote(helperNoteNode, picked));
 draftWithHelper(helper, {
@@ -51,6 +51,10 @@ if (helper.id !== 'none') {
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
+  const confirm = document.getElementById('want-confirm');
+  if (confirm.dataset.busy === '1') return;
+  confirm.dataset.busy = '1';
+  confirm.disabled = true;
   const payload = {
     kind: 'IwanIT',
     category: document.getElementById('want-category').value,
@@ -60,7 +64,12 @@ form.addEventListener('submit', async (event) => {
     time: document.getElementById('want-time').value
   };
   const built = publicHelpWant(payload);
-  if (!built.ok) { status.textContent = built.error; return; }
+  if (!built.ok) {
+    status.textContent = built.error;
+    confirm.disabled = false;
+    delete confirm.dataset.busy;
+    return;
+  }
   rememberContext(localStorage, { skill: payload.skill, time: payload.time, category: payload.category, handle: context.handle });
   if (!signedIn()) {
     sessionStorage.setItem(RETURN_KEY, `${location.pathname}${location.search}`);
@@ -76,6 +85,10 @@ form.addEventListener('submit', async (event) => {
   status.textContent = body.ok
     ? `Posted. ${body.item?.title || payload.title}. Testnet only.`
     : (body.error || 'Nothing was posted.');
+  if (!body.ok) {
+    confirm.disabled = false;
+    delete confirm.dataset.busy;
+  }
 });
 
 paint();

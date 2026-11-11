@@ -1,6 +1,8 @@
 <!doctype html>
 <html lang="en">
 <head>
+  <link rel="stylesheet" href="/site-nav.css" />
+  <script src="/js/stable-screen.js"></script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="manifest" href="/manifest.webmanifest" />
@@ -57,7 +59,8 @@
     button.quiet { color:var(--muted); background:transparent; }
     button:hover, .seat:hover { border-color:var(--accent); }
     button:disabled { opacity:0.55; cursor:wait; }
-    .panel { padding:1rem; }
+    .panel { padding:1rem; min-height: 16rem; }
+    #exchange-test { min-height: 9rem; }
     label { display:block; font-size:0.82rem; color:var(--muted); margin:0.55rem 0 0.25rem; }
     label.row { display:flex; align-items:center; gap:0.55rem; color:var(--fg); }
     label.row input { width:1.25rem; min-height:1.25rem; }
@@ -74,7 +77,7 @@
     .badge-verified { background:#F97316; color:#1c1b19; }
     .badge-unverified { background:transparent; color:var(--accent-text); border:1px solid #F97316; }
     .dash-slot { padding-top:0.35rem; padding-bottom:0; }
-    #exchange-overview.dash { padding:0.35rem 0.45rem 0.45rem; }
+    #exchange-overview.dash { padding:0.35rem 0.45rem 0.45rem; min-height: 13.5rem; }
     .exchange-hero { position:relative; margin:0.3rem 0 0; }
     .exchange-hero img { width:100%; height:160px; object-fit:cover; object-position:center 40%; border-radius:12px; display:block; }
     @media (min-width:800px) { .exchange-hero img { height:320px; } }
@@ -195,7 +198,7 @@
     .market-card h3 { font-family:Figtree,sans-serif; font-size:0.95rem; font-weight:600; letter-spacing:0; margin:0.4rem 0 0.1rem; }
     .price { font-weight:600; }
     .chips { display:flex; gap:0.35rem; overflow-x:auto; padding-bottom:0.15rem; }
-    .chips button { flex:0 0 auto; min-height:40px; }
+    .chips button { flex:0 0 auto; min-height:44px; }
     .tabbar .plus { display:block; font-size:1.2rem; line-height:1; font-weight:600; }
     .quiet-link { margin-left:0.6rem; letter-spacing:0.08em; color:var(--accent-text); text-decoration:none; }
     .bubble { padding:0.55rem 0.7rem; border:1px solid var(--line); border-radius:12px; margin:0.35rem 0; background:var(--bg); }

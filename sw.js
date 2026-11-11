@@ -1,5 +1,5 @@
 // lgme.app shell. HTML is fetched from the network first so a published change shows.
-const CACHE_NAME = "lgme-v155";
+const CACHE_NAME = "lgme-v156";
 const NET_MS = 8000;
 const SHELL = [
   "/",
@@ -171,6 +171,8 @@ const SHELL = [
   "/js/demo-page.mjs",
   "/js/site-nav.js",
   "/site-nav.css",
+  "/js/stable-screen.js",
+  "/404.html",
   "/develop",
   "/develop.html",
   "/js/develop-page.mjs",
@@ -279,7 +281,7 @@ self.addEventListener("fetch", (event) => {
           const copy = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(url.pathname, copy)).catch(() => {});
         }
-        if (response && (response.ok || response.type === "opaqueredirect")) return response;
+        if (response) return response;
         return fallback();
       })
       .catch(() => fallback())

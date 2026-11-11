@@ -2108,9 +2108,9 @@ async function boot() {
   const seated = seatId() || registered?.id;
   if (seated && recallPage(localStorage, seated) && (route() === '/' || route() === '/me')) location.hash = '/page';
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw-gym.js', { scope: '/gym' }).catch(() => {});
-  const deviceHost = document.createElement('div');
+  const deviceHost = document.getElementById('device-can-host') || document.createElement('div');
   deviceHost.id = 'device-can-host';
-  document.querySelector('header')?.append(deviceHost);
+  if (!deviceHost.parentElement) document.querySelector('header')?.append(deviceHost);
   mountDeviceCard(deviceHost).catch(() => {});
   startAgentLoop();
   window.addEventListener('hashchange', () => { render(); });

@@ -18,7 +18,9 @@ test('an installed launch opens the saved page, or Health, with no hop', () => {
   const bare = memory();
   const win = { matchMedia: () => ({ matches: true }) };
   const nav = { standalone: false, userAgent: 'Mozilla/5.0' };
-  assert.equal(installedEntry(bare, win, nav).href, '/gym');
+  assert.equal(installedEntry(bare, win, nav).open, false);
+  assert.equal(installedEntry(memory({ 'lgme.demo.member': '{"demo":true}' }), win, nav).href, '/gym');
+  assert.equal(installedEntry(memory({ 'lgme.demo.member': '{"demo":true}' }), { matchMedia: () => ({ matches: true }), location: { search: '?home=1' } }, nav).open, false);
   assert.equal(installedEntry(bare, { matchMedia: () => ({ matches: false }) }, nav).open, false);
   const saved = memory({
     'lgme-gym.seat': 'jordan',

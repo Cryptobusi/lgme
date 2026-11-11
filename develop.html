@@ -6,18 +6,22 @@
   <title>Help develop a category · lgme</title>
   <meta name="robots" content="noindex" />
   <link rel="stylesheet" href="/preview.css" />
+  <link rel="stylesheet" href="/site-nav.css" />
+  <script src="/js/stable-screen.js"></script>
   <style>
     label { display: block; margin: 0.7rem 0 0.25rem; }
     input, textarea { width: 100%; box-sizing: border-box; font: inherit; min-height: 44px; padding: 0.45rem 0.6rem; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--fg); }
     textarea { min-height: 6rem; }
     button { margin-top: 0.7rem; }
-    #want-status { min-height: 1.4rem; }
+    #want-status, #want-helper { min-height: 1.4rem; }
+    #want-suggest-row { min-height: 44px; }
   </style>
 </head>
 <body>
   <p class="kicker"><a href="/">Categories</a></p>
   <h1>Help develop this</h1>
   <p>This is an IwanIT. One tap posts it after you confirm. Nothing is sent until then.</p>
+  <p id="want-helper" class="helper-note"></p>
   <form id="want-form">
     <label for="want-kind">Type</label>
     <input id="want-kind" name="kind" value="IwanIT" readonly />
@@ -31,7 +35,7 @@
     <input id="want-skill" name="skill" maxlength="80" />
     <label for="want-time">Time, optional</label>
     <input id="want-time" name="time" maxlength="40" />
-    <p><button type="button" id="want-suggest" hidden>Suggest wording</button></p>
+    <p id="want-suggest-row"><button type="button" id="want-suggest" hidden>Suggest wording</button></p>
     <p><button type="submit" id="want-confirm">Confirm IwanIT</button></p>
     <p id="want-status" role="status"></p>
   </form>

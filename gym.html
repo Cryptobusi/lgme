@@ -1,6 +1,8 @@
 <!doctype html>
 <html lang="en">
 <head>
+  <link rel="stylesheet" href="/site-nav.css" />
+  <script src="/js/stable-screen.js"></script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0c100c" />
@@ -56,6 +58,8 @@
     th, td { border:1px solid var(--line); padding:0.35rem; vertical-align:top; text-align:left; }
     .clarify { border-color:var(--gold); }
     .hash { overflow-wrap:anywhere; font-size:0.85rem; }
+    #device-can-host { min-height: 88rem; border-radius: 14px; background: #151a15; }
+    #gym-panel { min-height: 46vh; }
     footer.gym-foot { padding:0 1rem 6rem; max-width:40rem; margin:0 auto; }
   </style>
 </head>
@@ -64,6 +68,7 @@
   <p class="kicker">lgme · Gym beta</p>
   <h1>Gym</h1>
   <p class="muted"><a href="/gym/covenant">Member Covenant</a> · <a href="/gym/intake-protocol">Intake protocol</a> · <a href="/gym/health-data">Consumer health data</a> · <a href="/helper">Set up my own AI helper</a> · <a href="/ai-help">Ask for AI help</a></p>
+  <div id="device-can-host"></div>
 </header>
 <main id="gym-panel"></main>
 <footer class="gym-foot"><a href="/gym/covenant">Member Covenant</a> · <a href="/gym/health-data">Consumer health data</a> · <a href="/gym/breach-plan">Breach plan</a> · <a href="/help">Help</a> · <a href="/disclaimer">Disclaimer (Live beta v.5)</a></footer>

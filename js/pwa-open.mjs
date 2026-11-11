@@ -21,6 +21,9 @@ export function personalTarget(storage) {
 
 export function installedEntry(storage, win, nav) {
   if (!isStandalone(win, nav)) return { open: false, href: '' };
+  const search = String(win.location?.search || '');
+  if (/(?:^|[?&])(?:demo|home)=1(?:&|$)/.test(search)) return { open: false, href: '' };
+  if (!storage?.getItem?.('lgme.demo.member')) return { open: false, href: '' };
   return { open: true, href: personalTarget(storage), splash: false, hops: 0 };
 }
 

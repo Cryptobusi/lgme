@@ -19,3 +19,4 @@ jobs:
       - run: node test/category-board.mjs
       - run: node test/one-tap-ui.mjs
       - run: node test/demo-onboard-ui.mjs
+      - run: node test/stable-screens.mjs
