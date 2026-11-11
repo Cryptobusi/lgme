@@ -49,6 +49,7 @@ async function open(width, height, ai) {
     if (req.method() === 'POST') posts.push(req.url());
   });
   await page.addInitScript((on) => {
+    localStorage.setItem('lgme.demo.member', '{"demo":true,"handle":"demo"}');
     if (!on) Object.defineProperty(navigator, 'lgmeAi', { configurable: true, get: () => 'off' });
   }, ai);
   await page.route('**/*', (route) => route.request().url().startsWith(base) ? route.continue() : route.abort());

@@ -1262,6 +1262,10 @@ function emailJoinCard() {
 }
 
 async function renderRegister() {
+  if (!localStorage.getItem('lgme.demo.member') && localStorage.getItem('lgme-gym.mode') !== 'demo') {
+    location.replace('/?demo=1');
+    return el('p', {}, ['Opening the demo sign-in.']);
+  }
   const invite = readJoin(sessionStorage);
   const box = el('section', { id: 'join-health' }, [
     el('p', { class: 'kicker' }, [signup.step === 0 ? 'New member' : `Step ${signup.step} of 5`]),

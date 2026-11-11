@@ -44,6 +44,7 @@ async function open(width, height, tier) {
   let taps = 0;
   page.on('click', () => {});
   await page.addInitScript((picked) => {
+    localStorage.setItem('lgme.demo.member', '{"demo":true,"handle":"demo"}');
     localStorage.setItem('lgme.exchange.splashSeen', '1');
     localStorage.setItem('lgme.exchange.introSeen', '1');
     localStorage.setItem('lgme-gym.seat', 'mina');

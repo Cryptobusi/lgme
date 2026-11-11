@@ -104,6 +104,7 @@ async function openPage(view, path) {
   const page = await context.newPage();
   page.setDefaultTimeout(15000);
   await page.addInitScript((opts) => {
+    localStorage.setItem('lgme.demo.member', '{"demo":true,"handle":"demo"}');
     localStorage.setItem('lgme.exchange.splashSeen', '1');
     localStorage.setItem('lgme.exchange.introSeen', '1');
     if (opts.signed) {

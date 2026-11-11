@@ -310,10 +310,24 @@
       .entry-grid { grid-template-columns: repeat(4, 1fr); }
       .entry-tile.health { grid-column: span 2; }
     }
+    body.demo-gate > *:not(#demo-root):not(#site-nav) { display: none !important; }
+    #demo-root { max-width: 40rem; margin: 0 auto; padding: 1rem; }
+    #demo-root h2 { font-family: Newsreader, serif; font-weight: 500; }
+    #demo-root input, #demo-root textarea, #demo-root button { font: inherit; min-height: 44px; }
+    #demo-root input, #demo-root textarea { width: 100%; box-sizing: border-box; padding: 0.45rem 0.6rem; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); }
+    #demo-root button.primary, #demo-root .demo-choice { background: #F97316; color: #1c1b19; font-weight: 700; border: 0; border-radius: 12px; padding: 0.8rem; }
+    .demo-choices { display: grid; gap: 0.6rem; }
+    @media (min-width: 768px) { .demo-choices { grid-template-columns: 1fr 1fr; } }
+    .demo-help { display: block; font-weight: 500; color: var(--muted); }
+    .demo-badge { margin: 0.25rem; }
+    #demo-dashboard { border: 1px solid var(--gold); border-radius: 12px; padding: 0.8rem; margin-bottom: 1rem; }
   </style>
 </head>
 <body>
+  <div id="demo-root"></div>
   <script src="/js/home-entry.js"></script>
+  <script src="/js/site-nav.js"></script>
+  <script type="module" src="/js/demo-page.mjs"></script>
   <section class="entry-picker" aria-label="Categories">
     <p class="beta-banner" role="status">Health is in beta. Every category is open. You can look, list, and trade.</p>
     <section class="card" id="install-lgme">

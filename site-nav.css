@@ -1,0 +1,27 @@
+#site-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.4rem 0.6rem;
+  background: #0c100c;
+  border-bottom: 1px solid #2c352b;
+}
+#site-nav button, #site-nav a {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid #c6a15b;
+  background: transparent;
+  color: #f4f1e8;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+}
+body.has-site-nav { scroll-padding-top: 4rem; }

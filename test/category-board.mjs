@@ -60,7 +60,8 @@ const failures = [];
 function assert(ok, message) { if (!ok) throw new Error(message); }
 
 const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
-const page = await context.newPage();
+  const page = await context.newPage();
+  await page.addInitScript(() => localStorage.setItem('lgme.demo.member', '{"demo":true,"handle":"demo"}'));
 await page.route('**/*', (route) => route.request().url().startsWith(base) ? route.continue() : route.abort());
 try {
   await page.goto(`${base}/?picker=1`, { waitUntil: 'domcontentloaded' });
@@ -108,6 +109,7 @@ await context.close();
 for (const [width, height] of [[768, 1024], [1280, 800]]) {
   const wide = await browser.newContext({ viewport: { width, height } });
   const desk = await wide.newPage();
+  await desk.addInitScript(() => localStorage.setItem('lgme.demo.member', '{"demo":true,"handle":"demo"}'));
   await desk.route('**/*', (route) => route.request().url().startsWith(base) ? route.continue() : route.abort());
   try {
     await desk.goto(`${base}/?picker=1`, { waitUntil: 'domcontentloaded' });
