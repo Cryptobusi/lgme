@@ -91,9 +91,8 @@ async function askBrowser(scope, prompt) {
 
 export async function draftWithHelper(helper, { template, prompt, scope = globalThis } = {}) {
   const safeTemplate = String(template || '').slice(0, 280);
-  if (!helper?.ready || helper.id !== 'browser') {
-    return { text: safeTemplate, blocked: true, notice: AI_ENABLE, helper, sent: false };
-  }
+  const manual = { text: safeTemplate, blocked: false, notice: 'You can confirm this by hand. Nothing was sent.', helper, sent: false };
+  if (!helper?.ready || helper.id !== 'browser') return manual;
   if (PRIVATE.test(prompt || '') || PRIVATE.test(safeTemplate)) {
     return { text: safeTemplate, helper, sent: false, blocked: false };
   }

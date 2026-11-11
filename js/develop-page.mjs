@@ -1,6 +1,6 @@
 import { helpDraft } from './category-help.mjs';
 import { publicHelpWant } from './develop-want.mjs';
-import { AI_ENABLE, deviceContext, draftWithHelper, localAiReady, pickHelperSync, refreshHelper, rememberContext, showHelperNote } from './one-tap.mjs';
+import { deviceContext, draftWithHelper, pickHelperSync, refreshHelper, rememberContext, showHelperNote } from './one-tap.mjs';
 
 const RETURN_KEY = 'lgme.develop.return';
 const form = document.getElementById('want-form');
@@ -51,8 +51,8 @@ if (helper.id !== 'none') {
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
-  if (navigator.onLine === false || !localAiReady()) {
-    status.textContent = AI_ENABLE;
+  if (navigator.onLine === false) {
+    status.textContent = 'You are offline. The draft stays on this phone until you are back online.';
     return;
   }
   const confirm = document.getElementById('want-confirm');
