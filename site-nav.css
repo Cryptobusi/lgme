@@ -102,6 +102,11 @@ body:has(nav[aria-label="Gym"]) #ai-dock { bottom: calc(4.5rem + env(safe-area-i
   padding: 0;
 }
 #ai-dock.is-open #ai-log { height: 40vh; }
+@media (max-height: 500px) {
+  #ai-log, #ai-flag { display: none; }
+  #ai-ask { height: 44px; }
+  #ai-chips { flex-wrap: nowrap; overflow-x: auto; max-height: 44px; }
+}
 #ai-dock .ai-actions { display: flex; gap: 0.4rem; margin: 0.25rem 0 0; }
 #ai-dock button { min-height: 44px; min-width: 44px; font: inherit; font-weight: 700; border-radius: 999px; border: 1px solid #c6a15b; background: transparent; color: #f4f1e8; padding: 0.3rem 0.8rem; }
 #ai-accept:disabled { opacity: 0.7; }

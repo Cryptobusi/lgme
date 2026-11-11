@@ -35,6 +35,14 @@ const browser = await chromium.launch({
 const sizes = [[360, 640], [640, 360], [390, 844], [844, 390], [414, 896], [896, 414], [768, 1024], [1024, 768], [1280, 800], [1440, 900]];
 const schemes = ['light', 'dark'];
 const periods = ['day', 'week', 'month'];
+
+async function clickClear(locator) {
+  await locator.evaluate((el) => {
+    const top = el.getBoundingClientRect().top + window.scrollY - 80;
+    window.scrollTo(0, Math.max(0, top));
+  });
+  await locator.click();
+}
 const failures = [];
 const book = { handle: 'mina-vale', sessions: [{ id: 's1', at: '2026-11-10T15:00:00Z', side: 'offer', minutes: 60, status: 'Test item - receipt', activity: 'Walking group', credit: 2, attestations: 1 }] };
 
@@ -53,9 +61,9 @@ for (const [width, height] of sizes) {
         }, personal ? (empty ? { handle: 'mina-vale', sessions: [] } : book) : null);
         await page.goto(`${base}/exchange.html${empty ? '?empty=1' : ''}`, { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('#overview-source', { timeout: 20000 });
-        if (personal) await page.getByRole('button', { name: 'Mine' }).click();
+        if (personal) await clickClear(page.getByRole('button', { name: 'Mine' }));
         for (const period of periods) {
-          await page.getByRole('button', { name: period, exact: true }).click();
+          await clickClear(page.getByRole('button', { name: period, exact: true }));
           const box = await page.evaluate(() => {
             const node = document.querySelector('#exchange-overview');
             const rect = node.getBoundingClientRect();
