@@ -24,6 +24,35 @@
       --panel: #141a13;
     }
     html { background: var(--bg); color: var(--fg); overflow-x: clip; }
+    :root { --notice-h: 6.25rem; }
+    @media (min-width: 768px) { :root { --notice-h: 4.5rem; } }
+    @media (min-width: 1280px) { :root { --notice-h: 3.25rem; } }
+    #testnet-notice {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 70;
+      box-sizing: border-box;
+      height: var(--notice-h);
+      min-height: var(--notice-h);
+      margin: 0;
+      padding: 0.6rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #b00020;
+      color: #fff;
+      font-family: Figtree, ui-sans-serif, sans-serif;
+      font-weight: 700;
+      font-size: 1.05rem;
+      line-height: 1.35;
+      text-align: center;
+    }
+    body:has(#testnet-notice) { padding-top: calc(1.5rem + var(--notice-h)); }
+    html.has-site-nav body:has(#testnet-notice) { padding-top: calc(3.25rem + var(--notice-h)); }
+    body:has(#testnet-notice) #site-nav { top: var(--notice-h); }
+    body:has(#testnet-notice) .menu-toggle { top: calc(3.25rem + var(--notice-h)); }
     body {
       background: var(--bg);
       color: var(--fg);
@@ -343,6 +372,7 @@
   </style>
 </head>
 <body>
+  <p id="testnet-notice" role="note">Notice: back in testnet for troubleshooting. Keep learning, earning, never boring.</p>
   <script src="/js/home-entry.js"></script>
   <script src="/js/site-nav.js"></script>
   <script type="module" src="/js/demo-page.mjs"></script>
