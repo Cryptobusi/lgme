@@ -58,14 +58,6 @@ function mount() {
   });
   window.addEventListener('online', () => paint(dock));
   window.addEventListener('offline', () => paint(dock));
-  document.addEventListener('click', (event) => {
-    const button = event.target.closest('#demo-confirm, #want-confirm, #one-tap-confirm, #confirm-upload, #invite-one-confirm, #one-tap-repair-confirm');
-    if (!button || !signedIn()) return;
-    if (navigator.onLine !== false && localAiReady()) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    paint(dock);
-  }, true);
   pickHelperSync();
 }
 

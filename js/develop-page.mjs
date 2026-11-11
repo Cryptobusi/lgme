@@ -1,6 +1,6 @@
 import { helpDraft } from './category-help.mjs';
 import { publicHelpWant } from './develop-want.mjs';
-import { deviceContext, draftWithHelper, pickHelperSync, refreshHelper, rememberContext, showHelperNote } from './one-tap.mjs';
+import { AI_ENABLE, deviceContext, draftWithHelper, localAiReady, pickHelperSync, refreshHelper, rememberContext, showHelperNote } from './one-tap.mjs';
 
 const RETURN_KEY = 'lgme.develop.return';
 const form = document.getElementById('want-form');
@@ -51,6 +51,10 @@ if (helper.id !== 'none') {
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
+  if (navigator.onLine === false || !localAiReady()) {
+    status.textContent = AI_ENABLE;
+    return;
+  }
   const confirm = document.getElementById('want-confirm');
   if (confirm.dataset.busy === '1') return;
   confirm.dataset.busy = '1';
