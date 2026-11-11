@@ -13,6 +13,7 @@ export const BUILTINS = Object.freeze([
   { id: 'shop-street', src: photo('shop-street'), label: 'City walk', alt: 'Adults walking together on a city street', words: ['city', 'street', 'people', 'group', 'walk'] },
   { id: 'volunteers', src: photo('volunteers'), label: 'Neighbors working', alt: 'Neighbors working together outdoors', words: ['volunteer', 'community', 'together', 'work', 'neighbor'] },
   { id: 'dumbbells', src: photo('dumbbells'), label: 'Dumbbells', alt: 'A rack of dumbbells', words: ['dumbbell', 'strength', 'weight', 'gym', 'lift'] },
+  { id: 'market', src: photo('market'), label: 'Market stall', alt: 'A market vendor hands a bag of goods to a buyer at a covered stall in Antibes', words: ['market', 'stall', 'vendor', 'buyer', 'antibes'] },
   { id: 'repair', src: '/assets/img/repair-extraordinaire.webp', label: 'Repair Extraordinaire', alt: 'Person exercising on a treadmill: The Repair Extraordinaire, equipment repair', words: ['repair', 'treadmill', 'equipment', 'fix'] }
 ]);
 
@@ -42,6 +43,7 @@ export const IMAGE_SLOTS = Object.freeze([
   slot('thumb-ex-repair', 'Repair listing', 'Listing thumbnails', 'repair'),
   slot('thumb-pool', 'Membership fee pool', 'Listing thumbnails', 'volunteers'),
   slot('thumb-repair', 'Repair Extraordinaire', 'Listing thumbnails', 'repair'),
+  slot('header-exchange', 'Exchange header', 'Card headers', 'market'),
   slot('header-help', 'Help header', 'Card headers', 'jogger'),
   slot('header-disclaimer', 'Disclaimer header', 'Card headers', 'neighborhood'),
   slot('header-pool', 'Pool card', 'Card headers', 'volunteers'),

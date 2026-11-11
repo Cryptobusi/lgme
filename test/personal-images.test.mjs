@@ -81,6 +81,8 @@ test('image choices stay on the device, follow one member, and export without a 
   assert.equal(JSON.stringify(back.healthPage).includes('data:image'), false);
   assert.equal(sim.toExport(back).healthPage.images['tile-health'].source, 'suggest');
   assert.equal(IMAGE_SLOTS.some((slot) => slot.id === 'banner'), true);
+  assert.equal(resolveImage('header-exchange', {}, 'jordan', 'jordan').src.includes('market-640.webp'), true);
+  assert.equal(resolveImage('header-exchange', {}, 'jordan', 'jordan').custom, false);
   const page = text('js/health-page.mjs');
   assert.equal(page.includes('Change image') || text('js/personal-images-ui.mjs').includes('Change image'), true);
   assert.equal(text('js/personal-images-ui.mjs').includes('Reset to default'), true);

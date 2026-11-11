@@ -10,6 +10,7 @@ These photographs are self-hosted under `images/photos/`. Each file is WebP, at 
 | shop-street | Hosts tile, motivation and seniors listings | Fons Heijnsbroek | CC BY 4.0 | https://commons.wikimedia.org/wiki/File:People_are_walking_and_shopping_in_the_street_Zeedijk._Free_photo_of_Amsterdam_city_by_Fons_Heijnsbroek,_23_April_2022.tif |
 | volunteers | Campus tile, membership fee pool | evergladesnps | Public domain | https://commons.wikimedia.org/wiki/File:Community_volunteers_during_National_Volunteer_Day_at_Chekika_April_16,_2011_(5646384577).jpg |
 | dumbbells | Exchange tile, strength and equipment-loan listings | Sterling | CC BY 3.0 | https://commons.wikimedia.org/wiki/File:Gym_Dumbbells_For_Working_Out_(193383405).jpeg |
+| market | Exchange page default header. Also served as AVIF and JPEG at 640 and 1200 pixels wide. | Jorge Franganillo | CC BY 4.0 | https://commons.wikimedia.org/wiki/File:Antibes_-_marché_provençal_-_54800228731.jpg |
 | repair-extraordinaire | The Repair Extraordinaire standing listing, equipment referral, and repair thumbnails | Provided by the owner | Provided by the owner | /assets/img/repair-extraordinaire.webp |
 
 License links: [CC0](https://creativecommons.org/publicdomain/zero/1.0/), [CC BY 2.0](https://creativecommons.org/licenses/by/2.0/), [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Public-domain photographs are from Wikimedia Commons.

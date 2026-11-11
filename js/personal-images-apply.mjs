@@ -14,6 +14,10 @@ export async function applyPersonalImages(documentRef = globalThis.document, sto
       node.src = shown.src;
       node.removeAttribute('srcset');
       node.alt = shown.alt;
+      const picture = node.parentElement?.tagName === 'PICTURE' ? node.parentElement : null;
+      picture?.querySelectorAll('source').forEach((source) => source.remove());
+      const credit = node.closest('figure')?.querySelector('[data-photo-credit]');
+      if (credit) credit.hidden = true;
     } else {
       node.style.backgroundImage = `url("${shown.src}")`;
       node.dataset.personalImage = '1';

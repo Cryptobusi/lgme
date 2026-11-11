@@ -18,7 +18,7 @@ test('self-hosted photos stay small, credited, and off the script policy', () =>
   }
   const credits = text('credits.html');
   const attribution = text('ATTRIBUTION.md');
-  for (const name of ['jogger', 'stretch', 'neighborhood', 'shop-street', 'volunteers', 'dumbbells']) {
+  for (const name of ['jogger', 'stretch', 'neighborhood', 'shop-street', 'volunteers', 'dumbbells', 'market']) {
     assert.equal(credits.includes(name), true, name);
     assert.equal(attribution.includes(name), true, name);
     assert.match(attribution, new RegExp(`${name}[\\s\\S]{0,400}https://commons\\.wikimedia\\.org/`));
@@ -36,4 +36,11 @@ test('self-hosted photos stay small, credited, and off the script policy', () =>
   assert.equal(credits.includes('Provided by the owner'), true);
   assert.equal(credits.includes('/assets/img/repair-extraordinaire.webp'), true);
   assert.equal(text('js/equipment-card.mjs').includes('/assets/img/repair-extraordinaire.webp'), true);
+  const exchange = text('exchange.html');
+  assert.equal(exchange.includes('Photo: Jorge Franganillo, CC BY 4.0'), true);
+  assert.equal(exchange.includes('/images/photos/market-640.avif'), true);
+  assert.equal(exchange.includes('/images/photos/market-640.webp'), true);
+  assert.equal(exchange.includes('/images/photos/market-1200.jpg'), true);
+  assert.equal(exchange.includes('commons.wikimedia.org'), true);
+  assert.equal(exchange.includes('https://commons.wikimedia.org/wiki/File:') && !exchange.includes('src="https://'), true);
 });

@@ -75,6 +75,12 @@
     .badge-unverified { background:transparent; color:var(--accent-text); border:1px solid #F97316; }
     .dash-slot { padding-top:0.35rem; padding-bottom:0; }
     #exchange-overview.dash { padding:0.35rem 0.45rem 0.45rem; }
+    .exchange-hero { position:relative; margin:0.3rem 0 0; }
+    .exchange-hero img { width:100%; height:160px; object-fit:cover; object-position:center 40%; border-radius:12px; display:block; }
+    @media (min-width:800px) { .exchange-hero img { height:320px; } }
+    .exchange-hero::after { content:""; position:absolute; left:0; right:0; bottom:0; height:46px; border-radius:0 0 12px 12px; background:rgba(12,16,12,0.82); pointer-events:none; }
+    .exchange-hero figcaption { position:absolute; left:0.45rem; right:0.45rem; bottom:0.3rem; z-index:1; margin:0; font-size:12px; line-height:1.3; }
+    .exchange-hero figcaption a { display:inline-block; background:#0c100c; color:#f4f1e8; border-radius:6px; padding:0.15rem 0.4rem; text-decoration:underline; }
     .dash-head { display:flex; flex-wrap:wrap; align-items:center; gap:0.35rem; min-height:44px; }
     .dash h2 { font-size:1rem; line-height:1.2; margin:0; }
     .dash-toggle { display:flex; flex-wrap:wrap; gap:0.25rem; margin-left:auto; }
@@ -238,6 +244,14 @@
   <p class="launch-bar"><a class="install-launch" data-install-launch href="/exchange">Install &amp; launch</a></p>
   <div class="wrap dash-slot">
     <section id="exchange-overview" class="card dash" aria-label="Exchange status"></section>
+    <figure class="exchange-hero">
+      <picture>
+        <source type="image/avif" srcset="/images/photos/market-640.avif 640w, /images/photos/market-1200.avif 1200w" sizes="(max-width: 800px) 100vw, 720px" />
+        <source type="image/webp" srcset="/images/photos/market-640.webp 640w, /images/photos/market-1200.webp 1200w" sizes="(max-width: 800px) 100vw, 720px" />
+        <img data-image-slot="header-exchange" src="/images/photos/market-1200.jpg" srcset="/images/photos/market-640.jpg 640w, /images/photos/market-1200.jpg 1200w" sizes="(max-width: 800px) 100vw, 720px" width="1200" height="800" alt="A market vendor hands a bag of goods to a buyer at a covered stall in Antibes" />
+      </picture>
+      <figcaption data-photo-credit><a href="https://commons.wikimedia.org/wiki/File:Antibes_-_march%C3%A9_proven%C3%A7al_-_54800228731.jpg">Photo: Jorge Franganillo, CC BY 4.0</a></figcaption>
+    </figure>
   </div>
   <p class="give-banner" role="note"><span>Real donations &amp; grants accepted</span> <a href="/lgme-coin#give">Give via soBeIT</a> <a href="/lgme-coin#give">How to give</a> <a href="/grants">Grants</a></p>
   <div id="splash" class="splash" role="dialog" aria-label="lgme" hidden>
