@@ -1,5 +1,5 @@
 import { hederaReadiness } from '../../js/hedera-anchor-core.mjs';
-import { networkDryRun, operatorBalanceAlert } from '../../js/hedera-network.mjs';
+import { MAINNET_OPERATOR, networkDryRun, operatorBalanceAlert } from '../../js/hedera-network.mjs';
 import { json, readEnv } from '../lib/http.mjs';
 
 export default async function handler(req, res) {
@@ -10,6 +10,7 @@ export default async function handler(req, res) {
   const balance = await operatorBalanceAlert();
   const mainnetWrites = dry.mainnetWrites === true;
   const enabled = ready.enabled || mainnetWrites;
+  const topic = String(env.HEDERA_MAINNET_HEALTH_TOPIC_ID || '').trim();
   return json(res, enabled ? 200 : 503, {
     ok: enabled,
     enabled,
@@ -17,9 +18,14 @@ export default async function handler(req, res) {
     asked: dry.asked,
     mainnetWrites,
     wording: mainnetWrites ? 'Health hashes are written on Hedera mainnet. Health data is not written.' : ready.wording,
-    topicId: mainnetWrites ? String(env.HEDERA_MAINNET_HEALTH_TOPIC_ID || '').trim() : (ready.topicId || ''),
+    topicId: mainnetWrites ? topic : (ready.topicId || ''),
     dailyCapHbar: dry.dailyCapHbar,
     rollback: dry.rollback,
-    operatorAlert: balance.alert
+    operatorAlert: balance.alert,
+    mainnetChecks: {
+      topic: topic === '0.0.10955014',
+      operator: String(env.HEDERA_MAINNET_OPERATOR_ID || '').trim() === MAINNET_OPERATOR,
+      key: Boolean(String(env.HEDERA_MAINNET_OPERATOR_KEY || '').trim())
+    }
   });
 }
