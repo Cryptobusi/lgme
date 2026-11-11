@@ -42,25 +42,35 @@ function accountReady() {
 function paintHome() {
   showBoard();
   state.step = 'home';
+  document.querySelectorAll('.tile-new').forEach((node) => node.remove());
   const posts = [...readPosts(localStorage), ...examplePosts()];
   const fresh = newSince(posts, readSeen(localStorage));
   const counts = countByCategory(fresh);
-  const badges = Object.entries(counts).map(([category, count]) => el('button', { type: 'button', class: 'demo-badge', 'data-category': category }, [`${category} ${count} new`]));
-  const mine = readPosts(localStorage)[0];
-  const saved = mine && mine.where === 'device' ? el('p', { id: 'demo-saved' }, ['Saved on this device.']) : null;
-  root.replaceChildren(el('section', { id: 'demo-dashboard' }, [
-    el('h2', {}, ['New since your last visit']),
-    el('div', { id: 'demo-badges' }, badges.length ? badges : [el('p', {}, ['No new posts.'])]),
-    saved
-  ].filter(Boolean)));
-  root.querySelectorAll('[data-category], [data-open]').forEach((button) => {
-    button.addEventListener('click', () => {
-      const category = button.getAttribute('data-category') || button.getAttribute('data-open');
+  const hosts = {
+    Health: '#health-tile',
+    Campus: '[data-entry="campus"]',
+    'Neighbor help': '[data-entry="neighbor"]',
+    Hosts: '[data-entry="hosts"]',
+    Circles: '[data-entry="circles"]',
+    Stories: '[data-entry="stories"]',
+    Exchange: '[data-entry="exchange"]'
+  };
+  for (const [category, count] of Object.entries(counts)) {
+    const host = document.querySelector(hosts[category] || '');
+    if (!host) continue;
+    const badge = el('button', { type: 'button', class: 'tile-new demo-badge', 'data-category': category }, [`${count} new`]);
+    badge.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
       markSeen(localStorage, category);
+      badge.remove();
       const href = { Health: '/gym', Campus: '/campus', Exchange: '/exchange' }[category] || '/';
       location.assign(href);
     });
-  });
+    host.append(badge);
+  }
+  const mine = readPosts(localStorage)[0];
+  root.replaceChildren(mine && mine.where === 'device' ? el('p', { id: 'demo-saved' }, ['Saved on this device.']) : el('span', { id: 'demo-home-note' }, ['']));
 }
 
 function begin(choice) {

@@ -76,7 +76,7 @@ for (const [width, height] of [[390, 844], [768, 1024], [1280, 800]]) {
     if (width === 390) await page.locator('#demo-confirm').scrollIntoViewIfNeeded();
     if (width === 390) await page.screenshot({ path: '/opt/cursor/artifacts/demo-step-390.png' });
     await click('#demo-confirm');
-    await page.locator('#demo-dashboard').waitFor();
+    await page.locator('.demo-badge').first().waitFor();
     const badge = await page.locator('.demo-badge').first().innerText();
     assert(/new/.test(badge), badge);
     if (width === 390) await page.screenshot({ path: '/opt/cursor/artifacts/demo-dashboard-390.png' });

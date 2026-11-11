@@ -1,5 +1,5 @@
 // lgme.app shell. HTML is fetched from the network first so a published change shows.
-const CACHE_NAME = "lgme-v159";
+const CACHE_NAME = "lgme-v160";
 const NET_MS = 8000;
 const SHELL = [
   "/",
@@ -170,6 +170,7 @@ const SHELL = [
   "/js/demo-onboard.mjs",
   "/js/demo-page.mjs",
   "/js/site-nav.js",
+  "/js/sw-update.js",
   "/js/local-ai-panel.mjs",
   "/site-nav.css",
   "/js/stable-screen.js",
@@ -275,8 +276,11 @@ self.addEventListener("fetch", (event) => {
     return path.then((hit) => hit || new Response("Offline", { status: 503, headers: { "content-type": "text/plain; charset=utf-8" } }));
   };
 
+  const network = isHtml(request, url)
+    ? fetch(new Request(request, { cache: 'no-cache' }))
+    : timedFetch(request, NET_MS);
   event.respondWith(
-    timedFetch(request, NET_MS)
+    network
       .then((response) => {
         if (response && response.ok) {
           const copy = response.clone();

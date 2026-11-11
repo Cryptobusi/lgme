@@ -193,7 +193,7 @@ await flowPage.evaluate(() => {
   button.click();
   button.click();
 });
-await flowPage.locator('#demo-dashboard').waitFor();
+await flowPage.locator('.demo-badge').first().waitFor();
 const posts = await flowPage.evaluate(() => JSON.parse(localStorage.getItem('lgme.demo.posts') || '[]').length);
 if (posts !== 1) failures.push(`double confirm saved ${posts}`);
 await flow.close();

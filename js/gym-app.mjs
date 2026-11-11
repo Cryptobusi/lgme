@@ -2108,7 +2108,14 @@ async function boot() {
   }
   const seated = seatId() || registered?.id;
   if (seated && recallPage(localStorage, seated) && (route() === '/' || route() === '/me')) location.hash = '/page';
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw-gym.js', { scope: '/gym' }).catch(() => {});
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw-gym.js', { scope: '/gym' }).then((reg) => {
+      reg.update().catch(() => {});
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') reg.update().catch(() => {});
+      });
+    }).catch(() => {});
+  }
   const deviceHost = document.getElementById('device-can-host') || document.createElement('div');
   deviceHost.id = 'device-can-host';
   if (!deviceHost.parentElement) document.querySelector('header')?.append(deviceHost);

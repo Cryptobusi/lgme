@@ -43,6 +43,11 @@ const member = JSON.stringify({ demo: true, handle: 'demo', disclaimer: true, em
 
 async function boot(width, height, extra) {
   const context = await browser.newContext({ viewport: { width, height } });
+  await context.route('**/*', (route) => {
+    const url = route.request().url();
+    if (url.includes('fonts.g')) return route.abort();
+    return route.continue();
+  });
   await context.addInitScript((raw) => {
     if (raw) localStorage.setItem('lgme.demo.member', raw);
     localStorage.setItem('lgme.exchange.splashSeen', '1');
@@ -73,12 +78,29 @@ for (const [width, height] of [[390, 844], [768, 1024], [1280, 800]]) {
         return nav.bottom > dock.top;
       });
       if (covered) failures.push(`${width} ${path} dock covers nav`);
+      if (box.line && box.height + 2 < box.line * 3) failures.push(`${width} ${path} clips a line ${box.height}/${box.line}`);
+      if (path === '/') {
+        const place = await page.evaluate(() => {
+          const nav = document.getElementById('site-nav').getBoundingClientRect();
+          const grid = document.getElementById('category-grid').getBoundingClientRect();
+          const between = [...document.body.querySelectorAll('p, h1, h2, section, button, a')].filter((el) => {
+            if (document.getElementById('site-nav').contains(el) || document.getElementById('category-grid').contains(el)) return false;
+            const box = el.getBoundingClientRect();
+            return box.height > 4 && box.width > 4 && box.top >= nav.bottom - 1 && box.top < grid.top - 1;
+          });
+          const actions = document.getElementById('demo-actions');
+          return { gap: between.map((el) => el.textContent.trim().slice(0, 24)), overflow: actions.scrollWidth > actions.clientWidth + 1 };
+        });
+        if (place.gap.length) failures.push(`${width} above grid ${place.gap.join('|')}`);
+        if (place.overflow) failures.push(`${width} action row overflows`);
+      }
     }
     if (width === 390) {
       mkdirSync('/opt/cursor/artifacts', { recursive: true });
       await page.goto(`${base}/`, { waitUntil: 'domcontentloaded' });
       await page.locator('.entry-tile').first().waitFor();
-      await page.screenshot({ path: '/opt/cursor/artifacts/ai-panel-390.png' });
+      await page.screenshot({ path: '/opt/cursor/artifacts/category-first-390.png', timeout: 8000, animations: 'disabled' });
+      await page.screenshot({ path: '/opt/cursor/artifacts/ai-panel-390.png', timeout: 8000, animations: 'disabled' });
     }
     console.log(`ok panel ${width}`);
   } catch (error) {
@@ -95,13 +117,13 @@ await signedPage.locator('#ai-flag').waitFor();
 const flag = await signedPage.locator('#ai-flag').innerText();
 if (!flag.includes('Only available online with AI enabled.')) failures.push(`flag ${flag}`);
 if (!/Online: yes/.test(flag) || !/AI: yes/.test(flag)) failures.push(`flag state ${flag}`);
-await signedPage.screenshot({ path: '/opt/cursor/artifacts/ai-flag-390.png' });
+await signedPage.screenshot({ path: '/opt/cursor/artifacts/ai-flag-390.png', timeout: 8000, animations: 'disabled' });
 posts.length = 0;
 await signedPage.getByRole('button', { name: 'Offer', exact: true }).click();
 await signedPage.locator('#demo-confirm').click();
 await signedPage.locator('#demo-saved').waitFor();
 if (posts.some((path) => path.startsWith('/api/hedera') || path === '/api/develop/want')) failures.push(`local offer wrote ${posts.join(',')}`);
-await signedPage.screenshot({ path: '/opt/cursor/artifacts/local-listing-390.png' });
+await signedPage.screenshot({ path: '/opt/cursor/artifacts/local-listing-390.png', timeout: 8000, animations: 'disabled' });
 posts.length = 0;
 await signedPage.getByRole('button', { name: 'IwanIT help develop', exact: true }).click();
 await signedPage.locator('#demo-confirm').click();
