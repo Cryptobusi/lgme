@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /testnet-review
 
 Sitemap: https://lgme.app/sitemap.xml
