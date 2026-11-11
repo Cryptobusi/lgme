@@ -12,7 +12,7 @@
   <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
   <title>lgme</title>
-  <link id="site-fonts" rel="stylesheet" media="print" href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;1,6..72,500&display=swap" />
+  <link id="site-fonts" rel="stylesheet" media="print" href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;1,6..72,500&display=optional" />
   <style>
     :root {
       --bg: #0c100c;
@@ -318,6 +318,10 @@
       .entry-tile.health, .entry-tile.health .health-open { min-height: 5.6rem; }
       #start-helper-note { display: none; }
     }
+    @media (min-width: 768px) and (max-width: 799px) {
+      .entry-tile.health { min-height: 22rem; }
+      #start-helper-note { display: inline-block; min-height: 1.3em; }
+    }
     @media (min-width: 800px) {
       .entry-grid { grid-template-columns: repeat(4, 1fr); }
       .entry-tile.health { grid-column: span 2; }
@@ -333,7 +337,7 @@
     #demo-signin { min-height: 44px; margin: 0.2rem 0 0.6rem; }
     .demo-help { display: block; font-weight: 500; color: var(--muted); }
     .demo-badge { margin: 0.25rem; }
-    #demo-dashboard { border: 1px solid var(--gold); border-radius: 12px; padding: 0.8rem; margin-bottom: 1rem; min-height: 9rem; }
+    #demo-dashboard { border: 1px solid var(--gold); border-radius: 12px; padding: 0.8rem; margin-bottom: 1rem; min-height: 11rem; }
   </style>
 </head>
 <body>
