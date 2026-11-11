@@ -75,8 +75,7 @@ body:has(nav[aria-label="Gym"]) #ai-dock { bottom: calc(4.5rem + env(safe-area-i
 #ai-dock.has-field #ai-log { order: 2; }
 #ai-dock.has-field #ai-chips { order: 3; }
 #ai-dock.has-field #ai-ask,
-#ai-dock.has-field .ai-actions,
-#ai-dock.has-field #ai-flag { display: none; }
+#ai-dock.has-field .ai-actions { display: none; }
 #ai-chips { display: flex; flex-wrap: nowrap; gap: 0.35rem; min-height: 44px; max-height: 44px; margin: 0 0 0.25rem; overflow-x: auto; }
 #ai-dock.has-field #ai-chips { flex-wrap: wrap; max-height: none; overflow: visible; }
 .ai-chip { flex: 0 0 auto; white-space: nowrap; min-height: 44px; padding: 0.35rem 0.8rem; border-radius: 999px; border: 1px solid #c6a15b; background: #f4f1e8; color: #1a1408; font: inherit; font-weight: 700; }

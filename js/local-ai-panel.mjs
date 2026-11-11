@@ -47,6 +47,8 @@ function paint(dock) {
   toggle.textContent = enabled ? 'On' : 'Off';
   dock.dataset.ai = enabled ? (ready ? 'yes' : 'no') : 'off';
   dock.dataset.online = online ? 'yes' : 'no';
+  flag.hidden = !enabled || !signedIn();
+  flag.textContent = `${FLAG} Online: ${online ? 'yes' : 'no'}. AI: ${ready ? 'yes' : 'no'}.`;
   if (dock.classList.contains('has-field')) return;
   if (!enabled) return;
   const guide = aiSetupSteps(navigator.userAgent);
