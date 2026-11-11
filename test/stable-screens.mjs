@@ -171,23 +171,22 @@ const pwa = await openContext(390, 844, 'dark', false, true);
 const pwaPage = await pwa.newPage();
 await pwaPage.goto(`${base}/gym`, { waitUntil: 'domcontentloaded' });
 await pwaPage.waitForTimeout(500);
-const pwaUrl = pwaPage.url();
-if (!pwaUrl.includes('demo=1') && !pwaPage.url().includes(base + '/')) failures.push(`pwa loop ${pwaUrl}`);
-else if (pwaUrl.includes('/gym') && !pwaUrl.includes('demo=1')) failures.push(`pwa stayed on gym ${pwaUrl}`);
-await pwaPage.goto(`${base}/?demo=1`, { waitUntil: 'domcontentloaded' });
+if (!pwaPage.url().includes('/gym')) failures.push(`gym browse left ${pwaPage.url()}`);
+await pwaPage.goto(`${base}/`, { waitUntil: 'domcontentloaded' });
 await pwaPage.waitForTimeout(400);
-if (pwaPage.url().includes('/gym')) failures.push('demo sign-in bounced to gym');
+if (pwaPage.url().includes('/gym')) failures.push('home bounced to gym');
+if (await pwaPage.locator('#demo-email').count()) failures.push('home flashed sign-in');
 await pwa.close();
 
 const flow = await openContext(390, 844, 'dark', false, false);
 const flowPage = await flow.newPage();
 await flowPage.goto(`${base}/`, { waitUntil: 'domcontentloaded' });
+await flowPage.getByRole('button', { name: 'IwantIT', exact: true }).click();
 await flowPage.locator('#demo-email').fill('ada@example.com');
 await flowPage.locator('#demo-send').click();
 await flowPage.locator('#demo-code').fill('123456');
 await flowPage.locator('#demo-verify').click();
 await flowPage.locator('#demo-understand').click();
-await flowPage.getByRole('button', { name: 'IwantIT', exact: true }).click();
 await flowPage.locator('#demo-confirm').waitFor();
 await flowPage.evaluate(() => {
   const button = document.getElementById('demo-confirm');

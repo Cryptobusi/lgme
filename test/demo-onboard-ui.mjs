@@ -46,25 +46,31 @@ for (const [width, height] of [[390, 844], [768, 1024], [1280, 800]]) {
   await page.route('**/*', (route) => route.request().url().startsWith(base) ? route.continue() : route.abort());
   try {
     await page.goto(`${base}/`, { waitUntil: 'domcontentloaded' });
-    await page.locator('#demo-email').waitFor();
+    await page.locator('.entry-tile .badge', { hasText: 'Beta' }).waitFor();
+    await page.locator('.help-develop').first().waitFor();
+    await page.locator('#demo-signin').waitFor();
+    assert(await page.locator('#demo-email').count() === 0, 'sign-in flashed');
     await page.locator('#site-home').waitFor();
     await page.locator('#site-back').waitFor();
     if (width === 390) {
       mkdirSync('/opt/cursor/artifacts', { recursive: true });
-      await page.screenshot({ path: '/opt/cursor/artifacts/demo-signin-390.png' });
+      await page.screenshot({ path: '/opt/cursor/artifacts/category-first-390.png' });
     }
+    if (width === 1280) await page.screenshot({ path: '/opt/cursor/artifacts/category-first-1280.png' });
+    await page.locator('a[href="/campus"]').first().click();
+    await page.waitForURL(/\/campus/);
+    assert(await page.evaluate(() => localStorage.getItem('lgme.demo.member')) === null, 'browse stored an account');
+    await page.goto(`${base}/`, { waitUntil: 'domcontentloaded' });
+    await page.getByRole('button', { name: 'IwantIT', exact: true }).click();
+    taps += 1;
+    await page.locator('#demo-email').waitFor();
     await page.locator('#demo-email').fill('ada@example.com');
     await click('#demo-send');
     await page.locator('#demo-code').waitFor();
     await page.locator('#demo-code').fill('123456');
     await click('#demo-verify');
     await page.locator('#demo-understand').waitFor();
-    if (width === 390) await page.screenshot({ path: '/opt/cursor/artifacts/demo-disclaimer-390.png' });
     await click('#demo-understand');
-    await page.locator('#demo-choice').waitFor();
-    if (width === 390) await page.screenshot({ path: '/opt/cursor/artifacts/demo-choice-390.png' });
-    await page.getByRole('button', { name: 'IwantIT', exact: true }).click();
-    taps += 1;
     await page.locator('#demo-title').waitFor();
     assert((await page.locator('#demo-title').inputValue()).length > 3, 'title');
     if (width === 390) await page.locator('#demo-confirm').scrollIntoViewIfNeeded();

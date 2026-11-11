@@ -1,11 +1,8 @@
 (function () {
   var root = document.documentElement;
   root.classList.add('has-site-nav');
-  var path = location.pathname;
-  var home = path === '/' || path === '/index.html';
-  if (!home) return;
-  var member = null;
-  try { member = localStorage.getItem('lgme.demo.member'); } catch (error) { member = null; }
-  if (!member) root.classList.add('demo-gate');
-  else root.classList.add('demo-member');
+  try {
+    var pending = JSON.parse(sessionStorage.getItem('lgme.demo.pending') || 'null');
+    if (pending && pending.step && pending.step !== 'home') root.classList.add('demo-form');
+  } catch (error) { /* a broken note does not open the form */ }
 })();

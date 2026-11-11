@@ -1263,7 +1263,8 @@ function emailJoinCard() {
 
 async function renderRegister() {
   if (!localStorage.getItem('lgme.demo.member') && localStorage.getItem('lgme-gym.mode') !== 'demo') {
-    location.replace('/?demo=1');
+    sessionStorage.setItem('lgme.demo.pending', JSON.stringify({ step: 'email', choice: 'Health' }));
+    location.replace('/?home=1');
     return el('p', {}, ['Opening the demo sign-in.']);
   }
   const invite = readJoin(sessionStorage);
@@ -2032,7 +2033,7 @@ async function render() {
   } else if (path === '/page') view = await personalPageView({ storage: localStorage, status, go, mine: await seat(), signedGym, peerStore: store });
   else if (path === '/start' && registered && mode !== 'demo') view = await renderDashboard();
   else if (path === '/helper') view = await renderHelperHome();
-  else if (path === '/register' || path === '/start' || (!registered && mode !== 'demo' && path === '/')) view = await renderRegister();
+  else if (path === '/register' || path === '/start') view = await renderRegister();
   else if (registered && (path === '/' || path === '/me')) view = await renderDashboard();
   else view = await renderClub();
   panel.replaceChildren(view);

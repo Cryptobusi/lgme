@@ -311,37 +311,52 @@
     .entry-tile[data-entry="circles"] { background-image: url('/images/photos/stretch-640.webp'); }
     .entry-tile[data-entry="stories"] { background-image: url('/images/photos/jogger-640.webp'); }
     .entry-tile[data-entry="exchange"] { background-image: url('/images/photos/dumbbells-640.webp'); }
+    @media (max-width: 767px) {
+      #health-tile .tile-note:not(:has(#start-health)),
+      #health-tile .photo-actions,
+      #health-photo-status { display: none; }
+      .entry-tile.health, .entry-tile.health .health-open { min-height: 5.6rem; }
+      #start-helper-note { display: none; }
+    }
     @media (min-width: 800px) {
       .entry-grid { grid-template-columns: repeat(4, 1fr); }
       .entry-tile.health { grid-column: span 2; }
     }
-    html.demo-gate body > *:not(#demo-root):not(#site-nav),
-    body.demo-gate > *:not(#demo-root):not(#site-nav) { display: none !important; }
-    html.demo-member #demo-root { min-height: 24rem; }
-    #demo-root { max-width: 40rem; margin: 0 auto; padding: 1rem; }
+    #demo-root { max-width: 40rem; margin: 0 auto; padding: 0.2rem 0 0.4rem; min-height: 3.2rem; }
+    html.demo-form #demo-root { min-height: 22rem; }
     #demo-root h2 { font-family: Newsreader, serif; font-weight: 500; }
     #demo-root input, #demo-root textarea, #demo-root button { font: inherit; min-height: 44px; }
     #demo-root input, #demo-root textarea { width: 100%; box-sizing: border-box; padding: 0.45rem 0.6rem; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); }
-    #demo-root button.primary, #demo-root .demo-choice { background: #F97316; color: #1c1b19; font-weight: 700; border: 0; border-radius: 12px; padding: 0.8rem; }
-    .demo-choices { display: grid; gap: 0.6rem; }
-    @media (min-width: 768px) { .demo-choices { grid-template-columns: 1fr 1fr; } }
+    #demo-root button.primary, #demo-root .demo-choice, #demo-actions .demo-choice, #demo-signin { background: #F97316; color: #1c1b19; font-weight: 700; border: 0; border-radius: 12px; padding: 0.8rem; font: inherit; }
+    #demo-actions.demo-choices { display: flex; flex-wrap: nowrap; gap: 0.5rem; overflow-x: auto; margin: 0.4rem 0; }
+    #demo-actions .demo-choice { flex: 0 0 auto; white-space: nowrap; }
+    #demo-signin { min-height: 44px; margin: 0.2rem 0 0.6rem; }
     .demo-help { display: block; font-weight: 500; color: var(--muted); }
     .demo-badge { margin: 0.25rem; }
     #demo-dashboard { border: 1px solid var(--gold); border-radius: 12px; padding: 0.8rem; margin-bottom: 1rem; }
   </style>
 </head>
 <body>
-  <div id="demo-root"></div>
   <script src="/js/home-entry.js"></script>
   <script src="/js/site-nav.js"></script>
   <script type="module" src="/js/demo-page.mjs"></script>
   <section class="entry-picker" aria-label="Categories">
     <p class="beta-banner" role="status">Health is in beta. Every category is open. You can look, list, and trade.</p>
-    <section class="card" id="install-lgme">
-      <h2>Install</h2>
-      <p id="install-lgme-text">Install lgme, then open it from the icon. A returning member goes straight to Health.</p>
-      <button type="button" id="install-lgme-button" hidden>Install</button>
-    </section>
+    <div id="demo-root">
+      <section id="demo-dashboard">
+        <h2>New since your last visit</h2>
+        <div id="demo-badges"><p>No new posts.</p></div>
+      </section>
+    </div>
+    <div id="demo-actions" class="demo-choices">
+      <button type="button" class="demo-choice" data-choice="IwantIT">IwantIT</button>
+      <button type="button" class="demo-choice" data-choice="IdidIt (verified receipt)">IdidIt (verified receipt)</button>
+      <button type="button" class="demo-choice" data-choice="IwanIT help develop">IwanIT help develop</button>
+      <button type="button" class="demo-choice" data-choice="Offer">Offer</button>
+      <button type="button" class="demo-choice" data-choice="Browse">Browse</button>
+      <button type="button" class="demo-choice" data-choice="Health">Health</button>
+    </div>
+    <button type="button" class="primary" id="demo-signin">Try the demo / Sign in</button>
     <h2>Categories</h2>
     <div class="entry-grid">
       <div class="entry-tile health has-photo" id="health-tile" data-image-slot="tile-health">
@@ -387,6 +402,11 @@
       </article>
     </div>
     <p><a href="/milestones">Next milestones</a></p>
+    <section class="card" id="install-lgme">
+      <h2>Install</h2>
+      <p id="install-lgme-text">Install lgme, then open it from the icon. A returning member goes straight to Health.</p>
+      <button type="button" id="install-lgme-button" hidden>Install</button>
+    </section>
   </section>
   <script type="module" src="/js/health-tile-photo.mjs"></script>
   <script type="module" src="/js/personal-images-apply.mjs"></script>

@@ -6,6 +6,7 @@ const root = document.getElementById('demo-root');
 if (!root) throw new Error('missing demo root');
 
 const PENDING = 'lgme.demo.pending';
+const NEEDS_ACCOUNT = new Set(['IwantIT', 'IdidIt (verified receipt)', 'IwanIT help develop', 'Offer', 'Health']);
 const state = { step: 'email', email: '', choice: '', draft: null, busy: false };
 
 function readPending() {
@@ -28,23 +29,26 @@ function el(tag, attrs = {}, children = []) {
   return node;
 }
 
-function gate(on) {
-  document.body.classList.toggle('demo-gate', on);
+function showBoard() {
+  document.documentElement.classList.remove('demo-gate');
+  document.body.classList.remove('demo-gate');
 }
 
-function paintDashboard() {
-  gate(false);
+function accountReady() {
+  const member = readDemo(localStorage);
+  return Boolean(member && member.disclaimer !== false);
+}
+
+function paintHome() {
+  showBoard();
+  state.step = 'home';
   const posts = [...readPosts(localStorage), ...examplePosts()];
   const fresh = newSince(posts, readSeen(localStorage));
   const counts = countByCategory(fresh);
   const badges = Object.entries(counts).map(([category, count]) => el('button', { type: 'button', class: 'demo-badge', 'data-category': category }, [`${category} ${count} new`]));
-  const list = fresh.slice(0, 6).map((post) => el('li', {}, [
-    el('button', { type: 'button', class: 'demo-open', 'data-open': post.category }, [`${post.example ? 'Example. ' : ''}${post.category}: ${post.title}`])
-  ]));
   root.replaceChildren(el('section', { id: 'demo-dashboard' }, [
     el('h2', {}, ['New since your last visit']),
-    el('div', { id: 'demo-badges' }, badges.length ? badges : [el('p', {}, ['No new posts.'])]),
-    el('ul', { id: 'demo-new-list' }, list)
+    el('div', { id: 'demo-badges' }, badges.length ? badges : [el('p', {}, ['No new posts.'])])
   ]));
   root.querySelectorAll('[data-category], [data-open]').forEach((button) => {
     button.addEventListener('click', () => {
@@ -56,7 +60,26 @@ function paintDashboard() {
   });
 }
 
+function begin(choice) {
+  if (!choice || choice === 'Browse' || !NEEDS_ACCOUNT.has(choice)) {
+    document.querySelector('.entry-grid')?.scrollIntoView({ block: 'start' });
+    return;
+  }
+  state.choice = choice;
+  if (accountReady()) {
+    writePending(null);
+    paintGuide();
+    root.scrollIntoView({ block: 'start' });
+    return;
+  }
+  writePending({ step: 'email', choice });
+  paintEmail();
+  root.scrollIntoView({ block: 'start' });
+}
+
 function paintGuide() {
+  state.busy = false;
+  showBoard();
   const ctx = { ...deviceContext(), handle: readDemo(localStorage)?.handle || 'demo', category: deviceContext().category || 'Health' };
   const helper = pickHelperSync();
   const base = draftFor(state.choice, ctx);
@@ -93,7 +116,7 @@ function paintGuide() {
     writePending(null);
     if (state.choice === 'Health') { location.assign('/gym#/start'); return; }
     state.step = 'home';
-    paintDashboard();
+    paintHome();
   });
   root.replaceChildren(el('section', { id: 'demo-guide' }, [
     note,
@@ -128,10 +151,17 @@ function paintChoice() {
 function paintDisclaimer() {
   const button = el('button', { type: 'button', class: 'primary', id: 'demo-understand' }, ['I understand']);
   button.addEventListener('click', () => {
+    const pending = readPending();
+    const choice = state.choice || pending?.choice || '';
     saveDemo(localStorage, { disclaimer: true });
-    writePending({ step: 'choice' });
-    state.step = 'choice';
-    paintChoice();
+    writePending(null);
+    if (choice && NEEDS_ACCOUNT.has(choice)) {
+      state.choice = choice;
+      paintGuide();
+      root.scrollIntoView({ block: 'start' });
+      return;
+    }
+    paintHome();
   });
   root.replaceChildren(el('section', { id: 'demo-disclaimer' }, [
     el('h2', {}, ['Demo']),
@@ -157,7 +187,7 @@ function paintCode() {
     if (!body.ok) { status.textContent = body.error || body.waiting || 'Not verified.'; return; }
     saveDemo(localStorage, { emailHash: body.emailHash || 'demo', disclaimer: false, at: new Date().toISOString() });
     localStorage.setItem('lgme-gym.seat', 'demo');
-    writePending(null);
+    writePending({ step: 'disclaimer', choice: state.choice });
     state.email = '';
     state.step = 'disclaimer';
     paintDisclaimer();
@@ -187,7 +217,7 @@ function paintEmail() {
     if (!body.ok) { status.textContent = body.error || body.waiting || 'Email sign-in is not connected yet.'; return; }
     state.email = email.value.trim();
     state.step = 'code';
-    writePending({ step: 'code', email: state.email });
+    writePending({ step: 'code', email: state.email, choice: state.choice });
     paintCode();
   });
   root.replaceChildren(el('section', { id: 'demo-email-step' }, [
@@ -200,25 +230,37 @@ function paintEmail() {
   ]));
 }
 
+document.querySelectorAll('#demo-actions [data-choice]').forEach((button) => {
+  button.addEventListener('click', () => begin(button.getAttribute('data-choice')));
+});
+document.getElementById('demo-signin')?.addEventListener('click', () => {
+  state.choice = '';
+  writePending({ step: 'email', choice: '' });
+  paintEmail();
+  root.scrollIntoView({ block: 'start' });
+});
+document.getElementById('start-health')?.addEventListener('click', (event) => {
+  if (accountReady()) return;
+  event.preventDefault();
+  begin('Health');
+});
+
 const member = readDemo(localStorage);
-const force = new URLSearchParams(location.search).get('demo') === '1';
 const pending = readPending();
-if (!member) {
-  gate(true);
-  if (pending?.step === 'code' && pending.email) {
-    state.email = pending.email;
-    paintCode();
-  } else paintEmail();
-} else if (member.disclaimer === false) {
-  gate(true);
+const ask = new URLSearchParams(location.search).get('demo') === '1';
+if (pending?.step === 'code' && pending.email) {
+  state.email = pending.email;
+  state.choice = pending.choice || '';
+  paintCode();
+} else if (member?.disclaimer === false) {
+  state.choice = pending?.choice || '';
   paintDisclaimer();
-} else if (pending?.step === 'guide' && pending.choice && !member.choice) {
-  gate(true);
+} else if (ask || (pending?.step === 'email' && pending.choice)) {
+  state.choice = pending?.choice || 'Health';
+  paintEmail();
+} else if (pending?.step === 'guide' && pending.choice && accountReady()) {
   state.choice = pending.choice;
   paintGuide();
-} else if ((force || pending?.step === 'choice') && !member.choice) {
-  gate(true);
-  paintChoice();
 } else {
-  paintDashboard();
+  paintHome();
 }
