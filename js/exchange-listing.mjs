@@ -1,6 +1,8 @@
 import { deedCreditSplit } from './commons-split.mjs';
-import { VIEW_ONLY_MESSAGE } from './view-only-api.mjs';
 import { categoryOpen } from './category-help.mjs';
+import { VIEW_ONLY_MESSAGE } from './view-only-api.mjs';
+
+export const LOCAL_ONLY_MESSAGE = 'Saved on this device. Only Health is written to the test network.';
 
 export const LISTINGS_TOPIC = '0.0.11397293';
 export const LISTINGS_OPERATOR = '0.0.11281203';

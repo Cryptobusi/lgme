@@ -1,5 +1,5 @@
 import { CHOICES, DISCLAIMER, countByCategory, draftFor, examplePosts, markSeen, newSince, readDemo, readPosts, readSeen, saveDemo, savePost } from './demo-onboard.mjs';
-import { deviceContext, draftWithHelper, pickHelperSync, showHelperNote } from './one-tap.mjs';
+import { AI_ENABLE, deviceContext, draftWithHelper, localAiReady, pickHelperSync, showHelperNote } from './one-tap.mjs';
 import { ensureDeviceKey } from './device-sign.mjs';
 
 const root = document.getElementById('demo-root');
@@ -46,10 +46,13 @@ function paintHome() {
   const fresh = newSince(posts, readSeen(localStorage));
   const counts = countByCategory(fresh);
   const badges = Object.entries(counts).map(([category, count]) => el('button', { type: 'button', class: 'demo-badge', 'data-category': category }, [`${category} ${count} new`]));
+  const mine = readPosts(localStorage)[0];
+  const saved = mine && mine.where === 'device' ? el('p', { id: 'demo-saved' }, ['Saved on this device.']) : null;
   root.replaceChildren(el('section', { id: 'demo-dashboard' }, [
     el('h2', {}, ['New since your last visit']),
-    el('div', { id: 'demo-badges' }, badges.length ? badges : [el('p', {}, ['No new posts.'])])
-  ]));
+    el('div', { id: 'demo-badges' }, badges.length ? badges : [el('p', {}, ['No new posts.'])]),
+    saved
+  ].filter(Boolean)));
   root.querySelectorAll('[data-category], [data-open]').forEach((button) => {
     button.addEventListener('click', () => {
       const category = button.getAttribute('data-category') || button.getAttribute('data-open');
@@ -66,6 +69,11 @@ function begin(choice) {
     return;
   }
   state.choice = choice;
+  if (accountReady() && (navigator.onLine === false || !localAiReady())) {
+    const flag = document.getElementById('ai-flag');
+    if (flag) flag.hidden = false;
+    return;
+  }
   if (accountReady()) {
     writePending(null);
     paintGuide();
@@ -96,15 +104,22 @@ function paintGuide() {
       prompt: `Explain this request in one short sentence. ${body.value}`,
       scope: window
     });
-    body.value = result.text;
+    if (result.blocked) { note.textContent = result.notice || AI_ENABLE; return; }
+    if (result.text) body.value = result.text;
   });
   const confirm = el('button', { type: 'button', class: 'primary', id: 'demo-confirm' }, ['Confirm']);
   confirm.addEventListener('click', async () => {
     if (state.busy) return;
+    if (navigator.onLine === false || !localAiReady()) {
+      note.textContent = AI_ENABLE;
+      return;
+    }
     state.busy = true;
     confirm.disabled = true;
-    const post = { id: `me-${Date.now()}`, category: state.choice === 'Health' ? 'Health' : (ctx.category || 'Health'), title: title.value, at: new Date().toISOString(), example: false };
-    if (state.choice !== 'Browse') savePost(localStorage, post);
+    const raw = String(ctx.category || '').toLowerCase();
+    const named = { campus: 'Campus', exchange: 'Exchange', neighbor: 'Neighbor help', hosts: 'Hosts', circles: 'Circles', stories: 'Stories' }[raw] || 'Exchange';
+    const post = { id: `me-${Date.now()}`, category: state.choice === 'Health' ? 'Health' : named, title: title.value, at: new Date().toISOString(), example: false };
+    if (state.choice !== 'Browse' && state.choice !== 'Health' && state.choice !== 'IwanIT help develop') savePost(localStorage, { ...post, where: 'device' });
     if (state.choice === 'IwanIT help develop') {
       await fetch('/api/develop/want', {
         method: 'POST',

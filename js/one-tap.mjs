@@ -2,10 +2,11 @@ const CACHE = 'lgme.helper.pick';
 const MEMORY = 'lgme.oneTap.memory';
 const PRIVATE = /@|https?:|\b\d{3}[-.\s]?\d{3}|\b(diagnos\w*|prescription|gps|latitude)\b/i;
 
+export const AI_ENABLE = 'Turn on the browser’s built-in AI. In Chrome, open settings and enable the on-device model, then come back.';
+
 export function helperNote(id) {
   if (id === 'browser' || id === 'model') return 'Using: on-device AI';
-  if (id === 'none') return 'Using: no AI';
-  return 'Using: app helper';
+  return AI_ENABLE;
 }
 
 function browserApi(scope) {
@@ -18,13 +19,17 @@ function hasBrowser(api) {
 
 export function pickHelperSync(scope = globalThis, storage = scope.localStorage) {
   const nav = scope.navigator || {};
-  if (nav.lgmeAi === 'off') return { id: 'none', note: helperNote('none') };
-  if (nav.lgmeAi === 'app') return { id: 'app', note: helperNote('app') };
-  if (hasBrowser(browserApi(scope))) return { id: 'browser', note: helperNote('browser') };
+  const unavailable = { id: 'unavailable', ready: false, note: AI_ENABLE };
+  if (nav.lgmeAi === 'off' || nav.lgmeAi === 'app') return unavailable;
+  if (hasBrowser(browserApi(scope))) return { id: 'browser', ready: true, note: helperNote('browser') };
   try {
-    if (storage?.getItem('lgme.localModel.ready') === '1') return { id: 'model', note: helperNote('model') };
-  } catch { /* keep going */ }
-  return { id: 'app', note: helperNote('app') };
+    if (storage?.getItem('lgme.localModel.ready') === '1') return { id: 'model', ready: true, note: helperNote('model') };
+  } catch { /* the notice still shows */ }
+  return unavailable;
+}
+
+export function localAiReady(scope = globalThis, storage = scope.localStorage) {
+  return pickHelperSync(scope, storage).ready === true;
 }
 
 export function refreshHelper(scope = globalThis, storage = scope.localStorage, onChange) {
@@ -35,9 +40,9 @@ export function refreshHelper(scope = globalThis, storage = scope.localStorage, 
     if (picked.note !== first.note && onChange) onChange(picked);
     return picked;
   };
-  if (typeof api?.availability !== 'function' || first.id === 'none') return Promise.resolve(finish(first));
+  if (typeof api?.availability !== 'function' || !first.ready) return Promise.resolve(finish(first));
   return Promise.race([
-    Promise.resolve(api.availability()).then((state) => (state === 'available' || state === 'readily' ? { id: 'browser', note: helperNote('browser') } : first)).catch(() => first),
+    Promise.resolve(api.availability()).then((state) => (state === 'available' || state === 'readily' ? { id: 'browser', ready: true, note: helperNote('browser') } : { id: 'unavailable', ready: false, note: AI_ENABLE })).catch(() => first),
     new Promise((resolve) => { setTimeout(() => resolve(first), 250); })
   ]).then(finish);
 }
@@ -83,8 +88,11 @@ async function askBrowser(scope, prompt) {
 
 export async function draftWithHelper(helper, { template, prompt, scope = globalThis } = {}) {
   const safeTemplate = String(template || '').slice(0, 280);
-  if (!helper || helper.id !== 'browser' || PRIVATE.test(prompt || '') || PRIVATE.test(safeTemplate)) {
-    return { text: safeTemplate, helper, sent: false };
+  if (!helper?.ready || helper.id !== 'browser') {
+    return { text: safeTemplate, blocked: true, notice: AI_ENABLE, helper, sent: false };
+  }
+  if (PRIVATE.test(prompt || '') || PRIVATE.test(safeTemplate)) {
+    return { text: safeTemplate, helper, sent: false, blocked: false };
   }
   try {
     const text = await Promise.race([
@@ -100,5 +108,5 @@ export async function draftWithHelper(helper, { template, prompt, scope = global
 }
 
 export function showHelperNote(node, helper) {
-  if (node) node.textContent = helper?.note || helperNote('app');
+  if (node) node.textContent = helper?.note || AI_ENABLE;
 }

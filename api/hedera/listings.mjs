@@ -253,6 +253,9 @@ export default async function handler(req, res) {
   if (!categoryOpen(payload.category || 'exchange')) {
     return json(res, 403, { ok: false, viewOnly: true, error: VIEW_ONLY_MESSAGE });
   }
+  if (!fee && String(built.body.category || payload.category || '').toLowerCase() !== 'health') {
+    return json(res, 403, { ok: false, localOnly: true, error: 'Saved on this device. Only Health is written to the test network.' });
+  }
   const signed = await verifyDevice(body.publicJwk, payload, body.sig);
   if (!signed || payload.handle !== body.handle) return json(res, 401, { ok: false, error: 'The device signature was refused.' });
   if (!enabled) return json(res, 503, { ok: false, enabled: false, error: 'Shared listings are not on.' });

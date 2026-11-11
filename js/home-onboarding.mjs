@@ -83,6 +83,7 @@ function mountExplain() {
   showHelperNote(note, helper);
   refreshHelper(window, localStorage, (picked) => showHelperNote(note, picked));
   button.addEventListener('click', async () => {
+    if (!helper.ready) { answer.textContent = helper.note; return; }
     const template = explainJoin(question?.value || '').text;
     const result = await draftWithHelper(helper, {
       template,

@@ -107,8 +107,8 @@ for (const [width, height] of sizes) {
       } else {
         assert(box.hidden === false, `${label} no-AI path hidden`);
         await page.locator('#explain-join').click();
-        await page.waitForFunction(() => /I do not sign you up/.test(document.getElementById('explain-answer')?.textContent || ''));
-        assert(/no AI/i.test(await page.locator('#explain-note').innerText()), 'missing no-AI note');
+        await page.waitForFunction(() => /built-in AI/i.test(document.getElementById('explain-answer')?.textContent || ''));
+        assert(/built-in AI/i.test(await page.locator('#explain-note').innerText()), 'missing enable note');
         if (width === 390) {
           mkdirSync('/opt/cursor/artifacts', { recursive: true });
           await page.screenshot({ path: '/opt/cursor/artifacts/join-step2-phone-no-ai.png' });

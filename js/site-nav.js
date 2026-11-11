@@ -22,6 +22,12 @@
   }
   document.documentElement.classList.add('has-site-nav');
   document.body.classList.add('has-site-nav');
+  if (!document.querySelector('script[src="/js/local-ai-panel.mjs"]')) {
+    var panel = document.createElement('script');
+    panel.type = 'module';
+    panel.src = '/js/local-ai-panel.mjs';
+    document.body.appendChild(panel);
+  }
   var backButton = bar.querySelector('#site-back');
   if (backButton && !backButton.dataset.bound) {
     backButton.dataset.bound = '1';

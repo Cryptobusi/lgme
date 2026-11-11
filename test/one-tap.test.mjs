@@ -15,9 +15,10 @@ test('the helper pick is instant and the draft stays on the device', async () =>
   storage.setItem('lgme-gym.seat', 'Mina Vale');
   storage.setItem('lgme.entry.category', 'campus');
   const none = pickHelperSync({ navigator: { lgmeAi: 'off' } }, storage);
-  assert.equal(none.note, 'Using: no AI');
-  const app = pickHelperSync({ navigator: {} }, storage);
-  assert.equal(app.note, 'Using: app helper');
+  assert.equal(none.ready, false);
+  assert.match(none.note, /built-in AI/);
+  const app = pickHelperSync({ navigator: { lgmeAi: 'app' } }, storage);
+  assert.equal(app.ready, false);
   const browser = pickHelperSync({ navigator: {}, LanguageModel: { prompt: async () => 'ok' } }, storage);
   assert.equal(browser.note, 'Using: on-device AI');
   const ctx = deviceContext(storage, { getItem: () => null });

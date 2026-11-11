@@ -66,6 +66,14 @@ async function run(width, height, tier) {
   const page = await open(width, height, tier);
   const noteFor = async (selector) => (await page.locator(selector).innerText()).trim();
   try {
+    if (tier !== 'browser') {
+      await page.goto(`${base}/`, { waitUntil: 'domcontentloaded' });
+      await page.locator('#ai-dock').waitFor();
+      assert(/built-in AI/i.test(await page.locator('#ai-log').innerText()), 'enable notice');
+      console.log(`PASS ${width} ${tier} notice`);
+      await page.context().close();
+      return;
+    }
     await page.goto(`${base}/?picker=1`, { waitUntil: 'domcontentloaded' });
     await page.locator('#helper-note').waitFor();
     const installNote = await noteFor('#helper-note');
