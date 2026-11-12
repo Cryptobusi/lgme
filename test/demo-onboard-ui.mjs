@@ -47,7 +47,7 @@ for (const [width, height] of [[390, 844], [768, 1024], [1280, 800]]) {
   try {
     await page.goto(`${base}/`, { waitUntil: 'domcontentloaded' });
     await page.locator('.entry-tile .badge', { hasText: 'Beta' }).waitFor();
-    await page.locator('.help-develop').first().waitFor();
+    await page.locator('#help-develop-open').waitFor();
     await page.locator('#demo-signin').waitFor();
     assert(await page.locator('#demo-email').count() === 0, 'sign-in flashed');
     await page.locator('#site-home').waitFor();

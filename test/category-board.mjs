@@ -79,8 +79,6 @@ try {
   await page.locator('#health-tile').scrollIntoViewIfNeeded();
   await page.screenshot({ path: '/opt/cursor/artifacts/categories-home-390.png' });
   await page.locator('#help-develop-open').click();
-  await page.locator('#help-develop-chips').getByRole('button', { name: 'Campus', exact: true }).click();
-  await page.locator('#help-develop-go').click();
   await page.waitForURL(/\/develop\?category=Campus/);
   assert(await page.locator('#want-kind').inputValue() === 'IwanIT', 'kind');
   assert(await page.locator('#want-category').inputValue() === 'Campus', 'category');

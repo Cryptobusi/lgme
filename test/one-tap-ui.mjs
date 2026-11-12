@@ -58,7 +58,16 @@ async function open(width, height, tier) {
   }, tier);
   await page.route('**/*', (route) => route.request().url().startsWith(base) ? route.continue() : route.abort());
   page.tapCount = () => taps;
-  page.count = async (selector) => { taps += 1; await page.locator(selector).click(); };
+  page.count = async (selector) => {
+    taps += 1;
+    await page.locator(selector).evaluate((node) => {
+      const dock = document.getElementById('ai-dock');
+      const limit = dock ? dock.getBoundingClientRect().top - 12 : window.innerHeight;
+      const box = node.getBoundingClientRect();
+      if (box.bottom > limit) window.scrollBy(0, box.bottom - limit + 16);
+      node.click();
+    });
+  };
   return page;
 }
 
@@ -94,8 +103,8 @@ async function run(width, height, tier) {
     rows.push({ flow: 'Explain this to me', tier, width, taps: 1, note: await noteFor('#explain-note') });
 
     await page.goto(`${base}/?picker=1`, { waitUntil: 'domcontentloaded' });
-    await page.locator('[data-entry="campus"] .help-develop').scrollIntoViewIfNeeded();
-    await page.count('[data-entry="campus"] .help-develop');
+    await page.locator('#help-develop-open').scrollIntoViewIfNeeded();
+    await page.count('#help-develop-open');
     await page.waitForSelector('#want-title');
     assert((await page.locator('#want-title').inputValue()).includes('Campus'), 'title');
     assert((await page.locator('#want-skill').inputValue()) === 'writing', 'skill');

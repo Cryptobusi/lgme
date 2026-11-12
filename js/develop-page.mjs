@@ -1,4 +1,4 @@
-import { helpDraft } from './category-help.mjs';
+import { CATEGORIES, helpDraft } from './category-help.mjs';
 import { publicHelpWant } from './develop-want.mjs';
 import { deviceContext, draftWithHelper, pickHelperSync, refreshHelper, rememberContext, showHelperNote } from './one-tap.mjs';
 
@@ -13,6 +13,23 @@ const context = deviceContext();
 document.getElementById('want-kind').value = draft.kind;
 document.getElementById('want-category').value = draft.category;
 document.getElementById('want-title').value = draft.title;
+const chips = document.getElementById('help-develop-chips');
+if (chips) {
+  for (const item of CATEGORIES.filter((entry) => entry.badge !== 'Beta')) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = item.name;
+    button.setAttribute('aria-pressed', item.name === draft.category ? 'true' : 'false');
+    button.addEventListener('click', () => {
+      const next = helpDraft(item.name);
+      document.getElementById('want-category').value = next.category;
+      document.getElementById('want-title').value = next.title;
+      chips.querySelectorAll('button').forEach((chip) => chip.setAttribute('aria-pressed', 'false'));
+      button.setAttribute('aria-pressed', 'true');
+    });
+    chips.append(button);
+  }
+}
 document.getElementById('want-body').value = context.handle
   ? `${draft.body} I am ${context.handle}.`
   : draft.body;

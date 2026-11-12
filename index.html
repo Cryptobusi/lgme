@@ -373,10 +373,7 @@
     #demo-actions.demo-choices { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.6rem 0 0.3rem; overflow: visible; }
     #demo-actions .demo-choice { box-sizing: border-box; flex: 1 1 8rem; min-width: 0; max-width: 100%; white-space: normal; text-align: center; }
     #demo-signin { min-height: 44px; width: 100%; margin: 0.2rem 0 0.6rem; }
-    #help-develop-open { min-height: 44px; font: inherit; font-weight: 700; border-radius: 999px; border: 1px solid #c6a15b; background: transparent; color: #f4f1e8; padding: 0.4rem 0.9rem; }
-    #help-develop-chips { display: flex; gap: 0.4rem; overflow-x: auto; }
-    #help-develop-chips button { flex: 0 0 auto; min-height: 36px; border-radius: 999px; border: 1px solid #c6a15b; background: #0c100c; color: #f4f1e8; font: inherit; font-weight: 700; }
-    #help-develop-chips button[aria-pressed="true"] { background: #F97316; color: #1a1408; }
+    #help-develop-open { display: inline-flex; align-items: center; min-height: 44px; font: inherit; font-weight: 700; border-radius: 999px; border: 1px solid #c6a15b; color: #f4f1e8; text-decoration: none; padding: 0.4rem 0.9rem; }
     .tile-new { position: absolute; bottom: 0.35rem; right: 0.35rem; z-index: 2; min-height: 28px; padding: 0.1rem 0.4rem; border-radius: 999px; border: 0; background: #f4f1e8; color: #1c1b19; font: inherit; font-size: 0.75rem; font-weight: 700; }
     .demo-help { display: block; font-weight: 500; color: var(--muted); }
     .demo-badge { margin: 0.25rem; }
@@ -423,13 +420,7 @@
         <a class="tile-open" href="/exchange"><span class="badge">In development</span><span class="tile-name">Exchange</span></a>
       </article>
     </div>
-    <p id="help-develop-row"><button type="button" id="help-develop-open">Help develop</button></p>
-    <section id="help-develop-sheet" hidden>
-      <p>Pick one category. One open note per category.</p>
-      <div id="help-develop-chips"></div>
-      <p><a id="help-develop-go" href="/develop?category=Campus">Open the draft</a></p>
-      <p><a href="/hosts#dev-interest">Join the developer team</a></p>
-    </section>
+    <p id="help-develop-row"><a id="help-develop-open" href="/develop?category=Campus">Help develop</a></p>
     <div id="demo-actions" class="demo-choices">
       <button type="button" class="demo-choice" data-choice="IwantIT">IwantIT</button>
       <button type="button" class="demo-choice" data-choice="IdidIt (verified receipt)">IdidIt (verified receipt)</button>

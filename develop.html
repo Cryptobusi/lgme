@@ -14,6 +14,9 @@
     textarea { min-height: 6rem; }
     button { margin-top: 0.7rem; }
     #want-status, #want-helper { min-height: 1.4rem; }
+    #help-develop-chips { display: flex; gap: 0.4rem; overflow-x: auto; margin: 0.4rem 0; }
+    #help-develop-chips button { flex: 0 0 auto; min-height: 36px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); font: inherit; font-weight: 700; }
+    #help-develop-chips button[aria-pressed="true"] { background: #F97316; color: #1a1408; }
     #want-suggest-row { min-height: 44px; }
   </style>
 </head>
@@ -26,7 +29,9 @@
     <label for="want-kind">Type</label>
     <input id="want-kind" name="kind" value="IwanIT" readonly />
     <label for="want-category">Category</label>
+    <div id="help-develop-chips" role="group" aria-label="Category"></div>
     <input id="want-category" name="category" readonly />
+    <p><a href="/hosts#dev-interest">Join the developer team</a></p>
     <label for="want-title">Title</label>
     <input id="want-title" name="title" maxlength="80" required data-help="This is the title of the IwanIT note. It tells the owner what you want to help build." data-options="I can help test|I can write plain words|I can try the phone flow" />
     <label for="want-body">Note</label>
