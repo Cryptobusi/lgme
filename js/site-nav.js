@@ -1,6 +1,6 @@
 (function () {
   var EPOCH = '2';
-  var CURRENT = { 'lgme-v176': 1, 'lgme-gym-v81': 1 };
+  var CURRENT = { 'lgme-v177': 1, 'lgme-gym-v81': 1 };
   function keep(name) {
     if (!name) return true;
     if (name === 'lgme.reset.epoch' || name === 'lgme.reset.note' || name === 'lgme.device.key' || name === 'lgme-gym.seat' || name === 'lgme.health.book' || name === 'lgme.health.email' || name === 'lgme.health.plan' || name === 'lgme.health.contact' || name === 'lgme.health.contactGrants' || name === 'lgme.health.consent' || name === 'lgme.demo.member') return true;
@@ -91,6 +91,11 @@
     panel.src = '/js/local-ai-panel.mjs';
     document.body.appendChild(panel);
   }
+  document.addEventListener('click', function (event) {
+    var button = event.target.closest && event.target.closest('[data-copy]');
+    if (!button || !navigator.clipboard || !navigator.clipboard.writeText) return;
+    navigator.clipboard.writeText(button.getAttribute('data-copy')).then(function () { button.textContent = 'Copied'; }).catch(function () {});
+  });
   var backButton = bar.querySelector('#site-back');
   if (backButton && !backButton.dataset.bound) {
     backButton.dataset.bound = '1';

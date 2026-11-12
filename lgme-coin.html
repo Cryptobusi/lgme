@@ -18,7 +18,11 @@
     body { margin:0 auto; max-width:40rem; padding:0 0 3rem; background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; line-height:1.5; }
     .notice { margin:0; padding:0.85rem 1.1rem; background:var(--accent); color:var(--ink); font-weight:600; }
     .wrap { padding:1rem 1.1rem 0; }
-    h1 { font-family:Newsreader,serif; font-weight:500; font-size:clamp(2rem, 6vw, 2.8rem); margin:0.2rem 0 0.4rem; }
+    h1 { font-family:Newsreader,serif; font-weight:500; font-size:clamp(2rem, 6vw, 2.8rem); margin:0.2rem 0 0.4rem; display:flex; align-items:center; gap:0.55rem; }
+    h1 img { width:36px; height:36px; }
+    .lgme-token { display:flex; flex-wrap:wrap; align-items:center; gap:0.35rem 0.55rem; }
+    .lgme-token a { word-break:break-all; }
+    .lgme-token button { min-height:32px; }
     h2 { font-family:Newsreader,serif; font-weight:500; font-size:1.35rem; margin:1.4rem 0 0.4rem; }
     h3 { font-family:Newsreader,serif; font-weight:500; font-size:1.1rem; margin:0 0 0.35rem; }
     a { color:var(--fg); }
@@ -54,7 +58,8 @@
       <source srcset="/icons/lgme-coin-512.webp" type="image/webp" />
       <img class="coin" src="/icons/icon-512.png" width="512" height="512" alt="Egonomic Anonymous coin, #legomiego" />
     </picture>
-    <h1>$lgme</h1>
+    <h1><img src="/icons/lgme-coin.svg" width="36" height="36" alt="" />$lgme</h1>
+    <p class="lgme-token"><span>$lgme pegged to US$</span><span>Solana</span><a href="https://solscan.io/token/6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY">6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY</a><button type="button" data-copy="6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY">Copy</button><span>@EgonAnon</span></p>
     <p class="muted">The #legomiego coin. Egonomic Anonymous.</p>
 
     <h2>Mint address</h2>

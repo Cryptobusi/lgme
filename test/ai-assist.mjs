@@ -181,13 +181,17 @@ async function launch(view) {
 }
 
 async function clickClear(page, selector) {
-  await page.locator(selector).evaluate((node) => {
-    const dock = document.getElementById('ai-dock');
-    const limit = dock ? dock.getBoundingClientRect().top - 12 : window.innerHeight;
-    const box = node.getBoundingClientRect();
-    if (box.bottom > limit) window.scrollBy(0, box.bottom - limit + 16);
-    node.click();
-  });
+  try {
+    await page.locator(selector).evaluate((node) => {
+      const dock = document.getElementById('ai-dock');
+      const limit = dock ? dock.getBoundingClientRect().top - 12 : window.innerHeight;
+      const box = node.getBoundingClientRect();
+      if (box.bottom > limit) window.scrollBy(0, box.bottom - limit + 16);
+      node.click();
+    });
+  } catch (error) {
+    if (!/destroyed|navigation/.test(String(error && error.message))) throw error;
+  }
 }
 
 async function aiHelp(view) {

@@ -26,6 +26,11 @@
       new QRCode(host, { text: text, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
     }
 
+    document.addEventListener('click', function (event) {
+      var button = event.target.closest && event.target.closest('[data-copy]');
+      if (!button || !navigator.clipboard || !navigator.clipboard.writeText) return;
+      navigator.clipboard.writeText(button.getAttribute('data-copy')).then(function () { button.textContent = 'Copied'; }).catch(function () {});
+    });
     document.getElementById('copy-mint').addEventListener('click', function () { copyFrom('mint', this); });
     document.getElementById('copy-donate').addEventListener('click', function () { copyFrom('donate', this); });
 

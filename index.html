@@ -374,6 +374,10 @@
     #demo-actions .demo-choice { box-sizing: border-box; flex: 1 1 8rem; min-width: 0; max-width: 100%; white-space: normal; text-align: center; }
     #demo-signin { min-height: 44px; width: 100%; margin: 0.2rem 0 0.6rem; }
     #help-develop-open { display: inline-flex; align-items: center; min-height: 44px; font: inherit; font-weight: 700; border-radius: 999px; border: 1px solid #c6a15b; color: #f4f1e8; text-decoration: none; padding: 0.4rem 0.9rem; }
+    .lgme-token { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.55rem; margin: 0.45rem 0.7rem 0.2rem; font-size: 0.82rem; }
+    .lgme-token img { width: 28px; height: 28px; flex: 0 0 auto; }
+    .lgme-token a { word-break: break-all; }
+    .lgme-token button { min-height: 32px; font: inherit; border-radius: 999px; border: 1px solid #c6a15b; background: transparent; color: inherit; }
     .tile-new { position: absolute; bottom: 0.35rem; right: 0.35rem; z-index: 2; min-height: 28px; padding: 0.1rem 0.4rem; border-radius: 999px; border: 0; background: #f4f1e8; color: #1c1b19; font: inherit; font-size: 0.75rem; font-weight: 700; }
     .demo-help { display: block; font-weight: 500; color: var(--muted); }
     .demo-badge { margin: 0.25rem; }
@@ -388,6 +392,7 @@
   <script src="/js/site-nav.js"></script>
   <script type="module" src="/js/tile-fresh.mjs"></script>
   <script type="module" src="/js/demo-page.mjs"></script>
+  <p class="lgme-token" id="lgme-token"><img src="/icons/lgme-coin.svg" width="28" height="28" alt="" /><a href="/lgme-coin">$lgme</a><span>$lgme pegged to US$</span><span>Solana</span><a href="https://solscan.io/token/6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY">6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY</a><button type="button" data-copy="6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY">Copy</button><span>@EgonAnon</span></p>
   <section class="entry-picker" aria-label="Categories">
     <div class="entry-grid" id="category-grid">
       <div class="entry-tile health has-photo" id="health-tile" data-image-slot="tile-health">
