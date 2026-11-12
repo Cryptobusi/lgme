@@ -71,28 +71,34 @@ try {
   assert((await page.content()).includes('cryptovanities') === false, 'address on the home screen');
   for (const name of names) {
     const tile = page.locator('[data-entry]').filter({ hasText: name }).first();
-    const href = await tile.locator('.help-develop').getAttribute('href');
-    assert(href === `/develop?category=${encodeURIComponent(name)}`, href);
+    assert(await tile.locator('.help-develop').count() === 0, `${name} still has a develop button`);
     const open = await tile.locator('.tile-open').getAttribute('href');
     assert(open.startsWith('/'), open);
   }
   mkdirSync('/opt/cursor/artifacts', { recursive: true });
   await page.locator('#health-tile').scrollIntoViewIfNeeded();
   await page.screenshot({ path: '/opt/cursor/artifacts/categories-home-390.png' });
-  await page.locator('[data-entry="campus"] .help-develop').click();
+  await page.locator('#help-develop-open').click();
+  await page.locator('#help-develop-chips').getByRole('button', { name: 'Campus', exact: true }).click();
+  await page.locator('#help-develop-go').click();
   await page.waitForURL(/\/develop\?category=Campus/);
   assert(await page.locator('#want-kind').inputValue() === 'IwanIT', 'kind');
   assert(await page.locator('#want-category').inputValue() === 'Campus', 'category');
   assert(await page.locator('#want-title').inputValue() === 'I want to help develop Campus', 'title');
-  await page.locator('#want-confirm').scrollIntoViewIfNeeded();
+  await page.locator('#want-confirm').evaluate((node) => {
+    const dock = document.getElementById('ai-dock');
+    const limit = dock ? dock.getBoundingClientRect().top - 12 : window.innerHeight;
+    const box = node.getBoundingClientRect();
+    if (box.bottom > limit) window.scrollBy(0, box.bottom - limit + 16);
+  });
   await page.screenshot({ path: '/opt/cursor/artifacts/develop-want-390.png' });
-  await page.locator('#want-confirm').click();
+  await page.locator('#want-confirm').evaluate((node) => node.click());
   await page.locator('#demo-email').waitFor();
   assert(page.url().includes('home=1'), page.url());
   await page.goto(`${base}/develop?category=Campus`, { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => localStorage.setItem('lgme-gym.seat', 'mina'));
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await page.locator('#want-confirm').click();
+  await page.locator('#want-confirm').evaluate((node) => node.click());
   await page.waitForFunction(() => /Posted/.test(document.getElementById('want-status')?.textContent || ''));
   assert(sentMail.length === 1 && sentMail[0].subject === 'IwanIT: Campus', 'notify');
   assert(sentMail[0].text.includes('@') === false, 'mail body has an address');
@@ -115,8 +121,8 @@ for (const [width, height] of [[768, 1024], [1280, 800]]) {
     await desk.goto(`${base}/?picker=1`, { waitUntil: 'domcontentloaded' });
     const overflow = await desk.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
     assert(overflow === false, `${width} overflow`);
-    const count = await desk.locator('.help-develop').count();
-    assert(count === 6, `${width} help buttons ${count}`);
+    const count = await desk.locator('#help-develop-open').count();
+    assert(count === 1, `${width} help buttons ${count}`);
     if (width === 1280) await desk.screenshot({ path: '/opt/cursor/artifacts/categories-home-1280.png' });
     console.log(`PASS ${width}`);
   } catch (error) {

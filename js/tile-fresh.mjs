@@ -20,6 +20,26 @@ if (root) {
     });
   };
   loadSeen().then(paint);
+  const open = document.getElementById('help-develop-open');
+  const sheet = document.getElementById('help-develop-sheet');
+  const chips = document.getElementById('help-develop-chips');
+  const go = document.getElementById('help-develop-go');
+  if (open && sheet && chips && go) {
+    const names = [...root.querySelectorAll('.tile-name')].map((node) => node.textContent.trim()).filter((name) => name !== 'Health');
+    names.forEach((name, index) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = name;
+      button.setAttribute('aria-pressed', index === 0 ? 'true' : 'false');
+      button.addEventListener('click', () => {
+        chips.querySelectorAll('button').forEach((item) => item.setAttribute('aria-pressed', 'false'));
+        button.setAttribute('aria-pressed', 'true');
+        go.href = `/develop?category=${encodeURIComponent(name)}`;
+      });
+      chips.append(button);
+    });
+    open.addEventListener('click', () => { sheet.hidden = !sheet.hidden; });
+  }
   root.addEventListener('click', (event) => {
     const tile = event.target.closest?.('[data-entry]');
     if (!tile) return;

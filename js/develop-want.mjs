@@ -92,9 +92,13 @@ export async function acceptHelpWant(store, spec, { now = Date.now(), ip = 'loca
   if (!built.ok) return built;
   const stamps = ((await store.get(`develop:ip:${ip}`)) || []).filter((stamp) => now - stamp < HOUR_MS);
   if (stamps.length >= HOUR_MAX) return { ok: false, status: 429, error: 'Too many requests. Nothing was posted.' };
-  const prior = (await store.get('develop:wants')) || [];
-  const key = `${built.item.category}|${built.item.title}`.toLowerCase();
-  const duplicate = prior.some((row) => row.key === key && now - Date.parse(row.at) < DEDUPE_MS);
+  const prior = dedupeWants((await store.get('develop:wants')) || []);
+  const handle = clean(spec.handle).toLowerCase();
+  const helpDevelop = /help develop/i.test(built.item.title);
+  const key = helpDevelop
+    ? `help|${built.item.category}|${handle || ip}`.toLowerCase()
+    : `${built.item.category}|${built.item.title}`.toLowerCase();
+  const duplicate = prior.some((row) => row.key === key && (helpDevelop || now - Date.parse(row.at) < DEDUPE_MS));
   const notice = noticeOf(built.item);
   let alert = { email: false, push: false };
   if (!duplicate) {
@@ -106,7 +110,30 @@ export async function acceptHelpWant(store, spec, { now = Date.now(), ip = 'loca
   return { ok: true, status: 200, item: built.item, notice, duplicate, notified: !duplicate && (alert.email || alert.push || !env.OWNER_NOTIFY_EMAIL) };
 }
 
+function stableKey(row) {
+  if (String(row.key || '').startsWith('help|')) return row.key;
+  if (/help develop/i.test(row.title || '')) return `help|${row.category}|legacy`.toLowerCase();
+  return row.key || '';
+}
+
+function dedupeWants(rows) {
+  const seen = new Set();
+  const kept = [];
+  for (const row of rows) {
+    const key = stableKey(row);
+    if (key.startsWith('help|')) {
+      if (seen.has(key)) continue;
+      seen.add(key);
+      kept.push({ ...row, key });
+      continue;
+    }
+    kept.push(row);
+  }
+  return kept;
+}
+
 export async function listHelpWants(store) {
-  const rows = (await store.get('develop:wants')) || [];
+  const rows = dedupeWants((await store.get('develop:wants')) || []);
+  if (rows.length !== ((await store.get('develop:wants')) || []).length) await store.set('develop:wants', rows);
   return rows.map((row) => ({ category: row.category, title: row.title, at: row.at, link: row.link }));
 }

@@ -319,7 +319,8 @@
     .photo-actions label, .photo-actions button { font: inherit; font-size: 0.85rem; font-weight: 700; min-height: 44px; border-radius: 999px; border: 1px solid #1a1408; background: rgba(244, 241, 232, 0.94); color: #1a1408; padding: 0.35rem 0.8rem; }
     .photo-status { position: relative; z-index: 1; margin: 0; padding: 0 0.8rem 0.7rem; font-size: 0.85rem; font-weight: 600; text-align: center; }
     #health-photo { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-    .entry-tile .badge { display: block; font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; text-align: center; }
+    .entry-tile .tile-open { display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end; gap: 0.45rem; min-height: 8.5rem; padding: 0.7rem; color: inherit; text-decoration: none; }
+    .entry-tile .badge { display: inline-block; width: auto; font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; text-align: left; }
     .entry-tile .tile-open { position: relative; z-index: 2; color: inherit; text-decoration: none; min-height: 44px; width: 100%; display: flex; align-items: center; justify-content: center; }
     .entry-tile .tile-soon, .entry-tile .help-develop, .entry-tile .dev-team { position: relative; z-index: 2; }
     .entry-tile .tile-soon { margin: 0.15rem 0.4rem; font-size: 1rem; font-weight: 600; text-align: center; line-height: 1.3; }
@@ -372,6 +373,10 @@
     #demo-actions.demo-choices { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.6rem 0 0.3rem; overflow: visible; }
     #demo-actions .demo-choice { box-sizing: border-box; flex: 1 1 8rem; min-width: 0; max-width: 100%; white-space: normal; text-align: center; }
     #demo-signin { min-height: 44px; width: 100%; margin: 0.2rem 0 0.6rem; }
+    #help-develop-open { min-height: 44px; font: inherit; font-weight: 700; border-radius: 999px; border: 1px solid #c6a15b; background: transparent; color: #f4f1e8; padding: 0.4rem 0.9rem; }
+    #help-develop-chips { display: flex; gap: 0.4rem; overflow-x: auto; }
+    #help-develop-chips button { flex: 0 0 auto; min-height: 36px; border-radius: 999px; border: 1px solid #c6a15b; background: #0c100c; color: #f4f1e8; font: inherit; font-weight: 700; }
+    #help-develop-chips button[aria-pressed="true"] { background: #F97316; color: #1a1408; }
     .tile-new { position: absolute; bottom: 0.35rem; right: 0.35rem; z-index: 2; min-height: 28px; padding: 0.1rem 0.4rem; border-radius: 999px; border: 0; background: #f4f1e8; color: #1c1b19; font: inherit; font-size: 0.75rem; font-weight: 700; }
     .demo-help { display: block; font-weight: 500; color: var(--muted); }
     .demo-badge { margin: 0.25rem; }
@@ -401,35 +406,30 @@
       </div>
       <article class="entry-tile preview has-photo" data-entry="campus" data-image-slot="tile-campus">
         <a class="tile-open" href="/campus"><span class="badge">In development</span><span class="tile-name">Campus</span></a>
-        <a class="help-develop" href="/develop?category=Campus">Help develop this</a>
-        <a class="dev-team" href="/hosts#dev-interest">Join the developer team</a>
       </article>
       <article class="entry-tile preview has-photo" data-entry="neighbor" data-image-slot="tile-neighbor">
         <a class="tile-open" href="/neighbors"><span class="badge">In development</span><span class="tile-name">Neighbor help</span></a>
-        <a class="help-develop" href="/develop?category=Neighbor%20help">Help develop this</a>
-        <a class="dev-team" href="/hosts#dev-interest">Join the developer team</a>
       </article>
       <article class="entry-tile preview has-photo" data-entry="hosts" data-image-slot="tile-hosts">
         <a class="tile-open" href="/hosts"><span class="badge">In development</span><span class="tile-name">Hosts</span></a>
-        <a class="help-develop" href="/develop?category=Hosts">Help develop this</a>
-        <a class="dev-team" href="/hosts#dev-interest">Join the developer team</a>
       </article>
       <article class="entry-tile preview has-photo" data-entry="circles" data-image-slot="tile-circles">
         <a class="tile-open" href="/circles"><span class="badge">In development</span><span class="tile-name">Circles</span></a>
-        <a class="help-develop" href="/develop?category=Circles">Help develop this</a>
-        <a class="dev-team" href="/hosts#dev-interest">Join the developer team</a>
       </article>
       <article class="entry-tile preview has-photo" data-entry="stories" data-image-slot="tile-stories">
         <a class="tile-open" href="/stories"><span class="badge">In development</span><span class="tile-name">Stories</span></a>
-        <a class="help-develop" href="/develop?category=Stories">Help develop this</a>
-        <a class="dev-team" href="/hosts#dev-interest">Join the developer team</a>
       </article>
       <article class="entry-tile has-photo" data-entry="exchange" data-image-slot="tile-exchange">
         <a class="tile-open" href="/exchange"><span class="badge">In development</span><span class="tile-name">Exchange</span></a>
-        <a class="help-develop" href="/develop?category=Exchange">Help develop this</a>
-        <a class="dev-team" href="/hosts#dev-interest">Join the developer team</a>
       </article>
     </div>
+    <p id="help-develop-row"><button type="button" id="help-develop-open">Help develop</button></p>
+    <section id="help-develop-sheet" hidden>
+      <p>Pick one category. One open note per category.</p>
+      <div id="help-develop-chips"></div>
+      <p><a id="help-develop-go" href="/develop?category=Campus">Open the draft</a></p>
+      <p><a href="/hosts#dev-interest">Join the developer team</a></p>
+    </section>
     <div id="demo-actions" class="demo-choices">
       <button type="button" class="demo-choice" data-choice="IwantIT">IwantIT</button>
       <button type="button" class="demo-choice" data-choice="IdidIt (verified receipt)">IdidIt (verified receipt)</button>
