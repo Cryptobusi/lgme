@@ -180,22 +180,32 @@ async function launch(view) {
   await page.context().close();
 }
 
+async function clickClear(page, selector) {
+  await page.locator(selector).evaluate((node) => {
+    const dock = document.getElementById('ai-dock');
+    const limit = dock ? dock.getBoundingClientRect().top - 12 : window.innerHeight;
+    const box = node.getBoundingClientRect();
+    if (box.bottom > limit) window.scrollBy(0, box.bottom - limit + 16);
+    node.click();
+  });
+}
+
 async function aiHelp(view) {
   const page = await openPage(view, '/ai-help');
   await page.waitForSelector('#ask-ai');
-  await page.locator('#draft-ai').click();
+  await clickClear(page, '#draft-ai');
   await page.waitForFunction(() => document.getElementById('ai-status')?.textContent.includes('Ask and offer first'));
-  await page.locator('#ask-ai').click();
+  await clickClear(page, '#ask-ai');
   await page.waitForFunction(() => document.getElementById('ai-status')?.textContent.includes('Choose the words'));
   await page.locator('#ai-notes').fill('my diagnosis is private');
-  await page.locator('#ask-ai').click();
+  await clickClear(page, '#ask-ai');
   await page.waitForFunction(() => document.getElementById('ai-status')?.textContent.includes('Leave out'));
   await page.locator('#ai-notes').fill('Need a short reply about the session.');
-  await page.locator('#ask-ai').click();
+  await clickClear(page, '#ask-ai');
   await page.waitForSelector('#ai-request');
-  await page.locator('#offer-ai').click();
+  await clickClear(page, '#offer-ai');
   await page.waitForSelector('#ai-offer');
-  await page.locator('#draft-ai').click();
+  await clickClear(page, '#draft-ai');
   await page.waitForSelector('#ai-draft');
   const draft = await page.locator('#ai-draft').inputValue();
   assert(draft.length > 10, 'draft was empty');
@@ -204,31 +214,31 @@ async function aiHelp(view) {
     await page.locator('#accept-ai').scrollIntoViewIfNeeded();
     await page.screenshot({ path: '/opt/cursor/artifacts/ai-draft-confirm-phone.png' });
   }
-  await page.locator('#accept-ai').click();
+  await clickClear(page, '#accept-ai');
   await page.waitForFunction(() => document.getElementById('ai-status')?.textContent.includes('Edit the draft'));
-  await page.locator('#decline-ai').click();
+  await clickClear(page, '#decline-ai');
   await page.waitForFunction(() => !document.getElementById('ai-draft'));
-  await page.locator('#draft-ai').click();
+  await clickClear(page, '#draft-ai');
   await page.locator('#ai-draft').fill('Edited by the member before anything is kept.');
-  await page.locator('#accept-ai').click();
+  await clickClear(page, '#accept-ai');
   await page.waitForSelector('#ai-receipt');
   assert((await sent(page)).length === 0, `ai help posted ${await sent(page)}`);
 
-  await page.locator('#equipment-ask').click();
+  await clickClear(page, '#equipment-ask');
   await page.waitForFunction(() => document.getElementById('ai-status')?.textContent.includes('Nothing was sent'));
   await page.locator('#equipment-question').fill('the treadmill is broken call 555-010-9999');
-  await page.locator('#equipment-ask').click();
+  await clickClear(page, '#equipment-ask');
   await page.waitForFunction(() => document.getElementById('ai-status')?.textContent.includes('Leave the phone number'));
   await page.locator('#equipment-question').fill('the treadmill is broken and needs a tune');
-  await page.locator('#equipment-ask').click();
+  await clickClear(page, '#equipment-ask');
   await page.waitForSelector('#equipment-referral');
-  await page.locator('#request-repair').click();
+  await clickClear(page, '#request-repair');
   await page.waitForFunction(() => document.getElementById('ai-status')?.textContent.includes('Choose to share'));
   assert((await sent(page)).length === 0, 'repair posted before share');
   const mailto = await page.locator('#equipment-mailto').getAttribute('href');
   assert(mailto.startsWith('mailto:'), 'mailto missing');
   await page.locator('#equipment-share').check();
-  await page.locator('#request-repair').click();
+  await clickClear(page, '#request-repair');
   if (view.offline) {
     await page.waitForFunction(() => document.getElementById('ai-status')?.textContent.includes('Nothing was sent'));
   } else {
@@ -241,7 +251,7 @@ async function aiHelp(view) {
 async function helper(view) {
   const page = await openPage(view, '/helper');
   await page.waitForSelector('#helper-step-1');
-  await page.locator('#helper-next').click();
+  await clickClear(page, '#helper-next');
   await page.waitForSelector('#helper-step-2');
   await page.locator('#helper-back').click();
   await page.waitForSelector('#helper-step-1');
@@ -257,7 +267,7 @@ async function helper(view) {
       const locked = await page.locator('.locked').innerText();
       assert(/never sends|confirm every action/i.test(locked), locked);
     }
-    await page.locator('#helper-next').click();
+    await clickClear(page, '#helper-next');
     await page.waitForSelector(`#helper-step-${step}`);
   }
   await page.waitForSelector('#turn-on-helper');
