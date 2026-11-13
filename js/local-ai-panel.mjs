@@ -5,6 +5,7 @@ import { dockChipsOf } from './variant-schema.mjs';
 
 const FLAG = 'Only available online with AI enabled.';
 const AI_CHIPS = ['Log a workout', 'Make an IdidIt receipt', 'What can I do here?'];
+const PREFILL = 'Recommend how I can help cooperate this app. Explain the next useful step in three short lines. I confirm before anything is kept or sent.';
 
 export function dockKeyboardOffset(innerHeight, viewport) {
   const height = Number(viewport?.height);
@@ -56,6 +57,8 @@ function paint(dock) {
     ? [promptFor(location.pathname), 'Tap Accept to keep this on the phone.', 'Nothing is sent until you confirm a Health step or an IwanIT.', 'You can scroll this note.', 'The helper stays on this device.']
     : [AI_ENABLE, guide.steps[0] || 'Open How to turn AI on.', guide.steps[1] || 'Tap Check again on that page.', 'Browsing stays open.', 'The helper stays on this device.'];
   log.textContent = lines.join('\n');
+  const ask = dock.querySelector('#ai-ask');
+  if (ask && !ask.value.trim()) ask.value = PREFILL;
   flag.hidden = !signedIn();
   flag.textContent = `${FLAG} Online: ${online ? 'yes' : 'no'}. AI: ${ready ? 'yes' : 'no'}.`;
   accept.disabled = !ready;
