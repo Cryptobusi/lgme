@@ -1,1 +1,106 @@
-PLACEHOLDER
+<!doctype html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="/site-nav.css" />
+  <link id="category-board-css" rel="stylesheet" href="/category-board.css" />
+  <script src="/js/stable-screen.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="lgme" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#F97316" />
+  <script src="/js/p2p-layout.js"></script>
+  <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+  <title>Exchange · lgme</title>
+  <meta name="description" content="Beta. Peer-to-peer exchange that settles real $lgme from your own Solana wallet. Separate books, countersigned agreements, third-seat refusal, and a floor that stays senior." />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;1,6..72,500&display=swap" />
+  <link rel="stylesheet" href="/menu.css" />
+  <style>
+    :root {
+      --bg:#f4f3ef; --fg:#1c1b19; --muted:#4e4c47; --faint:#6b6862; --accent:#F97316; --accent-ink:#1c1b19; --accent-text:#9A3412;
+      --line:#e3dfd6; --panel:#ffffff; --shadow:0 1px 2px #00000010, 0 10px 28px #0000000c;
+      --ok:#146c43; --bad:#8d2f2f; --space:1rem; --radius:14px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:#121411; --fg:#f4f1e8; --muted:#c8c3b8; --faint:#a39e93; --accent:#F97316; --accent-ink:#1c1b19; --accent-text:#FDBA74;
+        --line:#2c312b; --panel:#1c201c; --shadow:0 1px 2px #00000055, 0 12px 32px #00000040;
+        --ok:#b7e0c2; --bad:#f0c7b0;
+      }
+    }
+    html { background:var(--bg); overflow-x:clip; }
+    body { background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; font-size:1rem; line-height:1.5; max-width:76rem; margin:0 auto; padding:0 0 2.5rem; }
+    h1,h2,h3 { font-family:Newsreader,serif; font-weight:500; letter-spacing:-0.02em; color:var(--fg); }
+    h1 { font-size:clamp(1.8rem, 5vw, 2.6rem); line-height:1.08; margin:0.2rem 0 0.35rem; }
+    h2 { font-size:1.35rem; margin:0 0 0.45rem; }
+    h3 { font-size:1.05rem; margin:0 0 0.35rem; }
+    a { color:var(--fg); } a:hover { color:var(--accent-text); }
+    p { margin:0.65rem 0; }
+    .muted { color:var(--muted); }
+    .kicker { margin:0; font-size:0.72rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--accent-text); }
+    .wrap { padding:1rem max(1rem, env(safe-area-inset-right)) 0 max(1rem, env(safe-area-inset-left)); }
+    .sim-banner { margin:0; padding:0.55rem 1rem; background:var(--accent); color:var(--accent-ink); font-weight:600; font-size:0.92rem; line-height:1.35; overflow-wrap:anywhere; }
+    .rules { display:grid; gap:0.75rem; margin:1rem 0 1.2rem; }
+    .card, .row, .seat, .panel, .tx { background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); }
+    .card { padding:0.9rem 1rem; }
+    .contrib { display:grid; gap:0.75rem; margin-top:0.6rem; }
+    .contrib > .card { box-shadow:none; }
+    .seatbar { display:grid; grid-template-columns:repeat(auto-fit, minmax(11rem, 1fr)); gap:0.5rem; margin:0.8rem 0; }
+    .seat { appearance:none; color:var(--fg); font:inherit; text-align:left; padding:0.55rem 0.75rem; min-height:44px; cursor:pointer; background:var(--panel); }
+    .seat[aria-pressed="true"] { border-color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent); }
+    .seat small, .meta { display:block; color:var(--faint); font-size:0.78rem; }
+    .tabs, .tabbar { display:flex; flex-wrap:wrap; gap:0.4rem; }
+    .tabs { margin:0.35rem 0 0.7rem; }
+    .tabbar { display:none; }
+    .tabs button, .tabbar button, button, .btn { appearance:none; font:inherit; min-height:44px; padding:0.45rem 0.85rem; background:transparent; color:var(--fg); border:1px solid var(--line); border-radius:10px; cursor:pointer; }
+    .tabs button[aria-selected="true"], .tabbar button[aria-selected="true"], button.primary { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:600; }
+    button.quiet { color:var(--muted); background:transparent; }
+    button:hover, .seat:hover { border-color:var(--accent); }
+    button:disabled { opacity:0.55; cursor:wait; }
+    .panel { padding:1rem; min-height: 16rem; }
+    #exchange-test { min-height: 9rem; }
+    label { display:block; font-size:0.82rem; color:var(--muted); margin:0.55rem 0 0.25rem; }
+    label.row { display:flex; align-items:center; gap:0.55rem; color:var(--fg); }
+    label.row input { width:1.25rem; min-height:1.25rem; }
+    input, select, textarea { width:100%; box-sizing:border-box; font:inherit; padding:0.55rem 0.7rem; border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--fg); }
+    textarea { min-height:5rem; resize:vertical; }
+    .row { display:flex; flex-wrap:wrap; gap:0.6rem; align-items:end; padding:0.75rem; }
+    .row > * { flex:1 1 10rem; }
+    .tx { padding:0.75rem 1rem; margin:0.5rem 0; }
+    .ok { color:var(--ok); }
+    .bad { color:var(--bad); }
+    .splash { display:flex; flex-direction:column; align-items:center; gap:0.6rem; margin:1.2rem 0; }
+    .splash img { width:8rem; height:8rem; border-radius:50%; object-fit:cover; }
+  </style>
+</head>
+<body>
+  <div class="sim-banner">Beta. Peer-to-peer exchange. Separate books. Countersigned agreements. Third-seat refusal. Floor stays senior.</div>
+  <div class="wrap">
+    <p class="kicker">lgme · Exchange</p>
+    <h1>Settle real $lgme from your own wallet.</h1>
+    <p class="muted">Named credit for work that was done. Not a deposit. Not a security. Not a token offered for sale.</p>
+    <div class="splash">
+      <img src="/legomiego-coin.jpg" alt="lgme coin" />
+    </div>
+    <div class="rules">
+      <div class="card">
+        <h3>Floor stays senior</h3>
+        <p class="muted">The basket is paid first from named surplus. Then the fee. Then the remainder.</p>
+      </div>
+      <div class="card">
+        <h3>Third seat can refuse</h3>
+        <p class="muted">A blank refusal writes nothing. The person's sentence has to be shown.</p>
+      </div>
+      <div class="card">
+        <h3>Same rules for everyone</h3>
+        <p class="muted">State, firm, and person. An unpublished change is not a change.</p>
+      </div>
+    </div>
+    <p class="muted"><a href="/">Back to the desk</a> · <a href="/balance">Check and balance</a></p>
+  </div>
+  <script src="/js/exchange.js"></script>
+</body>
+</html>
