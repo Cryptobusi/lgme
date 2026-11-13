@@ -62,19 +62,35 @@
     #device-can-host { min-height: 88rem; border-radius: 14px; background: #151a15; }
     #gym-panel { min-height: 46vh; }
     footer.gym-foot { padding:0 1rem 6rem; max-width:40rem; margin:0 auto; }
+    .help-toggle { background:transparent; border:1px solid var(--line); color:var(--muted); font-size:0.85rem; min-height:36px; padding:0.3rem 0.7rem; }
+    .help-menu { display:none; margin:0.5rem 0; padding:0.6rem; background:var(--card); border:1px solid var(--line); border-radius:12px; }
+    .help-menu.open { display:block; }
+    .help-menu a { display:block; padding:0.4rem 0; color:var(--fg); text-decoration:none; }
+    .help-menu a:hover { color:var(--gold); }
   </style>
 </head>
 <body>
 <header>
   <p class="kicker">lgme · Gym beta</p>
-  <h1>Gym</h1>
-  <div id="category-board" data-category="health"></div>
+  <h1>Health</h1>
   <p id="health-anchor" data-health-anchor>Health hashes are anchored on Hedera testnet. Health data itself is never written on chain.</p>
-  <p class="muted"><a href="/gym/covenant">Member Covenant</a> · <a href="/gym/intake-protocol">Intake protocol</a> · <a href="/gym/health-data">Consumer health data</a> · <a href="/helper">Set up my own AI helper</a> · <a href="/ai-help">Ask for AI help</a></p>
+  <button type="button" class="help-toggle" id="help-toggle" aria-expanded="false" aria-controls="help-menu">Help</button>
+  <div class="help-menu" id="help-menu">
+    <a href="/gym/covenant">Member Covenant</a>
+    <a href="/gym/intake-protocol">Intake protocol</a>
+    <a href="/gym/health-data">Consumer health data</a>
+    <a href="/gym/breach-plan">Breach plan</a>
+    <a href="/helper">Set up my own AI helper</a>
+    <a href="/ai-help">Ask for AI help</a>
+    <a href="/versions">Versions</a>
+    <a href="/customize">Customize</a>
+    <a href="/disclaimer">Disclaimer (Live beta v.5)</a>
+    <a href="/?home=1">All categories</a>
+  </div>
   <div id="device-can-host"></div>
 </header>
 <main id="gym-panel"></main>
-<footer class="gym-foot"><a href="/gym/covenant">Member Covenant</a> · <a href="/gym/health-data">Consumer health data</a> · <a href="/gym/breach-plan">Breach plan</a> · <a href="/versions">Versions</a> · <a href="/customize">Customize</a> · <a href="/help">Help</a> · <a href="/disclaimer">Disclaimer (Live beta v.5)</a></footer>
+<footer class="gym-foot"><span class="muted">Floor stays senior. An unpublished change is not a change.</span></footer>
 <nav aria-label="Gym">
   <button type="button" data-route="/">Club</button>
   <button type="button" data-route="/train">Train</button>
@@ -82,6 +98,13 @@
   <button type="button" data-route="/groups">Groups</button>
   <button type="button" data-route="/more">More</button>
 </nav>
+<script>
+  document.getElementById('help-toggle')?.addEventListener('click', function () {
+    var menu = document.getElementById('help-menu');
+    var open = menu.classList.toggle('open');
+    this.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+</script>
 <script src="/js/vendor/qrcode.js"></script>
 <script type="module" src="/js/category-board.mjs"></script>
 <script type="module" src="/js/gym-app.mjs"></script>
