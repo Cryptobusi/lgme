@@ -67,12 +67,22 @@
     .help-menu.open { display:block; }
     .help-menu a { display:block; padding:0.4rem 0; color:var(--fg); text-decoration:none; }
     .help-menu a:hover { color:var(--gold); }
+    .ui-switcher { display:flex; gap:0.4rem; margin:0.6rem 0 0.8rem; }
+    .ui-switcher button { flex:1; min-height:40px; font-size:0.85rem; padding:0.4rem 0.5rem; background:var(--card); border:1px solid var(--line); color:var(--muted); }
+    .ui-switcher button[aria-pressed="true"] { background:var(--gold); color:#1a1408; border-color:var(--gold); font-weight:600; }
+    body[data-ui="easy"] .ui-easy, body[data-ui="engaging"] .ui-engaging, body[data-ui="ultimate"] .ui-ultimate { display:block; }
+    .ui-panel { display:none; }
   </style>
 </head>
-<body>
+<body data-ui="easy">
 <header>
   <p class="kicker">lgme · Gym beta</p>
   <h1>Health</h1>
+  <div class="ui-switcher" role="group" aria-label="UI view">
+    <button type="button" data-ui="easy" aria-pressed="true">Easy</button>
+    <button type="button" data-ui="engaging" aria-pressed="false">Engaging</button>
+    <button type="button" data-ui="ultimate" aria-pressed="false">Ultimate</button>
+  </div>
   <p id="health-anchor" data-health-anchor>Health hashes are anchored on Hedera testnet. Health data itself is never written on chain.</p>
   <button type="button" class="help-toggle" id="help-toggle" aria-expanded="false" aria-controls="help-menu">Help</button>
   <div class="help-menu" id="help-menu">
@@ -100,6 +110,24 @@
   <button type="button" data-route="/more">More</button>
 </nav>
 <script>
+  (function () {
+    var key = 'lgme.health.ui';
+    var body = document.body;
+    var buttons = document.querySelectorAll('.ui-switcher button');
+    function apply(ui) {
+      body.setAttribute('data-ui', ui);
+      buttons.forEach(function (btn) {
+        btn.setAttribute('aria-pressed', btn.dataset.ui === ui ? 'true' : 'false');
+      });
+      try { localStorage.setItem(key, ui); } catch (e) {}
+    }
+    var saved = '';
+    try { saved = localStorage.getItem(key) || 'easy'; } catch (e) { saved = 'easy'; }
+    apply(saved);
+    buttons.forEach(function (btn) {
+      btn.addEventListener('click', function () { apply(btn.dataset.ui); });
+    });
+  })();
   document.getElementById('help-toggle')?.addEventListener('click', function () {
     var menu = document.getElementById('help-menu');
     var open = menu.classList.toggle('open');
