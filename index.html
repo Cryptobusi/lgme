@@ -1,1 +1,238 @@
-PLACEHOLDER - will replace
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content" />
+  <link rel="stylesheet" href="/site-nav.css" />
+  <script src="/js/stable-screen.js"></script>
+  <script src="/js/ui-view.js"></script>
+  <link rel="stylesheet" href="/css/ui-view.css" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#39e36a" />
+  <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+  <title>lgme</title>
+  <link id="site-fonts" rel="stylesheet" media="print" href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;1,6..72,500&display=optional" />
+  <style>
+    :root {
+      --bg: #0c100c;
+      --fg: #f4f1e8;
+      --muted: #c5d0c2;
+      --faint: #8ea892;
+      --gold: #c6a15b;
+      --line: #2c352b;
+      --panel: #141a13;
+    }
+    html { background: var(--bg); color: var(--fg); overflow-x: clip; }
+    :root { --notice-h: 6.25rem; }
+    @media (min-width: 768px) { :root { --notice-h: 4.5rem; } }
+    @media (min-width: 1280px) { :root { --notice-h: 3.25rem; } }
+    #testnet-notice {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 70;
+      box-sizing: border-box;
+      height: var(--notice-h);
+      min-height: var(--notice-h);
+      margin: 0;
+      padding: 0.6rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #b00020;
+      color: #fff;
+      font-family: Figtree, ui-sans-serif, sans-serif;
+      font-weight: 700;
+      font-size: 1.05rem;
+      line-height: 1.35;
+      text-align: center;
+    }
+    body:has(#testnet-notice) { padding-top: calc(1.5rem + var(--notice-h)); }
+    html.has-site-nav body:has(#testnet-notice) { padding-top: calc(3.25rem + var(--notice-h)); }
+    body:has(#testnet-notice) #site-nav { top: var(--notice-h); }
+    body:has(#testnet-notice) .menu-toggle { top: calc(3.25rem + var(--notice-h)); }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: Figtree, sans-serif;
+      font-size: 1.05rem;
+      line-height: 1.6;
+      max-width: 46rem;
+      margin: 0 auto;
+      padding: 1.5rem 1.25rem 4rem;
+    }
+    .kicker {
+      margin: 0;
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+    .launch-bar { position: relative; display: flex; margin: -1.5rem -1.25rem 0.85rem; padding: 0.55rem 1.25rem; }
+    .launch-bar[hidden] { display: none; }
+    .install-launch { appearance: none; font: inherit; font-size: 0.82rem; font-weight: 600; min-height: 44px; padding: 0.35rem 0.85rem; border: 0; border-radius: 999px; background: #F97316; color: #1c1b19; text-decoration: none; display: inline-flex; align-items: center; }
+    .install-launch:hover { color: #1c1b19; }
+    .install-tip { position: absolute; left: 1.25rem; top: calc(100% - 0.35rem); z-index: 8; background: #1c1b19; color: #fff; border: 1px solid #F97316; border-radius: 8px; padding: 0.4rem 0.65rem; font-size: 0.82rem; }
+    .launch-bar { margin-bottom: 0; }
+    .give-banner { display: flex; flex-wrap: wrap; align-items: center; gap: 0.55rem 0.75rem; margin: 0 -1.25rem 0.85rem; padding: 0.75rem 1.25rem; background: #F97316; color: #1c1b19; font-weight: 700; }
+    .give-banner a { display: inline-flex; align-items: center; min-height: 44px; padding: 0.35rem 0.9rem; border-radius: 999px; background: #1c1b19; color: #fff; text-decoration: none; font-weight: 700; }
+    h1, h2 { font-family: Newsreader, serif; font-weight: 500; letter-spacing: -0.02em; }
+    h1 { font-size: clamp(2.4rem, 7vw, 3.7rem); line-height: 1.02; margin: 0.6rem 0 0; }
+    h2 { font-size: clamp(1.8rem, 4vw, 2.35rem); line-height: 1.12; margin: 0.4rem 0 0.9rem; }
+    p { margin: 0.85rem 0; }
+    .muted { color: var(--muted); }
+    a { color: var(--fg); text-underline-offset: 0.22em; }
+    a:hover { color: var(--gold); }
+    .menu-toggle {
+      position: sticky;
+      top: 3.25rem;
+      z-index: 6;
+      display: flex;
+      align-items: center;
+      width: 100%;
+      min-height: 44px;
+      margin: 0 0 0.4rem;
+      padding: 0.45rem 0;
+      background: var(--bg);
+      border-bottom: 1px solid var(--line);
+      font-size: 0.92rem;
+      cursor: pointer;
+      user-select: none;
+    }
+    .menu-toggle:hover .kicker { color: var(--gold); }
+    .menu-toggle .kicker::after { content: " \u25be"; font-size: 0.7em; opacity: 0.7; }
+    .menu-toggle.open .kicker::after { content: " \u25b4"; }
+    nav {
+      position: sticky;
+      top: 48px;
+      z-index: 5;
+      display: none;
+      flex-wrap: wrap;
+      gap: 0.35rem 0.9rem;
+      margin: 0 0 1.4rem;
+      padding: 0.5rem 0 0.8rem;
+      border-bottom: 1px solid var(--line);
+      font-size: 0.88rem;
+    }
+    nav.open { display: flex; }
+    nav a { text-decoration: none; color: var(--muted); }
+    nav a:hover { color: var(--gold); }
+    .seals { display: flex; gap: 0.6rem; margin: 1.2rem 0 0.4rem; }
+    .seals img { width: 5.2rem; height: 5.2rem; border-radius: 50%; object-fit: cover; }
+    .slogan { margin: 0.2rem 0 0; font-family: Newsreader, serif; font-size: 1.15rem; color: var(--gold); }
+    .heart-pump { display: block; width: 100%; max-width: 36rem; margin: 1.2rem auto 0; border-radius: 1rem; }
+    .status { margin-top: 2.4rem; }
+    .status h2 { margin-top: 1.6rem; }
+    .status ul, .status ol { margin: 0.4rem 0 0; padding-left: 1.2rem; }
+    .status li { margin: 0.35rem 0; }
+    .order { margin: 1rem 0; }
+    .order div { display: grid; grid-template-columns: 5.5rem 1fr; gap: 0.4rem; padding: 0.45rem 0; border-bottom: 1px solid var(--line); }
+    .order strong { font-weight: 600; }
+    footer { margin-top: 3rem; font-size: 0.85rem; color: var(--faint); }
+  </style>
+</head>
+<body>
+  <div id="testnet-notice">Testnet only. Nothing on this page is written to Hedera mainnet.</div>
+  <div class="launch-bar" hidden>
+    <a class="install-launch" href="#" id="install-btn">Install lgme</a>
+    <div class="install-tip" hidden>Tap the share icon, then Add to Home Screen</div>
+  </div>
+  <div class="give-banner">
+    <span>Give an hour. Keep the book.</span>
+    <a href="/exchange">Open the desk</a>
+  </div>
+  <button class="menu-toggle" aria-expanded="false" aria-controls="site-nav"><span class="kicker">Menu</span></button>
+  <nav id="site-nav" aria-label="Site">
+    <a href="/">Home</a>
+    <a href="/exchange">Exchange</a>
+    <a href="/balance">Balance</a>
+    <a href="/docs">Docs</a>
+    <a href="/study">Study</a>
+    <a href="/technical">Technical</a>
+  </nav>
+  <p class="kicker">Hederica</p>
+  <h2>A public book for work the banks never counted.</h2>
+  <p class="muted">The aim is a cooperative, not a charity. Members would record civic work for one another — one member, one vote — instead of running a speculative mint. The blind spot is real. Informal human capital, a neighbor helped, a lesson given, a walkway cleared, never reaches a balance sheet, because the old rails cost more to clear than the act is worth.</p>
+  <p class="muted">Surplus, if any, would return by use, after the floor. It would not be a dividend on a holding. A manager’s wage, if one is ever paid, would be employment set in advance by the members. It would not be a claim on other people’s hours, and this site pays no wage today.</p>
+  <p class="muted">No cooperative is formed. No membership is offered on this page. It is not a 501(c)(3) and not a credit union. An hour here is not cash, not a deposit, not a security, and not a token offered for sale. It does not move money. Nothing on this page is anchored or written to Hedera. <a href="/charter">The charter</a> lists the rules and what counsel still has to file.</p>
+  <h2>1. The core thesis: recording lost, unrecorded value</h2>
+  <p class="muted">In conventional economies, vast amounts of real wealth are permanently lost because the administrative and verification costs exceed the face value of the act:</p>
+  <ul class="muted">
+    <li>Helping an elderly neighbor move groceries</li>
+    <li>Forty-five minutes of unbilled peer chemistry tutoring in a dorm</li>
+    <li>Clearing snow off a community walkway</li>
+    <li>Mentoring a freshman or organizing a campus cleanup</li>
+  </ul>
+  <p class="muted">Because traditional banking rails demand $0.30 + 2.9% per swipe and require contracts, invoices, and accounting departments, these high-value societal contributions vanish from balance sheets.</p>
+  <p class="muted">Campus deeds earn credit, not coins. Earlier coin records on /pumpup are kept. Not written to Hedera.</p>
+  <p class="muted"><a href="/hederica">Open Hederica</a></p>
+  <p class="kicker">lgme · #LeGoMiEgo</p>
+  <h1>They printed the money. We are keeping the book.</h1>
+  <p class="muted">Floor stays senior. Same rules bind state, firm, and person. An unpublished change is not a change.</p>
+  <div class="seals">
+    <img src="/seals/legomiego-coin.jpg" alt="Gold coin. #legomiego on a burst. Egonomic Anonymous along the rim." />
+    <img src="/seals/hederica.jpg" alt="Gold seal. Hederica, #legomiego, and @trancesage." />
+    <a href="https://youtu.be/nJtP3bpmS5U?is=dgTwaShouLxcOlBs" target="_blank" rel="noreferrer" aria-label="Gold seal. #legomiego on a burst. Egonomic Anonymous along the rim. Opens in a new window.">
+      <img src="/seals/legomiego-burst.jpg" alt="Gold seal. #legomiego on a burst. Egonomic Anonymous along the rim." />
+    </a>
+  </div>
+  <p class="slogan">Debit Credit ØtØh IDIDIT!</p>
+  <a href="https://www.egonomicanonymous.live" class="heart-pump" aria-label="I am keeping the book. Opens egonomicanonymous.live">
+    <img src="/keeping-the-book.jpg" alt="I am keeping the book" />
+  </a>
+  <section class="status">
+    <p class="kicker">Copied from the live status</p>
+    <h1>Site Status — 10 October 2026</h1>
+    <p class="muted">Beta (#LeGoMiEgo). Public bookkeeping and visibility rules. The person is the third seat.</p>
+    <h2>Central thesis</h2>
+    <p>“They printed the money. I am keeping the book.”</p>
+    <ul>
+      <li>Same rails. Anyone may issue. No one may hide the print.</li>
+      <li>If it cannot be shown, it is not policy.</li>
+      <li>Sovereignty is the refusal.</li>
+      <li>Precommitment barriers keep the refusal durable. See the egonomic restraint section.</li>
+    </ul>
+    <h2>The order</h2>
+    <div class="order">
+      <div><strong>Floor</strong><span>Basket paid first from named surplus (~$1,470 example).</span></div>
+      <div><strong>Mint</strong><span>Public schedule only. No private window.</span></div>
+      <div><strong>Issue</strong><span>Named credit. Not cash at the register.</span></div>
+      <div><strong>Tape</strong><span>Title, mint, lien, conversion, agent act must be shown.</span></div>
+      <div><strong>Charge</strong><span>Discount and risk named before residual.</span></div>
+      <div><strong>Agent</strong><span>Clerk of the rules. Does not mint.</span></div>
+      <div><strong>Thin</strong><span>Width is information. No invented tight price.</span></div>
+      <div><strong>Desert</strong><span>Remainder titled, including zero.</span></div>
+    </div>
+    <h2>Nine done</h2>
+    <ol>
+      <li>Done — Dated Status block published.</li>
+      <li>Done — Notes stabilized as the single bound order.</li>
+      <li>Done — Worked invoice shows all five tape lines.</li>
+      <li>Done — Current basket figure, source, and schedule published on Floor.</li>
+      <li>Done — Four agent duties listed as a public checklist.</li>
+      <li>Done — Public contribution split (half floor / half development) posted.</li>
+      <li>Done — Third Seat sitting checklist published.</li>
+      <li>Done — Thin-book rule noted on Market.</li>
+      <li>Done — Zero remainder and named-debt retirement clarified on Desert.</li>
+      <li>In force — Status remains the running public tape. An unpublished change is not a change.</li>
+    </ol>
+    <h2>Ten cases closed</h2>
+    <ol>
+      <li>Done — The clapper control is off the open book. The book picture remains.</li>
+      <li>Done — The slot reel is off the book.</li>
+      <li>In force — Observed stays open under the book. The poem, the prose, and #LEGOMIEGO are the public line.</li>
+      <li>Checked — www.egonomicanonymous.live answers.</li>
+      <li>Blocked — The connected Vercel account can read the project. It cannot enter the team that owns it.</li>
+      <li>Stopped — Live execution of the book ends on that site. The record stays. Future performances are written here.</li>
+    </ol>
+    <p class="muted"><a href="/docs">Full docs</a> · <a href="/exchange">Open the desk</a></p>
+  </section>
+  <footer>
+    lgme.app · Floor stays senior · An unpublished change is not a change
+  </footer>
+  <script src="/js/site-nav.js"></script>
+  <script src="/js/install.js"></script>
+</body>
+</html>
