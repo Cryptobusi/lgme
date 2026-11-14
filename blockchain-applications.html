@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Most Secured Technology: Blockchain Applications & Provenance · lgme</title>
+  <link rel="icon" href="/icons/icon-192.png" />
+  <link rel="stylesheet" href="/menu.css" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500&display=swap" />
+  <style>
+    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; }
+    body { margin: 0 auto; max-width: 46rem; padding: 1.25rem 1.25rem 4rem; background: var(--bg); color: var(--fg); font-family: Figtree, sans-serif; line-height: 1.55; }
+    h1 { font-family: Newsreader, serif; font-weight: 500; letter-spacing: -0.02em; font-size: clamp(2.2rem, 6vw, 3.4rem); line-height: 0.95; margin: 0.2rem 0 0.6rem; }
+    h2 { font-family: Newsreader, serif; font-weight: 500; font-size: 1.7rem; line-height: 1.05; margin: 1.6rem 0 0.5rem; }
+    h3 { font-size: 1.15rem; margin: 1.2rem 0 0.4rem; }
+    a { color: var(--fg); }
+    .kicker { margin: 0; font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); }
+    .muted { color: var(--muted); }
+    blockquote { border-left: 3px solid var(--gold); margin: 1rem 0; padding-left: 1rem; font-style: italic; }
+    ul { margin: 0.6rem 0; padding-left: 1.2rem; }
+    li { margin: 0.3rem 0; }
+  </style>
+</head>
+<body>
+  <nav class="deskmenu" aria-label="Desk">
+    <a href="/nswo">NSWO</a>
+    <a href="/dominion">Dominion</a>
+    <a href="/story">Story</a>
+    <a href="/study">Study/Prerequisite</a>
+    <a href="/sobeit">soBEIT</a>
+    <a href="/technical">Technical</a>
+    <a href="/preparation">Preparation</a>
+    <a href="/">Desk</a>
+  </nav>
+
+  <p class="kicker">Study · Blockchain · Provenance</p>
+  <h1>The Most Secured Technology: Blockchain Applications & the Public Tape</h1>
+  <p class="muted">Summary notes from Ara, Mohalder & Rahim, “The Most Secured Technology: Blockchain and Its application in Various Sectors,” International Journal of Computer Trends and Technology (IJCTT), Vol. 67 Issue 12, December 2019. Linked to the Sovereign Provenance Protocol design.</p>
+
+  <p class="muted">Companion sites: <a href="https://egonomicanonymous.live">egonomicanonymous.live</a> · <a href="https://lgme.app">lgme.app</a> · <a href="https://hederica.com">Hederica.com</a></p>
+
+  <h2>Core properties</h2>
+  <p>Blockchain is a decentralized, digitized, distributed ledger of records that is immutable and verifiable. Once written, data in existing blocks cannot be manipulated. It originated as the mechanism behind Bitcoin (Satoshi Nakamoto, 2008) and is now explored far beyond cryptocurrency.</p>
+  <p>Centralized systems place control in one entity or server. Decentralized and distributed ledgers keep copies across nodes so no single party can unilaterally alter history. Every participant can verify integrity and order.</p>
+
+  <h2>Classification and protocols</h2>
+  <ul>
+    <li><strong>Permissionless (public)</strong>: Open to anyone. Consensus typically Proof of Work or Proof of Stake. Higher resistance to 51% attacks when participation is broad.</li>
+    <li><strong>Permissioned</strong>: Requires invitation or authority. Often used by consortia or private organizations. More control over who writes, at the cost of some openness.</li>
+  </ul>
+  <p>Common consensus mechanisms:</p>
+  <ul>
+    <li><strong>Proof of Work</strong>: Computational puzzle; first solver adds the block and receives a reward. Energy-intensive; ~10-minute blocks on Bitcoin.</li>
+    <li><strong>Proof of Stake</strong>: Selection weighted by stake (wealth). Rewards come from fees rather than new issuance. Lower energy use and typically faster.</li>
+  </ul>
+
+  <h2>Applications relevant to provenance and mutual credit</h2>
+  <h3>Digital identity</h3>
+  <p>One of the most cited uses. Blockchain-based identity can support birth certificates, passports, online logins, and residency credentials that are harder to forge and easier to verify without a single central issuer. Named credit and IdidIt-style receipts on a public tape extend this idea to proven deeds rather than only static identity documents.</p>
+
+  <h3>Education and permanent records</h3>
+  <p>Student attendance, courses, payments, marks, and certificates are long-lived. An append-only ledger means corrections appear as new records rather than silent overwrites; both the original and the correction remain visible. The same pattern applies to civic work and mutual-credit balances.</p>
+
+  <h3>Voting and transparent governance</h3>
+  <p>The paper notes election hacking, vote rigging, and manipulation as persistent problems. A public, hash-linked tape of attested actions can make processes more auditable. In the SPP frame this maps to “vote by doing” (verified service) and the public tape rather than secret or central tallies.</p>
+
+  <h3>Banking and money transfers</h3>
+  <p>Centralized banking concentrates access and creates single points of failure or manipulation. Decentralized ledgers remove the need for every participant to trust one intermediary. Lower-cost, faster cross-border transfers without third parties are highlighted. Mutual credit (Floor → Mint → Issue → Tape → Charge…) aims for similar transparency and reduced intermediary cut while keeping the living floor senior.</p>
+
+  <h3>Distributed cloud storage</h3>
+  <p>Peer-to-peer storage combined with cryptographic hashing yields tamper-evident data without a single middleman. Complements the idea of a local or exported tape that can be verified independently.</p>
+
+  <h3>Healthcare</h3>
+  <p>The paper discusses generating a health card to store patient history immutably. Current lgme policy: health data is not written to the public tape or network. Any future health-related use would require explicit, separate consent and design that keeps sensitive records off the shared ledger.</p>
+
+  <h2>Relation to Sovereign Provenance Protocol</h2>
+  <p>lgme.app’s public tape / constitutive record is an append-only, hash-linked book of co-signed deeds and agreements. It inherits the immutability and verifiability properties described in the 2019 paper while remaining focused on named credit for civic and community work rather than general-purpose currency or unrestricted data storage.</p>
+  <ul>
+    <li>Floor stays senior — subsistence claims are settled before surplus.</li>
+    <li>Third Seat refusal — a recorded “no” that moves nothing and carries no penalty.</li>
+    <li>Same rules bind state, firm, and person.</li>
+    <li>If it cannot be shown, it is not policy.</li>
+  </ul>
+  <p>Hedera Consensus Service is the intended long-term anchor for the public tape; the current beta keeps many records local or on Solana for payments while the design research continues.</p>
+
+  <blockquote>
+    “Distributed ledger of records is immutable and verifiable in Blockchain that’s why it is impossible to manipulate any data in existing blocks.” — Ara et al., 2019
+  </blockquote>
+
+  <p class="muted">Floor stays senior. Same rules bind state, firm, and person. Sovereignty is the refusal. An unpublished change is not a change.</p>
+  <p><a href="/study">← Study/Prerequisite</a> · <a href="/">Desk</a> · <a href="https://egonomicanonymous.live">egonomicanonymous.live</a></p>
+  <p class="muted"><a href="/">Desk</a> · <a href="/disclosures">Disclosures</a> · Not an offer. Not an investment. Design research.</p>
+</body>
+</html>
