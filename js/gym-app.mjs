@@ -2124,7 +2124,9 @@ async function renderIdidIt() {
   const confirm = el('button', { type: 'button', class: 'primary', id: 'gym-ididit-confirm' }, ['Confirm']);
   confirm.addEventListener('click', async () => {
     confirm.disabled = true;
+    window.dispatchEvent(new CustomEvent('lgme-ididit-step', { detail: { step: 3 } }));
     const result = await submitIdidIt(title.value);
+    if (result.ok) window.dispatchEvent(new CustomEvent('lgme-ididit-step', { detail: { step: 4 } }));
     statusLine.textContent = result.ok
       ? `Recorded on testnet. ${result.transactionId || result.sequenceNumber || ''}`
       : (result.error || 'The receipt stayed on this phone.');

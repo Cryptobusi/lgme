@@ -60,6 +60,14 @@ export function screenChosen(storage) {
   return storage.getItem(SEEN) === '1';
 }
 
+export function activeScreen(storage) {
+  try {
+    const mode = JSON.parse(storage.getItem(ACTIVE) || 'null')?.mode;
+    if (mode === 'simple' || mode === 'full' || mode === 'everyday') return mode;
+  } catch { /* everyday is the default height */ }
+  return 'everyday';
+}
+
 export function screenModePrompt(text) {
   const q = String(text || '').toLowerCase();
   if (/make it simpler|bigger text|large print|simple screen/.test(q)) return { mode: 'simple', line: 'Simple uses large print and paper contrast. Confirm to apply it.' };

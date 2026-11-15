@@ -1,6 +1,6 @@
 import { applyFieldOption, fieldMeta, nextHelpField, safeHelpLine } from './field-help.mjs';
 import { classifyPrompt, routeLine } from './prompt-route.mjs';
-import { applyMode, screenModePrompt } from './screen-modes.mjs';
+import { activeScreen, applyMode, screenModePrompt } from './screen-modes.mjs';
 import { localFunctionFromPrompt, saveLocalFunction } from './local-functions.mjs';
 import { draftWithHelper, localAiReady, pickHelperSync } from './one-tap.mjs';
 import { dockChipsOf } from './variant-schema.mjs';
@@ -74,10 +74,22 @@ function paint(dock) {
 }
 
 const ACTIVITIES = [
-  ['treadmill', 'Treadmill'], ['walking', 'Walk'], ['walk', 'Walk'], ['running', 'Run'], ['run', 'Run'],
-  ['biking', 'Bike'], ['bike', 'Bike'], ['yoga', 'Yoga'], ['swimming', 'Swim'], ['swim', 'Swim'],
-  ['stretching', 'Stretch'], ['stretch', 'Stretch'], ['strength', 'Strength'], ['rowing', 'Row'], ['row', 'Row'],
-  ['cycling', 'Bike'], ['hike', 'Hike'], ['lift', 'Strength'], ['dance', 'Dance'], ['pilates', 'Pilates']
+  [/treadmills?/, 'Treadmill'],
+  [/walk(?:ed|ing|s)?/, 'Walk'],
+  [/jog(?:ged|ging)?/, 'Jog'],
+  [/(?:ran|running|runs?)/, 'Run'],
+  [/bik(?:e|ed|ing)/, 'Bike'],
+  [/cycl(?:e|ed|ing)/, 'Bike'],
+  [/(?:swam|swimming|swims?)/, 'Swim'],
+  [/lift(?:ed|ing)?/, 'Lift'],
+  [/yoga/, 'Yoga'],
+  [/stretch(?:ed|ing|es)?/, 'Stretch'],
+  [/strength/, 'Strength'],
+  [/row(?:ing|ed)?/, 'Row'],
+  [/steps?/, 'Steps'],
+  [/hik(?:e|ed|ing)/, 'Hike'],
+  [/danc(?:e|ed|ing)/, 'Dance'],
+  [/pilates/, 'Pilates']
 ];
 
 function workoutMinutes(text) {
@@ -95,7 +107,8 @@ function workoutMeasure(text) {
   const sets = text.match(/(\d+)\s*sets?\b/);
   const reps = text.match(/(\d+)\s*reps?\b/);
   const weight = text.match(/(\d+(?:\.\d+)?)\s*(lb|lbs|kg)\b/);
-  const distance = miles ? `${miles[1]} miles` : km ? `${km[1]} km` : '';
+  const steps = text.match(/(\d+)\s*steps?\b/);
+  const distance = miles ? `${miles[1]} miles` : km ? `${km[1]} km` : steps ? `${steps[1]} steps` : '';
   const speed = mph ? `${mph[1]} mph` : kmh ? `${kmh[1]} km/h` : '';
   let minutes = workoutMinutes(text);
   let computed = false;
@@ -118,8 +131,8 @@ function workoutMeasure(text) {
 }
 
 function workoutActivity(text) {
-  for (const [word, label] of ACTIVITIES) {
-    if (new RegExp(`\\b${word}\\b`).test(text)) return label;
+  for (const [pattern, label] of ACTIVITIES) {
+    if (new RegExp(`\\b(?:${pattern.source})\\b`).test(text)) return label;
   }
   return '';
 }
@@ -140,7 +153,8 @@ export function matchPrompt(text) {
   const activity = workoutActivity(q);
   const measure = workoutMeasure(q);
   const lead = /^(log\b|did\b|i did\b|ididit\b)/.test(q);
-  if (lead || activity) {
+  const measured = measure.minutes || measure.distance || measure.sets || measure.reps || measure.weight;
+  if ((activity && measured) || lead) {
     const parts = [activity || 'I did the session'];
     if (measure.distance) parts.push(measure.distance);
     if (measure.speed) parts.push(measure.speed);
@@ -154,9 +168,38 @@ export function matchPrompt(text) {
   return { kind: 'help', text: '', line: 'Say log a workout, I want something, or I have something.' };
 }
 
+export function readyLine(matched) {
+  const label = matched?.title || matched?.text || 'the session';
+  return [
+    `Ready to log on IdidIt: ${label}.`,
+    '1) Press Send again or tap Confirm to open the filled-in draft.',
+    '2) Check the activity and minutes.',
+    '3) Tap Confirm on the page to record it.',
+    '4) Ask a trainer or nearby member to attest (optional).'
+  ].join('\n');
+}
+
+export const LIKELY_CATEGORIES = ['Health', 'Campus', 'Neighbor help'];
+
+export function planSend({ staged, stagedText, text }) {
+  const value = String(text || '').trim();
+  const matched = value ? matchPrompt(value) : { kind: 'help', text: '', line: 'Type a workout with a time or a distance.' };
+  if (!value || (matched.kind === 'help' && stagedText === value && !staged)) {
+    return {
+      action: 'reexplain',
+      line: value
+        ? 'Nothing is staged. Add a time or a distance, or pick a category.'
+        : 'Type a workout with a time or a distance, or pick a category.',
+      categories: LIKELY_CATEGORIES
+    };
+  }
+  if (staged && stagedText === value) return { action: 'open', matched: staged };
+  if (matched.kind === 'help') return { action: 'explain', matched, line: matched.line };
+  return { action: 'stage', matched, line: readyLine(matched) };
+}
+
 export function stageLine(matched) {
-  const label = matched.title || matched.text || 'the session';
-  return `Recommend: log ${label} as an IdidIt receipt. Verify: it stays on this phone until you confirm; Health is on testnet. Explain: tap Confirm or press Send again to open the filled draft.`;
+  return readyLine(matched);
 }
 
 export function executionPlan(matched) {
@@ -179,6 +222,7 @@ function mount() {
   dock.setAttribute('aria-label', 'On-device AI');
   dock.innerHTML = '<p class="ai-top"><button type="button" id="ai-switch" class="ai-pill" role="switch" aria-checked="true" aria-live="polite" aria-label="AI on or off">AI off - tap to turn on</button><button type="button" id="ai-voice" aria-label="Speak or type">Voice</button><button type="button" id="ai-smaller" aria-label="Smaller text">A-</button><button type="button" id="ai-larger" aria-label="Bigger text">A+</button><button type="button" id="ai-expand" aria-expanded="true">Close</button><a class="ai-setup-link" href="/ai-setup">Help</a></p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><div id="ai-scroll"><div id="ai-chip-row"><div id="ai-chips" class="ai-chips"></div><span id="ai-chip-hint" aria-hidden="true">›</span></div><textarea id="ai-ask" rows="1" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><pre id="ai-log"></pre><p class="ai-actions"><button type="button" id="ai-send" aria-label="Send recommends the words in the box">Send</button><button type="button" id="ai-accept" aria-label="Accept uses the top suggestion">Use suggestion</button><button type="button" id="ai-confirm" aria-label="Confirm and run">Confirm</button></p><p id="ai-more" hidden>More</p></div>';
   dock.classList.add('is-open', 'is-normal');
+  try { document.documentElement.dataset.screen = activeScreen(localStorage); } catch { /* everyday height stays */ }
   try {
     if (localStorage.getItem('lgme.reset.note') === '1') {
       const note = dock.querySelector('#app-reset-note');
@@ -263,6 +307,35 @@ function mount() {
   } catch { applySize('normal', false); }
   let staged = null;
   let stagedText = '';
+  let flowStep = 0;
+  const paintSteps = (current) => {
+    flowStep = current;
+    let list = dock.querySelector('#ai-steps');
+    if (!current) {
+      if (list) list.remove();
+      return;
+    }
+    if (!list) {
+      list = document.createElement('ol');
+      list.id = 'ai-steps';
+      dock.querySelector('#ai-log').after(list);
+    }
+    const lines = [
+      'Press Send again or tap Confirm to open the filled-in draft.',
+      'Check the activity and minutes.',
+      'Tap Confirm on the page to record it.',
+      'Ask a trainer or nearby member to attest (optional).'
+    ];
+    list.replaceChildren();
+    lines.forEach((line, index) => {
+      const item = document.createElement('li');
+      const step = index + 1;
+      item.textContent = `${step}) ${line}`;
+      if (step < current) item.className = 'is-done';
+      else if (step === current) item.className = 'is-current';
+      list.append(item);
+    });
+  };
   const note = (button, words) => {
     if (!button) return;
     button.classList.add('is-pressed');
@@ -280,6 +353,7 @@ function mount() {
     try { words = sessionStorage.getItem('lgme.prompt.note') || ''; } catch { /* the log stays */ }
     if (!words) return;
     dock.querySelector('#ai-log').textContent = words;
+    if (flowStep < 3) paintSteps(2);
     try { sessionStorage.removeItem('lgme.prompt.note'); } catch { /* the log still shows */ }
   };
   const stagePrompt = () => {
@@ -290,10 +364,16 @@ function mount() {
     stagedText = text;
     const route = classifyPrompt(text);
     matched.route = route;
-    const detail = matched.kind === 'ididit' ? stageLine(matched) : matched.line;
-    log.textContent = route.liveWrite === false
-      ? `${routeLine(route, detail)} This category is In development. Nothing is written live.`
-      : `${routeLine(route, detail)}`;
+    if (matched.kind === 'ididit') {
+      log.textContent = `Ready to log on IdidIt: ${matched.title || matched.text}.`;
+      paintSteps(1);
+    } else {
+      paintSteps(0);
+      const detail = matched.line;
+      log.textContent = route.liveWrite === false
+        ? `${routeLine(route, detail)} This category is In development. Nothing is written live.`
+        : `${routeLine(route, detail)}`;
+    }
     if (route.alternatives.length) paintChips(route.alternatives, null);
     note(dock.querySelector('#ai-send'), 'Staged');
     markOverflow();
@@ -346,6 +426,7 @@ function mount() {
       return;
     }
     if (matched.kind === 'ididit') {
+      paintSteps(2);
       if (here && location.hash === '#/ididit') window.dispatchEvent(new HashChangeEvent('hashchange'));
       else location.assign('/gym#/ididit');
     } else if (here) {
@@ -356,8 +437,23 @@ function mount() {
   };
   const sendOrStage = () => {
     const text = ask.value.trim();
-    if (staged && stagedText === text) executeStaged();
-    else stagePrompt();
+    const plan = planSend({ staged, stagedText, text });
+    if (plan.action === 'open') {
+      executeStaged();
+      return;
+    }
+    if (plan.action === 'reexplain') {
+      staged = null;
+      stagedText = text;
+      paintSteps(0);
+      const log = dock.querySelector('#ai-log');
+      log.textContent = plan.line;
+      paintChips(plan.categories, null);
+      note(dock.querySelector('#ai-send'), 'Pick one');
+      markOverflow();
+      return;
+    }
+    stagePrompt();
   };
   const markOverflow = () => {
     const scroller = dock.querySelector('#ai-scroll');
@@ -401,6 +497,10 @@ function mount() {
   dock.querySelector('#ai-send').addEventListener('click', () => sendOrStage());
   dock.querySelector('#ai-confirm').addEventListener('click', () => executeStaged());
   window.addEventListener('lgme-draft-filled', showFilled);
+  window.addEventListener('lgme-ididit-step', (event) => {
+    const step = Number(event.detail?.step);
+    if (step) paintSteps(step);
+  });
   setTimeout(showFilled, 0);
   dock.querySelector('#ai-voice').addEventListener('click', () => {
     const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;

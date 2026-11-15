@@ -52,11 +52,13 @@ if (root && !document.getElementById('profile-board')) {
     if (sensitive) link.dataset.sensitive = '1';
     row.append(link);
   }
-  const mine = document.createElement('div');
+  const mine = document.createElement('details');
   mine.id = 'my-functions';
-  mine.setAttribute('aria-label', 'My functions');
+  const summary = document.createElement('summary');
+  summary.textContent = 'My functions';
+  mine.append(summary);
   const paintMine = () => {
-    mine.replaceChildren();
+    for (const node of [...mine.children]) if (node !== summary) node.remove();
     const tag = document.createElement('span');
     tag.textContent = 'local only';
     mine.append(tag);
@@ -83,6 +85,8 @@ if (root && !document.getElementById('profile-board')) {
     file.id = 'functions-import';
     file.type = 'file';
     file.accept = 'application/json';
+    file.hidden = !mine.open;
+    file.setAttribute('aria-label', 'Choose File');
     file.addEventListener('change', async () => {
       const text = await file.files?.[0]?.text();
       if (text) importLocalFunctions(localStorage, text);
@@ -90,6 +94,7 @@ if (root && !document.getElementById('profile-board')) {
     });
     mine.append(exp, file);
   };
+  mine.addEventListener('toggle', paintMine);
   paintMine();
   root.prepend(mine);
   root.prepend(row);

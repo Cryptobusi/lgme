@@ -39,6 +39,8 @@ const failures = [];
 const page = await context.newPage();
 await page.goto(`${base}/gym`, { waitUntil: 'domcontentloaded' });
 await page.locator('#ai-ask').waitFor();
+const panel = await page.locator('#ai-dock').evaluate((node) => node.getBoundingClientRect().height / window.innerHeight);
+if (panel < 0.38 || panel > 0.42) failures.push(`panel ${panel}`);
 const chip = await page.locator('.ai-chip').first().evaluate((node) => {
   const box = node.getBoundingClientRect();
   return { h: box.height, size: parseFloat(getComputedStyle(node).fontSize) };
@@ -49,7 +51,8 @@ await page.locator('#ai-ask').fill('log 10min treadmill');
 await page.locator('#ai-ask').evaluate((node) => {
   node.dispatchEvent(new InputEvent('beforeinput', { inputType: 'insertLineBreak', bubbles: true, cancelable: true }));
 });
-if (!/tap Confirm or press Send again/.test(await page.locator('#ai-log').innerText())) failures.push('first enter did not stage');
+if (!/Ready to log on IdidIt: Treadmill, 10 min/.test(await page.locator('#ai-log').innerText())) failures.push('first enter did not stage');
+if (!/is-current/.test(await page.locator('#ai-steps li').first().getAttribute('class'))) failures.push('step 1 not current');
 if (await page.locator('#gym-ididit-confirm').count()) failures.push('first enter recorded or opened');
 await page.waitForTimeout(50);
 await page.locator('#ai-ask').press('Enter');
@@ -58,6 +61,7 @@ if ((await page.locator('#gym-ididit-other').inputValue()) !== 'Treadmill, 10 mi
 if ((await page.locator('#gym-ididit-activity').inputValue()) !== 'Treadmill') failures.push('draft activity');
 if ((await page.locator('#gym-ididit-minutes').inputValue()) !== '10') failures.push('draft minutes');
 if (!/Draft filled: Treadmill, 10 min/.test(await page.locator('#ai-log').innerText())) failures.push('arrival explainer');
+if ((await page.locator('#ai-steps li.is-current').innerText()).indexOf('2)') !== 0) failures.push('step 2 not current');
 if (/Opening draft/.test(await page.locator('#ai-action-status').innerText().catch(() => ''))) failures.push('opening draft label');
 if (await page.locator('#category-board').isVisible()) failures.push('listings still cover the draft');
 if (!(await page.locator('#ididit-done').isVisible())) failures.push('draft not visible');
