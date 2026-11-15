@@ -6,8 +6,8 @@ jobs:
   node:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
       - run: node --test test/data-integrity.test.mjs test/nested-schema.test.mjs test/testnet-review.test.mjs test/health-examples.test.mjs test/health-dashboard.test.mjs test/exchange-overview.test.mjs test/hedera-network.test.mjs test/mainnet-prep.test.mjs test/join-explain.test.mjs test/category-help.test.mjs test/one-tap.test.mjs test/demo-onboard.test.mjs test/health-scope.test.mjs test/model-warmup.test.mjs test/mainnet-setup.test.mjs test/field-help.test.mjs test/evolve.test.mjs test/variant.test.mjs

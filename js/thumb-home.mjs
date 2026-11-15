@@ -9,7 +9,7 @@ import { ensureDeviceKey, signDevice } from './device-sign.mjs';
 import { confirmFingerprint, fingerprintSupported, registerFingerprint } from './passkey-signin.mjs';
 
 const root = document.getElementById('category-grid');
-if (root && !document.getElementById('profile-board')) {
+if (root) {
   const paintBadges = (open) => {
     let items = [];
     try { items = JSON.parse(localStorage.getItem('lgme.attest.items') || '[]'); } catch { items = []; }
@@ -29,34 +29,42 @@ if (root && !document.getElementById('profile-board')) {
       host.append(button);
     }
   };
-  const board = document.createElement('section');
-  board.id = 'profile-board';
-  board.setAttribute('aria-label', 'Profile');
-  board.innerHTML = '<p id="profile-name">Not signed in</p><button type="button" id="credits-total" hidden>Credits 0.00</button><button type="button" id="messages-open">Messages</button><div id="attest-badges" hidden aria-label="Message dashboard"></div><details id="my-credits"><summary>My credits</summary><p id="contrib-preview">Contribute $lgme is a simulation. Live payments are off. Example price. Collective Fund and Health Sub-floor split 50/50.</p><p id="my-credits-balance"></p><ul id="my-credits-history"></ul><p id="my-credits-rules"></p></details><p id="profile-activity">No recent activity</p><p id="profile-balance">Balance stays on this phone</p><p id="profile-new">New 0</p><form id="first-open"><p id="step-count">Step 1 of 3: email or authenticator, then fingerprint, then AI test</p><section class="access-card" id="step-email"><h2>Sign in with email</h2><label for="access-email">Email</label><input id="access-email" type="email" autocomplete="email" maxlength="120"><button type="submit" id="access-send" class="primary">Send code</button><label for="access-code">Email code</label><input id="access-code" inputmode="numeric" maxlength="7" autocomplete="one-time-code"><button type="button" id="access-verify" class="primary">Verify</button></section><p id="step-or">or</p><section class="access-card" id="step-totp"><h2>Sign in with Google Authenticator</h2><label for="access-totp">Google Authenticator code</label><input id="access-totp" inputmode="numeric" maxlength="7" autocomplete="one-time-code"><button type="button" id="access-authenticator" class="primary">Sign in</button><button type="button" id="totp-setup-open" class="secondary">Set up authenticator</button><section id="totp-setup" hidden><p>Open Google Authenticator, tap +, scan this QR code or enter the key. The entry will be named lgme.app.</p><p id="totp-key"></p><div id="totp-qr"></div><label for="totp-confirm">Google Authenticator code</label><input id="totp-confirm" inputmode="numeric" maxlength="7" autocomplete="one-time-code"><button type="button" id="totp-finish" class="primary">Finish authenticator setup</button><button type="button" id="totp-reset" class="secondary">Reset authenticator</button></section></section><p id="step-or-fp">or</p><section class="access-card" id="step-fingerprint"><h2>Sign in with fingerprint</h2><p id="fingerprint-note" hidden>Fingerprint sign-in is not available on this device.</p><button type="button" id="access-fingerprint" class="primary">Sign in with fingerprint</button></section><section class="access-card" id="step-ai" hidden><h2>Test local AI</h2><p id="access-member"></p><button type="button" id="fingerprint-setup" class="secondary" hidden>Set up fingerprint</button><button type="button" id="ai-test" class="primary">Test local AI</button><p id="ai-test-result" role="status"></p><button type="button" id="access-grant" class="primary" disabled>Open the app</button></section><p id="access-status" role="status"></p></form>';
-  const row = document.createElement('div');
-  row.id = 'function-row';
-  row.setAttribute('aria-label', 'Functions');
-  const actions = [
-    ['IdidIt (verified receipt)', '/gym#/ididit', true],
-    ['Sobeit', '/lgme-coin#give', false],
-    ['Inanity', '/ihelpit', false],
-    ['Settings', '/gym#/more', false],
-    ['IwantIT', '/gym#/', false],
-    ['IhavIT', '/gym#/', false],
-    ['IhelpIT', '/ihelpit', false]
-  ];
-  for (const [label, href, sensitive] of actions) {
-    const link = document.createElement('a');
-    link.href = href;
-    link.textContent = label;
-    if (sensitive) link.dataset.sensitive = '1';
-    row.append(link);
+  let board = document.getElementById('profile-board');
+  let row = document.getElementById('function-row');
+  let mine = document.getElementById('my-functions');
+  if (!board) {
+    board = document.createElement('section');
+    board.id = 'profile-board';
+    board.setAttribute('aria-label', 'Profile');
+    board.innerHTML = '<p id="profile-name">Not signed in</p><button type="button" id="screen-reopen" class="secondary">Choose your screen</button><button type="button" id="credits-total" hidden>Credits 0.00</button><button type="button" id="messages-open">Messages</button><div id="attest-badges" hidden aria-label="Message dashboard"></div><details id="my-credits"><summary>My credits</summary><p id="contrib-preview">Contribute $lgme is a simulation. Live payments are off. Example price. Collective Fund and Health Sub-floor split 50/50.</p><p id="my-credits-balance"></p><ul id="my-credits-history"></ul><p id="my-credits-rules"></p></details><p id="profile-activity">No recent activity</p><p id="profile-balance">Balance stays on this phone</p><p id="profile-new">New 0</p><form id="first-open"><p id="step-count">Step 1 of 3: email or authenticator, then fingerprint, then AI test</p><section class="access-card" id="step-email"><h2>Sign in with email</h2><label for="access-email">Email</label><input id="access-email" type="email" autocomplete="email" maxlength="120"><button type="submit" id="access-send" class="primary">Send code</button><label for="access-code">Email code</label><input id="access-code" inputmode="numeric" maxlength="7" autocomplete="one-time-code"><button type="button" id="access-verify" class="primary">Verify</button></section><p id="step-or">or</p><section class="access-card" id="step-totp"><h2>Sign in with Google Authenticator</h2><label for="access-totp">Google Authenticator code</label><input id="access-totp" inputmode="numeric" maxlength="7" autocomplete="one-time-code"><button type="button" id="access-authenticator" class="primary">Sign in</button><button type="button" id="totp-setup-open" class="secondary">Set up authenticator</button><section id="totp-setup" hidden><p>Open Google Authenticator, tap +, scan this QR code or enter the key. The entry will be named lgme.app.</p><p id="totp-key"></p><div id="totp-qr"></div><label for="totp-confirm">Google Authenticator code</label><input id="totp-confirm" inputmode="numeric" maxlength="7" autocomplete="one-time-code"><button type="button" id="totp-finish" class="primary">Finish authenticator setup</button><button type="button" id="totp-reset" class="secondary">Reset authenticator</button></section></section><p id="step-or-fp">or</p><section class="access-card" id="step-fingerprint"><h2>Sign in with fingerprint</h2><p id="fingerprint-note" hidden>Fingerprint sign-in is not available on this device.</p><button type="button" id="access-fingerprint" class="primary">Sign in with fingerprint</button></section><section class="access-card" id="step-ai" hidden><h2>Test local AI</h2><p id="access-member"></p><button type="button" id="fingerprint-setup" class="secondary" hidden>Set up fingerprint</button><button type="button" id="ai-test" class="primary">Test local AI</button><p id="ai-test-result" role="status"></p><button type="button" id="access-grant" class="primary" disabled>Open the app</button></section><p id="access-status" role="status"></p></form>';
+    row = document.createElement('div');
+    row.id = 'function-row';
+    row.setAttribute('aria-label', 'Functions');
+    for (const [label, href, sensitive] of [
+      ['IdidIt (verified receipt)', '/gym#/ididit', true],
+      ['Sobeit', '/lgme-coin#give', false],
+      ['Inanity', '/ihelpit', false],
+      ['Settings', '/gym#/more', false],
+      ['IwantIT', '/gym#/', false],
+      ['IhavIT', '/gym#/', false],
+      ['IhelpIT', '/ihelpit', false]
+    ]) {
+      const link = document.createElement('a');
+      link.href = href;
+      link.textContent = label;
+      if (sensitive) link.dataset.sensitive = '1';
+      row.append(link);
+    }
+    mine = document.createElement('details');
+    mine.id = 'my-functions';
+    const summary = document.createElement('summary');
+    summary.textContent = 'My functions';
+    mine.append(summary);
+    root.prepend(mine);
+    root.prepend(row);
+    root.prepend(board);
   }
-  const mine = document.createElement('details');
-  mine.id = 'my-functions';
-  const summary = document.createElement('summary');
-  summary.textContent = 'My functions';
-  mine.append(summary);
+  const summary = mine.querySelector('summary');
   const paintMine = () => {
     for (const node of [...mine.children]) if (node !== summary) node.remove();
     const tag = document.createElement('span');
@@ -96,9 +104,6 @@ if (root && !document.getElementById('profile-board')) {
   };
   mine.addEventListener('toggle', paintMine);
   paintMine();
-  root.prepend(mine);
-  root.prepend(row);
-  root.prepend(board);
 
   const groupCode = (input) => {
     input.addEventListener('input', () => {
@@ -420,13 +425,16 @@ if (root && !document.getElementById('profile-board')) {
   more.textContent = 'Customize more';
   screen.append(undo, more);
   board.append(screen);
-  const reopen = document.createElement('button');
-  reopen.type = 'button';
-  reopen.id = 'screen-reopen';
-  reopen.className = 'secondary';
-  reopen.textContent = 'Choose your screen';
+  let reopen = document.getElementById('screen-reopen');
+  if (!reopen) {
+    reopen = document.createElement('button');
+    reopen.type = 'button';
+    reopen.id = 'screen-reopen';
+    reopen.className = 'secondary';
+    reopen.textContent = 'Choose your screen';
+    board.querySelector('#profile-name').after(reopen);
+  }
   reopen.addEventListener('click', () => { screen.hidden = false; });
-  board.querySelector('#profile-name').after(reopen);
   paint();
   paintBadges();
   paintCredits();
