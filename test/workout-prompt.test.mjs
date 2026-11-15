@@ -13,4 +13,11 @@ test('workout phrases become a 10 minute treadmill receipt', () => {
   const line = stageLine(matchPrompt('log 10min treadmill'));
   assert.equal(line, 'Recommend: log Treadmill, 10 min as an IdidIt receipt. Verify: it stays on this phone until you confirm; Health is on testnet. Explain: tap Confirm or press Send again to open the filled draft.');
   assert.equal(matchPrompt('log a workout').title, 'I did the session');
+  const pace = matchPrompt('Treadmill 5 miles at 3mph');
+  assert.equal(pace.activity, 'Treadmill');
+  assert.equal(pace.distance, '5 miles');
+  assert.equal(pace.speed, '3 mph');
+  assert.equal(pace.minutes, 100);
+  assert.equal(pace.computed, true);
+  assert.equal(pace.title, 'Treadmill, 5 miles, 3 mph, about 100 min');
 });

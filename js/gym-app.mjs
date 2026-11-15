@@ -2094,18 +2094,32 @@ async function renderIdidIt() {
   });
   const activity = el('input', { id: 'gym-ididit-activity', maxlength: '40', 'aria-label': 'Activity' });
   const minutes = el('input', { id: 'gym-ididit-minutes', inputmode: 'numeric', maxlength: '4', 'aria-label': 'Minutes' });
+  const distance = el('input', { id: 'gym-ididit-distance', maxlength: '40', 'aria-label': 'Distance' });
+  const speed = el('input', { id: 'gym-ididit-speed', maxlength: '40', 'aria-label': 'Speed' });
+  const computed = el('p', { id: 'gym-ididit-computed' });
+  const explain = () => {
+    const bits = [activity.value, distance.value, speed.value].filter(Boolean);
+    if (minutes.value) bits.push(computed.textContent ? `about ${minutes.value} min` : `${minutes.value} min`);
+    const summary = bits.join(', ') || title.value;
+    const note = `Draft filled: ${summary}. Check them, then Confirm.`;
+    try { sessionStorage.setItem('lgme.prompt.note', note); } catch { /* the log still updates */ }
+    window.dispatchEvent(new CustomEvent('lgme-draft-filled'));
+  };
   try {
     const draft = JSON.parse(sessionStorage.getItem('lgme.prompt.draft') || 'null');
     if (draft?.kind === 'ididit' && (draft.title || draft.text)) {
+      activity.value = String(draft.activity || '');
+      distance.value = String(draft.distance || '');
+      speed.value = String(draft.speed || '');
+      minutes.value = draft.minutes ? String(draft.minutes) : '';
+      computed.textContent = draft.computed ? `about ${draft.minutes} min (computed)` : '';
       title.value = String(draft.title || draft.text).slice(0, 80);
-      if (activity) activity.value = String(draft.activity || '');
-      if (minutes) minutes.value = draft.minutes ? String(draft.minutes) : '';
-      const note = `Draft filled: ${title.value}. Check it, then tap Confirm on the page (or press Send) to record the receipt on testnet.`;
-      sessionStorage.setItem('lgme.prompt.note', note);
+      for (const field of [activity, distance, speed, minutes, title]) field.classList.add('is-filled');
       sessionStorage.removeItem('lgme.prompt.draft');
-      window.dispatchEvent(new CustomEvent('lgme-draft-filled'));
+      explain();
     }
   } catch { /* the default title stays */ }
+  for (const field of [activity, distance, speed, minutes, title]) field.addEventListener('input', explain);
   const statusLine = el('p', { id: 'ididit-status', role: 'status' });
   const confirm = el('button', { type: 'button', class: 'primary', id: 'gym-ididit-confirm' }, ['Confirm']);
   confirm.addEventListener('click', async () => {
@@ -2116,19 +2130,24 @@ async function renderIdidIt() {
       : (result.error || 'The receipt stayed on this phone.');
     confirm.disabled = false;
   });
-  return el('section', { id: 'ididit-done' }, [
+  const view = el('section', { id: 'ididit-done' }, [
     el('h2', {}, [IDIDIT_NAME]),
     chipRow('gym-ididit-chips', IDIDIT_CHIPS, (label) => { title.value = label; }),
     el('label', {}, ['Activity', activity]),
-    el('label', {}, ['Minutes', minutes]),
+    el('label', {}, ['Distance', distance]),
+    el('label', {}, ['Speed', speed]),
+    el('label', {}, ['Minutes', minutes, computed]),
     el('label', {}, ['Other', title]),
     confirm,
     statusLine
   ]);
+  return view;
 }
 
 async function render() {
   const path = route();
+  const category = document.getElementById('category-board');
+  if (category) category.hidden = path === '/ididit';
   const panel = document.getElementById('gym-panel');
   if (!panel) return;
   let view;
@@ -2157,6 +2176,7 @@ async function render() {
     view = el('p', { id: 'gym-status', role: 'status' }, ['This step did not open. Tap Join Health and try the prefilled options.']);
   }
   panel.replaceChildren(view);
+  if (path === '/ididit' && view?.id === 'ididit-done') view.scrollIntoView({ block: 'start' });
   const people = await books();
   if (people.length) panel.prepend(actingAs(people));
   applySticky();

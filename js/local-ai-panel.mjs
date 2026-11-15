@@ -81,10 +81,40 @@ const ACTIVITIES = [
 ];
 
 function workoutMinutes(text) {
-  const hour = text.match(/(\d+)\s*(?:hours?|hrs?|h)\b/);
-  if (hour) return Number(hour[1]) * 60;
-  const minute = text.match(/(\d+)\s*(?:minutes?|mins?|min|m)\b/);
-  return minute ? Number(minute[1]) : 0;
+  const hour = text.match(/(\d+(?:\.\d+)?)\s*(?:hours?|hrs?|h)\b/);
+  if (hour) return Math.round(Number(hour[1]) * 60);
+  const minute = text.match(/(\d+(?:\.\d+)?)\s*(?:minutes?|mins?|min|m)\b/);
+  return minute ? Math.round(Number(minute[1])) : 0;
+}
+
+function workoutMeasure(text) {
+  const miles = text.match(/(\d+(?:\.\d+)?)\s*(?:miles|mi)\b/);
+  const km = text.match(/(\d+(?:\.\d+)?)\s*km\b/);
+  const mph = text.match(/(\d+(?:\.\d+)?)\s*mph\b/);
+  const kmh = text.match(/(\d+(?:\.\d+)?)\s*km\/h\b/);
+  const sets = text.match(/(\d+)\s*sets?\b/);
+  const reps = text.match(/(\d+)\s*reps?\b/);
+  const weight = text.match(/(\d+(?:\.\d+)?)\s*(lb|lbs|kg)\b/);
+  const distance = miles ? `${miles[1]} miles` : km ? `${km[1]} km` : '';
+  const speed = mph ? `${mph[1]} mph` : kmh ? `${kmh[1]} km/h` : '';
+  let minutes = workoutMinutes(text);
+  let computed = false;
+  if (!minutes && miles && mph && Number(mph[1]) > 0) {
+    minutes = Math.round(Number(miles[1]) / Number(mph[1]) * 60);
+    computed = true;
+  } else if (!minutes && km && kmh && Number(kmh[1]) > 0) {
+    minutes = Math.round(Number(km[1]) / Number(kmh[1]) * 60);
+    computed = true;
+  }
+  return {
+    distance,
+    speed,
+    minutes,
+    computed,
+    sets: sets ? Number(sets[1]) : 0,
+    reps: reps ? Number(reps[1]) : 0,
+    weight: weight ? `${weight[1]} ${weight[2] === 'kg' ? 'kg' : 'lb'}` : ''
+  };
 }
 
 function workoutActivity(text) {
@@ -108,11 +138,18 @@ export function matchPrompt(text) {
   const have = raw.match(/^i have\s+(.+)/i);
   if (have) return { kind: 'ihavit', text: have[1].trim(), line: `Opened IhavIT: ${have[1].trim()}` };
   const activity = workoutActivity(q);
-  const minutes = workoutMinutes(q);
+  const measure = workoutMeasure(q);
   const lead = /^(log\b|did\b|i did\b|ididit\b)/.test(q);
   if (lead || activity) {
-    const title = activity && minutes ? `${activity}, ${minutes} min` : (activity || 'I did the session');
-    return { kind: 'ididit', text: title, title, activity, minutes, line: 'Opened the IdidIt draft.' };
+    const parts = [activity || 'I did the session'];
+    if (measure.distance) parts.push(measure.distance);
+    if (measure.speed) parts.push(measure.speed);
+    if (measure.sets) parts.push(`${measure.sets} sets`);
+    if (measure.reps) parts.push(`${measure.reps} reps`);
+    if (measure.weight) parts.push(measure.weight);
+    if (measure.minutes) parts.push(measure.computed ? `about ${measure.minutes} min` : `${measure.minutes} min`);
+    const title = activity && (measure.minutes || measure.distance) ? parts.join(', ') : (activity || 'I did the session');
+    return { kind: 'ididit', text: title, title, activity, ...measure, line: 'Opened the IdidIt draft.' };
   }
   return { kind: 'help', text: '', line: 'Say log a workout, I want something, or I have something.' };
 }
@@ -276,8 +313,12 @@ function mount() {
     staged = null;
     stagedText = '';
     rememberUse(ask.value.trim());
-    note(dock.querySelector('#ai-confirm'), plan.openDraft ? 'Opening draft' : 'Done');
-    log.textContent = plan.message;
+    if (!plan.openDraft) note(dock.querySelector('#ai-confirm'), 'Done');
+    else {
+      const side = dock.querySelector('#ai-action-status');
+      if (side) side.textContent = '';
+    }
+    log.textContent = plan.openDraft ? '' : plan.message;
     if (!plan.openDraft) {
       if (matched.kind === 'screen') applyMode(localStorage, matched.mode);
       if (matched.kind === 'local' && matched.item) saveLocalFunction(localStorage, matched.item);
@@ -290,7 +331,13 @@ function mount() {
         text: matched.title || matched.text,
         title: matched.title || matched.text,
         activity: matched.activity || '',
-        minutes: matched.minutes || 0
+        minutes: matched.minutes || 0,
+        distance: matched.distance || '',
+        speed: matched.speed || '',
+        computed: matched.computed === true,
+        sets: matched.sets || 0,
+        reps: matched.reps || 0,
+        weight: matched.weight || ''
       }));
     } catch { /* the line still shows */ }
     const here = location.pathname.startsWith('/gym');
@@ -323,12 +370,34 @@ function mount() {
   document.addEventListener('focusin', (event) => { showField(event.target); });
   document.addEventListener('focusout', () => { setTimeout(clearField, 0); });
   ask.addEventListener('pointerup', () => { ask.focus(); });
+  let shiftHeld = false;
+  let keySent = 0;
+  const sendFromKeyboard = () => {
+    const now = Date.now();
+    if (now - keySent < 40) return;
+    keySent = now;
+    sendOrStage();
+  };
   ask.addEventListener('keydown', (event) => {
+    if (event.key === 'Shift') shiftHeld = true;
     if (event.key !== 'Enter' || event.shiftKey) return;
     event.preventDefault();
-    sendOrStage();
+    sendFromKeyboard();
   });
-  ask.addEventListener('input', () => { staged = null; stagedText = ''; });
+  ask.addEventListener('keyup', (event) => { if (event.key === 'Shift') shiftHeld = false; });
+  ask.addEventListener('beforeinput', (event) => {
+    if (event.inputType !== 'insertLineBreak' || event.shiftKey || shiftHeld) return;
+    event.preventDefault();
+    sendFromKeyboard();
+  });
+  ask.addEventListener('input', () => {
+    if (Date.now() - keySent < 40) {
+      if (ask.value.endsWith('\n')) ask.value = ask.value.replace(/\n+$/, '');
+      return;
+    }
+    staged = null;
+    stagedText = '';
+  });
   dock.querySelector('#ai-send').addEventListener('click', () => sendOrStage());
   dock.querySelector('#ai-confirm').addEventListener('click', () => executeStaged());
   window.addEventListener('lgme-draft-filled', showFilled);

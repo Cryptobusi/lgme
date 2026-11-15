@@ -115,11 +115,11 @@ body:has(nav[aria-label="Gym"]) #ai-dock { bottom: calc(4.5rem + env(safe-area-i
 #ai-log {
   box-sizing: border-box;
   margin: 0;
-  height: 22px;
-  line-height: 22px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  height: auto;
+  line-height: 1.35;
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
   font: inherit;
   font-size: 16px;
   padding: 0;
