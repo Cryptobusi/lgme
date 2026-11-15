@@ -39,7 +39,18 @@ async function challenge(store, userId, value) {
   return saved.challenge;
 }
 
-export async function passkeyRequest({ store, action, body = {}, host }) {
+async function notePasskeyFailure(store, emailHash) {
+  const id = String(emailHash || '').replace(/[^a-f0-9]/gi, '').slice(0, 64);
+  if (!id) return 0;
+  const now = Date.now();
+  const key = `totp:try:${id}`;
+  const row = (await store.get(key)) || { stamps: [] };
+  const stamps = [...(row.stamps || []).filter((stamp) => now - stamp < 10 * 60 * 1000), now];
+  await store.set(key, { stamps });
+  return stamps.length;
+}
+
+export async function passkeyRequest({ store, action, body = {}, host, verifyAuthentication = verifyAuthenticationResponse }) {
   if (!store) return { status: 500, body: { ok: false, error: 'The passkey store is not open.' } };
   const party = relyingParty(host);
   const userId = userIdOf(body);
@@ -99,7 +110,7 @@ export async function passkeyRequest({ store, action, body = {}, host }) {
     if (!expected) return { status: 400, body: { ok: false, error: 'The fingerprint prompt expired. Try again.' } };
     let verified;
     try {
-      verified = await verifyAuthenticationResponse({
+      verified = await verifyAuthentication({
         response: body.response,
         expectedChallenge: expected,
         expectedOrigin: party.origin,
@@ -108,14 +119,20 @@ export async function passkeyRequest({ store, action, body = {}, host }) {
         credential: { id: record.id, publicKey: bytes(record.publicKey), counter: record.counter, transports: record.transports }
       });
     } catch {
+      await store.set(`webauthn:challenge:${record.userId}`, null);
+      const tries = await notePasskeyFailure(store, body.emailHash);
+      if (tries >= 5) return { status: 429, body: { ok: false, error: 'Too many fingerprint tries. Wait and try again.' } };
       return { status: 400, body: { ok: false, error: 'The fingerprint was not accepted. Use the email code.' } };
     }
+    await store.set(`webauthn:challenge:${record.userId}`, null);
     if (!verified.verified || verified.authenticationInfo.userVerified !== true) {
+      const tries = await notePasskeyFailure(store, body.emailHash);
+      if (tries >= 5) return { status: 429, body: { ok: false, error: 'Too many fingerprint tries. Wait and try again.' } };
       return { status: 400, body: { ok: false, error: 'The fingerprint was not accepted. Use the email code.' } };
     }
     record.counter = verified.authenticationInfo.newCounter;
     await store.set(`webauthn:cred:${record.id}`, record);
-    return { status: 200, body: { ok: true, userId: record.userId } };
+    return { status: 200, body: { ok: true, verified: true, userId: record.userId } };
   }
   if (action === 'remove') {
     const credentialId = await store.get(`webauthn:user:${userId}`);

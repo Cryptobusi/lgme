@@ -1,6 +1,7 @@
 import { localAiReady } from './one-tap.mjs';
 import { gateDecision, nextAccess, signinAllowed } from './confirm-gate.mjs';
 import { ensureDeviceKey, signDevice } from './device-sign.mjs';
+import { confirmFingerprint, registerFingerprint } from './passkey-signin.mjs';
 
 const root = document.getElementById('category-grid');
 if (root && !document.getElementById('profile-board')) {
@@ -156,7 +157,31 @@ if (root && !document.getElementById('profile-board')) {
       dialog.querySelector('#gate-status').textContent = decision.ok ? 'Confirmed by a person.' : decision.error;
       if (decision.ok) location.assign(link.href);
     };
-    dialog.querySelector('#gate-passkey').onclick = () => finish(gateDecision({ human: true, method: 'passkey' }));
+    dialog.querySelector('#gate-passkey').onclick = async () => {
+      let emailHash = '';
+      try { emailHash = JSON.parse(localStorage.getItem('lgme.demo.member') || '{}').emailHash || ''; } catch { /* the code path stays */ }
+      try {
+        const saved = await confirmFingerprint(emailHash);
+        finish(gateDecision({ human: true, method: 'passkey', verified: saved?.verified === true }));
+      } catch (error) {
+        if (error.code === 'missing' && !dialog.querySelector('#gate-register')) {
+          const offer = document.createElement('button');
+          offer.id = 'gate-register';
+          offer.type = 'button';
+          offer.textContent = 'Save fingerprint';
+          offer.addEventListener('click', async () => {
+            try {
+              await registerFingerprint();
+              dialog.querySelector('#gate-status').textContent = 'Fingerprint saved. Use it, or use the authenticator code.';
+            } catch (err) {
+              dialog.querySelector('#gate-status').textContent = err.message || 'Use the authenticator code.';
+            }
+          });
+          dialog.append(offer);
+        }
+        finish(gateDecision({ human: true, method: 'passkey', verified: false }));
+      }
+    };
     dialog.querySelector('#gate-totp-go').onclick = async () => {
       let address = '';
       try { address = sessionStorage.getItem('lgme.access.email') || ''; } catch { /* ask for the email code */ }

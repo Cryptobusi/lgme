@@ -20,7 +20,10 @@ export function nextAccess(state = {}) {
 
 export function gateDecision({ human, method, verified } = {}) {
   if (human !== true) return { ok: false, error: 'A person has to confirm. Nothing ran.' };
-  if (method === 'passkey') return { ok: true };
+  if (method === 'passkey') {
+    if (verified === true) return { ok: true };
+    return { ok: false, error: 'The fingerprint was not accepted.' };
+  }
   if (method === 'totp') {
     if (verified === true) return { ok: true };
     return { ok: false, error: 'The authenticator code was not accepted.' };

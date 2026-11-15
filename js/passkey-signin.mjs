@@ -45,6 +45,18 @@ export async function registerFingerprint() {
   return saved;
 }
 
+export async function confirmFingerprint(emailHash = '') {
+  const userId = localStorage.getItem(USER_KEY) || '';
+  if (!userId || !readCredentialId(localStorage)) {
+    const error = new Error('No fingerprint is saved on this phone.');
+    error.code = 'missing';
+    throw error;
+  }
+  const options = await post('login-options', { userId });
+  const response = await startAuthentication({ optionsJSON: options.options });
+  return post('login', { response, emailHash });
+}
+
 export async function unlockFingerprint() {
   const userId = localStorage.getItem(USER_KEY) || '';
   if (!userId || !readCredentialId(localStorage)) throw new Error('No fingerprint is saved on this phone.');
