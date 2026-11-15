@@ -4,6 +4,8 @@ import {
   verifyAuthenticationResponse,
   verifyRegistrationResponse
 } from '@simplewebauthn/server';
+import { deviceThumb } from './email-check-core.mjs';
+import { verifyDevice } from './device-sign.mjs';
 
 export const RP_ID = 'lgme.app';
 export const RP_NAME = 'lgme';
@@ -54,6 +56,11 @@ export async function passkeyRequest({ store, action, body = {}, host, verifyAut
   if (!store) return { status: 500, body: { ok: false, error: 'The passkey store is not open.' } };
   const party = relyingParty(host);
   const userId = userIdOf(body);
+  if (action === 'register-options' || action === 'register') {
+    const emailHash = userId.split(':')[0];
+    const member = emailHash ? await store.get(`email:member:${emailHash}`) : null;
+    if (!member?.verifiedAt) return { status: 403, body: { ok: false, error: 'Verify email or the authenticator before saving a fingerprint.' } };
+  }
   if (action === 'register-options' || action === 'login-options' || action === 'remove') {
     if (!userId) return { status: 400, body: { ok: false, error: 'Sign in on this phone first.' } };
   }
@@ -129,6 +136,15 @@ export async function passkeyRequest({ store, action, body = {}, host, verifyAut
       const tries = await notePasskeyFailure(store, body.emailHash);
       if (tries >= 5) return { status: 429, body: { ok: false, error: 'Too many fingerprint tries. Wait and try again.' } };
       return { status: 400, body: { ok: false, error: 'The fingerprint was not accepted. Use the email code.' } };
+    }
+    const emailHash = String(record.userId || '').split(':')[0];
+    const member = emailHash ? await store.get(`email:member:${emailHash}`) : null;
+    const thumb = body.publicJwk?.x ? await deviceThumb(body.publicJwk) : '';
+    const deviceOk = Boolean(member?.deviceThumb) && thumb === member.deviceThumb && await verifyDevice(body.publicJwk, { challenge: expected, purpose: 'passkey-signin' }, body.sig);
+    if (!deviceOk) {
+      const tries = await notePasskeyFailure(store, body.emailHash || emailHash);
+      if (tries >= 5) return { status: 429, body: { ok: false, verified: false, error: 'Too many fingerprint tries. Wait and try again.' } };
+      return { status: 400, body: { ok: false, verified: false, fallback: 'email', error: 'This device does not match. Use the email code.' } };
     }
     record.counter = verified.authenticationInfo.newCounter;
     await store.set(`webauthn:cred:${record.id}`, record);

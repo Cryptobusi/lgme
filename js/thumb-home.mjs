@@ -2,14 +2,14 @@ import { compactCode } from './email-check-core.mjs';
 import { localAiReady } from './one-tap.mjs';
 import { gateDecision, nextAccess, signinAllowed } from './confirm-gate.mjs';
 import { ensureDeviceKey, signDevice } from './device-sign.mjs';
-import { confirmFingerprint, registerFingerprint } from './passkey-signin.mjs';
+import { confirmFingerprint, fingerprintSupported, registerFingerprint } from './passkey-signin.mjs';
 
 const root = document.getElementById('category-grid');
 if (root && !document.getElementById('profile-board')) {
   const board = document.createElement('section');
   board.id = 'profile-board';
   board.setAttribute('aria-label', 'Profile');
-  board.innerHTML = '<p id="profile-name">Not signed in</p><p id="profile-activity">No recent activity</p><p id="profile-balance">Balance stays on this phone</p><p id="profile-new">New 0</p><form id="first-open"><p id="step-count">1 of 3</p><section class="access-card" id="step-email"><h2>Sign in with email</h2><label for="access-email">Email</label><input id="access-email" type="email" autocomplete="email" maxlength="120"><button type="submit" id="access-send" class="primary">Send code</button><label for="access-code">Email code</label><input id="access-code" inputmode="numeric" maxlength="7" autocomplete="one-time-code"><button type="button" id="access-verify" class="primary">Verify</button></section><p id="step-or">or</p><section class="access-card" id="step-totp"><h2>Sign in with Google Authenticator</h2><label for="access-totp">Google Authenticator code</label><input id="access-totp" inputmode="numeric" maxlength="7" autocomplete="one-time-code"><button type="button" id="access-authenticator" class="primary">Sign in</button><button type="button" id="totp-setup-open" class="secondary">Set up authenticator</button><section id="totp-setup" hidden><p>Open Google Authenticator, tap +, scan this QR code or enter the key. The entry will be named lgme.app.</p><p id="totp-key"></p><div id="totp-qr"></div><label for="totp-confirm">Google Authenticator code</label><input id="totp-confirm" inputmode="numeric" maxlength="7" autocomplete="one-time-code"><button type="button" id="totp-finish" class="primary">Finish authenticator setup</button><button type="button" id="totp-reset" class="secondary">Reset authenticator</button></section></section><section class="access-card" id="step-ai" hidden><h2>Test local AI</h2><p id="access-member"></p><button type="button" id="ai-test" class="primary">Test local AI</button><p id="ai-test-result" role="status"></p><button type="button" id="access-grant" class="primary" disabled>Open the app</button></section><p id="access-status" role="status"></p></form>';
+  board.innerHTML = '<p id="profile-name">Not signed in</p><p id="profile-activity">No recent activity</p><p id="profile-balance">Balance stays on this phone</p><p id="profile-new">New 0</p><form id="first-open"><p id="step-count">1 of 3</p><section class="access-card" id="step-email"><h2>Sign in with email</h2><label for="access-email">Email</label><input id="access-email" type="email" autocomplete="email" maxlength="120"><button type="submit" id="access-send" class="primary">Send code</button><label for="access-code">Email code</label><input id="access-code" inputmode="numeric" maxlength="7" autocomplete="one-time-code"><button type="button" id="access-verify" class="primary">Verify</button></section><p id="step-or">or</p><section class="access-card" id="step-totp"><h2>Sign in with Google Authenticator</h2><label for="access-totp">Google Authenticator code</label><input id="access-totp" inputmode="numeric" maxlength="7" autocomplete="one-time-code"><button type="button" id="access-authenticator" class="primary">Sign in</button><button type="button" id="totp-setup-open" class="secondary">Set up authenticator</button><section id="totp-setup" hidden><p>Open Google Authenticator, tap +, scan this QR code or enter the key. The entry will be named lgme.app.</p><p id="totp-key"></p><div id="totp-qr"></div><label for="totp-confirm">Google Authenticator code</label><input id="totp-confirm" inputmode="numeric" maxlength="7" autocomplete="one-time-code"><button type="button" id="totp-finish" class="primary">Finish authenticator setup</button><button type="button" id="totp-reset" class="secondary">Reset authenticator</button></section></section><p id="step-or-fp">or</p><section class="access-card" id="step-fingerprint"><h2>Sign in with fingerprint</h2><p id="fingerprint-note" hidden>Fingerprint sign-in is not available on this device.</p><button type="button" id="access-fingerprint" class="primary">Sign in with fingerprint</button></section><section class="access-card" id="step-ai" hidden><h2>Test local AI</h2><p id="access-member"></p><button type="button" id="fingerprint-setup" class="secondary" hidden>Set up fingerprint</button><button type="button" id="ai-test" class="primary">Test local AI</button><p id="ai-test-result" role="status"></p><button type="button" id="access-grant" class="primary" disabled>Open the app</button></section><p id="access-status" role="status"></p></form>';
   const row = document.createElement('div');
   row.id = 'function-row';
   row.setAttribute('aria-label', 'Functions');
@@ -82,7 +82,10 @@ if (root && !document.getElementById('profile-board')) {
     board.querySelector('#step-email').hidden = signed;
     board.querySelector('#step-or').hidden = signed;
     board.querySelector('#step-totp').hidden = signed;
+    board.querySelector('#step-or-fp').hidden = signed;
+    board.querySelector('#step-fingerprint').hidden = signed;
     board.querySelector('#step-ai').hidden = !signed || stage === 'full';
+    board.querySelector('#fingerprint-setup').hidden = !codeOk || stage === 'full';
     board.querySelector('#step-count').textContent = stage === 'full' ? '3 of 3' : signed ? '3 of 3' : '1 of 3';
     const name = board.querySelector('#profile-name');
     if (stage === 'full') name.textContent = `Member ${localStorage.getItem('lgme.member.id') || 'on this phone'}`;
@@ -91,6 +94,39 @@ if (root && !document.getElementById('profile-board')) {
     const member = JSON.parse(localStorage.getItem('lgme.demo.member') || 'null');
     if (member?.emailHash && localStorage.getItem('lgme.access') === 'full') form.hidden = true;
   } catch { /* the form still shows */ }
+  fingerprintSupported().then((yes) => {
+    if (yes) return;
+    board.querySelector('#access-fingerprint').hidden = true;
+    board.querySelector('#fingerprint-note').hidden = false;
+  });
+  board.querySelector('#access-fingerprint').addEventListener('click', async () => {
+    const button = board.querySelector('#access-fingerprint');
+    await busy(button, async () => {
+      try {
+        const saved = await confirmFingerprint(memberId);
+        if (saved?.verified === true) {
+          codeOk = true;
+          if (!memberId) memberId = 'device';
+          mark(button, 'ok', 'Verified');
+          paint();
+        } else mark(button, 'error', 'The fingerprint was not accepted.');
+      } catch (error) {
+        mark(button, 'error', error.code === 'missing' ? 'No fingerprint yet. Set it up after you sign in.' : (error.message || 'The fingerprint was not accepted.'));
+      }
+    });
+  });
+  board.querySelector('#fingerprint-setup').addEventListener('click', async () => {
+    if (!codeOk) { mark(null, 'error', 'Verify email or the authenticator before saving a fingerprint.'); return; }
+    const button = board.querySelector('#fingerprint-setup');
+    await busy(button, async () => {
+      try {
+        await registerFingerprint();
+        mark(button, 'ok', 'Verified');
+      } catch (error) {
+        mark(button, 'error', error.message || 'The fingerprint was not accepted.');
+      }
+    });
+  });
   board.querySelector('#access-totp').addEventListener('focus', () => { board.querySelector('#step-count').textContent = '2 of 3'; });
   board.querySelector('#totp-setup-open').addEventListener('click', () => {
     board.querySelector('#totp-setup').hidden = false;

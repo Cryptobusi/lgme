@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { passkeyRequest } from '../js/webauthn-passkey.mjs';
 import { gateDecision } from '../js/confirm-gate.mjs';
+import { deviceThumb } from '../js/email-check-core.mjs';
+import { generateDeviceKey, signDevice } from '../js/device-sign.mjs';
 
 function memory() {
   const data = new Map();
@@ -45,11 +47,17 @@ test('a fingerprint tap needs a server-verified assertion', async () => {
   assert.equal(replay.body.ok, false);
 
   await seed(store);
+  const blocked = await passkeyRequest({ store, action: 'register', body: { userId: 'abcd:device' }, host: 'lgme.app' });
+  assert.equal(blocked.status, 403);
+  const key = await generateDeviceKey();
+  const thumb = await deviceThumb(key.publicJwk);
+  await store.set('email:member:abcd', { verifiedAt: new Date().toISOString(), deviceThumb: thumb });
+  const sig = await signDevice(key.privateJwk, { challenge: 'challenge-1', purpose: 'passkey-signin' });
   const valid = await passkeyRequest({
     store,
     action: 'login',
     host: 'lgme.app',
-    body: { emailHash: 'abc123', response: { id: 'cred1' } },
+    body: { emailHash: 'abc123', response: { id: 'cred1' }, publicJwk: key.publicJwk, sig },
     verifyAuthentication: async () => ({ verified: true, authenticationInfo: { userVerified: true, newCounter: 2 } })
   });
   assert.equal(valid.body.ok, true);

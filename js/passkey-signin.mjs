@@ -2,7 +2,7 @@ import { startAuthentication, startRegistration, browserSupportsWebAuthn, platfo
 import { readCredentialId, writeCredentialId } from './passkey-unlock.mjs';
 import { saveDemo } from './demo-onboard.mjs';
 import { saveEmailSession } from './health-email.mjs';
-import { ensureDeviceKey } from './device-sign.mjs';
+import { ensureDeviceKey, signDevice } from './device-sign.mjs';
 
 const USER_KEY = 'lgme.passkey.userId';
 
@@ -54,7 +54,9 @@ export async function confirmFingerprint(emailHash = '') {
   }
   const options = await post('login-options', { userId });
   const response = await startAuthentication({ optionsJSON: options.options });
-  return post('login', { response, emailHash });
+  const key = await ensureDeviceKey(localStorage);
+  const sig = await signDevice(key.privateJwk, { challenge: options.options.challenge, purpose: 'passkey-signin' });
+  return post('login', { response, emailHash, publicJwk: key.publicJwk, sig });
 }
 
 export async function unlockFingerprint() {
