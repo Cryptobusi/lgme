@@ -91,7 +91,7 @@ function mount() {
   const dock = document.createElement('section');
   dock.id = 'ai-dock';
   dock.setAttribute('aria-label', 'On-device AI');
-  dock.innerHTML = '<p class="ai-top"><button type="button" id="ai-switch" class="ai-pill" role="switch" aria-checked="true" aria-live="polite" aria-label="AI on or off">AI off - tap to turn on</button><button type="button" id="ai-smaller" aria-label="Smaller text">A-</button><button type="button" id="ai-larger" aria-label="Bigger text">A+</button><button type="button" id="ai-expand" aria-expanded="true">Close</button><a class="ai-setup-link" href="/ai-setup">Help</a></p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><div id="ai-scroll"><div id="ai-chip-row"><div id="ai-chips" class="ai-chips"></div><span id="ai-chip-hint" aria-hidden="true">›</span></div><textarea id="ai-ask" rows="1" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><pre id="ai-log"></pre><p class="ai-actions"><button type="button" id="ai-send" aria-label="Send runs the words in the box">Send</button><button type="button" id="ai-accept" aria-label="Accept uses the top suggestion">Use suggestion</button></p><p id="ai-more" hidden>More</p></div>';
+  dock.innerHTML = '<p class="ai-top"><button type="button" id="ai-switch" class="ai-pill" role="switch" aria-checked="true" aria-live="polite" aria-label="AI on or off">AI off - tap to turn on</button><button type="button" id="ai-voice" aria-label="Speak or type">Voice</button><button type="button" id="ai-smaller" aria-label="Smaller text">A-</button><button type="button" id="ai-larger" aria-label="Bigger text">A+</button><button type="button" id="ai-expand" aria-expanded="true">Close</button><a class="ai-setup-link" href="/ai-setup">Help</a></p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><div id="ai-scroll"><div id="ai-chip-row"><div id="ai-chips" class="ai-chips"></div><span id="ai-chip-hint" aria-hidden="true">›</span></div><textarea id="ai-ask" rows="1" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><pre id="ai-log"></pre><p class="ai-actions"><button type="button" id="ai-send" aria-label="Send recommends the words in the box">Send</button><button type="button" id="ai-accept" aria-label="Accept uses the top suggestion">Use suggestion</button><button type="button" id="ai-confirm" aria-label="Confirm and run">Confirm</button></p><p id="ai-more" hidden>More</p></div>';
   dock.classList.add('is-open', 'is-normal');
   try {
     if (localStorage.getItem('lgme.reset.note') === '1') {
@@ -160,7 +160,7 @@ function mount() {
     if (fieldMeta(active)) return;
     fieldToken += 1;
     dock.classList.remove('has-field');
-    paintChips(rankedPrompts(dockChipsOf() || AI_CHIPS, readUses()), null);
+    paintChips(rankedPrompts(dockChipsOf() || AI_CHIPS, readUses()).slice(0, 3), null);
     paint(dock);
   };
   const SIZES = ['compact', 'normal', 'tall'];
@@ -175,13 +175,22 @@ function mount() {
     const saved = localStorage.getItem('lgme.dock.size');
     applySize(saved || (document.getElementById('testnet-notice') ? 'compact' : 'normal'), false);
   } catch { applySize('normal', false); }
-  const runPrompt = () => {
+  let staged = null;
+  const stagePrompt = () => {
     const text = ask.value.trim();
     const log = dock.querySelector('#ai-log');
     const matched = matchPrompt(text);
-    if (text) rememberUse(text);
+    staged = matched.kind === 'help' ? null : matched;
+    log.textContent = `Recommend: ${matched.line} Verify: this stays on the phone. Explain: nothing runs until you confirm.`;
+    markOverflow();
+  };
+  const executeStaged = () => {
+    const log = dock.querySelector('#ai-log');
+    if (!staged) { log.textContent = 'Confirm is waiting. Nothing ran.'; markOverflow(); return; }
+    const matched = staged;
+    staged = null;
+    rememberUse(ask.value.trim());
     log.textContent = matched.line;
-    if (matched.kind === 'help') { markOverflow(); return; }
     try { sessionStorage.setItem('lgme.prompt.draft', JSON.stringify({ kind: matched.kind, text: matched.text })); } catch { /* the line still shows */ }
     const here = location.pathname.startsWith('/gym');
     if (matched.kind === 'ididit') {
@@ -200,16 +209,26 @@ function mount() {
     scroller.classList.toggle('is-over', over);
     more.hidden = !over;
   };
-  paintChips(rankedPrompts(dockChipsOf() || AI_CHIPS, readUses()), null);
+  paintChips(rankedPrompts(dockChipsOf() || AI_CHIPS, readUses()).slice(0, 3), null);
   document.addEventListener('focusin', (event) => { showField(event.target); });
   document.addEventListener('focusout', () => { setTimeout(clearField, 0); });
   ask.addEventListener('pointerup', () => { ask.focus(); });
   ask.addEventListener('keydown', (event) => {
     if (event.key !== 'Enter' || event.shiftKey) return;
     event.preventDefault();
-    runPrompt();
+    stagePrompt();
   });
-  dock.querySelector('#ai-send').addEventListener('click', () => runPrompt());
+  dock.querySelector('#ai-send').addEventListener('click', () => stagePrompt());
+  dock.querySelector('#ai-confirm').addEventListener('click', () => executeStaged());
+  dock.querySelector('#ai-voice').addEventListener('click', () => {
+    const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!Speech) { ask.focus(); dock.querySelector('#ai-log').textContent = 'Voice is not on this device. Typing still works.'; return; }
+    const heard = new Speech();
+    heard.lang = 'en-US';
+    heard.onresult = (event) => { ask.value = event.results?.[0]?.[0]?.transcript || ''; stagePrompt(); };
+    heard.onerror = () => { ask.focus(); };
+    heard.start();
+  });
   dock.querySelector('#ai-smaller').addEventListener('click', () => applySize(SIZES[Math.max(0, SIZES.indexOf(dock.classList.contains('is-tall') ? 'tall' : dock.classList.contains('is-compact') ? 'compact' : 'normal') - 1)]));
   dock.querySelector('#ai-larger').addEventListener('click', () => applySize(SIZES[Math.min(2, SIZES.indexOf(dock.classList.contains('is-tall') ? 'tall' : dock.classList.contains('is-compact') ? 'compact' : 'normal') + 1)]));
   dock.querySelector('#ai-scroll').addEventListener('scroll', markOverflow);

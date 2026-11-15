@@ -47,11 +47,13 @@ if (chip.h < 24 || chip.h > 32 || chip.size < 13 || chip.size > 14) failures.pus
 if (!(await page.locator('#ai-chip-hint').isVisible())) failures.push('chip hint missing');
 await page.locator('#ai-ask').fill('log a workout');
 await page.locator('#ai-ask').press('Enter');
+await page.locator('#ai-confirm').click();
 await page.locator('#gym-ididit-other').waitFor();
 if ((await page.locator('#gym-ididit-other').inputValue()) !== 'I did the session') failures.push('enter did not open the draft');
 if (!/Opened the IdidIt draft/.test(await page.locator('#ai-log').innerText())) failures.push('enter result missing');
 await page.locator('#ai-ask').fill('I want a ride');
 await page.locator('#ai-send').click();
+await page.locator('#ai-confirm').click();
 await page.locator('#prompt-draft').waitFor();
 if (!/a ride/.test(await page.locator('#prompt-draft').innerText())) failures.push('send did not open IwantIT');
 await page.evaluate(() => {
