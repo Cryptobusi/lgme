@@ -9,7 +9,7 @@ if (root && !document.getElementById('profile-board')) {
   const board = document.createElement('section');
   board.id = 'profile-board';
   board.setAttribute('aria-label', 'Profile');
-  board.innerHTML = '<p id="profile-name">Not signed in</p><p id="profile-activity">No recent activity</p><p id="profile-balance">Balance stays on this phone</p><p id="profile-new">New 0</p><form id="first-open"><p>First open. Email, then a code. No full KYC. The keys stay on this phone.</p><label for="access-email">Email</label><input id="access-email" type="email" autocomplete="email" maxlength="120"><label for="access-code">Email code (sent to your inbox)</label><input id="access-code" inputmode="numeric" maxlength="7" autocomplete="one-time-code"><button type="submit" id="access-send">Send code</button><button type="button" id="access-verify">Verify code</button><label for="access-totp">Google Authenticator code</label><input id="access-totp" inputmode="numeric" maxlength="7" autocomplete="one-time-code"><button type="button" id="access-authenticator">Use authenticator app</button><section id="totp-setup" hidden><p>Open Google Authenticator, tap +, scan this QR code or enter the key. The entry will be named lgme.app.</p><p id="totp-key"></p><div id="totp-qr"></div><label for="totp-confirm">Google Authenticator code</label><input id="totp-confirm" inputmode="numeric" maxlength="7" autocomplete="one-time-code"><button type="button" id="totp-finish">Finish authenticator setup</button></section><p id="access-member"></p><button type="button" id="ai-test">Test local AI</button><p id="ai-test-result" role="status"></p><button type="button" id="access-grant" disabled>Open the app</button><button type="button" id="totp-reset">Reset authenticator</button><p id="access-status" role="status"></p></form>';
+  board.innerHTML = '<p id="profile-name">Not signed in</p><p id="profile-activity">No recent activity</p><p id="profile-balance">Balance stays on this phone</p><p id="profile-new">New 0</p><form id="first-open"><p id="step-count">1 of 3</p><section class="access-card" id="step-email"><h2>Sign in with email</h2><label for="access-email">Email</label><input id="access-email" type="email" autocomplete="email" maxlength="120"><button type="submit" id="access-send" class="primary">Send code</button><label for="access-code">Email code</label><input id="access-code" inputmode="numeric" maxlength="7" autocomplete="one-time-code"><button type="button" id="access-verify" class="primary">Verify</button></section><p id="step-or">or</p><section class="access-card" id="step-totp"><h2>Sign in with Google Authenticator</h2><label for="access-totp">Google Authenticator code</label><input id="access-totp" inputmode="numeric" maxlength="7" autocomplete="one-time-code"><button type="button" id="access-authenticator" class="primary">Sign in</button><button type="button" id="totp-setup-open" class="secondary">Set up authenticator</button><section id="totp-setup" hidden><p>Open Google Authenticator, tap +, scan this QR code or enter the key. The entry will be named lgme.app.</p><p id="totp-key"></p><div id="totp-qr"></div><label for="totp-confirm">Google Authenticator code</label><input id="totp-confirm" inputmode="numeric" maxlength="7" autocomplete="one-time-code"><button type="button" id="totp-finish" class="primary">Finish authenticator setup</button><button type="button" id="totp-reset" class="secondary">Reset authenticator</button></section></section><section class="access-card" id="step-ai" hidden><h2>Test local AI</h2><p id="access-member"></p><button type="button" id="ai-test" class="primary">Test local AI</button><p id="ai-test-result" role="status"></p><button type="button" id="access-grant" class="primary" disabled>Open the app</button></section><p id="access-status" role="status"></p></form>';
   const row = document.createElement('div');
   row.id = 'function-row';
   row.setAttribute('aria-label', 'Functions');
@@ -29,10 +29,6 @@ if (root && !document.getElementById('profile-board')) {
     if (sensitive) link.dataset.sensitive = '1';
     row.append(link);
   }
-  const reach = document.createElement('div');
-  reach.id = 'thumb-actions';
-  reach.innerHTML = '<button type="button" id="thumb-confirm" class="primary">Confirm</button>';
-  root.prepend(reach);
   root.prepend(row);
   root.prepend(board);
 
@@ -53,9 +49,41 @@ if (root && !document.getElementById('profile-board')) {
   let codeOk = false;
   let memberId = '';
   let aiTested = false;
+  const maskEmail = (value) => {
+    const [name, host] = String(value || '').split('@');
+    return host ? `${name.slice(0, 1)}…@${host}` : 'your inbox';
+  };
+  const mark = (node, kind, text) => {
+    status.className = kind === 'ok' ? 'is-ok' : 'is-error';
+    status.textContent = text;
+    if (node) {
+      node.classList.remove('is-busy');
+      node.classList.add(kind === 'ok' ? 'is-done' : 'is-error');
+    }
+  };
+  const busy = async (node, work) => {
+    const label = node.textContent;
+    node.disabled = true;
+    node.classList.add('is-busy');
+    node.textContent = 'Sending…';
+    try { navigator.vibrate?.(12); } catch { /* this device does not vibrate */ }
+    try {
+      return await work();
+    } finally {
+      node.disabled = false;
+      if (node.classList.contains('is-busy')) node.textContent = label;
+      node.classList.remove('is-busy');
+    }
+  };
   const paint = () => {
     const stage = nextAccess({ email, codeOk, memberId, aiTested, full: localStorage.getItem('lgme.access') === 'full' });
+    const signed = stage === 'full' || codeOk;
     form.hidden = stage === 'full';
+    board.querySelector('#step-email').hidden = signed;
+    board.querySelector('#step-or').hidden = signed;
+    board.querySelector('#step-totp').hidden = signed;
+    board.querySelector('#step-ai').hidden = !signed || stage === 'full';
+    board.querySelector('#step-count').textContent = stage === 'full' ? '3 of 3' : signed ? '3 of 3' : '1 of 3';
     const name = board.querySelector('#profile-name');
     if (stage === 'full') name.textContent = `Member ${localStorage.getItem('lgme.member.id') || 'on this phone'}`;
   };
@@ -63,27 +91,38 @@ if (root && !document.getElementById('profile-board')) {
     const member = JSON.parse(localStorage.getItem('lgme.demo.member') || 'null');
     if (member?.emailHash && localStorage.getItem('lgme.access') === 'full') form.hidden = true;
   } catch { /* the form still shows */ }
+  board.querySelector('#access-totp').addEventListener('focus', () => { board.querySelector('#step-count').textContent = '2 of 3'; });
+  board.querySelector('#totp-setup-open').addEventListener('click', () => {
+    board.querySelector('#totp-setup').hidden = false;
+    board.querySelector('#step-count').textContent = '2 of 3';
+  });
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
+    const button = board.querySelector('#access-send');
     const gate = signinAllowed(stamps);
-    if (!gate.ok) { status.textContent = gate.error; return; }
-    stamps = gate.stamps;
-    const response = await fetch('/api/email/send', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: board.querySelector('#access-email').value }) });
-    const body = await response.json().catch(() => ({}));
-    if (!body.ok) { status.textContent = body.error || body.waiting || 'Nothing was sent.'; return; }
-    email = board.querySelector('#access-email').value.trim();
-    status.textContent = 'Code sent. Enter it to continue.';
+    if (!gate.ok) { mark(button, 'error', gate.error); return; }
+    const address = board.querySelector('#access-email').value.trim();
+    await busy(button, async () => {
+      const response = await fetch('/api/email/send', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: address }) });
+      const body = await response.json().catch(() => ({}));
+      if (!body.ok) { mark(button, 'error', body.error || body.waiting || 'Nothing was sent.'); return; }
+      stamps = gate.stamps;
+      email = address;
+      mark(button, 'ok', `Code sent to ${maskEmail(address)}`);
+    });
   });
   board.querySelector('#access-verify').addEventListener('click', async () => {
+    const button = board.querySelector('#access-verify');
+    await busy(button, async () => {
     const response = await fetch('/api/email/verify', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, code: compactCode(board.querySelector('#access-code').value) }) });
     const body = await response.json().catch(() => ({}));
-    if (!body.ok) { status.textContent = body.error || 'Code not accepted.'; return; }
+    if (!body.ok) { mark(button, 'error', body.error || 'Code not accepted.'); return; }
     codeOk = true;
     memberId = String(body.emailHash || 'member').slice(0, 12);
     localStorage.setItem('lgme.member.id', memberId);
     try { sessionStorage.setItem('lgme.access.email', email); } catch { /* the form still has it */ }
     board.querySelector('#access-member').textContent = `Member ID ${memberId}`;
-    status.textContent = 'Member ID is set. Add the authenticator app, then test the helper.';
+    mark(button, 'ok', 'Verified');
     const key = await ensureDeviceKey(localStorage);
     const enrolled = await fetch('/api/authenticator', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'enroll', email, publicJwk: key.publicJwk }) });
     const setup = await enrolled.json().catch(() => ({}));
@@ -94,6 +133,7 @@ if (root && !document.getElementById('profile-board')) {
       board.querySelector('#totp-qr').textContent = setup.uri;
     }
     paint();
+    });
   });
   board.querySelector('#totp-finish').addEventListener('click', async () => {
     const key = await ensureDeviceKey(localStorage);
@@ -102,18 +142,20 @@ if (root && !document.getElementById('profile-board')) {
     board.querySelector('#totp-key').textContent = '';
     board.querySelector('#totp-qr').textContent = '';
     board.querySelector('#totp-setup').hidden = true;
-    status.textContent = body.ok ? 'Authenticator app is set. The key is not shown again.' : (body.error || 'Setup was not finished.');
+    mark(null, body.ok ? 'ok' : 'error', body.ok ? 'Verified' : (body.error || 'Setup was not finished.'));
   });
   board.querySelector('#access-authenticator').addEventListener('click', async () => {
     const key = await ensureDeviceKey(localStorage);
     const address = board.querySelector('#access-email').value.trim();
     const nonceRes = await fetch('/api/authenticator', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'nonce', email: address }) });
     const nonceBody = await nonceRes.json().catch(() => ({}));
-    if (!nonceBody.ok) { status.textContent = nonceBody.error || 'Use the email code.'; return; }
+    if (!nonceBody.ok) { mark(board.querySelector('#access-authenticator'), 'error', nonceBody.error || 'Use the email code.'); return; }
     const sig = await signDevice(key.privateJwk, { nonce: nonceBody.nonce, purpose: 'totp-signin' });
     const response = await fetch('/api/authenticator', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'signin', email: address, code: compactCode(board.querySelector('#access-totp').value), publicJwk: key.publicJwk, sig, nonce: nonceBody.nonce }) });
     const body = await response.json().catch(() => ({}));
-    status.textContent = body.ok ? 'Signed in with the authenticator app. This device stays trusted for this session.' : (body.fallback === 'email' ? 'This device does not match. Use the email code.' : (body.error || 'Use the email code.'));
+    if (body.ok) { codeOk = true; if (!memberId) memberId = 'device'; }
+    mark(board.querySelector('#access-authenticator'), body.ok ? 'ok' : 'error', body.ok ? 'Verified' : (body.fallback === 'email' ? 'This device does not match. Use the email code.' : (body.error || 'Use the email code.')));
+    paint();
     if (body.ok && body.sessionId) {
       try { sessionStorage.setItem('lgme.session', body.sessionId); } catch { /* the sign-in still shows */ }
     }
@@ -121,7 +163,7 @@ if (root && !document.getElementById('profile-board')) {
   board.querySelector('#totp-reset').addEventListener('click', async () => {
     const response = await fetch('/api/authenticator', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'reset', email, code: compactCode(board.querySelector('#access-code').value) }) });
     const body = await response.json().catch(() => ({}));
-    status.textContent = body.ok ? 'Authenticator reset. Set it up again after the email code.' : (body.error || 'Reset was not accepted.');
+    mark(null, body.ok ? 'ok' : 'error', body.ok ? 'Verified' : (body.error || 'Reset was not accepted.'));
   });
   board.querySelector('#ai-test').addEventListener('click', () => {
     aiTested = true;
@@ -131,9 +173,9 @@ if (root && !document.getElementById('profile-board')) {
     paint();
   });
   board.querySelector('#access-grant').addEventListener('click', () => {
-    if (!aiTested || !memberId) { status.textContent = 'Verify the code and test the helper first.'; return; }
+    if (!aiTested || !memberId) { mark(null, 'error', 'Verify the code and test the helper first.'); return; }
     localStorage.setItem('lgme.access', 'full');
-    status.textContent = 'The app is open. You confirm each action.';
+    mark(null, 'ok', 'Verified');
     paint();
   });
   row.addEventListener('click', async (event) => {
@@ -206,9 +248,6 @@ if (root && !document.getElementById('profile-board')) {
       const body = await response.json().catch(() => ({}));
       finish(gateDecision({ human: true, method: 'totp', verified: body.ok === true }));
     };
-  });
-  document.getElementById('thumb-confirm')?.addEventListener('click', () => {
-    document.getElementById('ai-confirm')?.click();
   });
   paint();
 }
