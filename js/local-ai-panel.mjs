@@ -70,20 +70,53 @@ function paint(dock) {
   accept.textContent = ready ? 'Use suggestion' : 'AI off';
 }
 
+const ACTIVITIES = [
+  ['treadmill', 'Treadmill'], ['walking', 'Walk'], ['walk', 'Walk'], ['running', 'Run'], ['run', 'Run'],
+  ['biking', 'Bike'], ['bike', 'Bike'], ['yoga', 'Yoga'], ['swimming', 'Swim'], ['swim', 'Swim'],
+  ['stretching', 'Stretch'], ['stretch', 'Stretch'], ['strength', 'Strength'], ['rowing', 'Row'], ['row', 'Row'],
+  ['cycling', 'Bike'], ['hike', 'Hike'], ['lift', 'Strength'], ['dance', 'Dance'], ['pilates', 'Pilates']
+];
+
+function workoutMinutes(text) {
+  const hour = text.match(/(\d+)\s*(?:hours?|hrs?|h)\b/);
+  if (hour) return Number(hour[1]) * 60;
+  const minute = text.match(/(\d+)\s*(?:minutes?|mins?|min|m)\b/);
+  return minute ? Number(minute[1]) : 0;
+}
+
+function workoutActivity(text) {
+  for (const [word, label] of ACTIVITIES) {
+    if (new RegExp(`\\b${word}\\b`).test(text)) return label;
+  }
+  return '';
+}
+
 export function matchPrompt(text) {
   const raw = String(text || '').trim();
   const q = raw.toLowerCase();
   if (!q) return { kind: 'help', text: '', line: 'Type log a workout, I want something, or I have something.' };
   if (/what can i do|help me|show help/.test(q)) return { kind: 'help', text: '', line: 'You can log a workout, say I want something, or say I have something.' };
-  if (/log a workout|ididit|i did\b/.test(q)) {
-    const title = raw.replace(/^(log a workout|ididit|i did)\s*/i, '').trim() || 'I did the session';
-    return { kind: 'ididit', text: title, line: 'Opened the IdidIt draft.' };
-  }
   const want = raw.match(/^i want\s+(.+)/i);
   if (want) return { kind: 'iwantit', text: want[1].trim(), line: `Opened IwantIT: ${want[1].trim()}` };
   const have = raw.match(/^i have\s+(.+)/i);
   if (have) return { kind: 'ihavit', text: have[1].trim(), line: `Opened IhavIT: ${have[1].trim()}` };
+  const activity = workoutActivity(q);
+  const minutes = workoutMinutes(q);
+  const lead = /^(log\b|did\b|i did\b|ididit\b)/.test(q);
+  if (lead || activity) {
+    const title = activity && minutes ? `${activity}, ${minutes} min` : (activity || 'I did the session');
+    return { kind: 'ididit', text: title, title, activity, minutes, line: 'Opened the IdidIt draft.' };
+  }
   return { kind: 'help', text: '', line: 'Say log a workout, I want something, or I have something.' };
+}
+
+export function stageLine(matched) {
+  const label = matched.title || matched.text || 'the session';
+  return `Recommend: log ${label} as an IdidIt receipt. Verify: it stays on this phone until you confirm; Health is on testnet. Explain: tap Confirm or press Send again to open the filled draft.`;
+}
+
+export function filledLine(title) {
+  return `Draft filled: ${title}. Check it, then tap Confirm on the page (or press Send) to record the receipt on testnet.`;
 }
 
 function mount() {
@@ -176,22 +209,60 @@ function mount() {
     applySize(saved || (document.getElementById('testnet-notice') ? 'compact' : 'normal'), false);
   } catch { applySize('normal', false); }
   let staged = null;
+  let stagedText = '';
+  const note = (button, words) => {
+    if (!button) return;
+    button.classList.add('is-pressed');
+    let line = dock.querySelector('#ai-action-status');
+    if (!line) {
+      line = document.createElement('p');
+      line.id = 'ai-action-status';
+      dock.querySelector('.ai-actions').append(line);
+    }
+    line.textContent = words;
+    setTimeout(() => button.classList.remove('is-pressed'), 200);
+  };
+  const showFilled = () => {
+    let words = '';
+    try { words = sessionStorage.getItem('lgme.prompt.note') || ''; } catch { /* the log stays */ }
+    if (!words) return;
+    dock.querySelector('#ai-log').textContent = words;
+    try { sessionStorage.removeItem('lgme.prompt.note'); } catch { /* the log still shows */ }
+  };
   const stagePrompt = () => {
     const text = ask.value.trim();
     const log = dock.querySelector('#ai-log');
     const matched = matchPrompt(text);
     staged = matched.kind === 'help' ? null : matched;
-    log.textContent = `Recommend: ${matched.line} Verify: this stays on the phone. Explain: nothing runs until you confirm.`;
+    stagedText = text;
+    log.textContent = matched.kind === 'ididit' ? stageLine(matched) : `Recommend: ${matched.line} Verify: this stays on the phone. Explain: nothing runs until you confirm.`;
+    note(dock.querySelector('#ai-send'), 'Staged');
     markOverflow();
   };
   const executeStaged = () => {
     const log = dock.querySelector('#ai-log');
-    if (!staged) { log.textContent = 'Confirm is waiting. Nothing ran.'; markOverflow(); return; }
+    const pageConfirm = document.getElementById('gym-ididit-confirm');
+    const pageTitle = document.getElementById('gym-ididit-other');
+    if (pageConfirm && pageTitle && ask.value.trim() && ask.value.trim() === pageTitle.value) {
+      note(dock.querySelector('#ai-confirm'), 'Recording');
+      pageConfirm.click();
+      return;
+    }
+    if (!staged) { log.textContent = 'Confirm is waiting. Nothing ran.'; note(dock.querySelector('#ai-confirm'), 'Waiting'); markOverflow(); return; }
     const matched = staged;
     staged = null;
+    stagedText = '';
     rememberUse(ask.value.trim());
-    log.textContent = matched.line;
-    try { sessionStorage.setItem('lgme.prompt.draft', JSON.stringify({ kind: matched.kind, text: matched.text })); } catch { /* the line still shows */ }
+    note(dock.querySelector('#ai-confirm'), 'Opening draft');
+    try {
+      sessionStorage.setItem('lgme.prompt.draft', JSON.stringify({
+        kind: matched.kind,
+        text: matched.title || matched.text,
+        title: matched.title || matched.text,
+        activity: matched.activity || '',
+        minutes: matched.minutes || 0
+      }));
+    } catch { /* the line still shows */ }
     const here = location.pathname.startsWith('/gym');
     if (matched.kind === 'ididit') {
       if (here && location.hash === '#/ididit') window.dispatchEvent(new HashChangeEvent('hashchange'));
@@ -201,6 +272,11 @@ function mount() {
       window.dispatchEvent(new CustomEvent('lgme-prompt'));
     } else location.assign('/gym#/');
     markOverflow();
+  };
+  const sendOrStage = () => {
+    const text = ask.value.trim();
+    if (staged && stagedText === text) executeStaged();
+    else stagePrompt();
   };
   const markOverflow = () => {
     const scroller = dock.querySelector('#ai-scroll');
@@ -216,10 +292,13 @@ function mount() {
   ask.addEventListener('keydown', (event) => {
     if (event.key !== 'Enter' || event.shiftKey) return;
     event.preventDefault();
-    stagePrompt();
+    sendOrStage();
   });
-  dock.querySelector('#ai-send').addEventListener('click', () => stagePrompt());
+  ask.addEventListener('input', () => { staged = null; stagedText = ''; });
+  dock.querySelector('#ai-send').addEventListener('click', () => sendOrStage());
   dock.querySelector('#ai-confirm').addEventListener('click', () => executeStaged());
+  window.addEventListener('lgme-draft-filled', showFilled);
+  setTimeout(showFilled, 0);
   dock.querySelector('#ai-voice').addEventListener('click', () => {
     const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!Speech) { ask.focus(); dock.querySelector('#ai-log').textContent = 'Voice is not on this device. Typing still works.'; return; }
@@ -269,4 +348,4 @@ function mount() {
   pickHelperSync();
 }
 
-mount();
+if (typeof document !== 'undefined') mount();

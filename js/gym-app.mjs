@@ -2092,11 +2092,18 @@ async function renderIdidIt() {
     'data-help': 'This names what you finished, on this phone.',
     'data-options': IDIDIT_CHIPS.join('|')
   });
+  const activity = el('input', { id: 'gym-ididit-activity', maxlength: '40', 'aria-label': 'Activity' });
+  const minutes = el('input', { id: 'gym-ididit-minutes', inputmode: 'numeric', maxlength: '4', 'aria-label': 'Minutes' });
   try {
     const draft = JSON.parse(sessionStorage.getItem('lgme.prompt.draft') || 'null');
-    if (draft?.kind === 'ididit' && draft.text) {
-      title.value = String(draft.text).slice(0, 80);
+    if (draft?.kind === 'ididit' && (draft.title || draft.text)) {
+      title.value = String(draft.title || draft.text).slice(0, 80);
+      if (activity) activity.value = String(draft.activity || '');
+      if (minutes) minutes.value = draft.minutes ? String(draft.minutes) : '';
+      const note = `Draft filled: ${title.value}. Check it, then tap Confirm on the page (or press Send) to record the receipt on testnet.`;
+      sessionStorage.setItem('lgme.prompt.note', note);
       sessionStorage.removeItem('lgme.prompt.draft');
+      window.dispatchEvent(new CustomEvent('lgme-draft-filled'));
     }
   } catch { /* the default title stays */ }
   const statusLine = el('p', { id: 'ididit-status', role: 'status' });
@@ -2112,6 +2119,8 @@ async function renderIdidIt() {
   return el('section', { id: 'ididit-done' }, [
     el('h2', {}, [IDIDIT_NAME]),
     chipRow('gym-ididit-chips', IDIDIT_CHIPS, (label) => { title.value = label; }),
+    el('label', {}, ['Activity', activity]),
+    el('label', {}, ['Minutes', minutes]),
     el('label', {}, ['Other', title]),
     confirm,
     statusLine
