@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#39e36a" />
+  <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+  <title>Protocol reading — lgme</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Figtree:wght@400;500&family=IBM+Plex+Mono:wght@400&display=swap" />
+  <style>
+    body { margin: 0; background: #10140f; color: #e7efe4; font: 18px/1.55 Figtree, sans-serif; }
+    main { max-width: 42rem; margin: 0 auto; padding: 2rem 1rem 4rem; }
+    h1, h2, h3 { font-family: "Cormorant Garamond", serif; font-weight: 500; }
+    h1 { font-size: 2.5rem; line-height: 1.1; }
+    h2 { font-size: 1.8rem; margin-top: 2.4rem; }
+    a { color: #39e36a; }
+    .muted { color: #b7c7b8; }
+    .kicker { font: 12px/1 "IBM Plex Mono", monospace; letter-spacing: 0.16em; text-transform: uppercase; color: #8ea892; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+    th, td { border-bottom: 1px solid #2a3328; text-align: left; vertical-align: top; padding: 0.6rem 0.4rem; }
+    th { font: 12px/1 "IBM Plex Mono", monospace; letter-spacing: 0.12em; text-transform: uppercase; color: #8ea892; font-weight: 400; }
+    pre { overflow-x: auto; border: 1px solid #2a3328; padding: 1rem; font: 13px/1.45 "IBM Plex Mono", monospace; color: #b7c7b8; }
+    .line { border-left: 2px solid #39e36a; padding-left: 1rem; font-family: "Cormorant Garamond", serif; font-size: 1.6rem; }
+  </style>
+  <link rel="stylesheet" href="/menu.css" />
+</head>
+<body>
+<nav class="deskmenu" aria-label="Desk">
+  <a href="/nswo">NSWO</a>
+  <a href="/dominion">Dominion</a>
+  <a href="/story">Story</a>
+  <a href="/study">Study/Prerequisite</a>
+  <a href="/hederica">Hederica</a>
+  <a href="/charter">Charter</a>
+  <a href="/bylaws">Bylaws</a>
+  <a href="/membership">Membership</a>
+  <a href="/#sovereignty">Sovereignty</a>
+  <a href="/#order">The order</a>
+  <a href="/#third-seat">Third seat</a>
+  <a href="/#checks">Checks</a>
+  <a href="/#tape">Tape</a>
+  <a href="/spp">Protocol</a>
+  <a href="/whitepaper">Whitepaper</a>
+  <a href="/sop">SOP</a>
+  <a href="/gem" data-set-view="gem">Gem</a>
+  <a href="/spp-framework">SPP framework</a>
+  <a href="/workflow">Workflow map</a>
+  <a href="/clearing-engine">Clearing engine</a>
+  <a href="/opportunity">Opportunity</a>
+  <a href="/game-theory">Game theory</a>
+  <a href="/technical">Technical</a>
+  <a href="/preparation">Preparation</a>
+  <a href="/">Desk</a>
+</nav>
+<main>
+  <p class="kicker">lgme · appended 15 November 2026</p>
+  <h1>They printed the money. I am keeping the book.</h1>
+  <p class="muted">A reading of the Sovereign Provenance Protocol, then a research brief. This page does not say the site already runs these stages. It is not a quote and not a price. The live mission remains the <a href="/charter">Hederica charter</a>.</p>
+  <p><a href="/docs/Sovereign_Provenance_Protocol_Architecture.md">Technical architecture and implementation specification</a></p>
+  <p><a href="https://github.com/Cryptobusi/lgme/blob/main/docs/Sovereign_Provenance_Protocol_Architecture.md">The same file, on the record</a></p>
+  <p class="muted">The lines below follow that file, published 20 October 2026.</p>
+
+  <h2>The three seats</h2>
+  <p><strong>The state</strong> mints the tender, issues the sovereign debt, and can socialize the tail. It may still tax. It may not hide the print.</p>
+  <p><strong>The firm</strong> originates commercial credit behind limited liability and keeps the upside. It may still issue. The note is a dated promise, not cash.</p>
+  <p><strong>The person</strong> was the unhedged buffer: debasement, the bail-in, the quiet adjustment. The third seat verifies at the edge and prunes a block that breaks the order.</p>
+
+  <h2>Five locks</h2>
+  <ol class="muted">
+    <li><strong>Floor seniority.</strong> The subsistence basket is the senior claim on realized inflow. It is not levered, attached, or spent on debt service.</li>
+    <li><strong>Constitutive tape.</strong> A mandate or a credit that is not on the tape is null. Publication is the existence proof.</li>
+    <li><strong>Non-par realism.</strong> Credit is never cash at par. Every obligation carries a face, a discount, and a maturity.</li>
+    <li><strong>The Schelling barrier.</strong> The clerk is a precommitment. It has no discretion and no mint.</li>
+    <li><strong>Third seat refusal.</strong> The person rejects any block that skips the nine-stage order.</li>
+  </ol>
+
+  <h2>The nine stages</h2>
+  <p class="muted">Gross inflow is Y. The floor basket is B. Surplus is what remains after the floor. If the surplus is zero, everything after the floor halts.</p>
+  <ol>
+    <li><strong>Floor.</strong> <span class="muted">The basket is paid first from realized inflow. Surplus is inflow minus the floor, and never less than zero.</span></li>
+    <li><strong>Mint.</strong> <span class="muted">New units cannot exceed a fraction of the surplus. Off-book credit is not a mint.</span></li>
+    <li><strong>Issue.</strong> <span class="muted">A valid note names a holder, a face, a discount below par, and a maturity in the future.</span></li>
+    <li><strong>Tape.</strong> <span class="muted">Each change is hashed onto the previous line. A liability that is not on the tape is not a liability.</span></li>
+    <li><strong>Charge.</strong> <span class="muted">Fees and tail-risk are taken before any residual is titled.</span></li>
+    <li><strong>Agent.</strong> <span class="muted">The clerk pays the floor, flags a skipped stage, and discards a rollover that was not newly underwritten. It does not mint.</span></li>
+    <li><strong>Thin.</strong> <span class="muted">The width of the book is the liquidity. A quiet book stays wide. A subsidized peg is a hidden print.</span></li>
+    <li><strong>Desert.</strong> <span class="muted">What remains after the floor, the charge, and the marked issue is titled to the person who did the work. A deficit is written as zero.</span></li>
+    <li><strong>Retire.</strong> <span class="muted">Positive desert cancels debt. A rollover is a new issue. Nothing stays forever unamortized by silence.</span></li>
+  </ol>
+
+  <h2>A passport</h2>
+  <p class="muted">A worked example, not a quote and not a balance. Gross 25,000. Floor 14,700. Surplus 10,300. Face 10,000 at 650 basis points of discount.</p>
+  <pre>{
+  "seat_type": "ThirdSeat",
+  "order_phase": "Floor_Verified",
+  "metrics": { "gross_inflow": 25000.00, "floor_allocated": 14700.00, "surplus_available": 10300.00 },
+  "issue_spec": { "issuer_did": "did:spp:firm:alpha-logistics", "face_nominal": 10000.00, "discount_bps": 650 }
+}</pre>
+
+  <h2>Rollout</h2>
+  <p><strong>Phase 1. Local book.</strong> <span class="muted">One balance sheet. The floor is on the tape before any credit is extended.</span></p>
+  <p><strong>Phase 2. Between firms.</strong> <span class="muted">Receivables clear at a discount, not at par. The third seat refuses a line that skips the floor.</span></p>
+  <p><strong>Phase 3. The wider gate.</strong> <span class="muted">Positive desert retires debt. A cycle with no surplus writes desert as zero.</span></p>
+
+  <h2>Collective intelligence, dynamic ledgers, and IoT attestation</h2>
+  <p class="kicker">Appended brief</p>
+  <p class="muted">From Michael Levin’s morphogenetic problem spaces to personal credit and a hashgraph. A research synthesis, not a quote and not a price.</p>
+  <p><a href="https://youtu.be/fpIkuRr4MCQ">Michael Levin on evolution, AI, and Platonic space</a></p>
+  <p><a href="https://drive.google.com/file/d/1rb6Tcv9N9kPe8RpNJnIbKKjCqePfn89d/view">Decentralized Intelligence & Ledger Architectures</a></p>
+  <p class="muted">The paper is the comprehensive synthesis, three pages. The lines below follow that paper.</p>
+
+  <h3>Where intelligence lives</h3>
+  <p class="muted">In the seminar, intelligence is not only a brain. Cells cooperate toward an anatomical set point through bioelectric signals, with no single architect. A collective can solve a new physiological problem without being trained for that exact case. Strain leaks across gap junctions. The body behaves as if it is correcting toward an abstract anatomical attractor, not executing a fixed blueprint.</p>
+
+  <h3>The same shape, in the book</h3>
+  <p class="muted">The public book argues for credit issued by a person, against a monopoly of the printer. The parallel drawn here is morphological: local signals, not a command from the center.</p>
+  <p><strong>In favor.</strong> <span class="muted">Prices come from the exchange, not from a board that names the rate. A local friction can be met locally. A modular book fails in a piece. It does not have to fail as one reserve.</span></p>
+  <p><strong>The classical doubts.</strong> <span class="muted">No person can appraise millions of personal notes by hand. A crowd of personal tokens can lose the liquidity of one unit of account. Without a lender of last resort, a shock can become a deflationary spiral.</span></p>
+
+  <h3>What an agent and a tape change</h3>
+  <p class="muted">Those doubts assume a person doing the matching by hand, on a ledger that does not move.</p>
+  <table>
+    <thead>
+      <tr><th>Strain</th><th>If a person does it</th><th>If the agent and the tape do it</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Cognitive overhead</td><td class="muted">A person cannot price millions of personal notes.</td><td class="muted">A local agent routes trust and computes the cross-rate.</td></tr>
+      <tr><td>Market liquidity</td><td class="muted">A personal note has a wide book and a thin crowd.</td><td class="muted">A graph of pools can hop Alice to Bob to Charlie without one brand of cash.</td></tr>
+      <tr><td>Proof of real value</td><td class="muted">A task can be praised, colluded, or invented.</td><td class="muted">A zero-knowledge proof can show the work was done without publishing the private record.</td></tr>
+      <tr><td>Systemic stability</td><td class="muted">With no shock absorber, a local freeze spreads.</td><td class="muted">A pooled mutual-credit contract can dampen the shock the way a tissue shares strain.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>The rails named in the brief</h3>
+  <p><strong>Project Hiero.</strong> <span class="muted">Hedera’s consensus node, SDKs, and tools sit under Linux Foundation Decentralized Trust. The brief treats that as the open base: aBFT hashgraph, no single company’s lock on the code.</span></p>
+  <p><strong>CLPR.</strong> <span class="muted">Cross-ledger proof without a bridge that holds the assets. State is checked directly. There is no locked-asset pool to raid.</span></p>
+
+  <h3>The edge still lies</h3>
+  <p class="muted">A tape can freeze a message after it arrives. It cannot prove the sensor was honest when it spoke. The brief names three checks: a hardware root of trust, a second reading from another place, and a short zero-knowledge proof of the telemetry. Hedera Guardian and the measurement engines called dMRV structure the claim. They do not, by themselves, prove the meter.</p>
+
+  <h3>What still does not close</h3>
+  <ul class="muted">
+    <li>A small field controller often cannot build a zero-knowledge proof. A gateway that does it for the device is another place to intercept.</li>
+    <li>A net-zero claim that rests on purchased offsets is only as good as those offsets.</li>
+    <li>A governing council buys legal stability and resistance to a casual fork. It also means a node is not permissionless.</li>
+    <li>Hashgraph can finish locally in under a second. A cross-ledger proof still waits on the slower chain.</li>
+  </ul>
+  <p class="line">A system holds together by sharing stress, not by a command from the top.</p>
+  <p class="muted">Open code, a bridgeless proof between ledgers, and an agent that will not skip the order are the tools named for the old problems of liquidity and attention. They hold only if the sensor can be trusted and the validation is not a private club.</p>
+  <p><a href="/spp">← Protocol</a> · <a href="/charter">Charter</a> · <a href="/">Desk</a></p>
+  <p class="muted">Not an offer. Not an investment.</p>
+</main>
+<script src="/js/register-sw.js"></script>
+</body>
+</html>
