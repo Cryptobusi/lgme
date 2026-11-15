@@ -1,12 +1,13 @@
 import { localAiReady } from './one-tap.mjs';
 import { gateDecision, nextAccess, signinAllowed } from './confirm-gate.mjs';
+import { ensureDeviceKey, signDevice } from './device-sign.mjs';
 
 const root = document.getElementById('category-grid');
 if (root && !document.getElementById('profile-board')) {
   const board = document.createElement('section');
   board.id = 'profile-board';
   board.setAttribute('aria-label', 'Profile');
-  board.innerHTML = '<p id="profile-name">Not signed in</p><p id="profile-activity">No recent activity</p><p id="profile-balance">Balance stays on this phone</p><p id="profile-new">New 0</p><form id="first-open"><p>First open. Email, then a code. No full KYC. The keys stay on this phone.</p><label for="access-email">Email</label><input id="access-email" type="email" autocomplete="email" maxlength="120"><button type="submit" id="access-send">Send code</button><label for="access-code">Code</label><input id="access-code" inputmode="numeric" maxlength="6" autocomplete="one-time-code"><button type="button" id="access-verify">Verify code</button><p id="access-member"></p><button type="button" id="ai-test">Test local AI</button><p id="ai-test-result" role="status"></p><button type="button" id="access-grant" disabled>Open the app</button><p id="access-status" role="status"></p></form>';
+  board.innerHTML = '<p id="profile-name">Not signed in</p><p id="profile-activity">No recent activity</p><p id="profile-balance">Balance stays on this phone</p><p id="profile-new">New 0</p><form id="first-open"><p>First open. Email, then a code. No full KYC. The keys stay on this phone.</p><label for="access-email">Email</label><input id="access-email" type="email" autocomplete="email" maxlength="120"><button type="submit" id="access-send">Send code</button><button type="button" id="access-authenticator">Use authenticator app</button><label for="access-code">Code</label><input id="access-code" inputmode="numeric" maxlength="6" autocomplete="one-time-code"><button type="button" id="access-verify">Verify code</button><section id="totp-setup" hidden><p>Add this key to your authenticator app. It is shown only now.</p><p id="totp-key"></p><div id="totp-qr"></div><label for="totp-confirm">Authenticator code</label><input id="totp-confirm" inputmode="numeric" maxlength="6" autocomplete="one-time-code"><button type="button" id="totp-finish">Finish authenticator setup</button></section><p id="access-member"></p><button type="button" id="ai-test">Test local AI</button><p id="ai-test-result" role="status"></p><button type="button" id="access-grant" disabled>Open the app</button><button type="button" id="totp-reset">Reset authenticator</button><p id="access-status" role="status"></p></form>';
   const row = document.createElement('div');
   row.id = 'function-row';
   row.setAttribute('aria-label', 'Functions');
@@ -68,9 +69,44 @@ if (root && !document.getElementById('profile-board')) {
     codeOk = true;
     memberId = String(body.emailHash || 'member').slice(0, 12);
     localStorage.setItem('lgme.member.id', memberId);
+    try { sessionStorage.setItem('lgme.access.email', email); } catch { /* the form still has it */ }
     board.querySelector('#access-member').textContent = `Member ID ${memberId}`;
-    status.textContent = 'Member ID is set. Test the helper next.';
+    status.textContent = 'Member ID is set. Add the authenticator app, then test the helper.';
+    const key = await ensureDeviceKey(localStorage);
+    const enrolled = await fetch('/api/authenticator', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'enroll', email, publicJwk: key.publicJwk }) });
+    const setup = await enrolled.json().catch(() => ({}));
+    if (setup.secret) {
+      const box = board.querySelector('#totp-setup');
+      box.hidden = false;
+      board.querySelector('#totp-key').textContent = setup.secret;
+      board.querySelector('#totp-qr').textContent = setup.uri;
+    }
     paint();
+  });
+  board.querySelector('#totp-finish').addEventListener('click', async () => {
+    const key = await ensureDeviceKey(localStorage);
+    const response = await fetch('/api/authenticator', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'enroll-finish', email, code: board.querySelector('#totp-confirm').value, publicJwk: key.publicJwk }) });
+    const body = await response.json().catch(() => ({}));
+    board.querySelector('#totp-key').textContent = '';
+    board.querySelector('#totp-qr').textContent = '';
+    board.querySelector('#totp-setup').hidden = true;
+    status.textContent = body.ok ? 'Authenticator app is set. The key is not shown again.' : (body.error || 'Setup was not finished.');
+  });
+  board.querySelector('#access-authenticator').addEventListener('click', async () => {
+    const key = await ensureDeviceKey(localStorage);
+    const address = board.querySelector('#access-email').value.trim();
+    const nonceRes = await fetch('/api/authenticator', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'nonce', email: address }) });
+    const nonceBody = await nonceRes.json().catch(() => ({}));
+    if (!nonceBody.ok) { status.textContent = nonceBody.error || 'Use the email code.'; return; }
+    const sig = await signDevice(key.privateJwk, { nonce: nonceBody.nonce, purpose: 'totp-signin' });
+    const response = await fetch('/api/authenticator', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'signin', email: address, code: board.querySelector('#access-code').value, publicJwk: key.publicJwk, sig, nonce: nonceBody.nonce }) });
+    const body = await response.json().catch(() => ({}));
+    status.textContent = body.ok ? 'Signed in with the authenticator app.' : (body.fallback === 'email' ? 'This device does not match. Use the email code.' : (body.error || 'Use the email code.'));
+  });
+  board.querySelector('#totp-reset').addEventListener('click', async () => {
+    const response = await fetch('/api/authenticator', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'reset', email, code: board.querySelector('#access-code').value }) });
+    const body = await response.json().catch(() => ({}));
+    status.textContent = body.ok ? 'Authenticator reset. Set it up again after the email code.' : (body.error || 'Reset was not accepted.');
   });
   board.querySelector('#ai-test').addEventListener('click', () => {
     aiTested = true;
@@ -98,7 +134,18 @@ if (root && !document.getElementById('profile-board')) {
       if (decision.ok) location.assign(link.href);
     };
     dialog.querySelector('#gate-passkey').onclick = () => finish(gateDecision({ human: true, method: 'passkey' }));
-    dialog.querySelector('#gate-totp-go').onclick = () => finish(gateDecision({ human: true, method: 'totp', code: dialog.querySelector('#gate-totp').value }));
+    dialog.querySelector('#gate-totp-go').onclick = async () => {
+      let address = '';
+      try { address = sessionStorage.getItem('lgme.access.email') || ''; } catch { /* ask for the email code */ }
+      const key = await ensureDeviceKey(localStorage);
+      const nonceRes = await fetch('/api/authenticator', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'nonce', email: address }) });
+      const nonceBody = await nonceRes.json().catch(() => ({}));
+      if (!nonceBody.nonce) { finish(gateDecision({ human: true, method: 'totp', verified: false })); return; }
+      const sig = await signDevice(key.privateJwk, { nonce: nonceBody.nonce, purpose: 'totp-gate' });
+      const response = await fetch('/api/authenticator', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'gate', email: address, code: dialog.querySelector('#gate-totp').value, publicJwk: key.publicJwk, sig, nonce: nonceBody.nonce }) });
+      const body = await response.json().catch(() => ({}));
+      finish(gateDecision({ human: true, method: 'totp', verified: body.ok === true }));
+    };
   });
   document.getElementById('thumb-confirm')?.addEventListener('click', () => {
     document.getElementById('ai-confirm')?.click();

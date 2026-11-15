@@ -283,6 +283,7 @@ export const ROUTES = Object.freeze([
   { path: '/api/email/status', method: 'GET', auth: 'none', goes: 'nowhere' },
   { path: '/api/email/send', method: 'POST', auth: 'none', goes: 'Resend and hashed code in KV' },
   { path: '/api/email/verify', method: 'POST', auth: 'email code', goes: 'KV hash compare' },
+  { path: '/api/authenticator', method: 'POST', auth: 'device signature and authenticator code', goes: 'encrypted TOTP secret in KV' },
   { path: '/api/gym/chat', method: 'GET,POST,DELETE', auth: 'device signature', goes: 'KV' },
   { path: '/api/gym/covenant', method: 'GET,POST', auth: 'device signature', goes: 'KV' },
   { path: '/api/gym/dispute', method: 'GET,POST', auth: 'device signature', goes: 'KV hash' },

@@ -18,9 +18,12 @@ export function nextAccess(state = {}) {
   return 'grant';
 }
 
-export function gateDecision({ human, method, code } = {}) {
+export function gateDecision({ human, method, verified } = {}) {
   if (human !== true) return { ok: false, error: 'A person has to confirm. Nothing ran.' };
   if (method === 'passkey') return { ok: true };
-  if (method === 'totp' && /^\d{6}$/.test(String(code || ''))) return { ok: true };
+  if (method === 'totp') {
+    if (verified === true) return { ok: true };
+    return { ok: false, error: 'The authenticator code was not accepted.' };
+  }
   return { ok: false, error: 'Use a fingerprint or a 6-digit authenticator code.' };
 }
