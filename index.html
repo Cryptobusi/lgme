@@ -308,14 +308,6 @@
     .badge-ok { display: inline-block; background: #14532d; color: #d1fae5; font-size: 0.78rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 999px; }
     .later { opacity: 0.65; }
     .entry-picker { margin: 0 0 1.2rem; padding-top: 0; border-top: 0; }
-    #profile-board, #function-row, #thumb-actions { grid-column: 1 / -1; }
-    #profile-board { min-height: 28vh; max-height: 42vh; overflow: auto; margin: 0 0 0.6rem; }
-    #profile-board input, #profile-board button, #function-row a, #thumb-actions button, #confirm-gate button { min-height: 48px; min-width: 48px; font: inherit; }
-    #function-row { display: flex; gap: 0.5rem; overflow-x: auto; margin: 0 0 0.7rem; padding-bottom: 0.3rem; -webkit-mask-image: linear-gradient(90deg, #000 82%, transparent); mask-image: linear-gradient(90deg, #000 82%, transparent); }
-    #function-row a { flex: 0 0 auto; display: inline-flex; align-items: center; padding: 0 0.8rem; border-radius: 999px; background: #F97316; color: #1c1b19; font-weight: 700; text-decoration: none; }
-    #thumb-actions { position: sticky; z-index: 4; display: flex; justify-content: flex-end; margin: 0.4rem 0; }
-    #first-open[hidden] { display: none; }
-    #confirm-gate { position: fixed; right: 0.6rem; bottom: 28vh; z-index: 30; max-width: 16rem; padding: 0.7rem; border-radius: 12px; background: #151a15; color: #f4f1e8; }
     .entry-picker h2 { margin: 0.2rem 0 0.6rem; font-size: 1.35rem; }
     .entry-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; }
     .entry-tile { min-height: 96px; border: 1px solid var(--line); border-radius: 16px; background: var(--card); color: var(--fg); text-decoration: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.25rem; font-weight: 700; padding: 0.7rem; }
@@ -401,7 +393,6 @@
   <script src="/js/site-nav.js"></script>
   <script type="module" src="/js/tile-fresh.mjs"></script>
   <script type="module" src="/js/demo-page.mjs"></script>
-  <script type="module" src="/js/thumb-home.mjs"></script>
   <section class="entry-picker" aria-label="Categories">
     <div class="entry-grid" id="category-grid">
       <div class="entry-tile health has-photo" id="health-tile" data-image-slot="tile-health">
