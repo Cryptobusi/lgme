@@ -1,5 +1,6 @@
 import { applyFieldOption, fieldMeta, nextHelpField, safeHelpLine } from './field-help.mjs';
 import { classifyPrompt, routeLine } from './prompt-route.mjs';
+import { applyMode, screenModePrompt } from './screen-modes.mjs';
 import { draftWithHelper, localAiReady, pickHelperSync } from './one-tap.mjs';
 import { dockChipsOf } from './variant-schema.mjs';
 
@@ -97,6 +98,8 @@ export function matchPrompt(text) {
   const q = raw.toLowerCase();
   if (!q) return { kind: 'help', text: '', line: 'Type log a workout, I want something, or I have something.' };
   if (/what can i do|help me|show help/.test(q)) return { kind: 'help', text: '', line: 'You can log a workout, say I want something, or say I have something.' };
+  const screen = screenModePrompt(raw);
+  if (screen) return { kind: 'screen', mode: screen.mode, text: '', line: screen.line };
   const want = raw.match(/^i want\s+(.+)/i);
   if (want) return { kind: 'iwantit', text: want[1].trim(), line: `Opened IwantIT: ${want[1].trim()}` };
   const have = raw.match(/^i have\s+(.+)/i);
@@ -271,6 +274,11 @@ function mount() {
       }));
     } catch { /* the line still shows */ }
     const here = location.pathname.startsWith('/gym');
+    if (matched.kind === 'screen') {
+      const applied = applyMode(localStorage, matched.mode);
+      log.textContent = applied.ok ? `Applied ${matched.mode}. Undo is on the profile.` : applied.error;
+      return;
+    }
     if (matched.route && matched.route.liveWrite === false) {
       location.assign(matched.route.href);
       return;
@@ -312,6 +320,7 @@ function mount() {
   setTimeout(showFilled, 0);
   dock.querySelector('#ai-voice').addEventListener('click', () => {
     const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+    try { localStorage.setItem('lgme.voice.used', '1'); } catch { /* the suggestion still works */ }
     if (!Speech) { ask.focus(); dock.querySelector('#ai-log').textContent = 'Voice is not on this device. Typing still works.'; return; }
     const heard = new Speech();
     heard.lang = 'en-US';

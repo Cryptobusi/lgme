@@ -1,4 +1,5 @@
 import { attestBadges } from './attest-follow.mjs';
+import { applyMode, recommendMode, screenChosen, screenPresets, undoMode } from './screen-modes.mjs';
 import { formatCredits } from './work-credits.mjs';
 import { compactCode } from './email-check-core.mjs';
 import { localAiReady } from './one-tap.mjs';
@@ -106,6 +107,8 @@ if (root && !document.getElementById('profile-board')) {
     board.querySelector('#step-or-fp').hidden = signed;
     board.querySelector('#step-fingerprint').hidden = signed;
     board.querySelector('#step-ai').hidden = !signed || stage === 'full';
+    const screenStep = board.querySelector('#step-screen');
+    if (screenStep) screenStep.hidden = !(aiTested && !screenChosen(localStorage));
     board.querySelector('#fingerprint-setup').hidden = !codeOk || stage === 'full';
     board.querySelector('#step-count').textContent = stage === 'full' ? '3 of 3' : signed ? '3 of 3' : '1 of 3';
     const name = board.querySelector('#profile-name');
@@ -326,6 +329,48 @@ if (root && !document.getElementById('profile-board')) {
       board.querySelector('#my-credits-rules').textContent = `${rules.note} IdidIt ${rules.ididit}. Attestation ${rules.attestation}. Listing ${rules.listing}. Proposal ${rules.proposal}. Quiz ${rules.quiz}.`;
     }).catch(() => {});
   };
+  const screen = document.createElement('section');
+  screen.id = 'step-screen';
+  screen.className = 'access-card';
+  screen.hidden = true;
+  const rec = recommendMode({
+    largeText: localStorage.getItem('lgme.dock.size') === 'tall',
+    voiceUsed: localStorage.getItem('lgme.voice.used') === '1'
+  });
+  screen.innerHTML = `<h2>Choose your screen</h2><p id="screen-reason">${rec.reason}</p><p>The screen can be tailored. Pick a mode.</p>`;
+  for (const [id, label] of [['simple', 'Simple'], ['everyday', 'Everyday'], ['full', 'Full']]) {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'primary';
+    card.id = `screen-${id}`;
+    card.textContent = label;
+    card.setAttribute('aria-pressed', rec.mode === id ? 'true' : 'false');
+    card.addEventListener('click', () => {
+      const applied = applyMode(localStorage, id);
+      status.textContent = applied.ok ? `Applied ${label}.` : applied.error;
+      paint();
+    });
+    screen.append(card);
+  }
+  const undo = document.createElement('button');
+  undo.type = 'button';
+  undo.id = 'screen-undo';
+  undo.className = 'secondary';
+  undo.textContent = 'Undo';
+  undo.addEventListener('click', () => { undoMode(localStorage); status.textContent = 'Undone.'; paint(); });
+  const more = document.createElement('a');
+  more.id = 'screen-more';
+  more.href = '/customize';
+  more.textContent = 'Customize more';
+  screen.append(undo, more);
+  board.append(screen);
+  const reopen = document.createElement('button');
+  reopen.type = 'button';
+  reopen.id = 'screen-reopen';
+  reopen.className = 'secondary';
+  reopen.textContent = 'Choose your screen';
+  reopen.addEventListener('click', () => { screen.hidden = false; });
+  board.querySelector('#profile-name').after(reopen);
   paint();
   paintBadges();
   paintCredits();
