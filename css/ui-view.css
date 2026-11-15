@@ -42,7 +42,8 @@ html[data-ui-view="classic"] .view-switch [data-ui-view="classic"],
 html:not([data-ui-view]) .view-switch [data-ui-view="classic"],
 html[data-ui-view="picture"] .view-switch [data-ui-view="picture"],
 html[data-ui-view="app"] .view-switch [data-ui-view="app"],
-html[data-ui-view="tap"] .view-switch [data-ui-view="tap"] {
+html[data-ui-view="tap"] .view-switch [data-ui-view="tap"],
+html[data-ui-view="gem"] .view-switch [data-ui-view="gem"] {
   background: #f4f1e8;
   color: #0c100c;
   font-weight: 700;

@@ -1,7 +1,7 @@
 /**
- * Optional Classic / My Picture / Sovereign App / One-Tap Entry switch.
+ * Optional Classic / My Picture / Sovereign App / One-Tap Entry / Gem switch.
  * Default is Classic. A saved choice is applied before the page paints.
- * One-Tap Entry reuses the /tap-entry page.
+ * One-Tap Entry reuses the /tap-entry page. Gem is /gem.
  */
 (function (root, factory) {
   var api = factory();
@@ -31,7 +31,8 @@
     classic: '/',
     picture: '/my-picture-classic',
     app: '/my-picture',
-    tap: '/tap-entry'
+    tap: '/tap-entry',
+    gem: '/gem'
   };
 
   function isApp(pathname) {
@@ -49,11 +50,17 @@
     return path === '/tap-entry' || path === '/tap-entry.html';
   }
 
+  function isGem(pathname) {
+    var path = pathOf(pathname);
+    return path === '/gem' || path === '/gem.html';
+  }
+
   function pageKind(pathname) {
     if (isHome(pathname)) return 'classic';
     if (isPicture(pathname)) return 'picture';
     if (isApp(pathname)) return 'app';
     if (isTap(pathname)) return 'tap';
+    if (isGem(pathname)) return 'gem';
     return null;
   }
 
@@ -116,9 +123,15 @@
     }
     doc.addEventListener('click', function (event) {
       var target = radioFrom(event.target);
-      if (!target) return;
+      if (target) {
+        event.preventDefault();
+        choose(target.getAttribute('data-ui-view'));
+        return;
+      }
+      var jump = event.target && event.target.closest ? event.target.closest('[data-set-view]') : null;
+      if (!jump) return;
       event.preventDefault();
-      choose(target.getAttribute('data-ui-view'));
+      choose(jump.getAttribute('data-set-view'));
     });
     doc.addEventListener('keydown', function (event) {
       var target = radioFrom(event.target);
@@ -147,6 +160,7 @@
     isApp: isApp,
     isPicture: isPicture,
     isTap: isTap,
+    isGem: isGem,
     pageKind: pageKind,
     normalizeView: normalizeView,
     readView: readView,

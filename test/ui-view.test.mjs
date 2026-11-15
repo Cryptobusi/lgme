@@ -45,7 +45,8 @@ test('each saved view persists and switches among classic, picture, app, and one
     classic: '/',
     picture: '/my-picture-classic',
     app: '/my-picture',
-    tap: '/tap-entry'
+    tap: '/tap-entry',
+    gem: '/gem'
   });
   assert.equal(ui.destinationFor('/', 'app'), '/my-picture');
   assert.equal(ui.destinationFor('/index.html', 'picture'), '/my-picture-classic');
@@ -94,6 +95,18 @@ test('one-tap entry reuses /tap-entry and still returns to the other views', () 
   assert.equal(ui.destinationFor('/mutual-credit', 'tap'), null);
   assert.equal(ui.destinationFor('/workflow', 'tap'), null);
   assert.equal(ui.destinationFor('/clearing-engine', 'tap'), null);
+  assert.equal(ui.isGem('/gem'), true);
+  assert.equal(ui.isGem('/gem.html'), true);
+  assert.equal(ui.isGem('/gem/'), true);
+  assert.equal(ui.isGem('/'), false);
+  assert.equal(ui.pageKind('/gem'), 'gem');
+  assert.equal(ui.normalizeView('gem'), 'gem');
+  assert.equal(ui.destinationFor('/', 'gem'), '/gem');
+  assert.equal(ui.destinationFor('/gem', 'classic'), '/');
+  assert.equal(ui.destinationFor('/gem.html', 'tap'), '/tap-entry');
+  assert.equal(ui.destinationFor('/gem', 'gem'), null);
+  assert.equal(ui.viewForPage('/gem', null), 'gem');
+  assert.equal(ui.destinationFor('/campus', 'gem'), null);
 });
 
 test('unknown or old saved values fall back to classic and do not navigate', () => {
@@ -111,7 +124,7 @@ test('unknown or old saved values fall back to classic and do not navigate', () 
 });
 
 test('classic, my picture, the sovereign app, and one-tap entry all carry the switcher', () => {
-  for (const file of ['index.html', 'my-picture.html', 'my-picture-classic.html', 'tap-entry.html']) {
+  for (const file of ['index.html', 'my-picture.html', 'my-picture-classic.html', 'tap-entry.html', 'gem.html']) {
     const page = text(file);
     const scriptAt = page.indexOf('src="/js/ui-view.js"');
     const bodyAt = page.indexOf('<body');
@@ -127,17 +140,21 @@ test('classic, my picture, the sovereign app, and one-tap entry all carry the sw
     assert.equal(page.includes('>My Picture</a>'), true, file);
     assert.equal(page.includes('>Sovereign App</a>'), true, file);
     assert.equal(page.includes('>One-Tap Entry</a>'), true, file);
+    assert.equal(page.includes('>Gem</a>'), true, file);
+    assert.equal(page.includes('href="/gem" data-ui-view="gem"'), true, file);
     const classicAt = page.indexOf('data-ui-view="classic"');
     const pictureAt = page.indexOf('data-ui-view="picture"');
     const appAt = page.indexOf('data-ui-view="app"');
     const tapAt = page.indexOf('data-ui-view="tap"');
-    assert.equal(classicAt < pictureAt && pictureAt < appAt && appAt < tapAt, true, file);
+    const gemAt = page.indexOf('data-ui-view="gem"');
+    assert.equal(classicAt < pictureAt && pictureAt < appAt && appAt < tapAt && tapAt < gemAt, true, file);
     assert.equal(/<script(?![^>]*\bsrc=)/i.test(page), false, file);
   }
   assert.equal(text('tap-entry.html').includes('data-ui-view="tap" aria-checked="true"'), true);
   assert.equal(text('index.html').includes('data-ui-view="tap" aria-checked="false"'), true);
   assert.equal(text('my-picture.html').includes('data-ui-view="app" aria-checked="true"'), true);
   assert.equal(text('my-picture-classic.html').includes('data-ui-view="picture" aria-checked="true"'), true);
+  assert.equal(text('gem.html').includes('data-ui-view="gem" aria-checked="true"'), true);
   const home = text('index.html');
   const navStart = home.indexOf('id="main-nav"');
   const nav = home.slice(navStart, home.indexOf('</nav>', navStart));
@@ -146,6 +163,7 @@ test('classic, my picture, the sovereign app, and one-tap entry all carry the sw
   const css = text('css/ui-view.css');
   assert.equal(css.includes('data-ui-view="picture"'), true);
   assert.equal(css.includes('data-ui-view="tap"'), true);
+  assert.equal(css.includes('data-ui-view="gem"'), true);
   assert.equal(css.includes('max-width: 100%'), true);
   assert.equal(css.includes('max-width: 480px'), true);
   assert.equal(text('tap-entry.html').includes('src="/js/tap-entry-ui.mjs"'), true);
@@ -154,7 +172,7 @@ test('classic, my picture, the sovereign app, and one-tap entry all carry the sw
 });
 
 function harness(pathname, storage) {
-  const radios = ['classic', 'picture', 'app', 'tap'].map((view) => ({
+  const radios = ['classic', 'picture', 'app', 'tap', 'gem'].map((view) => ({
     attrs: { role: 'radio', 'data-ui-view': view, 'aria-checked': 'false' },
     focused: false,
     getAttribute(name) { return Object.prototype.hasOwnProperty.call(this.attrs, name) ? this.attrs[name] : null; },
@@ -250,8 +268,8 @@ test('boot saves the choice, routes to /tap-entry, and routes back', () => {
     preventDefault() { prevented = true; }
   });
   assert.equal(prevented, true);
-  assert.equal(keys.radios[3].focused, true);
-  assert.equal(keys.location.assigned, '/tap-entry');
+  assert.equal(keys.radios[4].focused, true);
+  assert.equal(keys.location.assigned, '/gem');
 
   const right = harness('/tap-entry', memoryAt('tap'));
   fire(right.listeners, 'keydown', {
@@ -259,8 +277,17 @@ test('boot saves the choice, routes to /tap-entry, and routes back', () => {
     target: right.radios[3],
     preventDefault() {}
   });
-  assert.equal(right.radios[0].focused, true);
-  assert.equal(right.location.assigned, '/');
+  assert.equal(right.radios[4].focused, true);
+  assert.equal(right.location.assigned, '/gem');
+
+  const wrap = harness('/gem', memoryAt('gem'));
+  fire(wrap.listeners, 'keydown', {
+    key: 'ArrowRight',
+    target: wrap.radios[4],
+    preventDefault() {}
+  });
+  assert.equal(wrap.radios[0].focused, true);
+  assert.equal(wrap.location.assigned, '/');
 
   const decoy = harness('/tap-entry', memory());
   const outside = {
