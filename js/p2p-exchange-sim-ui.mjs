@@ -4454,7 +4454,7 @@ function renderHelp() {
     h('button', { type: 'button', class: 'card mag-card', onClick: () => { location.hash = 'resources'; } }, [
       h('span', { class: 'kicker' }, ['Magazine']),
       h('h3', {}, ['Resources']),
-      h('p', { class: 'muted' }, ['Alice, Bob, and Charlie. The market. The fifteen exchanges. The refusal. The third seat and the story.'])
+      h('p', { class: 'muted' }, ['Alice, Bob, and Charlie. The market. The fifteen exchanges. The refusal. The third seat and the story. Public sources.'])
     ]),
     install,
     h('h3', {}, ['Glossary']),
