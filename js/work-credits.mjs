@@ -8,6 +8,17 @@ function gate(spec) {
   return null;
 }
 
+export function toHundredths(amount) {
+  return Math.round(Number(amount) * 100);
+}
+
+export function formatCredits(hundredths) {
+  const n = Number(hundredths) || 0;
+  const sign = n < 0 ? '-' : '';
+  const abs = Math.abs(Math.trunc(n));
+  return `${sign}${Math.floor(abs / 100)}.${String(abs % 100).padStart(2, '0')}`;
+}
+
 function add(book, member, amount, why, when) {
   const next = structuredClone(book);
   next.balances[member] = (next.balances[member] || 0) + amount;
@@ -22,8 +33,9 @@ export function awardAttestation(book, spec, rules) {
   const pair = [spec.logger, spec.attester].sort().join('|');
   const key = `${pair}:${spec.day}`;
   if ((book.pairs[key] || 0) >= rules.pairCapPerDay) return { book, entries: [], error: 'This pair already earned the daily attestation credit.' };
-  let next = add(book, spec.logger, rules.attestation, 'Attested receipt', spec.day);
-  next = add(next, spec.attester, rules.attestation, 'Attested a receipt', spec.day);
+  const units = toHundredths(rules.attestation);
+  let next = add(book, spec.logger, units, 'Attested receipt', spec.day);
+  next = add(next, spec.attester, units, 'Attested a receipt', spec.day);
   next.pairs[key] = (book.pairs[key] || 0) + 1;
   return { book: next, entries: next.history.slice(-2), paused: false };
 }
@@ -31,7 +43,7 @@ export function awardAttestation(book, spec, rules) {
 export function awardVerified(book, spec, rules) {
   const blocked = gate(spec);
   if (blocked) return { book, entry: null, ...blocked };
-  const amount = rules[spec.kind];
+  const amount = toHundredths(rules[spec.kind]);
   if (!amount || !spec.member) return { book, entry: null, error: 'That verified act has no credit.' };
   const next = add(book, spec.member, amount, spec.kind, spec.day);
   return { book: next, entry: next.history.at(-1), paused: false };
@@ -47,7 +59,7 @@ export function awardQuiz(book, spec, rules) {
   const lifeKey = spec.member;
   if ((book.quizDays[dayKey] || 0) >= rules.quizDailyCap) return { book, entry: null, error: 'The daily learning cap is reached.' };
   if ((book.quizDays[lifeKey] || 0) >= rules.quizLifetimeCap) return { book, entry: null, error: 'The learning cap is reached.' };
-  const next = add(book, spec.member, rules.quiz, `Quiz: ${spec.topic}`, spec.day);
+  const next = add(book, spec.member, toHundredths(rules.quiz), `Quiz: ${spec.topic}`, spec.day);
   next.quizzes[topicKey] = true;
   next.quizDays[dayKey] = (book.quizDays[dayKey] || 0) + 1;
   next.quizDays[lifeKey] = (book.quizDays[lifeKey] || 0) + 1;
