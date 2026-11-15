@@ -101,7 +101,10 @@ if (root && !document.getElementById('profile-board')) {
     const sig = await signDevice(key.privateJwk, { nonce: nonceBody.nonce, purpose: 'totp-signin' });
     const response = await fetch('/api/authenticator', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'signin', email: address, code: board.querySelector('#access-code').value, publicJwk: key.publicJwk, sig, nonce: nonceBody.nonce }) });
     const body = await response.json().catch(() => ({}));
-    status.textContent = body.ok ? 'Signed in with the authenticator app.' : (body.fallback === 'email' ? 'This device does not match. Use the email code.' : (body.error || 'Use the email code.'));
+    status.textContent = body.ok ? 'Signed in with the authenticator app. This device stays trusted for this session.' : (body.fallback === 'email' ? 'This device does not match. Use the email code.' : (body.error || 'Use the email code.'));
+    if (body.ok && body.sessionId) {
+      try { sessionStorage.setItem('lgme.session', body.sessionId); } catch { /* the sign-in still shows */ }
+    }
   });
   board.querySelector('#totp-reset').addEventListener('click', async () => {
     const response = await fetch('/api/authenticator', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'reset', email, code: board.querySelector('#access-code').value }) });
@@ -121,10 +124,30 @@ if (root && !document.getElementById('profile-board')) {
     status.textContent = 'The app is open. You confirm each action.';
     paint();
   });
-  row.addEventListener('click', (event) => {
+  row.addEventListener('click', async (event) => {
     const link = event.target.closest?.('[data-sensitive]');
     if (!link) return;
     event.preventDefault();
+    const key = await ensureDeviceKey(localStorage);
+    let sessionId = '';
+    try { sessionId = sessionStorage.getItem('lgme.session') || ''; } catch { /* a missing session asks again */ }
+    const watchSig = sessionId ? await signDevice(key.privateJwk, { sessionId, purpose: 'watch' }) : '';
+    const watched = await fetch('/api/authenticator', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        action: 'watch',
+        sessionId,
+        publicJwk: key.publicJwk,
+        sig: watchSig,
+        webdriver: navigator.webdriver === true,
+        headless: /Headless/i.test(navigator.userAgent)
+      })
+    }).then((response) => response.json()).catch(() => ({ prompt: true }));
+    if (watched.prompt === false) {
+      location.assign(link.href);
+      return;
+    }
     const dialog = document.getElementById('confirm-gate') || document.createElement('section');
     dialog.id = 'confirm-gate';
     dialog.innerHTML = '<p>A person has to confirm. Nothing runs by itself.</p><button type="button" id="gate-passkey">Use fingerprint</button><label for="gate-totp">Authenticator code</label><input id="gate-totp" inputmode="numeric" maxlength="6" autocomplete="one-time-code"><button type="button" id="gate-totp-go">Confirm code</button><p id="gate-status" role="status"></p>';

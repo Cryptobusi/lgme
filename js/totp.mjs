@@ -1,5 +1,5 @@
 import { deviceThumb, hashEmail, memberKey, normalizeEmail } from './email-check-core.mjs';
-import { verifyDevice } from './device-sign.mjs';
+import { sha256Hex, verifyDevice } from './device-sign.mjs';
 
 const STEP_SEC = 30;
 const WINDOW_MS = 10 * 60 * 1000;
@@ -198,7 +198,63 @@ async function checkDeviceAndCode(store, spec, purpose) {
   if (!matched.ok) return { ok: false, status: matched.reused ? 400 : 400, error: matched.error };
   await store.del(`totp:nonce:${found.emailHash}`);
   await store.set(memberKey(found.emailHash), { ...found.member, totpUsed: [...(found.member.totpUsed || []), matched.counter].slice(-8) }, 0);
-  return noSecret({ ok: true, status: 200 });
+  if (purpose !== 'totp-signin') return noSecret({ ok: true, status: 200 });
+  const sessionId = base32Encode(crypto.getRandomValues(new Uint8Array(16)));
+  await store.set(`totp:session:${sessionId}`, {
+    emailHash: found.emailHash,
+    deviceThumb: thumb,
+    ipHash: await sha256Hex(ip),
+    actions: [],
+    at: now
+  }, 0);
+  return noSecret({ ok: true, status: 200, sessionId });
+}
+
+const NOTICES = 'security:notices';
+
+async function logSuspicious(store, { emailHash, ipHash, reason, now }) {
+  const notices = (await store.get(NOTICES)) || [];
+  notices.push({
+    title: 'Suspicious session',
+    category: 'Security',
+    at: new Date(now).toISOString(),
+    link: '/owner',
+    kind: 'security',
+    reason,
+    member: emailHash || '',
+    ip: ipHash
+  });
+  await store.set(NOTICES, notices.slice(-40), 0);
+}
+
+export async function watchSession(store, spec) {
+  const now = spec.now || Date.now();
+  const session = spec.sessionId ? await store.get(`totp:session:${spec.sessionId}`) : null;
+  const ipHash = await sha256Hex(spec.ip || 'local');
+  const thumb = spec.publicJwk?.x ? await deviceThumb(spec.publicJwk) : '';
+  const signed = Boolean(session) && Boolean(spec.sig) && await verifyDevice(spec.publicJwk, { sessionId: spec.sessionId, purpose: 'watch' }, spec.sig);
+  const reasons = [];
+  if (!session) reasons.push('no-session');
+  if (!signed) reasons.push('missing-signature');
+  if (spec.webdriver === true || spec.headless === true) reasons.push('automated-browser');
+  if (session && thumb && thumb !== session.deviceThumb) reasons.push('device-change');
+  if (session && ipHash !== session.ipHash) reasons.push('ip-change');
+  const recent = (session?.actions || []).filter((stamp) => now - stamp < 10_000);
+  if (recent.filter((stamp) => now - stamp < 1000).length >= 3) reasons.push('rapid-fire');
+  if (recent.length >= 8) reasons.push('burst');
+  const fails = session ? (((await store.get(`totp:try:${session.emailHash}`)) || {}).stamps || []).filter((stamp) => now - stamp < WINDOW_MS) : [];
+  if (fails.length >= 3) reasons.push('failed-codes');
+  if (reasons.length) {
+    await logSuspicious(store, { emailHash: session?.emailHash || '', ipHash, reason: reasons[0], now });
+    return { ok: true, status: 200, prompt: true, reason: reasons[0] };
+  }
+  await store.set(`totp:session:${spec.sessionId}`, { ...session, actions: [...recent, now] }, 0);
+  return { ok: true, status: 200, prompt: false };
+}
+
+export async function listSuspicious(store) {
+  const notices = (await store.get(NOTICES)) || [];
+  return notices.map((notice) => ({ title: notice.title, category: notice.category, at: notice.at, link: notice.link, kind: notice.kind, reason: notice.reason, member: notice.member, ip: notice.ip }));
 }
 
 export function signInWithAuthenticator(store, spec) {

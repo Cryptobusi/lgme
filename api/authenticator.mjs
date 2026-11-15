@@ -1,13 +1,26 @@
 import { clientIp, emailReadiness } from '../js/email-check-core.mjs';
-import { beginEnrollment, confirmWithAuthenticator, finishEnrollment, issueNonce, resetAuthenticator, signInWithAuthenticator } from '../js/totp.mjs';
+import { beginEnrollment, confirmWithAuthenticator, finishEnrollment, issueNonce, listSuspicious, resetAuthenticator, signInWithAuthenticator, watchSession } from '../js/totp.mjs';
 import { confirmCode } from './lib/email-flow.mjs';
 import { guardRequest, headerMap, json, readBody, readEnv } from './lib/http.mjs';
 import { redisRest } from '../js/redis-env.mjs';
 import { upstashStore } from './lib/upstash.mjs';
 
+function admin(req, env) {
+  const token = String(env.INTEREST_ADMIN || env.OWNER_INBOX_TOKEN || '');
+  return Boolean(token) && String(req.headers?.['x-lgme-admin'] || '') === token;
+}
+
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return json(res, 405, { ok: false, error: 'Use POST.' });
   const env = readEnv();
+  const url = new URL(req.url || '/', 'http://localhost');
+  if (req.method === 'GET' && url.searchParams.get('notices') === '1') {
+    if (!admin(req, env)) return json(res, 401, { ok: false, error: 'The owner inbox needs the admin token.' });
+    const redis = redisRest(env);
+    if (!redis.configured) return json(res, 200, { ok: true, notices: [] });
+    const store = upstashStore(redis.url, redis.token);
+    return json(res, 200, { ok: true, notices: await listSuspicious(store) });
+  }
+  if (req.method !== 'POST') return json(res, 405, { ok: false, error: 'Use POST.' });
   const ready = emailReadiness(env);
   if (!ready.enabled) return json(res, 503, { ok: false, error: 'Authenticator setup is not connected yet.' });
   const body = await readBody(req);
@@ -22,7 +35,10 @@ export default async function handler(req, res) {
     sig: body.sig,
     nonce: body.nonce,
     ip: clientIp(headerMap(req)),
-    now: Date.now()
+    now: Date.now(),
+    sessionId: body.sessionId,
+    webdriver: body.webdriver === true,
+    headless: body.headless === true
   };
   const action = body.action;
   let result;
@@ -31,6 +47,7 @@ export default async function handler(req, res) {
   else if (action === 'nonce') result = await issueNonce(store, spec);
   else if (action === 'signin') result = await signInWithAuthenticator(store, spec);
   else if (action === 'gate') result = await confirmWithAuthenticator(store, spec);
+  else if (action === 'watch') result = await watchSession(store, spec);
   else if (action === 'reset') result = await resetAuthenticator(store, spec, confirmCode);
   else result = { ok: false, status: 400, error: 'Unknown action.' };
   const payload = {
@@ -38,7 +55,10 @@ export default async function handler(req, res) {
     error: result.error || '',
     fallback: result.fallback || '',
     enrolled: result.enrolled === true,
-    reset: result.reset === true
+    reset: result.reset === true,
+    prompt: result.prompt === true,
+    reason: result.reason || '',
+    sessionId: result.sessionId || ''
   };
   if (action === 'enroll' && result.ok) {
     payload.secret = result.secret;

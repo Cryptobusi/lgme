@@ -74,6 +74,11 @@ async function load(token) {
     if (versions.ok && Array.isArray(versionBody.notices)) notices = notices.concat(versionBody.notices);
     for (const id of versionBody.openIds || []) openIds.add(id);
   } catch { /* version copies stay out */ }
+  try {
+    const security = await fetch('/api/authenticator?notices=1', { headers });
+    const securityBody = await security.json();
+    if (security.ok && Array.isArray(securityBody.notices)) notices = notices.concat(securityBody.notices);
+  } catch { /* security notices stay out */ }
   paint(notices, openIds);
   status.textContent = notices.length ? 'Notices are on this phone.' : 'No notices yet.';
 }

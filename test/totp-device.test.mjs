@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { hashEmail, memberKey } from '../js/email-check-core.mjs';
 import { ensureDeviceKey, generateDeviceKey, signDevice } from '../js/device-sign.mjs';
-import { beginEnrollment, finishEnrollment, issueNonce, resetAuthenticator, signInWithAuthenticator, totpAt } from '../js/totp.mjs';
+import { beginEnrollment, finishEnrollment, issueNonce, listSuspicious, resetAuthenticator, signInWithAuthenticator, totpAt, watchSession } from '../js/totp.mjs';
 import { confirmCode } from '../api/lib/email-flow.mjs';
 
 function memory() {
@@ -84,4 +84,25 @@ test('a device mismatch falls back to email and tries are rate limited', async (
   assert.equal(JSON.stringify(reset).includes(limitSecret), false);
   assert.equal(typeof confirmCode, 'function');
   assert.equal(typeof ensureDeviceKey, 'function');
+});
+
+test('a trusted session does not ask again until a bot signal', async () => {
+  const store = memory();
+  const key = await generateDeviceKey();
+  const now = 1_700_000_060_000;
+  const secret = await enrolled(store, key, now);
+  const later = now + 90_000;
+  const proof = await prove(store, key, 'totp-signin', later);
+  const signed = await signInWithAuthenticator(store, { email, pepper, code: await totpAt(secret, later), now: later, ip: '203.0.113.20', ...proof });
+  assert.equal(signed.ok, true, signed.error);
+  const watchSig = await signDevice(key.privateJwk, { sessionId: signed.sessionId, purpose: 'watch' });
+  const calm = await watchSession(store, { sessionId: signed.sessionId, publicJwk: key.publicJwk, sig: watchSig, ip: '203.0.113.20', now: later + 5_000 });
+  assert.equal(calm.prompt, false);
+  const bot = await watchSession(store, { sessionId: signed.sessionId, publicJwk: key.publicJwk, sig: watchSig, ip: '203.0.113.20', now: later + 6_000, webdriver: true });
+  assert.equal(bot.prompt, true);
+  assert.equal(bot.reason, 'automated-browser');
+  const notices = await listSuspicious(store);
+  assert.equal(notices.length, 1);
+  assert.equal(JSON.stringify(notices).includes(email), false);
+  assert.equal(JSON.stringify(notices).includes('203.0.113.20'), false);
 });
