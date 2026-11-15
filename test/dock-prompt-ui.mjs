@@ -69,6 +69,28 @@ const size = await page.evaluate(() => localStorage.getItem('lgme.dock.size'));
 if (size !== 'tall') failures.push(`size not remembered ${size}`);
 const after = await page.locator('#ai-dock').evaluate((node) => node.getBoundingClientRect().height);
 if (!(after > before - 5)) failures.push(`resize ${before} to ${after}`);
+const ai = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36' });
+await ai.addInitScript(() => {
+  localStorage.setItem('lgme.reset.epoch', '2');
+  localStorage.setItem('lgme.ai.enabled', '1');
+  localStorage.setItem('lgme.dock.used', JSON.stringify({ 'What can I do here?': 4, 'Log a workout': 1 }));
+  window.LanguageModel = { availability: async () => 'available', prompt: async () => 'A short on-device line.' };
+  const original = window.matchMedia.bind(window);
+  window.matchMedia = (query) => String(query).includes('display-mode') && String(query).includes('standalone')
+    ? { matches: true, media: query, onchange: null, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {}, dispatchEvent() { return false; } }
+    : original(query);
+});
+const aiPage = await ai.newPage();
+await aiPage.goto(`${base}/`, { waitUntil: 'domcontentloaded' });
+await aiPage.locator('#ai-dock').waitFor();
+if ((await aiPage.locator('#ai-switch').innerText()) !== 'AI on') failures.push('AI did not start');
+const order = await aiPage.locator('.ai-chip').allTextContents();
+if (order[0] !== 'What can I do here?') failures.push(`rank ${order.join('|')}`);
+await aiPage.locator('#ai-accept').click();
+if (!/Accepted on this phone/.test(await aiPage.locator('#ai-log').innerText())) failures.push('accept did not apply');
+const applied = await aiPage.evaluate(() => sessionStorage.getItem('lgme.prompt.draft'));
+if (!/help/.test(applied || '')) failures.push(`accept draft ${applied}`);
+await ai.close();
 await browser.close();
 server.close();
 if (failures.length) { console.log(failures.join('\n')); process.exit(1); }

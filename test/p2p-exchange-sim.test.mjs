@@ -1796,7 +1796,7 @@ test('DC reference values stay pending when a series has no number', () => {
   assert.equal(page.includes('id="refList"'), true);
   assert.equal(/<script(?![^>]*\bsrc=)/i.test(page), false);
   const worker = readFileSync(join(root, 'sw.js'), 'utf8');
-  assert.equal(worker.includes('lgme-v177'), true);
+  assert.equal(worker.includes('lgme-v178'), true);
   assert.equal(worker.includes('key.startsWith("lgme-v")'), true);
   assert.equal(ui.includes('held by you alone'), true);
   assert.equal(ui.includes('Public Ledger / Verified Receipt'), true);
@@ -1806,7 +1806,8 @@ test('DC reference values stay pending when a series has no number', () => {
   const desk = readFileSync(join(root, 'exchange.html'), 'utf8');
   assert.equal(desk.includes('splash-skip'), false);
   assert.equal(desk.includes('>Skip<'), false);
-  assert.equal(desk.includes('preload="none"'), true);
+  assert.equal(desk.includes('<video'), false);
+  assert.equal(desk.includes('.mp4'), false);
   assert.equal(ui.includes('splash-skip'), false);
   assert.equal(ui.includes('AbortController'), true);
   const pay = readFileSync(join(root, 'js/solana-pay.mjs'), 'utf8');

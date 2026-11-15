@@ -25,6 +25,30 @@
       "forTheApp": "For the app: keep the Health dashboard to the few numbers a member can count on their hands, and put everything else behind one tap rather than on the first screen.",
       "source": "Henry David Thoreau, Walden (1854)",
       "sourceUrl": "https://www.gutenberg.org/cache/epub/205/pg205.txt"
+    },
+    {
+      "date": "2026-11-13",
+      "kind": "original",
+      "theme": "Fasting and hunger",
+      "text": "Let hunger speak once in a while before you answer it. Most of what it asks for is habit looking for comfort. What is left is need, and need is small enough to share.",
+      "forTheApp": "For the app: the IwantIT draft asks one plain question, Need or want?, and the Floor lists needs first by default.",
+      "source": "lgme.app desk"
+    },
+    {
+      "date": "2026-11-13",
+      "kind": "original",
+      "theme": "Silence and the third seat",
+      "text": "Before you agree to a deal, leave a quiet moment for the one who is not at the table. Silence is how the third seat gets a voice.",
+      "forTheApp": "For the app: the trade Confirm step shows one line naming who else the deal touches (the Floor, the third seat) before the Confirm button, with no countdown or pressure.",
+      "source": "lgme.app desk"
+    },
+    {
+      "date": "2026-11-13",
+      "kind": "original",
+      "theme": "Physical labor and direct responsibility",
+      "text": "Do the work with your own hands where you can, and sign what you did where others can see it. A record you are willing to show is the cheapest audit there is.",
+      "forTheApp": "For the app: before an IdidIt receipt is posted, show a plain preview of exactly what the public tape will display; nothing posts without that preview.",
+      "source": "lgme.app desk"
     }
   ]
 }

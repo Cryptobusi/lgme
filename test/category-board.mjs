@@ -55,7 +55,7 @@ const server = createServer(async (req, res) => {
 await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
 const base = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch({ executablePath: process.env.CHROME || '/usr/bin/google-chrome-stable', args: ['--no-sandbox', '--disable-dev-shm-usage'] });
-const names = ['Campus', 'Neighbor help', 'Hosts', 'Circles', 'Stories', 'Exchange'];
+const names = ['Campus', 'Neighbor help', 'Hosts', 'Circles', 'Stories', 'Exchange', 'IhelpIT'];
 const failures = [];
 function assert(ok, message) { if (!ok) throw new Error(message); }
 

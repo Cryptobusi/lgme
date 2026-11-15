@@ -4,6 +4,21 @@ import { dockChipsOf } from './variant-schema.mjs';
 
 const FLAG = 'Only available online with AI enabled.';
 const AI_CHIPS = ['Log a workout', 'Make an IdidIt receipt', 'What can I do here?'];
+const USE_KEY = 'lgme.dock.used';
+
+export function rankedPrompts(labels, uses = {}) {
+  return [...labels].sort((a, b) => (Number(uses[b]) || 0) - (Number(uses[a]) || 0) || labels.indexOf(a) - labels.indexOf(b));
+}
+
+function readUses() {
+  try { return JSON.parse(localStorage.getItem(USE_KEY) || '{}'); } catch { return {}; }
+}
+
+function rememberUse(label) {
+  const uses = readUses();
+  uses[label] = (Number(uses[label]) || 0) + 1;
+  try { localStorage.setItem(USE_KEY, JSON.stringify(uses)); } catch { /* the count still shows this visit */ }
+}
 
 export function dockKeyboardOffset(innerHeight, viewport) {
   const height = Number(viewport?.height);
@@ -52,7 +67,7 @@ function paint(dock) {
   if (!enabled) return;
   log.textContent = live ? 'Ask here. Nothing is sent.' : 'AI off. Tap to turn on.';
   accept.disabled = !ready;
-  accept.textContent = ready ? 'Accept' : 'AI off';
+  accept.textContent = ready ? 'Use suggestion' : 'AI off';
 }
 
 export function matchPrompt(text) {
@@ -76,7 +91,7 @@ function mount() {
   const dock = document.createElement('section');
   dock.id = 'ai-dock';
   dock.setAttribute('aria-label', 'On-device AI');
-  dock.innerHTML = '<p class="ai-top"><button type="button" id="ai-switch" class="ai-pill" role="switch" aria-checked="true" aria-live="polite" aria-label="AI on or off">AI off - tap to turn on</button><button type="button" id="ai-smaller" aria-label="Smaller text">A-</button><button type="button" id="ai-larger" aria-label="Bigger text">A+</button><button type="button" id="ai-expand" aria-expanded="true">Close</button><a class="ai-setup-link" href="/ai-setup">Help</a></p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><div id="ai-scroll"><div id="ai-chip-row"><div id="ai-chips" class="ai-chips"></div><span id="ai-chip-hint" aria-hidden="true">›</span></div><textarea id="ai-ask" rows="1" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><pre id="ai-log"></pre><p class="ai-actions"><button type="button" id="ai-send" aria-label="Send to the helper">Send</button><button type="button" id="ai-accept">Accept</button></p><p id="ai-more" hidden>More</p></div>';
+  dock.innerHTML = '<p class="ai-top"><button type="button" id="ai-switch" class="ai-pill" role="switch" aria-checked="true" aria-live="polite" aria-label="AI on or off">AI off - tap to turn on</button><button type="button" id="ai-smaller" aria-label="Smaller text">A-</button><button type="button" id="ai-larger" aria-label="Bigger text">A+</button><button type="button" id="ai-expand" aria-expanded="true">Close</button><a class="ai-setup-link" href="/ai-setup">Help</a></p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><div id="ai-scroll"><div id="ai-chip-row"><div id="ai-chips" class="ai-chips"></div><span id="ai-chip-hint" aria-hidden="true">›</span></div><textarea id="ai-ask" rows="1" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><pre id="ai-log"></pre><p class="ai-actions"><button type="button" id="ai-send" aria-label="Send runs the words in the box">Send</button><button type="button" id="ai-accept" aria-label="Accept uses the top suggestion">Use suggestion</button></p><p id="ai-more" hidden>More</p></div>';
   dock.classList.add('is-open', 'is-normal');
   try {
     if (localStorage.getItem('lgme.reset.note') === '1') {
@@ -145,7 +160,7 @@ function mount() {
     if (fieldMeta(active)) return;
     fieldToken += 1;
     dock.classList.remove('has-field');
-    paintChips(dockChipsOf() || AI_CHIPS, null);
+    paintChips(rankedPrompts(dockChipsOf() || AI_CHIPS, readUses()), null);
     paint(dock);
   };
   const SIZES = ['compact', 'normal', 'tall'];
@@ -164,6 +179,7 @@ function mount() {
     const text = ask.value.trim();
     const log = dock.querySelector('#ai-log');
     const matched = matchPrompt(text);
+    if (text) rememberUse(text);
     log.textContent = matched.line;
     if (matched.kind === 'help') { markOverflow(); return; }
     try { sessionStorage.setItem('lgme.prompt.draft', JSON.stringify({ kind: matched.kind, text: matched.text })); } catch { /* the line still shows */ }
@@ -184,7 +200,7 @@ function mount() {
     scroller.classList.toggle('is-over', over);
     more.hidden = !over;
   };
-  paintChips(dockChipsOf() || AI_CHIPS, null);
+  paintChips(rankedPrompts(dockChipsOf() || AI_CHIPS, readUses()), null);
   document.addEventListener('focusin', (event) => { showField(event.target); });
   document.addEventListener('focusout', () => { setTimeout(clearField, 0); });
   ask.addEventListener('pointerup', () => { ask.focus(); });
@@ -217,9 +233,17 @@ function mount() {
   });
   dock.querySelector('#ai-accept').addEventListener('click', () => {
     if (!localAiReady()) return;
-    const log = dock.querySelector('#ai-log');
-    log.textContent = `${log.textContent}\nAccepted on this phone. Nothing was sent.`;
-    try { localStorage.setItem('lgme.ai.accepted', '1'); } catch { /* the line still shows */ }
+    const top = chips.querySelector('.ai-chip');
+    if (!top) return;
+    const suggestion = top.textContent;
+    ask.value = suggestion;
+    const matched = matchPrompt(suggestion);
+    rememberUse(suggestion);
+    try {
+      sessionStorage.setItem('lgme.prompt.draft', JSON.stringify({ kind: matched.kind, text: matched.text }));
+      localStorage.setItem('lgme.ai.accepted', suggestion);
+    } catch { /* the line still shows */ }
+    dock.querySelector('#ai-log').textContent = `${matched.line} Accepted on this phone. Nothing was sent.`;
   });
   window.addEventListener('online', () => paint(dock));
   window.addEventListener('offline', () => paint(dock));

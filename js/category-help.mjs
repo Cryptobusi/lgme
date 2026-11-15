@@ -8,7 +8,8 @@ export const CATEGORIES = Object.freeze([
   { id: 'hosts', name: 'Hosts', href: '/hosts', badge: 'In development' },
   { id: 'circles', name: 'Circles', href: '/circles', badge: 'In development' },
   { id: 'stories', name: 'Stories', href: '/stories', badge: 'In development' },
-  { id: 'exchange', name: 'Exchange', href: '/exchange', badge: 'In development' }
+  { id: 'exchange', name: 'Exchange', href: '/exchange', badge: 'In development' },
+  { id: 'ihelpit', name: 'IhelpIT', href: '/ihelpit', badge: 'In development' }
 ]);
 
 const OPEN = new Set([

@@ -1,5 +1,5 @@
 // lgme.app shell. HTML is fetched from the network first so a published change shows.
-const CACHE_NAME = "lgme-v177";
+const CACHE_NAME = "lgme-v178";
 const NET_MS = 8000;
 const SHELL = [
   "/",
@@ -289,7 +289,24 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(Response.redirect(moved[url.pathname], 301));
     return;
   }
-  if (/\.(mp4|webm)$/i.test(url.pathname)) return;
+  if (/\.(mp4|webm|mov|m4v|ogv)$/i.test(url.pathname)) {
+    const posters = {
+      "/legomiego-coin.mp4": "/legomiego-coin.jpg",
+      "/lgme-fishbowl.mp4": "/lgme-fishbowl.jpg",
+      "/keeping-the-book.mp4": "/keeping-the-book-page.jpg",
+      "/third-seat.mp4": "/third-seat-cover.jpg",
+      "/third-seat-tale.mp4": "/third-seat-cover.jpg",
+      "/third-seat-pie.mp4": "/third-seat-cover.jpg",
+      "/third-seat-now.mp4": "/third-seat-cover.jpg",
+      "/third-seat-long.mp4": "/third-seat-long.jpg",
+      "/third-seat-letter.mp4": "/third-seat-long.jpg",
+      "/third-seat-letter-smooth.mp4": "/third-seat-long.jpg",
+      "/third-seat-lecture.mp4": "/third-seat-cover.jpg",
+      "/third-seat-cases.mp4": "/third-seat-cover.jpg"
+    };
+    event.respondWith(Response.redirect(posters[url.pathname] || "/", 302));
+    return;
+  }
 
   const fallback = () => {
     const path = url.pathname === "/exchange" || url.pathname === "/exchange.html"

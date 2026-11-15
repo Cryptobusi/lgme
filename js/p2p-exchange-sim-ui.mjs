@@ -4546,18 +4546,9 @@ function storeFlag(key) {
 
 function showSplash() {
   const splash = document.getElementById('splash');
-  const video = document.getElementById('splash-video');
   const installed = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
-  if (installed) {
+  if (installed || !splash || storedFlag(SPLASH_SEEN)) {
     if (splash) splash.hidden = true;
-    return Promise.resolve();
-  }
-  if (!splash || storedFlag(SPLASH_SEEN)) {
-    if (video) {
-      video.pause();
-      video.removeAttribute('src');
-      video.querySelectorAll('source').forEach((source) => source.remove());
-    }
     return Promise.resolve();
   }
   storeFlag(SPLASH_SEEN);
@@ -4565,18 +4556,8 @@ function showSplash() {
   const coin = splash.querySelector('.splash-coin');
   if (coin) coin.classList.add('is-growing');
   return new Promise((resolve) => {
-    let closed = false;
-    const done = () => {
-      if (closed) return;
-      closed = true;
-      splash.hidden = true;
-      if (video) video.pause();
-      resolve();
-    };
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduce && video) video.remove();
-    if (!reduce && video) video.play().catch(() => {});
-    setTimeout(done, reduce ? 700 : 3000);
+    setTimeout(() => { splash.hidden = true; resolve(); }, reduce ? 700 : 3000);
   });
 }
 
