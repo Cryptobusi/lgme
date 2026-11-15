@@ -8,5 +8,13 @@
   "quiz": 0.01,
   "pairCapPerDay": 1,
   "quizDailyCap": 2,
-  "quizLifetimeCap": 5
+  "quizLifetimeCap": 5,
+  "usdPerCredit": 0.01,
+  "examplePriceUsd": 1,
+  "priceSource": "example price",
+  "LGME_CONTRIB_LIVE": "off",
+  "milestones": [
+    { "id": "first-10-sessions", "label": "First 10 verified sessions", "credits": 1 },
+    { "id": "thirty-days", "label": "30 days of attested activity", "credits": 1 }
+  ]
 }

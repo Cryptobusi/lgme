@@ -1,0 +1,37 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import rules from '../data/credit-rules.json' with { type: 'json' };
+import { contribute, milestoneAward, previewContribution, splitHundredths } from '../js/lgme-contrib.mjs';
+import { formatCredits } from '../js/work-credits.mjs';
+
+test('one dollar is 100 credits and the floor split stays in integer hundredths', async () => {
+  const preview = previewContribution({ lgme: 1, rules });
+  assert.equal(preview.priceLabel, 'example price');
+  assert.equal(preview.credits, 100);
+  assert.equal(formatCredits(preview.credits), '1.00');
+  assert.equal(preview.collective, 50);
+  assert.equal(preview.health, 50);
+  const odd = splitHundredths(101);
+  assert.equal(odd.collective + odd.health, 101);
+  assert.equal(odd.collective, 51);
+  assert.equal(odd.health, 50);
+  const held = await contribute({ lgme: 1, rules, confirmed: true, gate: true, memberHash: 'abc' });
+  assert.equal(rules.LGME_CONTRIB_LIVE, 'off');
+  assert.equal(held.transfer, false);
+  assert.equal(held.simulated, true);
+  assert.equal(held.recorded, true);
+  assert.equal(held.hash.includes('@'), false);
+  const unconfirmed = await contribute({ lgme: 1, rules, confirmed: false, gate: true });
+  assert.equal(unconfirmed.recorded, false);
+  assert.equal(unconfirmed.transfer, false);
+  const ungated = await contribute({ lgme: 1, rules, confirmed: true, gate: false });
+  assert.equal(ungated.recorded, false);
+  const awards = milestoneAward({ sessions: 10, attestedDays: 30, rules });
+  assert.equal(awards.length, 2);
+  const pages = ['help.html', 'gym.html', 'js/thumb-home.mjs', 'js/lgme-contrib.mjs'].map((file) => readFileSync(new URL(`../${file}`, import.meta.url), 'utf8')).join('\n');
+  assert.equal(/id="leaderboard"|id="top-member"|streak pressure/i.test(pages), false);
+  assert.match(pages, /There is no leaderboard/);
+  assert.equal(pages.includes('Collective Fund'), true);
+  assert.equal(pages.includes('Health Sub-floor'), true);
+});
