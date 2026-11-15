@@ -1,0 +1,12 @@
+{
+  "unit": "work credit",
+  "note": "In-app mutual credit. Not $lgme. Nothing is minted on chain. Health hashes stay on testnet.",
+  "ididit": 1,
+  "attestation": 1,
+  "listing": 1,
+  "proposal": 1,
+  "quiz": 1,
+  "pairCapPerDay": 1,
+  "quizDailyCap": 2,
+  "quizLifetimeCap": 5
+}
