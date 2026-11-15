@@ -1,4 +1,5 @@
 import { applyFieldOption, fieldMeta, nextHelpField, safeHelpLine } from './field-help.mjs';
+import { classifyPrompt, routeLine } from './prompt-route.mjs';
 import { draftWithHelper, localAiReady, pickHelperSync } from './one-tap.mjs';
 import { dockChipsOf } from './variant-schema.mjs';
 
@@ -235,7 +236,13 @@ function mount() {
     const matched = matchPrompt(text);
     staged = matched.kind === 'help' ? null : matched;
     stagedText = text;
-    log.textContent = matched.kind === 'ididit' ? stageLine(matched) : `Recommend: ${matched.line} Verify: this stays on the phone. Explain: nothing runs until you confirm.`;
+    const route = classifyPrompt(text);
+    matched.route = route;
+    const detail = matched.kind === 'ididit' ? stageLine(matched) : matched.line;
+    log.textContent = route.liveWrite === false
+      ? `${routeLine(route, detail)} This category is In development. Nothing is written live.`
+      : `${routeLine(route, detail)}`;
+    if (route.alternatives.length) paintChips(route.alternatives, null);
     note(dock.querySelector('#ai-send'), 'Staged');
     markOverflow();
   };
@@ -264,6 +271,10 @@ function mount() {
       }));
     } catch { /* the line still shows */ }
     const here = location.pathname.startsWith('/gym');
+    if (matched.route && matched.route.liveWrite === false) {
+      location.assign(matched.route.href);
+      return;
+    }
     if (matched.kind === 'ididit') {
       if (here && location.hash === '#/ididit') window.dispatchEvent(new HashChangeEvent('hashchange'));
       else location.assign('/gym#/ididit');
