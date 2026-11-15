@@ -309,7 +309,12 @@
     .later { opacity: 0.65; }
     .entry-picker { margin: 0 0 1.2rem; padding-top: 0; border-top: 0; }
     #profile-board, #function-row { grid-column: 1 / -1; }
-    #profile-board { min-height: 28vh; max-height: 42vh; overflow: auto; margin: 0 0 0.6rem; }
+    #profile-board { margin: 0 0 0.6rem; }
+    @media (max-width: 800px) {
+      body { font-size: 18px; }
+      button, #function-row a, #first-open input { font-size: 18px; min-height: 48px; }
+    }
+    html[data-screen="simple"] button, html[data-screen="simple"] #function-row a { font-size: 18px; min-height: 48px; }
     #first-open label { display: block; margin: 0.55rem 0 0.25rem; }
     #first-open input { display: block; width: 100%; box-sizing: border-box; min-height: 48px; }
     #first-open .access-card { display: block; margin: 0.45rem 0; padding: 0.7rem; border: 1px solid #2c352b; border-radius: 12px; }

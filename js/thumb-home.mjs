@@ -1,4 +1,5 @@
 import { attestBadges } from './attest-follow.mjs';
+import { deleteLocalFunction, exportLocalFunctions, importLocalFunctions, readLocalFunctions } from './local-functions.mjs';
 import { applyMode, recommendMode, screenChosen, screenPresets, undoMode } from './screen-modes.mjs';
 import { formatCredits } from './work-credits.mjs';
 import { compactCode } from './email-check-core.mjs';
@@ -31,7 +32,7 @@ if (root && !document.getElementById('profile-board')) {
   const board = document.createElement('section');
   board.id = 'profile-board';
   board.setAttribute('aria-label', 'Profile');
-  board.innerHTML = '<p id="profile-name">Not signed in</p><button type="button" id="credits-total" hidden>Credits 0.00</button><div id="attest-badges" aria-label="Message dashboard"></div><details id="my-credits"><summary>My credits</summary><p id="contrib-preview">Contribute $lgme is a simulation. Live payments are off. Example price. Collective Fund and Health Sub-floor split 50/50.</p><p id="my-credits-balance"></p><ul id="my-credits-history"></ul><p id="my-credits-rules"></p></details><p id="profile-activity">No recent activity</p><p id="profile-balance">Balance stays on this phone</p><p id="profile-new">New 0</p><form id="first-open"><p id="step-count">1 of 3</p><section class="access-card" id="step-email"><h2>Sign in with email</h2><label for="access-email">Email</label><input id="access-email" type="email" autocomplete="email" maxlength="120"><button type="submit" id="access-send" class="primary">Send code</button><label for="access-code">Email code</label><input id="access-code" inputmode="numeric" maxlength="7" autocomplete="one-time-code"><button type="button" id="access-verify" class="primary">Verify</button></section><p id="step-or">or</p><section class="access-card" id="step-totp"><h2>Sign in with Google Authenticator</h2><label for="access-totp">Google Authenticator code</label><input id="access-totp" inputmode="numeric" maxlength="7" autocomplete="one-time-code"><button type="button" id="access-authenticator" class="primary">Sign in</button><button type="button" id="totp-setup-open" class="secondary">Set up authenticator</button><section id="totp-setup" hidden><p>Open Google Authenticator, tap +, scan this QR code or enter the key. The entry will be named lgme.app.</p><p id="totp-key"></p><div id="totp-qr"></div><label for="totp-confirm">Google Authenticator code</label><input id="totp-confirm" inputmode="numeric" maxlength="7" autocomplete="one-time-code"><button type="button" id="totp-finish" class="primary">Finish authenticator setup</button><button type="button" id="totp-reset" class="secondary">Reset authenticator</button></section></section><p id="step-or-fp">or</p><section class="access-card" id="step-fingerprint"><h2>Sign in with fingerprint</h2><p id="fingerprint-note" hidden>Fingerprint sign-in is not available on this device.</p><button type="button" id="access-fingerprint" class="primary">Sign in with fingerprint</button></section><section class="access-card" id="step-ai" hidden><h2>Test local AI</h2><p id="access-member"></p><button type="button" id="fingerprint-setup" class="secondary" hidden>Set up fingerprint</button><button type="button" id="ai-test" class="primary">Test local AI</button><p id="ai-test-result" role="status"></p><button type="button" id="access-grant" class="primary" disabled>Open the app</button></section><p id="access-status" role="status"></p></form>';
+  board.innerHTML = '<p id="profile-name">Not signed in</p><button type="button" id="credits-total" hidden>Credits 0.00</button><button type="button" id="messages-open">Messages</button><div id="attest-badges" hidden aria-label="Message dashboard"></div><details id="my-credits"><summary>My credits</summary><p id="contrib-preview">Contribute $lgme is a simulation. Live payments are off. Example price. Collective Fund and Health Sub-floor split 50/50.</p><p id="my-credits-balance"></p><ul id="my-credits-history"></ul><p id="my-credits-rules"></p></details><p id="profile-activity">No recent activity</p><p id="profile-balance">Balance stays on this phone</p><p id="profile-new">New 0</p><form id="first-open"><p id="step-count">Step 1 of 3: email or authenticator, then fingerprint, then AI test</p><section class="access-card" id="step-email"><h2>Sign in with email</h2><label for="access-email">Email</label><input id="access-email" type="email" autocomplete="email" maxlength="120"><button type="submit" id="access-send" class="primary">Send code</button><label for="access-code">Email code</label><input id="access-code" inputmode="numeric" maxlength="7" autocomplete="one-time-code"><button type="button" id="access-verify" class="primary">Verify</button></section><p id="step-or">or</p><section class="access-card" id="step-totp"><h2>Sign in with Google Authenticator</h2><label for="access-totp">Google Authenticator code</label><input id="access-totp" inputmode="numeric" maxlength="7" autocomplete="one-time-code"><button type="button" id="access-authenticator" class="primary">Sign in</button><button type="button" id="totp-setup-open" class="secondary">Set up authenticator</button><section id="totp-setup" hidden><p>Open Google Authenticator, tap +, scan this QR code or enter the key. The entry will be named lgme.app.</p><p id="totp-key"></p><div id="totp-qr"></div><label for="totp-confirm">Google Authenticator code</label><input id="totp-confirm" inputmode="numeric" maxlength="7" autocomplete="one-time-code"><button type="button" id="totp-finish" class="primary">Finish authenticator setup</button><button type="button" id="totp-reset" class="secondary">Reset authenticator</button></section></section><p id="step-or-fp">or</p><section class="access-card" id="step-fingerprint"><h2>Sign in with fingerprint</h2><p id="fingerprint-note" hidden>Fingerprint sign-in is not available on this device.</p><button type="button" id="access-fingerprint" class="primary">Sign in with fingerprint</button></section><section class="access-card" id="step-ai" hidden><h2>Test local AI</h2><p id="access-member"></p><button type="button" id="fingerprint-setup" class="secondary" hidden>Set up fingerprint</button><button type="button" id="ai-test" class="primary">Test local AI</button><p id="ai-test-result" role="status"></p><button type="button" id="access-grant" class="primary" disabled>Open the app</button></section><p id="access-status" role="status"></p></form>';
   const row = document.createElement('div');
   row.id = 'function-row';
   row.setAttribute('aria-label', 'Functions');
@@ -51,6 +52,46 @@ if (root && !document.getElementById('profile-board')) {
     if (sensitive) link.dataset.sensitive = '1';
     row.append(link);
   }
+  const mine = document.createElement('div');
+  mine.id = 'my-functions';
+  mine.setAttribute('aria-label', 'My functions');
+  const paintMine = () => {
+    mine.replaceChildren();
+    const tag = document.createElement('span');
+    tag.textContent = 'local only';
+    mine.append(tag);
+    for (const item of readLocalFunctions(localStorage)) {
+      const label = document.createElement('button');
+      label.type = 'button';
+      label.textContent = item.label;
+      label.addEventListener('click', () => {
+        const ask = document.getElementById('ai-ask');
+        if (ask) ask.value = item.prompt;
+      });
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.textContent = 'Delete';
+      remove.addEventListener('click', () => { deleteLocalFunction(localStorage, item.id); paintMine(); });
+      mine.append(label, remove);
+    }
+    const exp = document.createElement('button');
+    exp.type = 'button';
+    exp.id = 'functions-export';
+    exp.textContent = 'Export';
+    exp.addEventListener('click', () => { mine.dataset.export = exportLocalFunctions(localStorage); });
+    const file = document.createElement('input');
+    file.id = 'functions-import';
+    file.type = 'file';
+    file.accept = 'application/json';
+    file.addEventListener('change', async () => {
+      const text = await file.files?.[0]?.text();
+      if (text) importLocalFunctions(localStorage, text);
+      paintMine();
+    });
+    mine.append(exp, file);
+  };
+  paintMine();
+  root.prepend(mine);
   root.prepend(row);
   root.prepend(board);
 
@@ -110,7 +151,9 @@ if (root && !document.getElementById('profile-board')) {
     const screenStep = board.querySelector('#step-screen');
     if (screenStep) screenStep.hidden = !(aiTested && !screenChosen(localStorage));
     board.querySelector('#fingerprint-setup').hidden = !codeOk || stage === 'full';
-    board.querySelector('#step-count').textContent = stage === 'full' ? '3 of 3' : signed ? '3 of 3' : '1 of 3';
+    board.querySelector('#step-count').textContent = stage === 'full' || signed
+      ? 'Step 3 of 3: test the helper'
+      : 'Step 1 of 3: email or authenticator, then fingerprint, then AI test';
     const name = board.querySelector('#profile-name');
     if (stage === 'full') name.textContent = `Member ${localStorage.getItem('lgme.member.id') || 'on this phone'}`;
   };
@@ -151,10 +194,10 @@ if (root && !document.getElementById('profile-board')) {
       }
     });
   });
-  board.querySelector('#access-totp').addEventListener('focus', () => { board.querySelector('#step-count').textContent = '2 of 3'; });
+  board.querySelector('#access-totp').addEventListener('focus', () => { board.querySelector('#step-count').textContent = 'Step 2 of 3: fingerprint, then the AI test'; });
   board.querySelector('#totp-setup-open').addEventListener('click', () => {
     board.querySelector('#totp-setup').hidden = false;
-    board.querySelector('#step-count').textContent = '2 of 3';
+    board.querySelector('#step-count').textContent = 'Step 2 of 3: fingerprint, then the AI test';
   });
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -317,6 +360,14 @@ if (root && !document.getElementById('profile-board')) {
     total.hidden = !member;
     total.textContent = `Credits ${formatCredits(book.balances?.[member] || 0)}`;
     total.onclick = () => { board.querySelector('#my-credits').open = true; };
+    const messages = board.querySelector('#messages-open');
+    if (messages && !messages.dataset.bound) {
+      messages.dataset.bound = '1';
+      messages.addEventListener('click', () => {
+        const badges = board.querySelector('#attest-badges');
+        badges.hidden = !badges.hidden;
+      });
+    }
     board.querySelector('#my-credits-balance').textContent = member ? `Balance ${formatCredits(book.balances?.[member] || 0)}` : 'Sign in to see your credits.';
     const list = board.querySelector('#my-credits-history');
     list.replaceChildren(...(book.history || []).filter((row) => row.member === member).map((row) => {

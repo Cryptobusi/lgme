@@ -15,14 +15,14 @@ export function screenPresets() {
       theme: 'paper',
       home: 'actions-first',
       chips: [CHIP_IDS[0]],
-      dockChips: ['Log a workout', 'Speak a receipt', 'What can I do here?']
+      dockChips: ['Log a workout', 'Say an IdidIt receipt', 'What can I do here?']
     }),
     everyday: clone('everyday', {}),
     full: clone('full', {
       theme: 'gold',
       home: 'chips-first',
       chips: [...CHIP_IDS],
-      dockChips: ['Log a workout', 'I want something', 'I have something', 'What can I do here?']
+      dockChips: ['Log a workout', 'I want something (barter request)', 'I have something (offer to swap)', 'What can I do here?']
     })
   };
 }

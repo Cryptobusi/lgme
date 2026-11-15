@@ -1,6 +1,7 @@
 import { applyFieldOption, fieldMeta, nextHelpField, safeHelpLine } from './field-help.mjs';
 import { classifyPrompt, routeLine } from './prompt-route.mjs';
 import { applyMode, screenModePrompt } from './screen-modes.mjs';
+import { localFunctionFromPrompt, saveLocalFunction } from './local-functions.mjs';
 import { draftWithHelper, localAiReady, pickHelperSync } from './one-tap.mjs';
 import { dockChipsOf } from './variant-schema.mjs';
 
@@ -100,6 +101,8 @@ export function matchPrompt(text) {
   if (/what can i do|help me|show help/.test(q)) return { kind: 'help', text: '', line: 'You can log a workout, say I want something, or say I have something.' };
   const screen = screenModePrompt(raw);
   if (screen) return { kind: 'screen', mode: screen.mode, text: '', line: screen.line };
+  const local = localFunctionFromPrompt(raw);
+  if (local?.ok) return { kind: 'local', item: local.item, text: local.item.prompt, line: 'This stays on this phone. Confirm to save the shortcut. Nothing is sent.' };
   const want = raw.match(/^i want\s+(.+)/i);
   if (want) return { kind: 'iwantit', text: want[1].trim(), line: `Opened IwantIT: ${want[1].trim()}` };
   const have = raw.match(/^i have\s+(.+)/i);
@@ -117,6 +120,15 @@ export function matchPrompt(text) {
 export function stageLine(matched) {
   const label = matched.title || matched.text || 'the session';
   return `Recommend: log ${label} as an IdidIt receipt. Verify: it stays on this phone until you confirm; Health is on testnet. Explain: tap Confirm or press Send again to open the filled draft.`;
+}
+
+export function executionPlan(matched) {
+  if (matched?.kind === 'screen') {
+    const name = String(matched.mode || 'everyday');
+    return { openDraft: false, message: `Screen changed to ${name.charAt(0).toUpperCase()}${name.slice(1)}. Undo?` };
+  }
+  if (matched?.kind === 'local') return { openDraft: false, message: 'Saved on this device only. Nothing was sent.' };
+  return { openDraft: true, message: 'Opening draft' };
 }
 
 export function filledLine(title) {
@@ -260,10 +272,18 @@ function mount() {
     }
     if (!staged) { log.textContent = 'Confirm is waiting. Nothing ran.'; note(dock.querySelector('#ai-confirm'), 'Waiting'); markOverflow(); return; }
     const matched = staged;
+    const plan = executionPlan(matched);
     staged = null;
     stagedText = '';
     rememberUse(ask.value.trim());
-    note(dock.querySelector('#ai-confirm'), 'Opening draft');
+    note(dock.querySelector('#ai-confirm'), plan.openDraft ? 'Opening draft' : 'Done');
+    log.textContent = plan.message;
+    if (!plan.openDraft) {
+      if (matched.kind === 'screen') applyMode(localStorage, matched.mode);
+      if (matched.kind === 'local' && matched.item) saveLocalFunction(localStorage, matched.item);
+      markOverflow();
+      return;
+    }
     try {
       sessionStorage.setItem('lgme.prompt.draft', JSON.stringify({
         kind: matched.kind,
@@ -274,11 +294,6 @@ function mount() {
       }));
     } catch { /* the line still shows */ }
     const here = location.pathname.startsWith('/gym');
-    if (matched.kind === 'screen') {
-      const applied = applyMode(localStorage, matched.mode);
-      log.textContent = applied.ok ? `Applied ${matched.mode}. Undo is on the profile.` : applied.error;
-      return;
-    }
     if (matched.route && matched.route.liveWrite === false) {
       location.assign(matched.route.href);
       return;

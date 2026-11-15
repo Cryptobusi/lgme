@@ -132,6 +132,10 @@ body:has(nav[aria-label="Gym"]) #ai-dock { bottom: calc(4.5rem + env(safe-area-i
 #ai-dock.is-tall #ai-scroll { min-height: 10rem; max-height: min(40vh, 16rem); }
 #ai-scroll.is-over { -webkit-mask-image: linear-gradient(#000 60%, transparent); mask-image: linear-gradient(#000 60%, transparent); }
 #ai-more { margin: 0; font-size: 0.75rem; font-weight: 700; color: #F97316; }
+@media (max-width: 800px) {
+  body { font-size: 18px; }
+  button, a { font-size: 18px; }
+}
 #ai-send.is-pressed, #ai-confirm.is-pressed { outline: 2px solid #F97316; }
 #ai-action-status { margin: 0.2rem 0 0; font-size: 0.8rem; }
 #ai-dock .ai-actions { display: flex; gap: 0.4rem; margin: 0.25rem 0 0; }

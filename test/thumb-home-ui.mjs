@@ -62,7 +62,7 @@ if (!regions.order) failures.push('regions out of order');
 if (!regions.target) failures.push('tap target under 48');
 if (!regions.dock) failures.push('dock too tall');
 if ((await page.locator('#function-row a').first().innerText()) !== 'IdidIt (verified receipt)') failures.push('ididit label');
-if ((await page.locator('#step-count').innerText()) !== '1 of 3') failures.push('step count');
+if (!/Step 1 of 3: email or authenticator/.test(await page.locator('#step-count').innerText())) failures.push('step count');
 await page.route('**/api/email/send', (route) => route.fulfill({ status: 400, contentType: 'application/json', body: '{"ok":false,"error":"Nothing was sent."}' }));
 await page.locator('#access-email').fill('ada@example.com');
 await page.locator('#access-send').click();
