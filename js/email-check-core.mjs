@@ -24,6 +24,10 @@ export function emailReadiness(env = {}) {
   return { enabled: missing.length === 0, missing };
 }
 
+export function compactCode(value) {
+  return String(value || '').replace(/[\s-]/g, '');
+}
+
 export function normalizeEmail(value) {
   const email = String(value || '').trim().toLowerCase();
   if (!/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/.test(email)) return '';

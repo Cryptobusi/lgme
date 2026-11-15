@@ -1,4 +1,4 @@
-import { deviceThumb, hashEmail, memberKey, normalizeEmail } from './email-check-core.mjs';
+import { compactCode, deviceThumb, hashEmail, memberKey, normalizeEmail } from './email-check-core.mjs';
 import { sha256Hex, verifyDevice } from './device-sign.mjs';
 
 const STEP_SEC = 30;
@@ -58,8 +58,8 @@ export function generateTotpSecret(bytes = crypto.getRandomValues(new Uint8Array
 }
 
 export function otpauthUri(secret, email) {
-  const label = encodeURIComponent(`lgme:${normalizeEmail(email) || 'member'}`);
-  return `otpauth://totp/${label}?secret=${secret}&issuer=lgme&algorithm=SHA1&digits=6&period=30`;
+  const label = encodeURIComponent(`lgme.app:${normalizeEmail(email) || 'member'}`);
+  return `otpauth://totp/${label}?secret=${secret}&issuer=${encodeURIComponent('lgme.app')}&algorithm=SHA1&digits=6&period=30`;
 }
 
 async function hotp(secret, counter) {
@@ -80,7 +80,7 @@ export async function totpAt(secret, now = Date.now()) {
 }
 
 export async function matchTotp(secret, code, now = Date.now(), used = []) {
-  const clean = String(code || '').trim();
+  const clean = compactCode(code);
   if (!/^\d{6}$/.test(clean)) return { ok: false, error: 'Enter the 6-digit authenticator code.' };
   const step = Math.floor(now / 1000 / STEP_SEC);
   for (let delta = -1; delta <= 1; delta += 1) {

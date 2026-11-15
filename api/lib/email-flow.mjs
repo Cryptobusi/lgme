@@ -1,4 +1,4 @@
-import { CODE_TTL_MS, IP_HOUR_MAX, MAX_ATTEMPTS, SEND_GAP_MS, SEND_HOUR_MAX, codeKey, deviceThumb, hashCode, hashEmail, isCampusEmail, isClubEmail, makeCode, memberKey, normalizeEmail } from '../../js/email-check-core.mjs';
+import { CODE_TTL_MS, IP_HOUR_MAX, MAX_ATTEMPTS, SEND_GAP_MS, SEND_HOUR_MAX, codeKey, compactCode, deviceThumb, hashCode, hashEmail, isCampusEmail, isClubEmail, makeCode, memberKey, normalizeEmail } from '../../js/email-check-core.mjs';
 
 const HOUR_MS = 60 * 60 * 1000;
 
@@ -31,7 +31,7 @@ export async function requestCode(store, spec) {
 
 export async function confirmCode(store, spec) {
   const email = normalizeEmail(spec.email);
-  const code = String(spec.code || '').trim();
+  const code = compactCode(spec.code);
   if (!email || !/^\d{6}$/.test(code)) return { ok: false, status: 400, error: 'Enter the email and the 6-digit code.' };
   const emailHash = await hashEmail(email, spec.pepper);
   const now = Number.isFinite(spec.now) ? spec.now : Date.now();
