@@ -864,6 +864,7 @@ function mount() {
   window.addEventListener('online', () => paint(dock));
   window.addEventListener('offline', () => paint(dock));
   pickHelperSync();
+  dock.dataset.ready = 'yes';
 }
 
 if (typeof document !== 'undefined') mount();

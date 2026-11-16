@@ -1,3 +1,5 @@
+const ciLimit = setTimeout(() => { console.error('ui test exceeded 8 minutes'); process.exit(1); }, 8 * 60 * 1000);
+ciLimit.unref();
 import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
 const loaded = await import(process.env.PLAYWRIGHT || 'playwright');

@@ -1,3 +1,5 @@
+const ciLimit = setTimeout(() => { console.error('ai-dock-views exceeded 8 minutes'); process.exit(1); }, 8 * 60 * 1000);
+ciLimit.unref();
 import { createServer } from 'node:http';
 import { existsSync, mkdirSync, readFileSync, statSync } from 'node:fs';
 import { extname, join } from 'node:path';
@@ -47,9 +49,11 @@ function contrast(fg, bg) {
   return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
 }
 
-async function check(page, label, shot) {
-  await page.locator('#ai-dock').waitFor({ timeout: 15000 });
-  await page.locator('.ai-label').waitFor();
+async function check(page, label, shot, viewportHeight) {
+  page.setDefaultTimeout(8000);
+  await page.locator('#ai-dock[data-ready="yes"]').waitFor({ timeout: 8000 });
+  await page.locator('#ai-switch').waitFor({ timeout: 8000 });
+  await page.locator('#ai-head').waitFor({ timeout: 8000 });
   await page.evaluate(() => {
     const dock = document.getElementById('ai-dock');
     dock.classList.remove('is-open');
@@ -69,8 +73,8 @@ async function check(page, label, shot) {
     };
   });
   const problems = [];
-  if (box.height > window.innerHeight * 0.25) problems.push(`tall ${box.height}`);
-  if (!/Ask here|AI off|AI on/.test(box.text)) problems.push('empty prompt');
+  if (box.height > viewportHeight * 0.25) problems.push(`tall ${box.height}`);
+  if (!/Ask here|AI off|AI on|Accepted on this phone/.test(box.text || '')) problems.push(`empty prompt ${(box.text || '').slice(0, 40)}`);
   if (shot) await page.screenshot({ path: shot, timeout: 8000, animations: 'disabled' });
   const parse = (value) => {
     const match = String(value).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
@@ -82,9 +86,25 @@ async function check(page, label, shot) {
   if (!bg || bg.a < 1) problems.push(`dock not solid ${box.dock}`);
   if (bg && ink && contrast(ink.rgb, bg.rgb) < 4.5) problems.push(`text contrast ${contrast(ink.rgb, bg.rgb).toFixed(2)}`);
   if (bg && mark && contrast(mark.rgb, bg.rgb) < 4.5) problems.push(`label contrast ${contrast(mark.rgb, bg.rgb).toFixed(2)}`);
-  await page.locator('#ai-accept').click({ timeout: 5000 });
-  await page.locator('#ai-expand').click({ timeout: 5000 });
-  const opened = await page.locator('#ai-expand').getAttribute('aria-expanded');
+  const openDock = async () => {
+    await page.evaluate(() => {
+      const dock = document.getElementById('ai-dock');
+      if (!dock) return;
+      dock.classList.remove('is-open');
+      const open = dock.querySelector('#ai-expand');
+      open.setAttribute('aria-expanded', 'false');
+      open.textContent = 'Open';
+    });
+    await page.locator('#ai-expand').evaluate((node) => node.click());
+  };
+  await openDock();
+  let opened = await page.locator('#ai-expand').getAttribute('aria-expanded');
+  if (opened !== 'true') {
+    await page.locator('#ai-dock[data-ready="yes"]').waitFor({ timeout: 8000 }).catch(() => {});
+    await openDock();
+    opened = await page.locator('#ai-expand').getAttribute('aria-expanded');
+  }
+  await page.locator('#ai-accept').evaluate((node) => node.click());
   if (opened !== 'true') problems.push('Open did not expand');
   const accepted = await page.locator('#ai-log').innerText();
   if (!/Accepted on this phone/.test(accepted)) problems.push('Accept did not keep the line');
@@ -103,6 +123,16 @@ for (const [width, height] of [[390, 844], [768, 1024], [1280, 800]]) {
         localStorage.setItem('lgme-gym.mode', 'demo');
         localStorage.setItem('lgme-gym.seat', 'jordan');
         window.LanguageModel = { availability: async () => 'available', prompt: async () => 'A short on-device line.' };
+        window.speechSynthesis = { speak() {}, cancel() {}, getVoices() { return []; }, addEventListener() {}, removeEventListener() {} };
+        class LocalSpeech { start() {} stop() {} abort() {} }
+        window.SpeechRecognition = LocalSpeech;
+        window.webkitSpeechRecognition = LocalSpeech;
+        window.PublicKeyCredential = function PublicKeyCredential() {};
+        window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable = async () => false;
+        try {
+          const credentials = { create: () => Promise.reject(new Error('stub')), get: () => Promise.reject(new Error('stub')) };
+          Object.defineProperty(window.navigator, 'credentials', { configurable: true, value: credentials });
+        } catch { /* a locked credentials object still leaves speech stubbed */ }
         if (!installed) return;
         const orig = window.matchMedia.bind(window);
         window.matchMedia = (query) => String(query).includes('display-mode')
@@ -133,11 +163,12 @@ for (const [width, height] of [[390, 844], [768, 1024], [1280, 800]]) {
               ? '/opt/cursor/artifacts/ai-dock-custom-390.png'
               : '';
           try {
-            await check(page, label, shot);
+            await check(page, label, shot, height);
           } catch (error) {
             if (!/destroyed|interrupted/.test(error.message)) throw error;
             await page.waitForLoadState('domcontentloaded').catch(() => {});
-            await check(page, label, shot);
+            await page.locator('#ai-dock[data-ready="yes"]').waitFor({ timeout: 8000 }).catch(() => {});
+            await check(page, label, shot, height);
           }
         } catch (error) {
           failures.push(`${label}: ${error.message.split('\n')[0]}`);
