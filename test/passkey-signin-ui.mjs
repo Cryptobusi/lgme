@@ -4,6 +4,7 @@ import { createServer } from 'node:http';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { extname, join } from 'node:path';
 import { passkeyRequest } from '../js/webauthn-passkey.mjs';
+import { deviceThumb } from '../js/email-check-core.mjs';
 const loaded = await import(process.env.PLAYWRIGHT || 'playwright');
 const pw = loaded.chromium ? loaded : loaded.default;
 const root = new URL('..', import.meta.url).pathname;
@@ -26,6 +27,18 @@ const server = createServer(async (req, res) => {
   const url = new URL(req.url, 'http://127.0.0.1');
   if (url.pathname === '/api/webauthn' && req.method === 'POST') {
     const body = JSON.parse(await readBody(req) || '{}');
+    if ((body.action === 'register-options' || body.action === 'register') && body.userId) {
+      const emailHash = String(body.userId).split(':')[0];
+      const key = `email:member:${emailHash}`;
+      const existing = await store.get(key);
+      if (emailHash && !existing?.verifiedAt) await store.set(key, { verifiedAt: new Date().toISOString(), deviceThumb: '' });
+    }
+    if (body.action === 'login' && body.publicJwk?.x) {
+      const thumb = await deviceThumb(body.publicJwk);
+      for (const [key, row] of store.bag) {
+        if (String(key).startsWith('email:member:') && row?.verifiedAt && !row.deviceThumb) await store.set(key, { ...row, deviceThumb: thumb });
+      }
+    }
     const result = await passkeyRequest({ store, action: body.action, body, host: req.headers.host });
     const saved = [...store.bag.values()].some((row) => row && row.publicKey && /biometric|fingerprint|template/i.test(JSON.stringify(row)));
     res.writeHead(saved ? 500 : result.status, { 'content-type': 'application/json' });
