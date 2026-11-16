@@ -102,8 +102,7 @@ html[data-screen="full"] #ai-dock.is-open { height: 30vh; max-height: 30vh; }
 #ai-switch.is-on::before { content: ''; display: inline-block; width: 0.55rem; height: 0.55rem; margin-right: 0.35rem; border-radius: 50%; background: #b7f0c8; vertical-align: middle; }
 #ai-switch:not(.is-on) { background: #3a3f3a; color: #f4f1e8; }
 body:has(nav[aria-label="Gym"]) #ai-dock { bottom: calc(4.5rem + env(safe-area-inset-bottom)); }
-.ai-top { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.6rem; margin: 0 0 0.15rem; }
-#ai-dock.is-open .ai-top { flex-wrap: nowrap; overflow-x: auto; }
+.ai-top { display: flex; flex-wrap: nowrap; align-items: center; gap: 0.25rem; margin: 0 0 0.1rem; overflow-x: auto; }
 #ai-dock.is-open .ai-actions { position: relative; z-index: 2; }
 .ai-label { margin: 0; font-size: 0.72rem; letter-spacing: 0.16em; font-weight: 700; color: #F97316; }
 .ai-setup-link { min-height: 32px; display: inline-flex; align-items: center; color: #f4f1e8; }
@@ -143,7 +142,7 @@ body:has(nav[aria-label="Gym"]) #ai-dock { bottom: calc(4.5rem + env(safe-area-i
 }
 .tap-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; min-height: 44px; margin: 0.35rem 0; }
 .tap-chip { min-height: 44px; font: inherit; font-weight: 700; border-radius: 999px; border: 1px solid #c6a15b; background: #f4f1e8; color: #1a1408; padding: 0.35rem 0.8rem; }
-#ai-flag { margin: 0 0 0.2rem; font-size: 0.82rem; line-height: 1.3; }
+#ai-flag { margin: 0; max-height: 1.05rem; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 12px; line-height: 1.05rem; }
 #ai-log {
   box-sizing: border-box;
   margin: 0;
@@ -158,8 +157,9 @@ body:has(nav[aria-label="Gym"]) #ai-dock { bottom: calc(4.5rem + env(safe-area-i
 }
 #ai-scroll { position: relative; flex: 1 1 auto; min-height: 0; max-height: none; overflow: auto; }
 #ai-dock.is-open #ai-scroll { min-height: 0; }
-#ai-steps { list-style: none; margin: 0.25rem 0 0; padding: 0; }
-#ai-steps li { margin: 0.15rem 0; padding: 0.15rem 0.35rem; border-radius: 8px; }
+#ai-steps { list-style: none; margin: 0.15rem 0 0; padding: 0; }
+#ai-steps.is-brief li:not(.is-current) { display: none; }
+#ai-steps li { margin: 0; padding: 0.1rem 0.35rem; border-radius: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #ai-steps li.is-current { outline: 2px solid #F97316; background: #241c10; }
 #ai-steps li.is-done { opacity: 0.75; }
 #function-row, #my-functions, #profile-board { scroll-margin-bottom: 42vh; }
@@ -220,9 +220,11 @@ html[data-theme="gold"] #ai-dock.is-open {
 #my-functions:not([open]) #functions-import { display: none; }
 #ai-more { margin: 0; font-size: 0.75rem; font-weight: 700; color: #F97316; }
 @media (max-width: 800px) {
-  body { font-size: 18px; }
-  button, a { font-size: 18px; }
+  body { font-size: 15px; }
+  button, a { font-size: 15px; min-height: 48px; }
+  #profile-board, #profile-board p, #profile-board h2 { margin-top: 0.15rem; margin-bottom: 0.15rem; line-height: 1.25; }
 }
+html[data-screen="simple"] body { font-size: 18px; }
 #ai-send.is-pressed, #ai-confirm.is-pressed { outline: 2px solid #F97316; }
 #ai-voice-mode { font-size: 0.75rem; font-weight: 700; }
 #ai-incognito-notice { margin: 0.15rem 0; font-weight: 700; color: #F97316; }
@@ -234,4 +236,19 @@ html[data-theme="gold"] #ai-dock.is-open {
 #ai-action-status { margin: 0.2rem 0 0; font-size: 0.8rem; }
 #ai-dock .ai-actions { display: flex; gap: 0.4rem; margin: 0.25rem 0 0; }
 #ai-dock button { min-height: 44px; min-width: 44px; font: inherit; font-weight: 700; border-radius: 999px; border: 1px solid #c6a15b; background: transparent; color: #f4f1e8; padding: 0.3rem 0.8rem; }
+#ai-dock .ai-top button,
+#ai-dock .ai-top .ai-setup-link,
+#ai-dock #ai-voice-mode,
+#ai-dock #ai-status {
+  min-height: 22px;
+  height: 22px;
+  min-width: 0;
+  padding: 0 0.4rem;
+  font-size: 12px;
+  line-height: 22px;
+  white-space: nowrap;
+}
+#ai-status { display: inline-flex; align-items: center; overflow: hidden; text-overflow: ellipsis; font-weight: 700; }
+#ai-dock.is-controls-shut .ai-detail { display: none; }
+#ai-dock:not(.is-controls-shut) #ai-status { display: none; }
 #ai-accept:disabled { opacity: 0.7; }

@@ -57,7 +57,7 @@ function paint(dock) {
   toggle.classList.toggle('is-on', live);
   toggle.dataset.state = live ? 'on' : 'off';
   toggle.setAttribute('aria-checked', enabled ? 'true' : 'false');
-  toggle.textContent = live ? 'AI on' : 'AI off - tap to turn on';
+  toggle.textContent = live ? 'AI on' : 'AI off';
   const head = document.getElementById('ai-head');
   if (head) {
     head.textContent = live ? 'AI on' : 'AI off';
@@ -67,6 +67,7 @@ function paint(dock) {
   dock.dataset.online = online ? 'yes' : 'no';
   flag.hidden = !enabled || !signedIn();
   flag.textContent = `${FLAG} Online: ${online ? 'yes' : 'no'}. AI: ${ready ? 'yes' : 'no'}.`;
+  if (typeof dock.paintControls === 'function') dock.paintControls();
   if (dock.classList.contains('has-field')) return;
   if (!enabled) return;
   log.textContent = live ? 'Ask here. Nothing is sent.' : 'AI off. Tap to turn on.';
@@ -286,7 +287,7 @@ function mount() {
   const dock = document.createElement('section');
   dock.id = 'ai-dock';
   dock.setAttribute('aria-label', 'On-device AI');
-  dock.innerHTML = '<p class="ai-top"><button type="button" id="ai-switch" class="ai-pill" role="switch" aria-checked="true" aria-live="polite" aria-label="AI on or off">AI off - tap to turn on</button><button type="button" id="ai-voice" aria-label="Speak or type">Voice</button><button type="button" id="ai-voice-reply" aria-label="Voice reply, Speak and show">Voice reply</button><span id="ai-voice-mode">Speak and show</span><button type="button" id="ai-listen" aria-pressed="false" aria-label="Listen again after speaking">Listen after</button><span id="ai-mic" hidden>Listening</span><span id="ai-speaking" hidden>Speaking</span><button type="button" id="ai-stop" hidden>Stop</button><button type="button" id="ai-smaller" aria-label="Smaller text">A-</button><button type="button" id="ai-larger" aria-label="Bigger text">A+</button><button type="button" id="ai-expand" aria-expanded="true">Close</button><a class="ai-setup-link" href="/ai-setup">Help</a><button type="button" id="ai-incognito" aria-pressed="false">Incognito</button><button type="button" id="ai-incognito-count">Pending 0</button></p><p id="ai-incognito-notice" hidden>Incognito — stays on this phone</p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><div id="ai-scroll"><div id="ai-incognito-review" hidden></div><div id="ai-chip-row"><div id="ai-chips" class="ai-chips"></div><span id="ai-chip-hint" aria-hidden="true">›</span></div><textarea id="ai-ask" rows="1" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><pre id="ai-log"></pre><p class="ai-actions"><button type="button" id="ai-send" aria-label="Send recommends the words in the box">Send</button><button type="button" id="ai-accept" aria-label="Accept uses the top suggestion">Use suggestion</button><button type="button" id="ai-confirm" aria-label="Confirm and run">Confirm</button></p><p id="ai-more" hidden>More</p></div>';
+  dock.innerHTML = '<p class="ai-top"><button type="button" id="ai-controls" aria-expanded="false" aria-label="Show or hide controls">Controls</button><span id="ai-status">AI off · Voice · Speak+show</span><button type="button" id="ai-switch" class="ai-pill" role="switch" aria-checked="true" aria-live="polite" aria-label="AI on or off">AI off</button><button type="button" id="ai-voice" class="ai-detail" aria-label="Speak or type">Voice</button><button type="button" id="ai-voice-reply" class="ai-detail" aria-label="Voice reply, Speak and show">Reply</button><span id="ai-voice-mode" class="ai-detail">Speak+show</span><button type="button" id="ai-listen" class="ai-detail" aria-pressed="false" aria-label="Listen again after speaking">Listen</button><span id="ai-mic" hidden>Listening</span><span id="ai-speaking" hidden>Speaking</span><button type="button" id="ai-stop" hidden>Stop</button><button type="button" id="ai-smaller" class="ai-detail" aria-label="Smaller text">A-</button><button type="button" id="ai-larger" class="ai-detail" aria-label="Bigger text">A+</button><a class="ai-setup-link ai-detail" href="/ai-setup">Help</a><button type="button" id="ai-incognito" class="ai-detail" aria-pressed="false">Incognito</button><button type="button" id="ai-incognito-count" class="ai-detail">Pending 0</button><button type="button" id="ai-expand" aria-expanded="true">Close</button></p><p id="ai-incognito-notice" hidden>Incognito — stays on this phone</p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><div id="ai-chip-row"><div id="ai-chips" class="ai-chips"></div><span id="ai-chip-hint" aria-hidden="true">›</span></div><textarea id="ai-ask" rows="1" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><p class="ai-actions"><button type="button" id="ai-send" aria-label="Send recommends the words in the box">Send</button><button type="button" id="ai-accept" aria-label="Accept uses the top suggestion">Use suggestion</button><button type="button" id="ai-confirm" aria-label="Confirm and run">Confirm</button></p><div id="ai-scroll"><div id="ai-incognito-review" hidden></div><pre id="ai-log"></pre><p id="ai-more" hidden>More</p></div>';
   dock.classList.add('is-open', 'is-normal');
   try { document.documentElement.dataset.screen = activeScreen(localStorage); } catch { /* everyday height stays */ }
   try {
@@ -418,12 +419,13 @@ function mount() {
   const paintVoiceToggles = () => {
     const mode = replyMode();
     const label = voiceReplyLabel(mode);
-    modeLabel.textContent = label;
+    modeLabel.textContent = label === 'Speak and show' ? 'Speak+show' : label === 'Show only' ? 'Show' : 'Off';
     replyButton.setAttribute('aria-label', `Voice reply, ${label}`);
     const again = autoListen();
     listenButton.setAttribute('aria-pressed', again ? 'true' : 'false');
     refreshShown();
     if (mode !== 'speak') stopSpeaking();
+    if (typeof dock.paintControls === 'function') dock.paintControls();
   };
   const stopSpeaking = () => {
     try { window.speechSynthesis?.cancel(); } catch { /* speech stays quiet */ }
@@ -460,11 +462,12 @@ function mount() {
       dock.querySelector('#ai-log').after(list);
     }
     const lines = [
-      'Press Send again or tap Confirm to open the filled-in draft.',
+      'Send again to open the draft.',
       'Check the activity and minutes.',
-      'Tap Confirm on the page to record it.',
-      'Ask a trainer or nearby member to attest (optional).'
+      'Confirm on the page.',
+      'Attest is optional.'
     ];
+    list.classList.add('is-brief');
     list.replaceChildren();
     lines.forEach((line, index) => {
       const item = document.createElement('li');
@@ -796,6 +799,7 @@ function mount() {
       paintIncognito();
     });
     review.append(list, approve);
+    if (typeof dock.paintControls === 'function') dock.paintControls();
   };
   paintIncognito();
   incognitoButton.addEventListener('click', () => {
@@ -829,6 +833,28 @@ function mount() {
   dock.querySelector('#ai-smaller').addEventListener('click', () => applySize(SIZES[Math.max(0, SIZES.indexOf(dock.classList.contains('is-tall') ? 'tall' : dock.classList.contains('is-compact') ? 'compact' : 'normal') - 1)]));
   dock.querySelector('#ai-larger').addEventListener('click', () => applySize(SIZES[Math.min(2, SIZES.indexOf(dock.classList.contains('is-tall') ? 'tall' : dock.classList.contains('is-compact') ? 'compact' : 'normal') + 1)]));
   dock.querySelector('#ai-scroll').addEventListener('scroll', markOverflow);
+  const controlsButton = dock.querySelector('#ai-controls');
+  const statusLine = dock.querySelector('#ai-status');
+  const controlsOpen = () => {
+    try { return localStorage.getItem('lgme.dock.controls') === 'open'; } catch { return false; }
+  };
+  dock.paintControls = () => {
+    const open = controlsOpen();
+    dock.classList.toggle('is-controls-shut', !open);
+    controlsButton.setAttribute('aria-expanded', open ? 'true' : 'false');
+    controlsButton.textContent = open ? 'Done' : 'Controls';
+    const mode = voiceReplyLabel(replyMode());
+    const short = mode === 'Speak and show' ? 'Speak+show' : mode === 'Show only' ? 'Show' : 'Off';
+    const parts = [aiOn() && localAiReady() ? 'AI on' : 'AI off', 'Voice', short];
+    if (autoListen()) parts.push('Listen');
+    if (incognitoOn(localStorage)) parts.push('Incognito');
+    parts.push(navigator.onLine !== false ? 'Online' : 'Offline');
+    statusLine.textContent = parts.join(' · ');
+  };
+  controlsButton.addEventListener('click', () => {
+    try { localStorage.setItem('lgme.dock.controls', controlsOpen() ? 'shut' : 'open'); } catch { /* the row still moves */ }
+    dock.paintControls();
+  });
   markOverflow();
   paint(dock);
   dock.querySelector('#ai-expand').addEventListener('click', () => {

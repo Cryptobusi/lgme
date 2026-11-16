@@ -309,15 +309,16 @@
     .later { opacity: 0.65; }
     .entry-picker { margin: 0 0 1.2rem; padding-top: 0; border-top: 0; }
     #profile-board, #function-row, #my-functions { grid-column: 1 / -1; }
-    #profile-board { margin: 0 0 0.6rem; }
+    #profile-board { margin: 0 0 0.35rem; padding: 0.35rem 0.45rem; }
     @media (max-width: 800px) {
-      body { font-size: 18px; }
-      button, #function-row a, #first-open input { font-size: 18px; min-height: 48px; }
+      body { font-size: 15px; }
+      button, #function-row a, #first-open input { font-size: 15px; min-height: 48px; }
+      #profile-board p, #profile-board h2 { margin: 0.12rem 0; line-height: 1.25; }
     }
     html[data-screen="simple"] button, html[data-screen="simple"] #function-row a { font-size: 18px; min-height: 48px; }
     #first-open label { display: block; margin: 0.55rem 0 0.25rem; }
     #first-open input { display: block; width: 100%; box-sizing: border-box; min-height: 48px; }
-    #first-open .access-card { display: block; margin: 0.45rem 0; padding: 0.7rem; border: 1px solid #2c352b; border-radius: 12px; }
+    #first-open .access-card { display: block; margin: 0.25rem 0; padding: 0.4rem 0.5rem; border: 1px solid #2c352b; border-radius: 12px; }
     #first-open .access-card[hidden], #step-or[hidden], #totp-setup[hidden] { display: none; }
     #step-or { text-align: center; margin: 0.4rem 0; }
     #profile-board button, #function-row a, #confirm-gate button { min-height: 48px; min-width: 48px; font: inherit; font-weight: 700; border-radius: 12px; }
