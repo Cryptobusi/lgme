@@ -16,8 +16,8 @@ test('the committed covenant file is the charter text', () => {
   assert.equal(lines[2], 'Platform Reference: lgme.app / Sovereign Provenance Protocol');
   assert.equal(lines[3], 'Effective Date: November 10, 2026');
   assert.equal(lines[4], 'Preamble & Operating Stance');
-  assert.equal(lines[8], 'Article 1 (Functional Need): Credits shall be drawn solely to satisfy immediate, real-world personal or household needs. Speculative purchasing, resale arbitrage, and balance hoarding are prohibited.');
-  assert.equal(lines[11], 'Article 4 (Hard Credit Limits): Negative balances are hard-capped at an initial threshold of -50 credit units (maximum -200 upon community review). When the limit is reached, outbound debits suspend until counter-services restore the balance.');
+  assert.equal(lines[8], 'Article 1 (Functional Need): Creo shall be drawn solely to satisfy immediate, real-world personal or household needs. Speculative purchasing, resale arbitrage, and balance hoarding are prohibited.');
+  assert.equal(lines[11], 'Article 4 (Hard Credit Limits): Negative balances are hard-capped at an initial threshold of -50 Creo (maximum -200 upon community review). When the limit is reached, outbound debits suspend until counter-services restore the balance.');
   assert.equal(lines[18], 'Article 11 (Velocity Over Hoarding): Surplus positive balances must be spent back into fellow members\u2019 offerings within a 90-day window rather than held idle as claims over the community.');
   assert.equal(lines[19], 'Article 12 (Zero External Debt): The Circle remains completely unencumbered by outside bank debt, fiat collateral, or external liens. Member claims exist strictly within peer ledgers.');
   assert.equal(lines[22], ' * Primary Offering: ____');

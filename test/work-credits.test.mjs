@@ -43,7 +43,8 @@ test('attestation credits both people, blocks self and pair repeats, and quizzes
   const home = readFileSync(new URL('../js/thumb-home.mjs', import.meta.url), 'utf8');
   assert.equal(home.includes('<details id="my-credits">'), true);
   assert.equal(home.includes('id="credits-total"'), true);
-  assert.equal(home.includes('Credits 0.00'), true);
+  assert.equal(home.includes('Creo 0.00'), true);
+  assert.equal(home.includes("Creo is not a debt."), true);
   assert.equal(home.includes('<details id="my-credits" open>'), false);
   const help = readFileSync(new URL('../help.html', import.meta.url), 'utf8');
   assert.equal(help.includes('id="work-credits"'), true);

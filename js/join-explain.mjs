@@ -24,7 +24,7 @@ export function explainJoin(question = '') {
     return { ok: true, sent: false, text: '$lgme is pegged to US$. This step does not take any money.' };
   }
   if (/\bcoins?\b/i.test(q)) {
-    return { ok: true, sent: false, text: 'A good deed earns credit, not coins.' };
+    return { ok: true, sent: false, text: 'A good deed earns Creo, not coins.' };
   }
   if (/\b(hedera|anchor|testnet|attester|third seat)\b/i.test(q)) {
     return { ok: true, sent: false, text: 'This step stays on your phones. I only explain it. I do not send it anywhere.' };

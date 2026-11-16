@@ -84,7 +84,7 @@ export async function mountExchangeTest(host) {
         thumb ? el('img', { src: thumb[0], alt: thumb[1], width: '356', height: '480', loading: 'lazy', style: thumb[0].includes('repair-extraordinaire') ? 'width:100%;height:180px;object-fit:contain;background:#efe8dc;border-radius:10px' : 'width:100%;height:140px;object-fit:cover;border-radius:10px' }) : null,
         el('h3', {}, [item.title || item.id]),
         el('p', {}, [poolLine]),
-        el('p', { class: 'muted' }, [item.rate ? `Suggested credit ${item.rate.author}. ${item.rate.note || ''}` : '']),
+        el('p', { class: 'muted' }, [item.rate ? `Suggested Creo ${item.rate.author}. ${item.rate.note || ''}` : '']),
         el('p', {}, [
           el('a', { href: `https://hashscan.io/testnet/topic/${body.topicId}/message/${row.sequenceNumber}` }, [`Mirror message ${row.sequenceNumber}`])
         ]),
@@ -132,7 +132,7 @@ export async function mountExchangeTest(host) {
     const tags = el('input', { id: 'upload-tags', maxlength: '80', value: (draft.tags || []).join(' ') });
     draftHost.replaceChildren(
       el('p', { class: 'muted' }, [draft.label]),
-      el('p', {}, [`Suggested credit ${draft.rate.author}. The 1% portion is ${draft.rate.skim}. ${draft.rate.note}`]),
+      el('p', {}, [`Suggested Creo ${draft.rate.author}. The 1% portion is ${draft.rate.skim}. ${draft.rate.note}`]),
       el('label', {}, ['Title', title]),
       el('label', {}, ['Category', service]),
       el('label', {}, ['Duration, minutes', minutes]),

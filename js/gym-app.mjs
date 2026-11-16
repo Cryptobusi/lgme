@@ -137,7 +137,7 @@ function todayLine() {
 async function renderClub() {
   const mine = await seat();
   const panel = el('div', {}, [banner(), todayLine()]);
-  panel.append(el('p', {}, ['A workout mints no credit. Support comes from another member, a barter, or the front desk. A $lgme gift keeps 5% for the Floor and 5% for the App development fund.']));
+  panel.append(el('p', {}, ['A workout mints no Creo. Support comes from another member, a barter, or the front desk. A $lgme gift keeps 5% for the Floor and 5% for the App development fund.']));
   if (!mine && mode === 'real') {
     panel.append(el('p', {}, [el('a', { href: '#/register' }, ['Join Health'])]));
     panel.append(el('button', { type: 'button', id: 'gym-ididit', onClick: () => go('/ididit') }, [IDIDIT_NAME]));
@@ -259,7 +259,7 @@ async function finish(peer, ui) {
     ...signing(ui.pass.value, ui.code.value)
   });
   workout.startedAt = '';
-  status(result.ok ? `IdidIt (verified receipt). ${EVIDENCE_UNVERIFIED}. No credit was minted.` : result.error);
+  status(result.ok ? `IdidIt (verified receipt). ${EVIDENCE_UNVERIFIED}. No Creo was minted.` : result.error);
 }
 
 function cheerKey(card) {
@@ -517,7 +517,7 @@ async function renderMember(id, shareOnly) {
   const maximValues = Object.values(stats.maxims);
   if (maximValues.length && (!shareOnly || card.sessions != null)) view.append(chartBlock('Maxims chosen', maximValues, 'Maxims chosen'));
   if (!shareOnly) {
-    view.append(el('p', {}, [`Supports given ${stats.given}. Supports received ${stats.received}. Deed credits ${stats.deedCredits}. $lgme balance ${sim.replay(peer).balance}.`]));
+    view.append(el('p', {}, [`Supports given ${stats.given}. Supports received ${stats.received}. Deed Creo ${stats.deedCredits}. $lgme balance ${sim.replay(peer).balance}.`]));
     view.append(el('h3', {}, ['Receipts']));
     for (const session of Object.values(peer.exerciseSessions || {})) {
       view.append(el('article', { class: 'card' }, [
@@ -545,9 +545,9 @@ async function renderMember(id, shareOnly) {
       if (isTrainer(peer)) {
         const kind = el('select', { id: 'training-kind' }, [el('option', { value: 'IhavIT' }, ['IhavIT']), el('option', { value: 'IselIT' }, ['IselIT'])]);
         const credit = el('input', { id: 'training-credit', type: 'checkbox' });
-        view.append(el('p', {}, ['List training. Credit uses the same 5-gate intake check. A session still mints nothing.']));
+        view.append(el('p', {}, ['List training. Creo uses the same 5-gate intake check. A session still mints nothing.']));
         view.append(kind);
-        view.append(el('label', { class: 'check' }, [credit, 'I want credit for this']));
+        view.append(el('label', { class: 'check' }, [credit, 'I want Creo for this']));
         view.append(el('button', { id: 'list-training', type: 'button', onClick: async () => {
           const fresh = await store.get(peer.id);
           const before = sim.replay(fresh).balance;
@@ -558,7 +558,7 @@ async function renderMember(id, shareOnly) {
           status(`${listed.note} Balance ${sim.replay(await store.get(peer.id)).balance === before ? 'unchanged' : 'changed'}.`);
           render();
         } }, ['List training']));
-        if (peer.trainingOffer) view.append(el('p', { id: 'training-offer' }, [`${peer.trainingOffer.kind} · Training · ${peer.trainingOffer.gates === 'pending' ? '5 gates still required' : 'No credit drawn'}`]));
+        if (peer.trainingOffer) view.append(el('p', { id: 'training-offer' }, [`${peer.trainingOffer.kind} · Training · ${peer.trainingOffer.gates === 'pending' ? '5 gates still required' : 'No Creo drawn'}`]));
       }
       view.append(el('h3', {}, ['What others can see']));
       view.append(el('p', { class: 'muted' }, ['Health details stay private.']));
@@ -614,7 +614,7 @@ function stewardCard(mine, members) {
     const steward = groupMembers.find((peer) => peer.id === stewardId);
     card.append(el('p', { id: 'steward-name' }, [`Steward: ${steward?.name || stewardId || 'not set'}`]));
     card.append(el('p', { id: 'group-trainers' }, [groupMembers.map((person) => `${person.name}${isTrainer(person) ? ' · Trainer' : ''}`).join(', ')]));
-    card.append(el('p', { class: 'muted' }, ['The steward receives no credit or perks for the role.']));
+    card.append(el('p', { class: 'muted' }, ['The steward receives no Creo or perks for the role.']));
     const eligible = groupMembers.filter((peer) => stewardEligible(peer) && peer.id !== stewardId);
     const select = el('select', { id: 'steward-choice' });
     for (const person of eligible) select.append(el('option', { value: person.id }, [person.name]));
@@ -643,7 +643,7 @@ function stewardCard(mine, members) {
     card.append(el('button', { type: 'button', onClick: async () => {
       mine.intake = { ...(mine.intake || {}), mediation: [...(mine.intake?.mediation || []), 'Bilateral resolution did not finish.'] };
       await store.set(mine.id, mine);
-      status('The steward has the mediation request. No credit moved.');
+      status('The steward has the mediation request. No Creo moved.');
       render();
     } }, ['Ask the steward to mediate']));
     if (mine.id === stewardId) card.append(queueCard(mine, members, code));
@@ -726,7 +726,7 @@ async function renderGroups() {
             const offer = await sim.offerExerciseSupport(store, mine.id, session.sessionId, { authorId: session.authorId, kind: 'contribute-lgme', amount: 1, ...signing(pass.value, totp.value) });
             if (!offer.ok) { status(offer.error); return; }
             const accepted = await sim.acceptExerciseSupport(store, session.authorId, offer.supportId, signing(pass.value, totp.value));
-            status(accepted.ok ? 'Support recorded. The session minted no credit.' : accepted.error);
+            status(accepted.ok ? 'Support recorded. The session minted no Creo.' : accepted.error);
           } }, ['Confirm 1 $lgme']),
           el('button', { type: 'button', onClick: async () => {
             const offer = await sim.offerExerciseSupport(store, mine.id, session.sessionId, { authorId: session.authorId, kind: 'barter', amount: 0, barter: 'Spotting', ...signing(pass.value, totp.value) });
@@ -970,7 +970,7 @@ function localAiCard(peer) {
               reserve.disabled = true;
               reserve.textContent = 'Cover reserved on your confirmation. The invite is still not sent.';
             });
-            actions.append(el('p', { id: 'invite-reserve-note' }, ['Sponsoring reserves credit only after you confirm. The invite is still not sent.']));
+            actions.append(el('p', { id: 'invite-reserve-note' }, ['Sponsoring reserves Creo only after you confirm. The invite is still not sent.']));
             actions.append(reserve);
           }
           out.replaceChildren(actions);
@@ -981,7 +981,7 @@ function localAiCard(peer) {
         out.textContent = `${result.text} Engine: ${result.label}. Not sent.`;
       } }, ['Ask']));
       lines.push(equip);
-      lines.push(el('p', { class: 'muted' }, ['A draft is not sent. Nothing here mints credit or posts.']));
+      lines.push(el('p', { class: 'muted' }, ['A draft is not sent. Nothing here mints Creo or posts.']));
       lines.push(out);
       lines.push(el('button', { type: 'button', onClick: async () => { await unloadLocalModel(); setOn(localStorage, false); draw(); } }, ['Turn off']));
       lines.push(el('button', { type: 'button', onClick: async () => { await deleteDownloadedModel(); out.textContent = 'Downloaded model deleted.'; } }, ['Delete downloaded model']));
@@ -1042,7 +1042,7 @@ async function renderMore() {
     todayLine(),
     el('p', {}, [el('a', { href: '/wisdom' }, ['Open Wisdom'])]),
     el('h3', {}, ['Front desk']),
-    el('p', {}, ['Redeem a club credit at the front desk after another member has supported a deed. A workout itself still mints nothing. One tap of No on the exchange refuses a gift. A gift that would spend your floor is refused.']),
+    el('p', {}, ['Redeem club Creo at the front desk after another member has supported a deed. A workout itself still mints nothing. One tap of No on the exchange refuses a gift. A gift that would spend your floor is refused.']),
     el('p', {}, ['Barter can be spotting, coaching, meal prep, or a ride. Deed posts use IwantIT, IhavIT, IselIT, and soBeIT in Health and fitness.']),
     el('h3', {}, ['Email check']),
     email,
@@ -1534,7 +1534,7 @@ function reportView(report) {
     host.append(el('p', {}, [report?.error || 'This report is not available.']));
     return host;
   }
-  host.append(el('h3', {}, ['Verified credit report']));
+  host.append(el('h3', {}, ['Verified Creo report']));
   host.append(el('p', {}, [`Balance ${Number(report.balance).toFixed(2)}. Initial limit ${report.limits.initial}. Maximum ${report.limits.maximum}. Counted across all groups.`]));
   host.append(el('p', {}, [`90-day velocity ${report.velocity.net}. Counted across all groups.`]));
   host.append(el('p', {}, [`Floor contributions ${report.floor}.`]));
@@ -1544,9 +1544,9 @@ function reportView(report) {
     ? `This root is in the latest messages on Hedera testnet topic ${report.topic}.`
     : `This root is not in the latest messages on Hedera testnet topic ${report.topic}. ${report.mirrorError || 'Only hashes are written there.'}`;
   host.append(el('p', {}, [mirror]));
-  if (!report.rows.length) host.append(el('p', {}, ['No credit rows yet.']));
+  if (!report.rows.length) host.append(el('p', {}, ['No Creo rows yet.']));
   for (const row of report.rows) {
-    host.append(el('p', { class: 'hash' }, [`${row.type} · debit ${row.debit} · credit ${row.credit} · floor ${row.floor} · ${row.included ? 'inclusion proof holds' : 'inclusion proof does not hold'} · ${row.hash}`]));
+    host.append(el('p', { class: 'hash' }, [`${row.type} · debit ${row.debit} · Creo ${row.credit} · floor ${row.floor} · ${row.included ? 'inclusion proof holds' : 'inclusion proof does not hold'} · ${row.hash}`]));
   }
   return host;
 }
@@ -1600,7 +1600,7 @@ function covenantPanel(peer, members = []) {
         if (!raised.ok) { status(raised.error); return; }
         peer.intake = raised.intake;
         await store.set(peer.id, peer);
-        status('The raise waits for the steward. Nothing was credited.');
+        status('The raise waits for the steward. No Creo was added.');
         render();
       } }, ['Request a limit of -200']));
     }
@@ -1631,7 +1631,7 @@ function covenantPanel(peer, members = []) {
     const qr = el('div', { id: 'sponsor-qr' });
     host.append(qr);
     queueMicrotask(() => { if (globalThis.QRCode) new globalThis.QRCode(qr, { text: link, width: 160, height: 160 }); });
-    if (!tierOpen) host.append(el('p', { class: 'muted' }, ['You can use private progress now. Listings and credit stay closed until 2 sponsors sign, including one from your group.']));
+    if (!tierOpen) host.append(el('p', { class: 'muted' }, ['You can use private progress now. Listings and Creo stay closed until 2 sponsors sign, including one from your group.']));
   }
   const reports = el('input', { type: 'checkbox', id: 'report-access' });
   reports.checked = peer.covenant.reportAccess !== false;
@@ -1639,7 +1639,7 @@ function covenantPanel(peer, members = []) {
     const fresh = await store.get(peer.id);
     fresh.covenant.reportAccess = reports.checked === true;
     await store.set(peer.id, fresh);
-    status(reports.checked ? 'Sponsors can request a credit report.' : 'Sponsor reports are off.');
+    status(reports.checked ? 'Sponsors can request a Creo report.' : 'Sponsor reports are off.');
   });
   const healthRows = el('input', { type: 'checkbox', id: 'authorize-health' });
   healthRows.checked = peer.covenant.authorizeHealth === true;
@@ -1649,7 +1649,7 @@ function covenantPanel(peer, members = []) {
     await store.set(peer.id, fresh);
     status(healthRows.checked ? 'A sponsor report may include health rows as hashes.' : 'Health data stays out of sponsor reports.');
   });
-  host.append(el('label', { class: 'check' }, [reports, 'Allow sponsor credit reports']));
+  host.append(el('label', { class: 'check' }, [reports, 'Allow sponsor Creo reports']));
   host.append(el('label', { class: 'check' }, [healthRows, 'Include health data in sponsor reports']));
   host.append(el('p', { class: 'muted' }, ['Health stays out unless you check it. It is never written to Hedera.']));
   const suggestion = suggestThird(members, peer, { id: 'counterparty', clubGroups: peer.clubGroups || {} });
@@ -1662,7 +1662,7 @@ function covenantPanel(peer, members = []) {
   host.append(el('button', { type: 'button', onClick: async () => {
     const result = await sim.postDeed(store, peer.id, {});
     status(result.error || 'Posted.');
-  } }, ['Draw credit']));
+  } }, ['Draw Creo']));
   host.append(el('p', { class: 'muted', id: 'covenant-hash' }, [`Covenant hash ${peer.covenant.hash}`]));
   if (peer.covenant.anchor?.hashscan) host.append(el('p', {}, [el('a', { href: peer.covenant.anchor.hashscan, target: '_blank', rel: 'noopener noreferrer' }, ['HashScan testnet'])]));
   else host.append(el('p', { class: 'muted' }, [peer.covenant.anchor?.wording || 'Queued. The daily job writes the hash. Health data is not written.']));
@@ -1723,7 +1723,7 @@ async function renderSponsor(token) {
     el('p', { id: 'sponsor-count' }, [`Sponsors: ${(peer.covenant.sponsors || []).length}.`]),
     shared,
     await reviewSheet(peer),
-    el('button', { type: 'button', id: 'request-report', onClick: () => requestSponsorReport(peer) }, ['Request verified credit report']),
+    el('button', { type: 'button', id: 'request-report', onClick: () => requestSponsorReport(peer) }, ['Request verified Creo report']),
     el('div', { id: 'sponsor-report-slot' }),
     el('p', { id: 'gym-status', role: 'status' }, [])
   ]);
@@ -1860,7 +1860,7 @@ async function renderHelperHome() {
     el('p', {}, [config.paused ? 'Paused.' : 'On.']),
     el('p', {}, [config.does ? `It may ${config.does}.` : '']),
     el('p', {}, [config.schedule || '']),
-    el('p', { class: 'muted' }, ['It never sends, posts, accepts, signs, spends, or mints credit.']),
+    el('p', { class: 'muted' }, ['It never sends, posts, accepts, signs, spends, or mints Creo.']),
     el('button', { type: 'button', onClick: async () => { config.paused = !config.paused; await saveHelper(config); render(); } }, [config.paused ? 'Resume' : 'Pause']),
     el('p', {}, [el('a', { href: '/helper' }, ['Edit'])]),
     el('button', { type: 'button', onClick: () => { deleteHelper(); render(); } }, ['Delete']),
@@ -1911,7 +1911,7 @@ async function renderDashboard() {
       el('h2', {}, ['People you sponsor']),
       ...sponsored.map((peer) => el('div', {}, [
         el('p', {}, [`${peer.id}. Sponsors: ${(peer.covenant.sponsors || []).length}.`]),
-        el('button', { type: 'button', onClick: () => requestSponsorReport(peer) }, ['Request verified credit report'])
+        el('button', { type: 'button', onClick: () => requestSponsorReport(peer) }, ['Request verified Creo report'])
       ])),
       el('div', { id: 'sponsor-report-slot' })
     ]) : null,
@@ -1952,7 +1952,7 @@ async function queueDisputeHash(handle, hash, day) {
 function disputeCard(dispute, mine, rows) {
   const host = el('section', { class: 'card', id: 'dispute-record' });
   host.append(el('p', {}, [`Steward mediation is with ${dispute.stewardId} (${dispute.stewardRole}).`]));
-  host.append(el('p', {}, [`Status: ${dispute.status}. Credit and the Floor stay where they are.`]));
+  host.append(el('p', {}, [`Status: ${dispute.status}. Creo and the Floor stay where they are.`]));
   if (dispute.pendingEntryId) host.append(el('p', {}, [`Pending entry ${dispute.pendingEntryId} stays pending.`]));
   host.append(el('p', { class: 'muted' }, [`Hash ${dispute.hash}. The statement stays on this phone.`]));
   if (mine.id === dispute.stewardId && dispute.status === 'mediation') {
@@ -2037,7 +2037,7 @@ async function signDispute(dispute, mine, choice) {
   if (!result.ok) { status(result.error); return; }
   await saveDispute(dispute.claimantId, result.dispute);
   if (result.dispute.verdict.hash) await queueDisputeHash(mine.id, result.dispute.verdict.hash, dispute.day);
-  status('Signed. The outcome is advisory. Credit and the Floor did not move.');
+  status('Signed. The outcome is advisory. Creo and the Floor did not move.');
   render();
 }
 
@@ -2047,7 +2047,7 @@ async function confirmDispute(dispute, mine) {
   const result = await confirmOutcome(dispute, { handle: mine.id, publicJwk: key.publicJwk, sig: await signDevice(key.privateJwk, payload) });
   if (!result.ok) { status(result.error); return; }
   await saveDispute(dispute.claimantId, result.dispute);
-  status(result.noted ? 'Both parties noted the outcome. Credit and the Floor did not move.' : 'Noted on this phone. The other party still confirms. Nothing moved.');
+  status(result.noted ? 'Both parties noted the outcome. Creo and the Floor did not move.' : 'Noted on this phone. The other party still confirms. Nothing moved.');
   render();
 }
 
@@ -2067,7 +2067,7 @@ async function renderDispute() {
     if (!result.ok) { status(result.error); return; }
     await saveDispute(mine.id, result.dispute);
     await queueDisputeHash(mine.id, result.dispute.hash, result.dispute.day);
-    status('Opened. Steward mediation comes first. Credit and the Floor did not move.');
+    status('Opened. Steward mediation comes first. Creo and the Floor did not move.');
     render();
   } }, ['Open dispute']);
   const current = rows.flatMap((peer) => peer.disputes || []).find((row) => row.claimantId === mine.id || row.respondentId === mine.id || row.stewardId === mine.id) || null;

@@ -23,7 +23,7 @@ test('section 2 is five short steps and the helper only explains', () => {
   assert.equal(refused.sent, false);
   const money = explainJoin('What about $lgme?');
   assert.match(money.text, /pegged to US\$/);
-  assert.match(explainJoin('Do I earn coins?').text, /credit, not coins/);
+  assert.match(explainJoin('Do I earn coins?').text, /Creo, not coins/);
   assert.equal(/\b(testnet|hedera|attester|third seat|\$trust)\b/i.test(explainJoin('').text), false);
   assert.equal(explainReady({ navigator: {}, WebAssembly: { validate: () => false } }).ok, true);
   assert.equal(explainReady({ navigator: { lgmeAi: 'off' } }).ok, false);

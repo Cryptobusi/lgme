@@ -768,7 +768,7 @@ export async function redeemCampusCredit(store, holderId, creditId, spec = {}) {
   const holder = await store.get(holderId);
   if (!holder) return fail('Unknown peer.');
   const credit = holder.campusCredits?.[creditId];
-  if (!credit) return fail('No campus credit on this book.');
+  if (!credit) return fail('No campus Creo on this book.');
   if (credit.holderId !== holderId) return fail('Only the member who earned the credit can redeem it.');
   if (credit.status === 'vetoed') return fail('Vetoed. No credit.');
   if (credit.status === 'redeemed' || credit.redeemed) return fail('Already redeemed.');

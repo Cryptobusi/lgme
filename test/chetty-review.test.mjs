@@ -20,8 +20,8 @@ test('the Chetty review is a full page, linked, and matched to the live credits'
   assert.equal(page.includes('id="page-3"'), true);
   assert.equal(page.includes('<table>'), true);
   assert.equal(page.includes('passkey- or authenticator-secured, both-sides-confirmed IdidIt (verified receipt) records'), true);
-  assert.equal(page.includes('each verified task earns a small work-value credit (currently 0.01), spent once'), true);
-  assert.equal(page.includes('Deeds earn credit, not coins; $lgme stays pegged to US$ and is never minted from deeds.'), true);
+  assert.equal(page.includes('each verified task earns a small Creo (currently 0.01), spent once'), true);
+  assert.equal(page.includes('Deeds earn Creo, not coins; $lgme stays pegged to US$ and is never minted from deeds.'), true);
   assert.equal(page.includes('one verified deed equals one credit'), false);
   assert.equal(page.includes('passkey-secured, dual-signed Merkle receipts'), false);
   assert.equal(page.includes('https://commonwealthbeacon.org/economy/raj-chettys-prescription-for-reviving-the-american-dream/'), true);
@@ -34,5 +34,5 @@ test('the Chetty review is a full page, linked, and matched to the live credits'
   assert.equal(home.includes('href="/chetty-review">Read more</a>'), true);
   assert.equal(ego.includes('href="/chetty-review"'), true);
   assert.equal(text('sitemap.xml').includes('https://lgme.app/chetty-review'), true);
-  assert.equal(text('sw.js').includes('lgme-v197'), true);
+  assert.equal(text('sw.js').includes('lgme-v198'), true);
 });

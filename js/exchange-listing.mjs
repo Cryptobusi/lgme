@@ -45,7 +45,7 @@ export function serviceRate(service, minutes) {
     amount: split.ok ? split.amount : gross,
     skim: split.ok ? split.skim : 0,
     author: split.ok ? split.author : gross,
-    note: 'Suggested credit. Both sides confirm before it is recorded. Over $100 still needs 3 attestations.'
+    note: 'Suggested Creo. Both sides confirm before it is recorded. Over $100 still needs 3 attestations.'
   };
 }
 

@@ -17,7 +17,7 @@ export function recommendRate({ kind = 'physical', minutes = 30 } = {}) {
     amount: rate.amount,
     skim: rate.skim,
     author: rate.author,
-    text: `Suggested credit ${rate.author} for ${rate.minutes} minutes of ${type} exercise. The 1% portion is ${rate.skim}. This is a suggestion. Both people confirm or change it. Nothing is recorded until then.`
+    text: `Suggested Creo ${rate.author} for ${rate.minutes} minutes of ${type} exercise. The 1% portion is ${rate.skim}. This is a suggestion. Both people confirm or change it. Nothing is recorded until then.`
   };
 }
 

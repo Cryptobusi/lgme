@@ -156,7 +156,7 @@ export async function examplePayloads() {
   const common = { durationMin: 60, place: 'Baltimore', side: 'offer', status: EXAMPLE_STATUS, handle: 'desk-examples', service: 'example' };
   return [
     { ...common, id: 'example-hour-trade', group: 'campus', title: 'Tutoring for yard help', summary: 'One hour of tutoring traded for one hour of yard help. IdidIt verified receipt.', tags: ['example', 'trade'], receiptHash: tradeHash, authorHandle: 'mina-vale' },
-    { ...common, id: 'example-mental', group: 'mental', title: 'Mental exercise, both confirmed', summary: `Thirty minutes. Suggested credit ${confirmed.credit}. Both confirmed. IdidIt verified receipt.`, tags: ['example', 'mental'], receiptHash: mentalHash, authorHandle: 'nico-fern', durationMin: rate.minutes },
+    { ...common, id: 'example-mental', group: 'mental', title: 'Mental exercise, both confirmed', summary: `Thirty minutes. Suggested Creo ${confirmed.credit}. Both confirmed. IdidIt verified receipt.`, tags: ['example', 'mental'], receiptHash: mentalHash, authorHandle: 'nico-fern', durationMin: rate.minutes },
     { ...common, id: 'example-over-100', group: 'campus', title: 'Over 100 dollars, three attestations', summary: 'One hundred twenty dollars. Three device attestations. IdidIt verified receipt.', tags: ['example', 'attest'], receiptHash: attestHash, authorHandle: 'sage-holm' }
   ];
 }

@@ -4,13 +4,13 @@ Platform Reference: lgme.app / Sovereign Provenance Protocol
 Effective Date: November 10, 2026
 Preamble & Operating Stance
 This Circle operates on the discipline of Sober Poverty: voluntary restraint, zero speculative leverage, and direct physical clearance. Our common ledger is exclusively a unit of account and a tool for reciprocal exchange. It does not carry interest, accumulate financial yield, or interact with debt-based banking systems.
-By signing below, the Member enters a covenant with fellow participants to anchor every recorded credit in genuine human labor, useful material goods, and unencumbered peer accountability.
+By signing below, the Member enters a covenant with fellow participants to anchor every recorded Creo in genuine human labor, useful material goods, and unencumbered peer accountability.
 Section 1: The Twelve Articles of Participation
-Article 1 (Functional Need): Credits shall be drawn solely to satisfy immediate, real-world personal or household needs. Speculative purchasing, resale arbitrage, and balance hoarding are prohibited.
-Article 2 (Direct Labor): Credit is backed by productive capacity. Members agree to settle debits through direct services, physical goods, or verified manual work. Third-party brokering is barred.
+Article 1 (Functional Need): Creo shall be drawn solely to satisfy immediate, real-world personal or household needs. Speculative purchasing, resale arbitrage, and balance hoarding are prohibited.
+Article 2 (Direct Labor): Creo is backed by productive capacity. Members agree to settle debits through direct services, physical goods, or verified manual work. Third-party brokering is barred.
 Article 3 (Open Audit): Account balances and clearing histories are fully visible to all peers within the Circle. Members agree to transparent, continuous ledger verification.
-Article 4 (Hard Credit Limits): Negative balances are hard-capped at an initial threshold of -50 credit units (maximum -200 upon community review). When the limit is reached, outbound debits suspend until counter-services restore the balance.
-Article 5 (Zero Yield & Non-Speculation): Circle credits will never bear interest, dividends, or appreciation. Credit is a medium of clearance, not an asset for financial accumulation.
+Article 4 (Hard Credit Limits): Negative balances are hard-capped at an initial threshold of -50 Creo (maximum -200 upon community review). When the limit is reached, outbound debits suspend until counter-services restore the balance.
+Article 5 (Zero Yield & Non-Speculation): Circle Creo will never bear interest, dividends, or appreciation. Creo is a medium of clearance, not an asset for financial accumulation.
 Article 6 (Lean Tooling): Transactions record directly via open, minimal protocols with zero dependence on proprietary intermediaries or closed banking infrastructure.
 Article 7 (No Commercial Noise): Internal communication channels are reserved for concrete listings and verifiable offerings. Commercial advertising, promotional spam, and hype are grounds for revocation.
 Article 8 (Bilateral Resolution): Delivery disputes or service discrepancies must be addressed directly and immediately between the two transacting parties before petitioning community mediation.

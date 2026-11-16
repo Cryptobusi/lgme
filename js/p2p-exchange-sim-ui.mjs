@@ -1145,7 +1145,7 @@ function campusDeedPanel(peers, me, full) {
     if (deed.status === 'pending' && deed.receiverId === me.id) {
       actions.push(h('button', { type: 'button', class: 'primary', onClick: async () => {
         const result = await sim.attestCampusDeed(store, me.id, deed.deedId, { passphrase: pass.value, code: code.value, unixSeconds: Math.floor(Date.now() / 1000) });
-        setStatus(result.ok ? 'IdidIt (verified receipt). 1 campus credit. Not $lgme. Not on Hedera.' : result.error, result.ok ? 'ok' : 'bad');
+        setStatus(result.ok ? 'IdidIt (verified receipt). 1 campus Creo. Not $lgme. Not on Hedera.' : result.error, result.ok ? 'ok' : 'bad');
         if (result.ok) await render();
       } }, ['Attest']));
     }
@@ -1177,13 +1177,13 @@ function campusDeedPanel(peers, me, full) {
         code: code.value,
         unixSeconds: Math.floor(Date.now() / 1000)
       });
-      setStatus(result.ok ? '1 campus credit used once. Not $lgme.' : result.error, result.ok ? 'ok' : 'bad');
+      setStatus(result.ok ? '1 campus Creo used once. Not $lgme.' : result.error, result.ok ? 'ok' : 'bad');
       if (result.ok) await render();
     } }, [`Redeem 1 credit · ${row.kind}`])
   ]));
   return h('section', { id: 'campus-deed' }, [
     h('h3', {}, ['Campus deed']),
-    h('p', { class: 'legend' }, [campusGroup() === 'health-club' ? 'You are in the health club community. One verified deed is one club credit. Not $lgme. Not on Hedera.' : campusGroup() === 'campus' ? 'You are in the campus pilot. One verified deed is one campus credit. Not $lgme. Not on Hedera.' : 'Log a deed for the health club, or open the campus pilot from Other pilots.']),
+    h('p', { class: 'legend' }, [campusGroup() === 'health-club' ? 'You are in the health club community. One verified deed is one club Creo. Not $lgme. Not on Hedera.' : campusGroup() === 'campus' ? 'You are in the campus pilot. One verified deed is one campus Creo. Not $lgme. Not on Hedera.' : 'Log a deed for the health club, or open the campus pilot from Other pilots.']),
     emailHost(),
     form,
     h('p', { class: 'legend' }, ['Redeem inside the pilot']),
@@ -1736,7 +1736,7 @@ async function renderBooks(peers, seat) {
     windowBanner(),
     h('p', { class: 'legend' }, [`Today's tape root ${dayRoot.slice(0, 16)}. Nothing on this page is anchored or written to Hedera.`]),
     hederaHost(peer),
-    h('p', { class: 'muted' }, [`Tape · public ledger. Every line below is on this peer’s book. Credits and debits come only from settlements, payments, and rewards. The running balance is a replay. Key ${finger}. Limit ${rule.creditLimit}.`]),
+    h('p', { class: 'muted' }, [`Tape · public ledger. Every line below is on this peer’s book. Creo and debits come only from settlements, payments, and rewards. The running balance is a replay. Key ${finger}. Limit ${rule.creditLimit}.`]),
     h('div', { class: 'nums' }, [
       h('div', {}, [coinMark(), h('strong', {}, [String(view.balance)]), 'Balance']),
       h('div', {}, [h('strong', {}, [String(rule.floor)]), `Floor · basic needs reserve · ${rule.floorNote}`]),
@@ -3603,7 +3603,7 @@ async function answerExercise(peer, offer, accept, pass, code) {
   const result = accept
     ? await sim.acceptExerciseSupport(store, peer.id, offer.supportId, spec)
     : await sim.refuseExerciseSupport(store, peer.id, offer.supportId, spec);
-  setStatus(result.ok ? (accept ? 'Support accepted. The session itself minted no credit.' : 'No. Nothing moved.') : result.error, result.ok ? 'ok' : 'bad');
+  setStatus(result.ok ? (accept ? 'Support accepted. The session itself minted no Creo.' : 'No. Nothing moved.') : result.error, result.ok ? 'ok' : 'bad');
   if (result.ok) await render();
 }
 
@@ -3694,7 +3694,7 @@ async function finishWorkout(peer, ui) {
   });
   workout.startedAt = '';
   const intentNote = result.ok && result.publicItem?.intent ? ` Intent: ${result.publicItem.intent}.` : '';
-  setStatus(result.ok ? `IdidIt (verified receipt). ${EVIDENCE_UNVERIFIED}. No credit was minted. Location matched club: ${matched}.${intentNote}` : result.error, result.ok ? 'ok' : 'bad');
+  setStatus(result.ok ? `IdidIt (verified receipt). ${EVIDENCE_UNVERIFIED}. No Creo was minted. Location matched club: ${matched}.${intentNote}` : result.error, result.ok ? 'ok' : 'bad');
   if (result.ok) await render();
 }
 
@@ -3756,7 +3756,7 @@ function exerciseCard(peer, books = [], file = { excerpts: [] }) {
   const start = h('button', { type: 'button', onClick: () => beginWorkout({ useGps, useCamera, useMotion, sensorsNote, lineTitle: line.title }) }, ['Start']);
   const finish = h('button', { type: 'button', class: 'primary', onClick: () => finishWorkout(peer, { category, terms, note, groupCode, useGps, useCamera, useMotion, fenceLat, fenceLon, fenceRadius, pass, code, sensorsNote, intent, allowedIntents }) }, ['Finish']);
   const form = h('form', { id: 'exercise-session', onSubmit: (event) => event.preventDefault() }, [
-    h('p', { class: 'legend' }, ['Exercise session (IdidIt / verified receipt). Start, then Finish. A workout alone mints no credit. Raw GPS, photos, and motion stay on this phone. Rewards come from another member or the front desk.']),
+    h('p', { class: 'legend' }, ['Exercise session (IdidIt / verified receipt). Start, then Finish. A workout alone mints no Creo. Raw GPS, photos, and motion stay on this phone. Rewards come from another member or the front desk.']),
     h('p', { class: 'legend' }, ["Today's line"]),
     h('p', {}, [line.title]),
     h('p', {}, [line.text]),

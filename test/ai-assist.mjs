@@ -301,7 +301,7 @@ async function listing(view) {
   await page.locator('#draft-upload').click();
   await page.waitForSelector('#upload-draft');
   const note = await page.locator('#upload-draft').innerText();
-  assert(/Suggested credit/.test(note), 'rate suggestion missing');
+  assert(/Suggested Creo/.test(note), 'rate suggestion missing');
   assert(/Not posted|Deterministic draft|Nothing is posted/.test(note) || /Draft only/.test(await page.locator('#exchange-test-status').innerText()), 'draft was treated as posted');
   assert(await page.locator('#confirm-upload').count() === 1, 'confirm missing');
   const before = (await sent(page)).length;

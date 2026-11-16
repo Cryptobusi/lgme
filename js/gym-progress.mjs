@@ -10,8 +10,8 @@ export const PROGRESS_KINDS = Object.freeze([
   { id: 'km', label: 'Kilometers', unit: 'km', gps: true },
   { id: 'minutes', label: 'Minutes', unit: 'min', duration: true },
   { id: 'sessions', label: 'Sessions', unit: 'sessions', count: true },
-  { id: 'credits-earned', label: 'Credits earned', unit: 'credits', tape: 'earned' },
-  { id: 'credits-given', label: 'Credits given', unit: 'credits', tape: 'given' },
+  { id: 'credits-earned', label: 'Creo earned', unit: 'Creo', tape: 'earned' },
+  { id: 'credits-given', label: 'Creo given', unit: 'Creo', tape: 'given' },
   { id: 'verified', label: 'Verified sessions', unit: 'sessions', verified: true },
   { id: 'health', label: 'Health meter', unit: '1-10', health: true }
 ]);

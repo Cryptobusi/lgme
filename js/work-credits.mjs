@@ -4,7 +4,7 @@ export function emptyBook() {
 
 function gate(spec) {
   if (spec.bot) return { paused: true, error: 'Credit is paused until a person confirms.' };
-  if (!spec.signedIn || !spec.deviceVerified) return { paused: false, error: 'Credits are only for a signed-in, device-verified member.' };
+  if (!spec.signedIn || !spec.deviceVerified) return { paused: false, error: 'Creo is only for a signed-in, device-verified member.' };
   return null;
 }
 
