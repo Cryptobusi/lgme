@@ -45,7 +45,8 @@ test('attestation credits both people, blocks self and pair repeats, and quizzes
   assert.equal(home.includes('<details id="my-credits">'), true);
   assert.equal(home.includes('id="credits-total"'), true);
   assert.equal(home.includes('Creo 0.00'), true);
-  assert.equal(home.includes("Creo is not a debt."), true);
+  assert.equal(home.includes('id="creo-explainer"'), false);
+  assert.equal(readFileSync(new URL('../data/credit-rules.json', import.meta.url), 'utf8').includes('Creo is not a debt.'), true);
   for (const line of ['Debit = you owe.', 'Credit = you lend.', 'Creo = value you create (the IdidIt currency).']) {
     assert.equal(home.includes(line), true, line);
     assert.equal(help.includes(line), true, line);

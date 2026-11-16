@@ -21,6 +21,9 @@ test('voice replies spell minutes, speed, and steps', () => {
   assert.equal(panel.includes('processLocally = true'), true);
   assert.equal(panel.includes('id="ai-speaking"'), true);
   assert.equal(panel.includes('id="ai-voice-mode"'), true);
+  assert.equal(panel.includes('id="ai-mic-btn"'), true);
+  assert.equal(panel.includes('id="ai-mic-btn" class="ai-detail"'), false);
+  assert.equal(panel.includes("querySelector('#ai-mic-btn').addEventListener('click', () => startListen())"), true);
   assert.equal(panel.includes('>Stop<'), true);
   assert.equal(panel.includes('>Listening<'), true);
   assert.equal(voiceReplyLabel('speak'), 'Speak and show');

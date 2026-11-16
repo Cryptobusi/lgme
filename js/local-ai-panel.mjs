@@ -8,7 +8,7 @@ import { NOTICE, UNPUBLISHED, deletePending, editPending, holdPrivate, incognito
 import { installPressFeedback } from './press-feedback.mjs';
 
 const FLAG = 'Only available online with AI enabled.';
-const AI_CHIPS = ['Log a workout', 'Make an IdidIt receipt', 'What can I do here?'];
+const AI_CHIPS = ['Log a workout', 'Make an IdidIt receipt', 'What can I do here?', 'I want something', 'I have something'];
 const USE_KEY = 'lgme.dock.used';
 
 export function rankedPrompts(labels, uses = {}) {
@@ -289,7 +289,7 @@ function mount() {
   const dock = document.createElement('section');
   dock.id = 'ai-dock';
   dock.setAttribute('aria-label', 'On-device AI');
-  dock.innerHTML = '<p class="ai-top"><button type="button" id="ai-controls" aria-expanded="false" aria-label="Show or hide controls">Controls</button><span id="ai-status">AI off · Voice · Speak+show</span><button type="button" id="ai-switch" class="ai-pill" role="switch" aria-checked="true" aria-live="polite" aria-label="AI on or off">AI off</button><button type="button" id="ai-voice" class="ai-detail" aria-label="Speak or type">Voice</button><button type="button" id="ai-voice-reply" class="ai-detail" aria-label="Voice reply, Speak and show">Reply</button><span id="ai-voice-mode" class="ai-detail">Speak+show</span><button type="button" id="ai-listen" class="ai-detail" aria-pressed="false" aria-label="Listen again after speaking">Listen</button><span id="ai-mic" hidden>Listening</span><span id="ai-speaking" hidden>Speaking</span><button type="button" id="ai-stop" hidden>Stop</button><button type="button" id="ai-smaller" class="ai-detail" aria-label="Smaller text">A-</button><button type="button" id="ai-larger" class="ai-detail" aria-label="Bigger text">A+</button><a class="ai-setup-link ai-detail" href="/ai-setup">Help</a><button type="button" id="ai-incognito" class="ai-detail" aria-pressed="false">Incognito</button><button type="button" id="ai-incognito-count" class="ai-detail">Pending 0</button><button type="button" id="ai-expand" aria-expanded="true">Close</button></p><p id="ai-incognito-notice" hidden>Incognito — stays on this phone</p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><div id="ai-chip-row"><div id="ai-chips" class="ai-chips"></div><span id="ai-chip-hint" aria-hidden="true">›</span></div><div class="ai-compose"><textarea id="ai-ask" rows="1" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><p class="ai-actions"><button type="button" id="ai-send" aria-label="Send">Snd</button><button type="button" id="ai-accept" aria-label="Use suggestion">Sug</button><button type="button" id="ai-confirm" aria-label="Confirm">OK</button></p></div><div id="ai-scroll"><div id="ai-incognito-review" hidden></div><pre id="ai-log"></pre><p id="ai-more" hidden>More</p></div>';
+  dock.innerHTML = '<p class="ai-top"><button type="button" id="ai-controls" aria-expanded="false" aria-label="Show or hide controls">Controls</button><span id="ai-status">AI off · Voice · Speak+show</span><button type="button" id="ai-switch" class="ai-pill" role="switch" aria-checked="true" aria-live="polite" aria-label="AI on or off">AI off</button><button type="button" id="ai-voice" class="ai-detail" aria-label="Speak or type">Voice</button><button type="button" id="ai-voice-reply" class="ai-detail" aria-label="Voice reply, Speak and show">Reply</button><span id="ai-voice-mode" class="ai-detail">Speak+show</span><button type="button" id="ai-listen" class="ai-detail" aria-pressed="false" aria-label="Listen again after speaking">Listen</button><span id="ai-mic" hidden>Listening</span><span id="ai-speaking" hidden>Speaking</span><button type="button" id="ai-stop" hidden>Stop</button><button type="button" id="ai-smaller" class="ai-detail" aria-label="Smaller text">A-</button><button type="button" id="ai-larger" class="ai-detail" aria-label="Bigger text">A+</button><a class="ai-setup-link ai-detail" href="/ai-setup">Help</a><button type="button" id="ai-incognito" class="ai-detail" aria-pressed="false">Incognito</button><button type="button" id="ai-incognito-count" class="ai-detail">Pending 0</button><button type="button" id="ai-expand" aria-expanded="true">Close</button></p><p id="ai-incognito-notice" hidden>Incognito — stays on this phone</p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><div id="ai-chip-row"><div id="ai-chips" class="ai-chips"></div><span id="ai-chip-hint" aria-hidden="true">›</span></div><div class="ai-compose"><textarea id="ai-ask" rows="1" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><button type="button" id="ai-mic-btn" aria-label="Speak">Mic</button><p class="ai-actions"><button type="button" id="ai-send" aria-label="Send">Snd</button><button type="button" id="ai-accept" aria-label="Use suggestion">Sug</button><button type="button" id="ai-confirm" aria-label="Confirm">OK</button></p></div><div id="ai-scroll"><div id="ai-incognito-review" hidden></div><pre id="ai-log"></pre><p id="ai-more" hidden>More</p></div>';
   dock.classList.add('is-open', 'is-normal');
   try { document.documentElement.dataset.screen = activeScreen(localStorage); } catch { /* everyday height stays */ }
   try {
@@ -359,7 +359,7 @@ function mount() {
     if (fieldMeta(active)) return;
     fieldToken += 1;
     dock.classList.remove('has-field');
-    paintChips(rankedPrompts(dockChipsOf() || AI_CHIPS, readUses()).slice(0, 3), null);
+    paintChips(rankedPrompts(dockChipsOf() || AI_CHIPS, readUses()).slice(0, 5), null);
     paint(dock);
   };
   const SIZES = ['compact', 'normal', 'tall'];
@@ -613,7 +613,7 @@ function mount() {
     scroller.classList.toggle('is-over', over);
     more.hidden = !over;
   };
-  paintChips(rankedPrompts(dockChipsOf() || AI_CHIPS, readUses()).slice(0, 3), null);
+  paintChips(rankedPrompts(dockChipsOf() || AI_CHIPS, readUses()).slice(0, 5), null);
   document.addEventListener('focusin', (event) => { showField(event.target); });
   document.addEventListener('focusout', () => { setTimeout(clearField, 0); });
   ask.addEventListener('pointerup', () => { ask.focus(); });
@@ -816,6 +816,7 @@ function mount() {
   window.addEventListener('lgme-incognito', paintIncognito);
   paintVoiceToggles();
   dock.querySelector('#ai-voice').addEventListener('click', () => startListen());
+  dock.querySelector('#ai-mic-btn').addEventListener('click', () => startListen());
   replyButton.addEventListener('click', () => {
     const next = nextVoiceReply(replyMode());
     try { localStorage.setItem('lgme.voice.reply', next); } catch { /* the label still moves */ }
@@ -847,13 +848,27 @@ function mount() {
     controlsButton.textContent = open ? 'Done' : 'Controls';
     const mode = voiceReplyLabel(replyMode());
     const short = mode === 'Speak and show' ? 'Speak+show' : mode === 'Show only' ? 'Show' : 'Off';
-    const parts = [aiOn() && localAiReady() ? 'AI on' : 'AI off', 'Voice', short];
-    if (autoListen()) parts.push('Listen');
-    if (incognitoOn(localStorage)) parts.push('Incognito');
     const live = aiOn() && localAiReady();
-    parts.push(`Online: ${navigator.onLine !== false ? 'yes' : 'no'}`);
-    parts.push(`AI: ${live ? 'yes' : 'no'}`);
-    statusLine.textContent = parts.join(' · ');
+    const voiceReady = typeof window.SpeechRecognition === 'function' || typeof window.webkitSpeechRecognition === 'function';
+    const dots = [
+      ['AI', live],
+      ['Voice', voiceReady],
+      ['Speak', replyMode() === 'speak'],
+      ['Listen', autoListen()],
+      ['Incog', incognitoOn(localStorage)]
+    ];
+    statusLine.replaceChildren();
+    for (const [name, on] of dots) {
+      const item = document.createElement('span');
+      item.className = on ? 'is-on' : 'is-off';
+      const dot = document.createElement('i');
+      item.append(dot, document.createTextNode(name));
+      statusLine.append(item);
+    }
+    const state = document.createElement('span');
+    state.className = 'ai-state';
+    state.textContent = `Online: ${navigator.onLine !== false ? 'yes' : 'no'} · AI: ${live ? 'yes' : 'no'}`;
+    statusLine.append(state);
   };
   controlsButton.addEventListener('click', () => {
     try { localStorage.setItem('lgme.dock.controls', controlsOpen() ? 'shut' : 'open'); } catch { /* the row still moves */ }

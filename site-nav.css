@@ -8,19 +8,22 @@
   gap: 0.5rem;
   align-items: center;
   box-sizing: border-box;
-  height: 3.25rem;
-  padding: 0.35rem 0.6rem;
-  padding-top: max(0.35rem, env(safe-area-inset-top));
+  height: 1.7rem;
+  padding: 0.1rem 0.45rem;
+  padding-top: max(0.1rem, env(safe-area-inset-top));
   background: #0c100c;
   border-bottom: 1px solid #2c352b;
 }
 #site-nav button, #site-nav a {
-  min-height: 44px;
-  min-width: 44px;
+  box-sizing: border-box;
+  height: 1.35rem;
+  min-height: 0;
+  min-width: 28px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.35rem 0.9rem;
+  padding: 0 0.45rem;
+  font-size: 12px;
   border-radius: 999px;
   border: 1px solid #c6a15b;
   background: transparent;
@@ -30,7 +33,7 @@
   text-decoration: none;
 }
 html.has-site-nav body,
-body.has-site-nav { padding-top: 3.25rem; scroll-padding-top: 4rem; }
+body.has-site-nav { padding-top: 1.7rem; scroll-padding-top: 2.2rem; }
 html.has-site-nav body:has(#exchange-overview),
 body.has-site-nav:has(#exchange-overview) { padding-top: 0; }
 html.has-site-nav body:has(#exchange-overview) .launch-bar { margin-top: 3.25rem; }
@@ -158,7 +161,9 @@ body:has(nav[aria-label="Gym"]) #ai-dock { bottom: calc(4.5rem + env(safe-area-i
   text-overflow: clip;
   font: inherit;
   font-size: 16px;
-  padding: 0;
+  padding: 0.35rem 0.5rem;
+  border: 2px solid #c6a15b;
+  border-radius: 12px;
 }
 #ai-scroll { position: relative; flex: 1 1 auto; min-height: 0; max-height: none; overflow: auto; }
 #ai-dock.is-open #ai-scroll { min-height: 0; }
@@ -240,7 +245,8 @@ html[data-screen="simple"] body { font-size: 18px; }
 #ai-dock.is-voice #ai-log, #ai-dock.is-voice #ai-steps { font-size: 1.35rem; line-height: 1.45; }
 #ai-action-status { margin: 0.2rem 0 0; font-size: 0.8rem; }
 #ai-dock .ai-actions { display: flex; flex-direction: column; gap: 0.15rem; margin: 0; }
-#ai-send, #ai-accept, #ai-confirm { width: 44px; min-width: 44px; height: 44px; min-height: 44px; padding: 0; font-size: 12px; line-height: 1; }
+#ai-mic-btn, #ai-send, #ai-accept, #ai-confirm { width: 44px; min-width: 44px; height: 44px; min-height: 44px; padding: 0; font-size: 12px; line-height: 1; flex: 0 0 auto; }
+#ai-mic-btn { align-self: flex-end; background: #146c43; color: #fff; border-color: #146c43; }
 #ai-send { background: #c6a15b; color: #1a1408; border-color: #c6a15b; }
 #ai-accept { background: #0f766e; color: #f4f1e8; border-color: #0f766e; }
 #ai-confirm { background: #146c43; color: #fff; border-color: #146c43; }
@@ -252,15 +258,31 @@ html[data-theme="paper"] #ai-dock #ai-confirm, html[data-screen="simple"] #ai-do
 #ai-dock .ai-top .ai-setup-link,
 #ai-dock #ai-voice-mode,
 #ai-dock #ai-status {
+  flex: 0 0 auto;
   min-height: 22px;
   height: 22px;
-  min-width: 0;
+  min-width: max-content;
   padding: 0 0.4rem;
   font-size: 12px;
   line-height: 22px;
   white-space: nowrap;
 }
-#ai-status { display: inline-flex; align-items: center; overflow: hidden; text-overflow: ellipsis; font-weight: 700; }
+#ai-status { display: inline-flex; align-items: center; gap: 0.35rem; overflow: visible; font-weight: 700; }
+#ai-status span { display: inline-flex; align-items: center; gap: 0.15rem; flex: 0 0 auto; }
+#ai-status i { width: 0.45rem; height: 0.45rem; border-radius: 50%; background: #dc2626; }
+#ai-status .is-on i { background: #22c55e; }
+#ai-status .is-off i { background: #dc2626; }
+#ai-status .ai-state { color: #8d938c; font-weight: 600; }
+.is-next { outline: 3px solid #22c55e; outline-offset: 2px; animation: lgme-next 0.9s ease-in-out infinite; }
+@keyframes lgme-next {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.75); }
+  50% { box-shadow: 0 0 0 7px rgba(34, 197, 94, 0); }
+}
+#ididit-done, #draft-suggestion { scroll-margin-bottom: 42vh; }
+#draft-suggestion { margin: 0.2rem 0; font-weight: 700; color: #8fd6a8; }
+@media (prefers-reduced-motion: reduce) {
+  .is-next { animation: none; }
+}
 #ai-dock.is-controls-shut .ai-detail { display: none; }
 button:active, [role="button"]:active, button.is-pressed, [role="button"].is-pressed { transform: scale(0.96); filter: brightness(1.2); }
 @media (prefers-reduced-motion: reduce) {

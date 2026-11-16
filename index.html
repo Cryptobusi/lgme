@@ -24,7 +24,7 @@
       --panel: #141a13;
     }
     html { background: var(--bg); color: var(--fg); overflow-x: clip; }
-    :root { --notice-h: 6.25rem; }
+    :root { --notice-h: 2.4rem; }
     @media (min-width: 768px) { :root { --notice-h: 4.5rem; } }
     @media (min-width: 1280px) { :root { --notice-h: 3.25rem; } }
     #testnet-notice {
@@ -37,29 +37,30 @@
       height: var(--notice-h);
       min-height: var(--notice-h);
       margin: 0;
-      padding: 0.6rem 1rem;
+      padding: 0 0.6rem;
       display: flex;
       align-items: center;
       justify-content: center;
+      overflow: hidden;
       background: #b00020;
       color: #fff;
       font-family: Figtree, ui-sans-serif, sans-serif;
       font-weight: 700;
-      font-size: 1.05rem;
-      line-height: 1.35;
+      font-size: 0.82rem;
+      line-height: 1.2;
       text-align: center;
     }
     body:has(#testnet-notice) { padding-top: calc(1.5rem + var(--notice-h)); }
-    html.has-site-nav body:has(#testnet-notice) { padding-top: calc(3.25rem + var(--notice-h)); }
+    html.has-site-nav body:has(#testnet-notice) { padding-top: calc(1.7rem + var(--notice-h)); }
     body:has(#testnet-notice) #site-nav { top: var(--notice-h); }
     body:has(#testnet-notice) .menu-toggle { top: calc(3.25rem + var(--notice-h)); }
     html.top-compact { --notice-h: 3.25rem; }
     html.top-tall { --notice-h: 8rem; }
-    html.notice-slim { --notice-h: 2.25rem; }
+    html.notice-slim { --notice-h: 2rem; }
     html.notice-slim #testnet-notice { white-space: nowrap; }
     html.notice-slim #notice-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     #testnet-notice button { min-height: 32px; min-width: 32px; margin-left: 0.25rem; border: 0; border-radius: 8px; background: #fff; color: #1a1408; font: inherit; font-weight: 700; }
-    #notice-text { min-width: 0; }
+    #notice-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     body {
       background: var(--bg);
       color: var(--fg);
@@ -309,7 +310,11 @@
     .later { opacity: 0.65; }
     .entry-picker { margin: 0 0 1.2rem; padding-top: 0; border-top: 0; }
     #profile-board, #function-row, #my-functions { grid-column: 1 / -1; }
-    #profile-board { margin: 0 0 0.35rem; padding: 0.35rem 0.45rem; }
+    #profile-board { margin: 0 0 0.25rem; padding: 0.2rem 0.4rem; }
+    #profile-name { margin: 0; font-size: 1rem; line-height: 1.15; font-weight: 700; }
+    #profile-activity, #profile-balance, #profile-new, #step-count { margin: 0.05rem 0; font-size: 0.82rem; line-height: 1.15; }
+    #my-credits { margin: 0.1rem 0; }
+    #my-credits summary { min-height: 36px; }
     @media (max-width: 800px) {
       body { font-size: 15px; }
       button, #function-row a, #first-open input { font-size: 15px; min-height: 48px; }
@@ -429,7 +434,7 @@
         <button type="button" id="credits-total" hidden>Creo 0.00</button>
         <button type="button" id="messages-open">Messages</button>
         <div id="attest-badges" hidden aria-label="Message dashboard"></div>
-        <details id="my-credits"><summary>My Creo</summary><p id="creo-explainer">Creo is not a debt. When you log work you don't owe anyone; you create value, and values are exchanged in proportion.</p><ul id="creo-glossary"><li>Debit = you owe.</li><li>Credit = you lend.</li><li>Creo = value you create (the IdidIt currency).</li></ul><p id="contrib-preview">Contribute $lgme is a simulation. Live payments are off. Example price. Collective Fund and Health Sub-floor split 50/50.</p><p id="my-credits-balance"></p><ul id="my-credits-history"></ul><p id="my-credits-rules"></p></details>
+        <details id="my-credits"><summary>My Creo</summary><ul id="creo-glossary"><li>Debit = you owe.</li><li>Credit = you lend.</li><li>Creo = value you create (the IdidIt currency).</li></ul><p id="contrib-preview">Contribute $lgme is a simulation. Live payments are off. Example price. Collective Fund and Health Sub-floor split 50/50.</p><p id="my-credits-balance"></p><ul id="my-credits-history"></ul><p id="my-credits-rules"></p></details>
         <p id="profile-activity">No recent activity</p>
         <p id="profile-balance">Balance stays on this phone</p>
         <p id="profile-new">New 0</p>

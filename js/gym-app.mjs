@@ -2178,6 +2178,7 @@ async function renderIdidIt() {
   const distance = el('input', { id: 'gym-ididit-distance', maxlength: '40', 'aria-label': 'Distance' });
   const speed = el('input', { id: 'gym-ididit-speed', maxlength: '40', 'aria-label': 'Speed' });
   const computed = el('p', { id: 'gym-ididit-computed' });
+  const suggestion = el('p', { id: 'draft-suggestion', hidden: 'hidden' });
   const explain = () => {
     const bits = [activity.value, distance.value, speed.value].filter(Boolean);
     if (minutes.value) bits.push(computed.textContent ? `about ${minutes.value} min` : `${minutes.value} min`);
@@ -2186,18 +2187,51 @@ async function renderIdidIt() {
     try { sessionStorage.setItem('lgme.prompt.note', note); } catch { /* the log still updates */ }
     window.dispatchEvent(new CustomEvent('lgme-draft-filled'));
   };
+  const markNext = (node) => {
+    for (const item of [activity, distance, speed, minutes, title]) item.classList.remove('is-next');
+    if (node) node.classList.add('is-next');
+  };
+  const typeField = (field, value) => new Promise((resolve) => {
+    const text = String(value || '');
+    if (!text) { resolve(); return; }
+    field.value = '';
+    field.classList.add('is-filled');
+    markNext(field);
+    let timer = 0;
+    const finish = () => {
+      if (timer) clearInterval(timer);
+      field.value = text;
+      field.removeEventListener('pointerdown', finish);
+      resolve();
+    };
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { finish(); return; }
+    let index = 0;
+    field.addEventListener('pointerdown', finish);
+    timer = setInterval(() => {
+      index += 1;
+      field.value = text.slice(0, index);
+      if (index >= text.length) finish();
+    }, 8);
+  });
   try {
     const draft = JSON.parse(sessionStorage.getItem('lgme.prompt.draft') || 'null');
     if (draft?.kind === 'ididit' && (draft.title || draft.text)) {
-      activity.value = String(draft.activity || '');
-      distance.value = String(draft.distance || '');
-      speed.value = String(draft.speed || '');
-      minutes.value = draft.minutes ? String(draft.minutes) : '';
-      computed.textContent = draft.computed ? `about ${draft.minutes} min (computed)` : '';
-      title.value = String(draft.title || draft.text).slice(0, 80);
-      for (const field of [activity, distance, speed, minutes, title]) field.classList.add('is-filled');
+      const line = String(draft.title || draft.text).slice(0, 80);
+      suggestion.hidden = false;
+      suggestion.textContent = `Suggestion: ${line}. Suggestion: ${line}`;
       sessionStorage.removeItem('lgme.prompt.draft');
-      explain();
+      const run = async () => {
+        suggestion.scrollIntoView({ block: 'start' });
+        await typeField(activity, draft.activity || '');
+        await typeField(distance, draft.distance || '');
+        await typeField(speed, draft.speed || '');
+        await typeField(minutes, draft.minutes ? String(draft.minutes) : '');
+        computed.textContent = draft.computed ? `about ${draft.minutes} min (computed)` : '';
+        await typeField(title, line);
+        markNext(confirm);
+        explain();
+      };
+      queueMicrotask(() => { run(); });
     }
   } catch { /* the default title stays */ }
   for (const field of [activity, distance, speed, minutes, title]) field.addEventListener('input', explain);
@@ -2213,6 +2247,7 @@ async function renderIdidIt() {
   });
   const view = el('section', { id: 'ididit-done' }, [
     el('h2', {}, [IDIDIT_NAME]),
+    suggestion,
     chipRow('gym-ididit-chips', IDIDIT_CHIPS, (label) => { title.value = label; }),
     el('label', {}, ['Activity', activity]),
     el('label', {}, ['Distance', distance]),
@@ -2257,7 +2292,10 @@ async function render() {
     view = el('p', { id: 'gym-status', role: 'status' }, ['This step did not open. Tap Join Health and try the prefilled options.']);
   }
   panel.replaceChildren(view);
-  if (path === '/ididit' && view?.id === 'ididit-done') view.scrollIntoView({ block: 'start' });
+  if (path === '/ididit' && view?.id === 'ididit-done') {
+    const focus = view.querySelector('#draft-suggestion:not([hidden])') || view;
+    focus.scrollIntoView({ block: 'start' });
+  }
   const people = await books();
   if (people.length) panel.prepend(actingAs(people));
   applySticky();

@@ -41,6 +41,35 @@ const failures = [];
 const page = await context.newPage();
 await page.goto(`${base}/gym`, { waitUntil: 'domcontentloaded' });
 await page.locator('#ai-ask').waitFor();
+const mic = await page.locator('#ai-mic-btn').boundingBox();
+if (!mic || mic.width < 40 || mic.height < 40) failures.push(`mic hidden ${JSON.stringify(mic)}`);
+if (await page.locator('#ai-chips .ai-chip').count() < 5) failures.push('chips under 5');
+const frame = await page.locator('#ai-log').evaluate((node) => getComputedStyle(node).borderTopWidth);
+if (frame !== '2px') failures.push(`log frame ${frame}`);
+const dots = await page.locator('#ai-status span i').count();
+if (dots < 5) failures.push(`status dots ${dots}`);
+const overlap = await page.locator('#ai-status').evaluate((node) => {
+  const boxes = [...node.querySelectorAll('span')].map((item) => item.getBoundingClientRect()).filter((box) => box.width > 0);
+  return boxes.some((box, index) => index > 0 && box.left < boxes[index - 1].right - 1);
+});
+if (overlap) failures.push('status labels overlap');
+await page.evaluate(() => {
+  class LocalSpeech { start() { this.onresult?.({ results: [[{ transcript: 'log 5min walk' }]] }); } stop() {} }
+  LocalSpeech.prototype.processLocally = true;
+  window.SpeechRecognition = LocalSpeech;
+  window.webkitSpeechRecognition = LocalSpeech;
+});
+await page.locator('#ai-mic-btn').click();
+await page.waitForFunction(() => /Ready to log on IdidIt/.test(document.getElementById('ai-log')?.textContent || ''));
+await page.evaluate(() => {
+  localStorage.setItem('lgme.incognito', '1');
+  class RemoteSpeech { start() { this.onresult?.({ results: [[{ transcript: 'should not land' }]] }); } stop() {} }
+  window.SpeechRecognition = RemoteSpeech;
+  window.webkitSpeechRecognition = RemoteSpeech;
+});
+await page.locator('#ai-mic-btn').click();
+await page.waitForFunction(() => /Incognito is on/.test(document.getElementById('ai-log')?.textContent || ''));
+await page.evaluate(() => localStorage.removeItem('lgme.incognito'));
 const panel = await page.locator('#ai-dock').evaluate((node) => node.getBoundingClientRect().height / window.innerHeight);
 if (panel < 0.38 || panel > 0.42) failures.push(`panel ${panel}`);
 const chip = await page.locator('.ai-chip').first().evaluate((node) => {
@@ -59,9 +88,9 @@ if (await page.locator('#gym-ididit-confirm').count()) failures.push('first ente
 await page.waitForTimeout(50);
 await page.locator('#ai-ask').press('Enter');
 await page.locator('#gym-ididit-other').waitFor();
-if ((await page.locator('#gym-ididit-other').inputValue()) !== 'Treadmill, 10 min') failures.push('draft title');
-if ((await page.locator('#gym-ididit-activity').inputValue()) !== 'Treadmill') failures.push('draft activity');
-if ((await page.locator('#gym-ididit-minutes').inputValue()) !== '10') failures.push('draft minutes');
+await page.waitForFunction(() => document.getElementById('gym-ididit-other')?.value === 'Treadmill, 10 min' && document.getElementById('gym-ididit-activity')?.value === 'Treadmill' && document.getElementById('gym-ididit-minutes')?.value === '10');
+if (!/Suggestion: Treadmill, 10 min/.test(await page.locator('#draft-suggestion').innerText())) failures.push('suggestion not repeated');
+if (!(await page.locator('#gym-ididit-confirm').evaluate((node) => node.classList.contains('is-next')))) failures.push('confirm not marked');
 if (!/Draft filled: Treadmill, 10 min/.test(await page.locator('#ai-log').innerText())) failures.push('arrival explainer');
 if ((await page.locator('#ai-steps li.is-current').innerText()).indexOf('2)') !== 0) failures.push('step 2 not current');
 if (/Opening draft/.test(await page.locator('#ai-action-status').innerText().catch(() => ''))) failures.push('opening draft label');
@@ -77,11 +106,9 @@ await page.locator('#ai-ask').press('Enter');
 await page.waitForTimeout(50);
 await page.locator('#ai-ask').press('Enter');
 await page.locator('#gym-ididit-distance').waitFor();
-if ((await page.locator('#gym-ididit-distance').inputValue()) !== '5 miles') failures.push('distance');
-if ((await page.locator('#gym-ididit-speed').inputValue()) !== '3 mph') failures.push('speed');
-if ((await page.locator('#gym-ididit-minutes').inputValue()) !== '100') failures.push('computed minutes');
-if (!/about 100 min/.test(await page.locator('#gym-ididit-computed').innerText())) failures.push('computed label');
-if (!/Draft filled: Treadmill, 5 miles, 3 mph, about 100 min/.test(await page.locator('#ai-log').innerText())) failures.push('pace explainer');
+await page.waitForFunction(() => document.getElementById('gym-ididit-distance')?.value === '5 miles' && document.getElementById('gym-ididit-speed')?.value === '3 mph' && document.getElementById('gym-ididit-minutes')?.value === '100');
+await page.waitForFunction(() => /about 100 min/.test(document.getElementById('gym-ididit-computed')?.textContent || ''));
+await page.waitForFunction(() => /Draft filled: Treadmill, 5 miles, 3 mph, about 100 min/.test(document.getElementById('ai-log')?.textContent || ''));
 if (!(await page.locator('#ididit-done').isVisible())) failures.push('pace draft hidden');
 await page.locator('#ai-ask').fill('I want a ride');
 await page.locator('#ai-send').click();
