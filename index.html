@@ -331,7 +331,9 @@
     #function-row { display: flex; gap: 0.5rem; overflow-x: auto; margin: 0 0 0.6rem; padding: 0.35rem 0.45rem; }
     #function-row a { flex: 0 0 auto; padding: 0 0.8rem; border-radius: 999px; text-decoration: none; }
     #first-open[hidden] { display: none; }
-    #confirm-gate { position: fixed; right: 0.6rem; bottom: 28vh; z-index: 30; max-width: 16rem; padding: 0.7rem; border-radius: 12px; background: #151a15; color: #f4f1e8; }
+    #first-open { padding-bottom: 42vh; }
+    #access-fingerprint, #fingerprint-setup, #gate-passkey { position: relative; z-index: 2; }
+    #confirm-gate { position: fixed; right: 0.6rem; left: 0.6rem; bottom: calc(40vh + 0.6rem); z-index: 60; max-width: none; padding: 0.7rem; border-radius: 12px; background: #151a15; color: #f4f1e8; }
     .entry-picker h2 { margin: 0.2rem 0 0.6rem; font-size: 1.35rem; }
     .entry-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; }
     .entry-tile { min-height: 96px; border: 1px solid var(--line); border-radius: 16px; background: var(--card); color: var(--fg); text-decoration: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.25rem; font-weight: 700; padding: 0.7rem; }
@@ -436,7 +438,7 @@
           <p id="step-or">or</p>
           <section class="access-card" id="step-totp"><h2>Sign in with Google Authenticator</h2><label for="access-totp">Google Authenticator code</label><input id="access-totp" inputmode="numeric" maxlength="7" autocomplete="one-time-code"><button type="button" id="access-authenticator" class="primary">Sign in</button><button type="button" id="totp-setup-open" class="secondary">Set up authenticator</button><section id="totp-setup" hidden><p>Open Google Authenticator, tap +, scan this QR code or enter the key. The entry will be named lgme.app.</p><p id="totp-key"></p><div id="totp-qr"></div><label for="totp-confirm">Google Authenticator code</label><input id="totp-confirm" inputmode="numeric" maxlength="7" autocomplete="one-time-code"><button type="button" id="totp-finish" class="primary">Finish authenticator setup</button><button type="button" id="totp-reset" class="secondary">Reset authenticator</button></section></section>
           <p id="step-or-fp">or</p>
-          <section class="access-card" id="step-fingerprint"><h2>Sign in with fingerprint</h2><p id="fingerprint-note" hidden>Fingerprint sign-in is not available on this device.</p><button type="button" id="access-fingerprint" class="primary">Sign in with fingerprint</button></section>
+          <section class="access-card" id="step-fingerprint"><h2>Sign in with fingerprint</h2><p id="fingerprint-note" hidden>This phone has no fingerprint or screen lock. Use the authenticator code.</p><button type="button" id="access-fingerprint" class="primary">Sign in with fingerprint</button></section>
           <section class="access-card" id="step-ai" hidden><h2>Test local AI</h2><p id="access-member"></p><button type="button" id="fingerprint-setup" class="secondary" hidden>Set up fingerprint</button><button type="button" id="ai-test" class="primary">Test local AI</button><p id="ai-test-result" role="status"></p><button type="button" id="access-grant" class="primary" disabled>Open the app</button></section>
           <p id="access-status" role="status"></p>
         </form>

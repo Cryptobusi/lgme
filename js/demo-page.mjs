@@ -3,7 +3,7 @@ import { COLLECT_LABEL, SHARE_LABEL, readHealthConsent, writeHealthConsent } fro
 import { AI_ENABLE, deviceContext, draftWithHelper, pickHelperSync, showHelperNote } from './one-tap.mjs';
 import { ensureDeviceKey } from './device-sign.mjs';
 import { saveEmailSession } from './health-email.mjs';
-import { fingerprintSupported, registerFingerprint, unlockFingerprint } from './passkey-signin.mjs';
+import { NO_FINGERPRINT, finishFingerprintPrompt, fingerprintSupported, prepareFingerprintPrompt, rememberFingerprintUnlock, startFingerprintPrompt } from './passkey-signin.mjs';
 import { readCredentialId } from './passkey-unlock.mjs';
 import { IDIDIT_CHIPS, IDIDIT_NAME, submitIdidIt } from './ididit-draft.mjs';
 
@@ -204,13 +204,23 @@ function paintChoice() {
 function paintDisclaimer() {
   const button = el('button', { type: 'button', class: 'primary', id: 'demo-understand' }, ['I understand']);
   const finger = el('button', { type: 'button', id: 'passkey-offer', hidden: 'hidden' }, ['Use fingerprint next time']);
-  finger.addEventListener('click', async () => {
-    try {
-      await registerFingerprint();
-      finger.textContent = 'Fingerprint saved on this phone.';
-    } catch (error) {
-      finger.textContent = error.message || 'Use the email code.';
+  let offerReady = null;
+  prepareFingerprintPrompt().then((next) => { offerReady = next; }).catch((error) => {
+    offerReady = { ok: false, message: error.message || NO_FINGERPRINT };
+  });
+  finger.addEventListener('click', () => {
+    const ready = offerReady;
+    if (!ready?.ok || ready.kind !== 'create') {
+      finger.textContent = ready?.message || 'Tap again to show the fingerprint prompt. Or use the authenticator code.';
+      return;
     }
+    const pending = startFingerprintPrompt(ready);
+    offerReady = null;
+    pending.then((started) => finishFingerprintPrompt(started)).then(() => {
+      finger.textContent = 'Fingerprint saved on this phone.';
+    }).catch((error) => {
+      finger.textContent = error.message || 'Use the authenticator code.';
+    });
   });
   fingerprintSupported().then((yes) => { if (yes && !readCredentialId(localStorage)) finger.hidden = false; });
   button.addEventListener('click', () => {
@@ -336,14 +346,26 @@ function paintEmail() {
   });
   const phone = el('button', { type: 'button', class: 'primary', id: 'demo-phone' }, ['Continue on this phone']);
   const unlock = el('button', { type: 'button', id: 'passkey-unlock-signin', hidden: 'hidden' }, ['Unlock with fingerprint']);
-  unlock.addEventListener('click', async () => {
-    try {
-      await unlockFingerprint();
+  let unlockReady = null;
+  prepareFingerprintPrompt().then((next) => { unlockReady = next; }).catch((error) => {
+    unlockReady = { ok: false, message: error.message || NO_FINGERPRINT };
+  });
+  unlock.addEventListener('click', () => {
+    const ready = unlockReady;
+    if (!ready?.ok || ready.kind !== 'get') {
+      status.textContent = ready?.message || 'Tap again to show the fingerprint prompt. Or use the authenticator code.';
+      return;
+    }
+    const pending = startFingerprintPrompt(ready);
+    unlockReady = null;
+    pending.then(async (started) => {
+      const saved = await finishFingerprintPrompt(started);
+      await rememberFingerprintUnlock(saved);
       writePending(null);
       paintHome();
-    } catch (error) {
-      status.textContent = error.message || 'Use the email code.';
-    }
+    }).catch((error) => {
+      status.textContent = error.message || 'Use the authenticator code.';
+    });
   });
   fingerprintSupported().then((yes) => { if (yes && readCredentialId(localStorage)) unlock.hidden = false; });
   phone.addEventListener('click', async () => {

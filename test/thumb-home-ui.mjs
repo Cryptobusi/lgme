@@ -77,6 +77,11 @@ if (regions.ratio < 0.38 || regions.ratio > 0.42) failures.push(`dock height ${r
 if (await page.locator('#functions-import').isVisible()) failures.push('choose file visible before open');
 if ((await page.locator('#function-row a').first().innerText()) !== 'IdidIt (verified receipt)') failures.push('ididit label');
 if (!/Step 1 of 3: email or authenticator/.test(await page.locator('#step-count').innerText())) failures.push('step count');
+await page.locator('#access-fingerprint').scrollIntoViewIfNeeded();
+const fingerBox = await page.locator('#access-fingerprint').boundingBox();
+const dockBox = await page.locator('#ai-dock').boundingBox();
+if (!fingerBox || fingerBox.height < 48 || await page.locator('#access-fingerprint').isDisabled()) failures.push('fingerprint button hidden');
+if (fingerBox && dockBox && fingerBox.y < dockBox.y + dockBox.height && fingerBox.y + fingerBox.height > dockBox.y) failures.push('fingerprint button covered');
 await page.route('**/api/email/send', (route) => route.fulfill({ status: 400, contentType: 'application/json', body: '{"ok":false,"error":"Nothing was sent."}' }));
 await page.locator('#access-email').fill('ada@example.com');
 await page.locator('#access-send').click();
@@ -106,6 +111,10 @@ if ((await page.evaluate(() => localStorage.getItem('lgme.access'))) !== 'full')
 await page.locator('#function-row a[data-sensitive]').click();
 await page.locator('#gate-passkey').click();
 await page.waitForFunction(() => /fingerprint/i.test(document.getElementById('gate-status')?.textContent || ''));
+const gateBox = await page.locator('#gate-passkey').boundingBox();
+const dockNow = await page.locator('#ai-dock').boundingBox();
+if (!gateBox || await page.locator('#gate-passkey').isDisabled()) failures.push('gate fingerprint hidden');
+if (gateBox && dockNow && gateBox.y < dockNow.y + dockNow.height && gateBox.y + gateBox.height > dockNow.y) failures.push('gate fingerprint covered');
 await browser.close();
 server.close();
 if (failures.length) { console.log(failures.join('\n')); process.exit(1); }
