@@ -8,22 +8,22 @@
   gap: 0.5rem;
   align-items: center;
   box-sizing: border-box;
-  height: 1.7rem;
-  padding: 0.1rem 0.45rem;
-  padding-top: max(0.1rem, env(safe-area-inset-top));
+  height: 2.75rem;
+  padding: 0 0.45rem;
+  padding-top: 0;
   background: #0c100c;
   border-bottom: 1px solid #2c352b;
 }
 #site-nav button, #site-nav a {
   box-sizing: border-box;
-  height: 1.35rem;
-  min-height: 0;
-  min-width: 28px;
+  height: 44px;
+  min-height: 44px;
+  min-width: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0 0.45rem;
-  font-size: 12px;
+  padding: 0 0.55rem;
+  font-size: 13px;
   border-radius: 999px;
   border: 1px solid #c6a15b;
   background: transparent;
@@ -33,7 +33,7 @@
   text-decoration: none;
 }
 html.has-site-nav body,
-body.has-site-nav { padding-top: 1.7rem; scroll-padding-top: 2.2rem; }
+body.has-site-nav { padding-top: 2.75rem; scroll-padding-top: 3.2rem; }
 html.has-site-nav body:has(#exchange-overview),
 body.has-site-nav:has(#exchange-overview) { padding-top: 0; }
 html.has-site-nav body:has(#exchange-overview) .launch-bar { margin-top: 3.25rem; }
