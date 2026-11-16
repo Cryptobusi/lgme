@@ -1,7 +1,7 @@
 #category-board[data-theme="paper"] { background: #f4f1e8; color: #1a1408; }
 #category-board[data-theme="gold"] .category-actions button { background: #c6a15b; }
 #category-board {
-  min-height: 0;
+  min-height: 48rem;
   margin: 0.2rem 0 0.6rem;
   color: #f4f1e8;
 }
