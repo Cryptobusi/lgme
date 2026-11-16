@@ -67,9 +67,9 @@ for (const [width, height] of [[390, 844], [768, 1024], [1280, 800]]) {
       await page.goto(`${base}${path}`, { waitUntil: 'domcontentloaded', timeout: 20000 });
       await page.locator('#ai-dock').waitFor();
       await page.locator('#site-home').waitFor();
-      const box = await page.locator('#ai-dock').evaluate((node) => ({ height: node.getBoundingClientRect().height, text: document.getElementById('ai-log').textContent }));
+      const box = await page.locator('#ai-dock').evaluate((node) => ({ height: node.getBoundingClientRect().height, text: `${document.getElementById('ai-log').textContent} ${document.getElementById('ai-send-state')?.getAttribute('aria-label') || ''}` }));
       if (box.height > height * 0.42) failures.push(`${width} ${path} dock tall ${box.height}`);
-      if (!/Ask here|AI off|names what/.test(box.text)) failures.push(`${width} ${path} empty panel`);
+      if (!/Ask here|AI off|names what|Not sent|Held/.test(box.text)) failures.push(`${width} ${path} empty panel`);
       const covered = await page.evaluate(() => {
         const nav = document.getElementById('site-nav').getBoundingClientRect();
         const dock = document.getElementById('ai-dock').getBoundingClientRect();

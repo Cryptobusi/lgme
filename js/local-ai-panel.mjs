@@ -49,7 +49,6 @@ function paint(dock) {
   const enabled = aiOn();
   const ready = enabled && localAiReady();
   const online = navigator.onLine !== false;
-  const log = dock.querySelector('#ai-log');
   const flag = dock.querySelector('#ai-flag');
   const accept = dock.querySelector('#ai-accept');
   const toggle = dock.querySelector('#ai-switch');
@@ -68,12 +67,20 @@ function paint(dock) {
   dock.dataset.online = online ? 'yes' : 'no';
   flag.hidden = true;
   flag.textContent = `${FLAG} Online: ${online ? 'yes' : 'no'}. AI: ${ready ? 'yes' : 'no'}.`;
+  const sent = dock.dataset.sent === 'yes';
+  const state = dock.querySelector('#ai-send-state');
+  if (state) {
+    state.classList.toggle('is-sent', sent);
+    state.classList.toggle('is-held', !sent);
+    const name = state.querySelector('b');
+    if (name) name.textContent = sent ? 'Sent' : 'Held';
+    state.setAttribute('aria-label', sent ? 'Sent.' : 'Not sent. Held on this phone.');
+  }
   if (typeof dock.paintControls === 'function') dock.paintControls();
   if (dock.classList.contains('has-field')) return;
   if (!enabled) return;
-  log.textContent = live ? 'Ask here. Nothing is sent.' : 'AI off. Tap to turn on.';
   accept.disabled = !ready;
-  accept.textContent = 'Sug';
+  accept.textContent = 'Hint';
 }
 
 const ACTIVITIES = [
@@ -289,7 +296,7 @@ function mount() {
   const dock = document.createElement('section');
   dock.id = 'ai-dock';
   dock.setAttribute('aria-label', 'On-device AI');
-  dock.innerHTML = '<p class="ai-top"><button type="button" id="ai-controls" aria-expanded="false" aria-label="Show or hide controls">Controls</button><span id="ai-status">AI off · Voice · Speak+show</span><button type="button" id="ai-switch" class="ai-pill" role="switch" aria-checked="true" aria-live="polite" aria-label="AI on or off">AI off</button><button type="button" id="ai-voice" class="ai-detail" aria-label="Speak or type">Voice</button><button type="button" id="ai-voice-reply" class="ai-detail" aria-label="Voice reply, Speak and show">Reply</button><span id="ai-voice-mode" class="ai-detail">Speak+show</span><button type="button" id="ai-listen" class="ai-detail" aria-pressed="false" aria-label="Listen again after speaking">Listen</button><span id="ai-mic" hidden>Listening</span><span id="ai-speaking" hidden>Speaking</span><button type="button" id="ai-stop" hidden>Stop</button><button type="button" id="ai-smaller" class="ai-detail" aria-label="Smaller text">A-</button><button type="button" id="ai-larger" class="ai-detail" aria-label="Bigger text">A+</button><a class="ai-setup-link ai-detail" href="/ai-setup">Help</a><button type="button" id="ai-incognito" class="ai-detail" aria-pressed="false">Incognito</button><button type="button" id="ai-incognito-count" class="ai-detail">Pending 0</button><button type="button" id="ai-expand" aria-expanded="true">Close</button></p><p id="ai-incognito-notice" hidden>Incognito — stays on this phone</p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><div id="ai-chip-row"><div id="ai-chips" class="ai-chips"></div><span id="ai-chip-hint" aria-hidden="true">›</span></div><div class="ai-compose"><textarea id="ai-ask" rows="1" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><button type="button" id="ai-mic-btn" aria-label="Speak">Mic</button><p class="ai-actions"><button type="button" id="ai-send" aria-label="Send">Snd</button><button type="button" id="ai-accept" aria-label="Use suggestion">Sug</button><button type="button" id="ai-confirm" aria-label="Confirm">OK</button></p></div><div id="ai-scroll"><div id="ai-incognito-review" hidden></div><pre id="ai-log"></pre><p id="ai-more" hidden>More</p></div>';
+  dock.innerHTML = '<p class="ai-top"><button type="button" id="ai-controls" aria-expanded="false" aria-label="Show or hide controls">Controls</button><span id="ai-status">AI off · Voice · Speak+show</span><button type="button" id="ai-switch" class="ai-pill" role="switch" aria-checked="true" aria-live="polite" aria-label="AI on or off">AI off</button><button type="button" id="ai-voice" class="ai-detail" aria-label="Speak or type">Voice</button><button type="button" id="ai-voice-reply" class="ai-detail" aria-label="Voice reply, Speak and show">Reply</button><span id="ai-voice-mode" class="ai-detail">Speak+show</span><button type="button" id="ai-listen" class="ai-detail" aria-pressed="false" aria-label="Listen again after speaking">Listen</button><span id="ai-mic" hidden>Listening</span><span id="ai-speaking" hidden>Speaking</span><button type="button" id="ai-stop" hidden>Stop</button><button type="button" id="ai-smaller" class="ai-detail" aria-label="Smaller text">A-</button><button type="button" id="ai-larger" class="ai-detail" aria-label="Bigger text">A+</button><a class="ai-setup-link ai-detail" href="/ai-setup">Help</a><button type="button" id="ai-incognito" class="ai-detail" aria-pressed="false">Incognito</button><button type="button" id="ai-incognito-count" class="ai-detail">Pending 0</button><button type="button" id="ai-expand" aria-expanded="true">Close</button></p><p id="ai-incognito-notice" hidden>Incognito — stays on this phone</p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><div id="ai-chip-row"><div id="ai-chips" class="ai-chips"></div><span id="ai-chip-hint" aria-hidden="true">›</span></div><div id="ai-scroll"><div id="ai-incognito-review" hidden></div><div id="ai-log-frame"><pre id="ai-log"></pre><div id="ai-suggestions"></div></div><p id="ai-more" hidden>More</p></div><div class="ai-compose"><div id="ai-input-frame"><textarea id="ai-ask" rows="1" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><p id="ai-send-state" class="is-held" role="status" aria-label="Not sent. Held on this phone."><i></i><b>Held</b></p><p class="ai-actions"><button type="button" id="ai-mic-btn" aria-label="Microphone"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg></button><button type="button" id="ai-send" aria-label="Send">Send</button><button type="button" id="ai-accept" aria-label="Hint">Hint</button><button type="button" id="ai-confirm" aria-label="Confirm">OK</button></p></div></div>';
   dock.classList.add('is-open', 'is-normal');
   try { document.documentElement.dataset.screen = activeScreen(localStorage); } catch { /* everyday height stays */ }
   try {
@@ -310,10 +317,62 @@ function mount() {
   window.addEventListener('resize', placeDock);
   const ask = dock.querySelector('#ai-ask');
   const chips = dock.querySelector('#ai-chips');
+  const dismissed = new Set();
   let fieldToken = 0;
+  const paintSuggestions = (labels, field) => {
+    const host = dock.querySelector('#ai-suggestions');
+    if (!host) return;
+    host.replaceChildren();
+    for (const label of labels) {
+      if (dismissed.has(label)) continue;
+      const row = document.createElement('div');
+      row.className = 'ai-suggest';
+      const line = document.createElement('span');
+      line.className = 'ai-suggest-line';
+      line.textContent = label;
+      const yes = document.createElement('button');
+      yes.type = 'button';
+      yes.className = 'ai-yes';
+      yes.textContent = '✓';
+      yes.setAttribute('aria-label', `Yes, ${label}`);
+      const no = document.createElement('button');
+      no.type = 'button';
+      no.className = 'ai-no';
+      no.textContent = '×';
+      no.setAttribute('aria-label', `No, ${label}`);
+      yes.addEventListener('click', () => {
+        if (field) {
+          applyFieldOption(field, label);
+          const next = nextHelpField(field);
+          if (next) next.focus();
+          else field.focus();
+          return;
+        }
+        ask.value = label;
+        lastByVoice = false;
+        dock.classList.remove('is-voice');
+        dock.dataset.sent = 'no';
+        stagePrompt();
+      });
+      no.addEventListener('click', () => {
+        dismissed.add(label);
+        if (stagedText === label) { staged = null; stagedText = ''; }
+        row.remove();
+        for (const chip of chips.querySelectorAll('.ai-chip')) {
+          if (chip.textContent === label) chip.remove();
+        }
+      });
+      const pair = document.createElement('span');
+      pair.className = 'ai-yesno';
+      pair.append(yes, no);
+      row.append(line, pair);
+      host.append(row);
+    }
+  };
   const paintChips = (labels, field) => {
     chips.replaceChildren();
     for (const label of labels) {
+      if (dismissed.has(label)) continue;
       const chip = document.createElement('button');
       chip.type = 'button';
       chip.className = 'ai-chip';
@@ -334,6 +393,7 @@ function mount() {
       }
       chips.append(chip);
     }
+    paintSuggestions(labels, field);
   };
   const showField = (field) => {
     const meta = fieldMeta(field);
@@ -503,6 +563,8 @@ function mount() {
     try { sessionStorage.removeItem('lgme.prompt.note'); } catch { /* the log still shows */ }
   };
   const stagePrompt = () => {
+    dock.dataset.sent = 'no';
+    paint(dock);
     const text = ask.value.trim();
     const log = dock.querySelector('#ai-log');
     const matched = matchPrompt(text);
@@ -534,6 +596,8 @@ function mount() {
     const pageTitle = document.getElementById('gym-ididit-other');
     if (pageConfirm && pageTitle && ask.value.trim() && ask.value.trim() === pageTitle.value) {
       note(dock.querySelector('#ai-confirm'), 'Recording');
+      if (!incognitoOn(localStorage)) dock.dataset.sent = 'yes';
+      paint(dock);
       pageConfirm.click();
       return;
     }
@@ -904,6 +968,8 @@ function mount() {
       sessionStorage.setItem('lgme.prompt.draft', JSON.stringify({ kind: matched.kind, text: matched.text }));
       localStorage.setItem('lgme.ai.accepted', suggestion);
     } catch { /* the line still shows */ }
+    dock.dataset.sent = 'no';
+    paint(dock);
     dock.querySelector('#ai-log').textContent = `${matched.line} Accepted on this phone. Nothing was sent.`;
   });
   window.addEventListener('online', () => paint(dock));

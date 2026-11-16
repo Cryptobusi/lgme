@@ -66,7 +66,7 @@ async function check(page, label, shot, viewportHeight) {
     const ink = getComputedStyle(node.querySelector('#ai-switch'));
     return {
       height: node.getBoundingClientRect().height,
-      text: document.getElementById('ai-log').textContent,
+      text: `${document.getElementById('ai-log').textContent} ${document.getElementById('ai-send-state')?.getAttribute('aria-label') || ''}`,
       dock: dock.backgroundColor,
       ink: ink.color,
       label: ink.color
@@ -74,7 +74,7 @@ async function check(page, label, shot, viewportHeight) {
   });
   const problems = [];
   if (box.height > viewportHeight * 0.25) problems.push(`tall ${box.height}`);
-  if (!/Ask here|AI off|AI on|Accepted on this phone/.test(box.text || '')) problems.push(`empty prompt ${(box.text || '').slice(0, 40)}`);
+  if (!/Ask here|AI off|AI on|Accepted on this phone|Not sent|Held/.test(box.text || '')) problems.push(`empty prompt ${(box.text || '').slice(0, 40)}`);
   if (shot) await page.screenshot({ path: shot, timeout: 8000, animations: 'disabled' });
   const parse = (value) => {
     const match = String(value).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);

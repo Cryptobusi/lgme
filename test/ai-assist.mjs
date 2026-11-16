@@ -380,7 +380,7 @@ async function gymOut(view) {
   const groups = await openPage(view, '/gym.html#/groups');
   await groups.waitForSelector('input[placeholder="Message"]');
   await groups.locator('input[placeholder="Message"]').fill('Hello from this phone');
-  await groups.locator('button', { hasText: /^Send$/ }).click();
+  await groups.locator('#gym-panel button.primary', { hasText: /^Send$/ }).click();
   await groups.waitForFunction(() => /Choose who is acting/.test(document.getElementById('gym-status')?.textContent || ''));
   assert((await sent(groups)).length === 0, 'signed-out chat posted');
   await groups.context().close();
@@ -438,13 +438,13 @@ async function gymFull(view) {
 
   const groups = await openPage(view, '/gym.html#/groups');
   await groups.waitForSelector('input[placeholder="Message"]');
-  await groups.locator('button', { hasText: /^Send$/ }).click();
+  await groups.locator('#gym-panel button.primary', { hasText: /^Send$/ }).click();
   await groups.waitForFunction(() => /Add a short message/.test(document.getElementById('gym-status')?.textContent || ''));
   await groups.locator('input[placeholder="Message"]').fill('call me at 555-111-2222');
-  await groups.locator('button', { hasText: /^Send$/ }).click();
+  await groups.locator('#gym-panel button.primary', { hasText: /^Send$/ }).click();
   await groups.waitForFunction(() => /Leave out/.test(document.getElementById('gym-status')?.textContent || ''));
   await groups.locator('input[placeholder="Message"]').fill('Hello from this phone');
-  await groups.locator('button', { hasText: /^Send$/ }).click();
+  await groups.locator('#gym-panel button.primary', { hasText: /^Send$/ }).click();
   await groups.waitForFunction(() => /on this phone only/.test(document.body.innerText));
   assert((await sent(groups)).length === 0, 'chat posted');
   await groups.context().close();

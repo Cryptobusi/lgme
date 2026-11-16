@@ -14,8 +14,8 @@ test('press ticks stay on the device and default on', () => {
   const button = { closest: () => button, disabled: false };
   assert.equal(pressTarget({ closest: (sel) => sel.includes('button') ? button : null }), button);
   const panel = readFileSync(new URL('../js/local-ai-panel.mjs', import.meta.url), 'utf8');
-  assert.match(panel, /aria-label="Send">Snd</);
-  assert.match(panel, /aria-label="Use suggestion">Sug</);
+  assert.match(panel, /aria-label="Send">Send</);
+  assert.match(panel, /aria-label="Hint">Hint</);
   assert.match(panel, /aria-label="Confirm">OK</);
   const css = readFileSync(new URL('../site-nav.css', import.meta.url), 'utf8');
   assert.match(css, /#ai-dock\.is-open\s*\{[^}]*height:\s*40vh/);

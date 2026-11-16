@@ -44,7 +44,7 @@ await page.locator('#ai-ask').waitFor();
 const mic = await page.locator('#ai-mic-btn').boundingBox();
 if (!mic || mic.width < 40 || mic.height < 40) failures.push(`mic hidden ${JSON.stringify(mic)}`);
 if (await page.locator('#ai-chips .ai-chip').count() < 5) failures.push('chips under 5');
-const frame = await page.locator('#ai-log').evaluate((node) => getComputedStyle(node).borderTopWidth);
+const frame = await page.locator('#ai-log-frame').evaluate((node) => getComputedStyle(node).borderTopWidth);
 if (frame !== '2px') failures.push(`log frame ${frame}`);
 const dots = await page.locator('#ai-status span i').count();
 if (dots < 5) failures.push(`status dots ${dots}`);
@@ -77,6 +77,33 @@ const chip = await page.locator('.ai-chip').first().evaluate((node) => {
   return { h: box.height, size: parseFloat(getComputedStyle(node).fontSize) };
 });
 if (chip.h < 24 || chip.h > 32 || chip.size < 13 || chip.size > 14) failures.push(`chip ${chip.h}/${chip.size}`);
+const frames = await page.evaluate(() => {
+  const log = getComputedStyle(document.getElementById('ai-log-frame'));
+  const input = getComputedStyle(document.getElementById('ai-input-frame'));
+  return { logW: log.borderTopWidth, inputW: input.borderTopWidth, logR: log.borderRadius, inputR: input.borderRadius, logA: log.backgroundColor, inputA: input.backgroundColor };
+});
+if (frames.logW !== '2px' || frames.inputW !== '2px' || frames.logR !== frames.inputR) failures.push(`frames ${frames.logW}/${frames.inputW}`);
+if (!/0\.5/.test(frames.logA) || frames.logA !== frames.inputA) failures.push(`shade ${frames.logA} ${frames.inputA}`);
+const row = await page.locator('#ai-mic-btn, #ai-send, #ai-confirm').evaluateAll((nodes) => nodes.map((node) => Math.round(node.getBoundingClientRect().top)));
+if (Math.max(...row) - Math.min(...row) > 4) failures.push(`action row ${row.join(',')}`);
+if (/Mic/.test(await page.locator('#ai-mic-btn').innerText())) failures.push('mic is text');
+if ((await page.locator('#ai-mic-btn svg').count()) !== 1) failures.push('mic icon missing');
+if ((await page.locator('#ai-accept').evaluate((node) => node.textContent)) !== 'Hint') failures.push('hint label');
+if (!/Not sent/.test(await page.locator('#ai-send-state').getAttribute('aria-label') || '')) failures.push('held label');
+if ((await page.locator('.ai-suggest').count()) < 5) failures.push('suggest lines');
+const shapes = await page.evaluate(() => {
+  const yes = getComputedStyle(document.querySelector('.ai-yes'));
+  const no = getComputedStyle(document.querySelector('.ai-no'));
+  return { yes: yes.borderRadius, no: no.borderRadius, yesBg: yes.backgroundColor, noBg: no.backgroundColor };
+});
+if (shapes.yes === shapes.no || shapes.yesBg === shapes.noBg) failures.push('yes and no look the same');
+await page.locator('.ai-yes').first().click();
+if (await page.locator('#gym-ididit-confirm').count()) failures.push('yes recorded');
+if (!/Ready to log|Category:|Opened|You can log/.test(await page.locator('#ai-log').innerText())) failures.push('yes did not stage');
+if (!/Not sent/.test(await page.locator('#ai-send-state').getAttribute('aria-label') || '')) failures.push('yes sent');
+const linesBefore = await page.locator('.ai-suggest').count();
+await page.locator('.ai-no').last().click();
+if (!((await page.locator('.ai-suggest').count()) < linesBefore)) failures.push('no did not dismiss');
 if (!(await page.locator('#ai-chip-hint').isVisible())) failures.push('chip hint missing');
 await page.locator('#ai-ask').fill('log 10min treadmill');
 await page.locator('#ai-ask').evaluate((node) => {

@@ -58,7 +58,7 @@ if (root) {
     mine = document.createElement('details');
     mine.id = 'my-functions';
     const summary = document.createElement('summary');
-    summary.textContent = 'My functions';
+    summary.textContent = 'My Agency';
     mine.append(summary);
     root.prepend(mine);
     root.prepend(row);

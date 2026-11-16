@@ -8,8 +8,8 @@ function plain(value, max) {
 }
 
 export function validateLocalFunction(input) {
-  if (!input || typeof input !== 'object' || Array.isArray(input)) return { ok: false, error: 'A local function is data only.' };
-  if (BAD.test(JSON.stringify(input))) return { ok: false, error: 'Local functions cannot contain code.' };
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return { ok: false, error: 'A My Agency item is data only.' };
+  if (BAD.test(JSON.stringify(input))) return { ok: false, error: 'My Agency cannot contain code.' };
   const action = ACTIONS.has(input.action) ? input.action : '';
   const label = plain(input.label, 40);
   const prompt = plain(input.prompt, 160);
@@ -68,7 +68,7 @@ export function exportLocalFunctions(storage) {
 
 export function importLocalFunctions(storage, json) {
   const parsed = JSON.parse(json);
-  if (!Array.isArray(parsed)) return { ok: false, error: 'Import a list of local functions.' };
+  if (!Array.isArray(parsed)) return { ok: false, error: 'Import a list for My Agency.' };
   const kept = [];
   for (const row of parsed) {
     const checked = validateLocalFunction(row);
