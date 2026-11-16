@@ -111,9 +111,9 @@ for (const [width, height] of [[390, 844], [768, 1024], [1280, 800]]) {
 const signed = await boot(390, 844, member);
 const signedPage = await signed.newPage();
 await signedPage.goto(`${base}/`, { waitUntil: 'domcontentloaded' });
-await signedPage.locator('#ai-flag').waitFor();
-const flag = await signedPage.locator('#ai-flag').innerText();
-if (!flag.includes('Only available online with AI enabled.')) failures.push(`flag ${flag}`);
+await signedPage.locator('#ai-status').waitFor();
+const flag = await signedPage.locator('#ai-status').innerText();
+if (await signedPage.locator('#ai-flag').isVisible()) failures.push('online line still shown');
 if (!/Online: yes/.test(flag) || !/AI: yes/.test(flag)) failures.push(`flag state ${flag}`);
 await signedPage.screenshot({ path: '/opt/cursor/artifacts/ai-flag-390.png', timeout: 8000, animations: 'disabled' });
 posts.length = 0;
@@ -137,7 +137,7 @@ await offPage.context().setOffline(true);
 await offPage.evaluate(() => window.dispatchEvent(new Event('offline')));
 await offPage.getByRole('button', { name: 'Offer', exact: true }).click();
 if (await offPage.locator('#demo-confirm').count()) failures.push('offline opened a confirm');
-const offFlag = await offPage.locator('#ai-flag').innerText();
+const offFlag = await offPage.locator('#ai-status').innerText();
 if (!/Online: no/.test(offFlag)) failures.push(`offline flag ${offFlag}`);
 await offline.close();
 

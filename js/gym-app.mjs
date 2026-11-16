@@ -37,6 +37,7 @@ import { DISCLAIMER, DISCLAIMER_EDITION, SANDBOX_LABEL, confirmOutcome, failMedi
 import { mountDeviceCard } from './device-card.mjs';
 import { nextVoiceReply, readVoiceReply, voiceReplyLabel } from './local-ai-panel.mjs';
 import { NOTICE, UNPUBLISHED, incognitoOn, installIncognitoGuard, listPending, receiptStatus, setIncognito } from './incognito.mjs';
+import { setSounds, soundsOn } from './press-feedback.mjs';
 
 installIncognitoGuard();
 let mode = localStorage.getItem(MODE_KEY) === 'demo' ? 'demo' : 'real';
@@ -1033,6 +1034,27 @@ function healthSettings(peer) {
 
 let voiceReplySync = null;
 
+function soundSettings() {
+  const on = soundsOn(localStorage);
+  const label = el('p', { id: 'sounds-label' }, [on ? 'Sounds on' : 'Sounds off']);
+  const toggle = el('button', { type: 'button', id: 'sounds-toggle', 'aria-pressed': on ? 'true' : 'false' }, ['Sounds']);
+  const sync = () => {
+    const enabled = soundsOn(localStorage);
+    label.textContent = enabled ? 'Sounds on. The tick stays on this phone.' : 'Sounds off.';
+    toggle.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+  };
+  toggle.addEventListener('click', () => {
+    setSounds(localStorage, !soundsOn(localStorage));
+    sync();
+  });
+  sync();
+  return el('section', { class: 'card', id: 'sounds-settings' }, [
+    el('h3', {}, ['Sounds']),
+    label,
+    toggle
+  ]);
+}
+
 function incognitoSettings() {
   const notice = el('p', { id: 'incognito-notice' }, [incognitoOn(localStorage) ? NOTICE : 'Incognito is off.']);
   const count = el('p', { id: 'incognito-count' }, [`Pending ${listPending(localStorage).length}`]);
@@ -1091,6 +1113,7 @@ async function renderMore() {
   return el('div', {}, [
     el('h2', {}, ['Settings']),
     incognitoSettings(),
+    soundSettings(),
     voiceReplySettings(),
     mine && mine.example !== true ? healthSettings(mine) : null,
     el('p', {}, [el('a', { href: '/gym/health-data' }, ['Consumer health data']), ' · ', el('a', { href: '/gym/breach-plan' }, ['Breach plan']), ' · ', el('a', { href: '/help' }, ['Help'])]),

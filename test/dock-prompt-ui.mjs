@@ -97,6 +97,7 @@ await page.evaluate(() => {
 });
 if (await page.locator('#ai-more').isHidden()) failures.push('more indicator missing');
 const before = await page.locator('#ai-dock').evaluate((node) => node.getBoundingClientRect().height);
+await page.locator('#ai-controls').click();
 await page.locator('#ai-larger').click();
 await page.reload({ waitUntil: 'domcontentloaded' });
 const size = await page.evaluate(() => localStorage.getItem('lgme.dock.size'));

@@ -1,0 +1,29 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { motionReduced, pressTarget, setSounds, soundsOn } from '../js/press-feedback.mjs';
+
+test('press ticks stay on the device and default on', () => {
+  const data = new Map();
+  const storage = { getItem: (key) => data.get(key) ?? null, setItem: (key, value) => data.set(key, value) };
+  assert.equal(soundsOn(storage), true);
+  assert.equal(setSounds(storage, false).local, true);
+  assert.equal(soundsOn(storage), false);
+  assert.equal(motionReduced(() => ({ matches: true })), true);
+  assert.equal(motionReduced(() => ({ matches: false })), false);
+  const button = { closest: () => button, disabled: false };
+  assert.equal(pressTarget({ closest: (sel) => sel.includes('button') ? button : null }), button);
+  const panel = readFileSync(new URL('../js/local-ai-panel.mjs', import.meta.url), 'utf8');
+  assert.match(panel, /aria-label="Send">Snd</);
+  assert.match(panel, /aria-label="Use suggestion">Sug</);
+  assert.match(panel, /aria-label="Confirm">OK</);
+  const css = readFileSync(new URL('../site-nav.css', import.meta.url), 'utf8');
+  assert.match(css, /#ai-dock\.is-open\s*\{[^}]*height:\s*40vh/);
+  assert.match(css, /#ai-send \{ background: #c6a15b/);
+  assert.match(css, /prefers-reduced-motion: reduce/);
+  const settings = readFileSync(new URL('../js/gym-app.mjs', import.meta.url), 'utf8');
+  assert.equal(settings.includes("id: 'sounds-settings'"), true);
+  const tick = readFileSync(new URL('../js/press-feedback.mjs', import.meta.url), 'utf8');
+  assert.equal(tick.includes('fetch('), false);
+  assert.match(tick, /vibrate\?\.\(10\)/);
+});
