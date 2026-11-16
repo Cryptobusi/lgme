@@ -2,7 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fingerprintKind, startFingerprintPrompt } from '../js/passkey-signin.mjs';
-import { relyingParty } from '../js/webauthn-passkey.mjs';
 
 const root = new URL('..', import.meta.url);
 
@@ -47,7 +46,10 @@ test('a fingerprint tap opens the prompt before any await', async () => {
   assert.equal(seen.at(-1)[1].publicKey.userVerification, 'required');
   await again.catch(() => {});
   assert.throws(() => startFingerprintPrompt({ ok: false, unavailable: true, message: 'This phone has no fingerprint or screen lock. Use the authenticator code.' }), /authenticator code/);
-  assert.equal(relyingParty('lgme.app').rpID, 'lgme.app');
+  const party = readFileSync(new URL('js/webauthn-passkey.mjs', root), 'utf8');
+  assert.match(party, /export const RP_ID = 'lgme.app'/);
+  assert.match(party, /authenticatorAttachment: 'platform'/);
+  assert.match(party, /userVerification: 'required'/);
   const home = readFileSync(new URL('js/thumb-home.mjs', root), 'utf8');
   const tap = home.slice(home.indexOf('const tapFingerprint'), home.indexOf('tapFingerprint(board'));
   assert.equal(tap.includes("addEventListener('click', async"), false);
