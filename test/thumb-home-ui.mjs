@@ -65,6 +65,14 @@ const regions = await page.evaluate(() => {
 if (!regions.order) failures.push('regions out of order');
 if (!regions.clear) failures.push('function row overlaps the dock');
 if (!regions.target) failures.push('tap target under 48');
+const areas = await page.evaluate(() => ['#profile-board', '#function-row', '#ai-dock'].map((id) => {
+  const style = getComputedStyle(document.querySelector(id));
+  return { id, width: style.borderTopWidth, style: style.borderTopStyle, color: style.borderTopColor };
+}));
+for (const area of areas) {
+  if (area.width !== '2px' || area.style !== 'solid') failures.push(`outline ${area.id} ${area.width} ${area.style}`);
+}
+if (await page.locator('#ai-head').count() && !(await page.locator('#ai-head').isVisible())) failures.push('AI notice hidden');
 if (regions.ratio < 0.38 || regions.ratio > 0.42) failures.push(`dock height ${regions.ratio}`);
 if (await page.locator('#functions-import').isVisible()) failures.push('choose file visible before open');
 if ((await page.locator('#function-row a').first().innerText()) !== 'IdidIt (verified receipt)') failures.push('ididit label');
