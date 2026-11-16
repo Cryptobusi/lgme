@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { nextVoiceReply, readVoiceReply, spokenCommand, voiceFriendly, voiceReplyLabel, voiceReplyShows, voiceReplySpeaks } from '../js/local-ai-panel.mjs';
+import { nextVoiceReply, readVoiceReply, speechErrorLine, spokenCommand, voiceFriendly, voiceReplyLabel, voiceReplyShows, voiceReplySpeaks } from '../js/local-ai-panel.mjs';
 
 test('voice replies spell minutes, speed, and steps', () => {
   const line = voiceFriendly('Ready to log on IdidIt: Walk, 30 min.\n1) Press Send again or tap Confirm to open the filled-in draft.\n2) Check the activity and minutes.');
@@ -24,6 +24,16 @@ test('voice replies spell minutes, speed, and steps', () => {
   assert.equal(panel.includes('id="ai-mic-btn"'), true);
   assert.equal(panel.includes('id="ai-mic-btn" class="ai-detail"'), false);
   assert.equal(panel.includes("querySelector('#ai-mic-btn').addEventListener('click', () => startListen())"), true);
+  assert.equal(panel.includes('heard.start()'), true);
+  assert.equal(panel.includes('getUserMedia'), true);
+  assert.equal(panel.includes('is-recording'), true);
+  assert.equal(panel.includes('Listening…'), true);
+  assert.equal(/if \(!\('processLocally' in heard\)\) \{\s*showReply/.test(panel), false);
+  assert.equal(speechErrorLine('not-allowed').includes('Allow the microphone'), true);
+  assert.equal(speechErrorLine('no-speech').includes('No speech heard'), true);
+  assert.equal(speechErrorLine('network').includes('connection'), true);
+  assert.equal(speechErrorLine('service-not-allowed').includes('turned off'), true);
+  assert.equal(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8').includes('microphone=(self)'), true);
   assert.equal(panel.includes('>Stop<'), true);
   assert.equal(panel.includes('>Listening<'), true);
   assert.equal(voiceReplyLabel('speak'), 'Speak and show');

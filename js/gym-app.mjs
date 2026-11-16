@@ -2183,7 +2183,14 @@ async function renderIdidIt() {
     const bits = [activity.value, distance.value, speed.value].filter(Boolean);
     if (minutes.value) bits.push(computed.textContent ? `about ${minutes.value} min` : `${minutes.value} min`);
     const summary = bits.join(', ') || title.value;
-    const note = `Draft filled: ${summary}. Check them, then Confirm.`;
+    let voiceTurn = false;
+    try { voiceTurn = sessionStorage.getItem('lgme.voice.turn') === '1'; } catch { /* the typed note stays */ }
+    const note = voiceTurn
+      ? `Heard ${summary}. Check the form. Tap OK. OK?`
+      : `Draft filled: ${summary}. Check them, then Confirm.`;
+    if (voiceTurn) {
+      try { sessionStorage.removeItem('lgme.voice.turn'); } catch { /* the note still shows */ }
+    }
     try { sessionStorage.setItem('lgme.prompt.note', note); } catch { /* the log still updates */ }
     window.dispatchEvent(new CustomEvent('lgme-draft-filled'));
   };

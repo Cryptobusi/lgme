@@ -54,13 +54,25 @@ const overlap = await page.locator('#ai-status').evaluate((node) => {
 });
 if (overlap) failures.push('status labels overlap');
 await page.evaluate(() => {
-  class LocalSpeech { start() { this.onresult?.({ results: [[{ transcript: 'log 5min walk' }]] }); } stop() {} }
+  class LocalSpeech {
+    start() { window.__speech = this; }
+    stop() { this.stopped = true; }
+  }
   LocalSpeech.prototype.processLocally = true;
   window.SpeechRecognition = LocalSpeech;
   window.webkitSpeechRecognition = LocalSpeech;
 });
 await page.locator('#ai-mic-btn').click();
-await page.waitForFunction(() => /Ready to log on IdidIt/.test(document.getElementById('ai-log')?.textContent || ''));
+if (!(await page.locator('#ai-mic-btn').evaluate((node) => node.classList.contains('is-recording')))) failures.push('mic not recording');
+if (!/Listening/.test(await page.locator('#ai-mic').innerText())) failures.push('listening label');
+await page.evaluate(() => window.__speech.onresult({ results: [[{ transcript: 'log 5min walk' }]] }));
+await page.locator('#gym-ididit-activity').waitFor();
+await page.waitForFunction(() => document.getElementById('gym-ididit-activity')?.value === 'Walk' && /OK\?/.test(document.getElementById('ai-log')?.textContent || ''));
+if ((await page.locator('#ai-ask').inputValue()) !== 'log 5min walk') failures.push('transcript missing');
+if (/Recorded on testnet/.test(await page.locator('#ididit-status').innerText().catch(() => ''))) failures.push('voice recorded without OK');
+await page.goto(`${base}/gym`, { waitUntil: 'domcontentloaded' });
+await page.evaluate(() => { sessionStorage.removeItem('lgme.voice.turn'); sessionStorage.removeItem('lgme.prompt.note'); });
+await page.locator('#ai-ask').waitFor();
 await page.evaluate(() => {
   localStorage.setItem('lgme.incognito', '1');
   class RemoteSpeech { start() { this.onresult?.({ results: [[{ transcript: 'should not land' }]] }); } stop() {} }
@@ -70,6 +82,22 @@ await page.evaluate(() => {
 await page.locator('#ai-mic-btn').click();
 await page.waitForFunction(() => /Incognito is on/.test(document.getElementById('ai-log')?.textContent || ''));
 await page.evaluate(() => localStorage.removeItem('lgme.incognito'));
+await page.evaluate(() => {
+  class ErrSpeech {
+    start() { this.onerror?.({ error: 'not-allowed' }); }
+    stop() {}
+  }
+  window.SpeechRecognition = ErrSpeech;
+  window.webkitSpeechRecognition = ErrSpeech;
+  window.__micPrompt = false;
+  const devices = { getUserMedia() { window.__micPrompt = true; return Promise.resolve({ getTracks: () => [{ stop() {} }] }); } };
+  try { Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: devices }); }
+  catch { /* the page keeps its own devices object */ }
+});
+await page.locator('#ai-mic-btn').click();
+await page.waitForTimeout(200);
+const micError = await page.evaluate(() => ({ log: document.getElementById('ai-log')?.textContent || '', prompt: window.__micPrompt === true }));
+if (!/microphone is blocked/i.test(micError.log) || micError.prompt !== true) failures.push(`mic error ${JSON.stringify(micError)}`);
 const panel = await page.locator('#ai-dock').evaluate((node) => node.getBoundingClientRect().height / window.innerHeight);
 if (panel < 0.38 || panel > 0.42) failures.push(`panel ${panel}`);
 const chip = await page.locator('.ai-chip').first().evaluate((node) => {
@@ -118,7 +146,7 @@ await page.locator('#gym-ididit-other').waitFor();
 await page.waitForFunction(() => document.getElementById('gym-ididit-other')?.value === 'Treadmill, 10 min' && document.getElementById('gym-ididit-activity')?.value === 'Treadmill' && document.getElementById('gym-ididit-minutes')?.value === '10');
 if (!/Suggestion: Treadmill, 10 min/.test(await page.locator('#draft-suggestion').innerText())) failures.push('suggestion not repeated');
 if (!(await page.locator('#gym-ididit-confirm').evaluate((node) => node.classList.contains('is-next')))) failures.push('confirm not marked');
-if (!/Draft filled: Treadmill, 10 min/.test(await page.locator('#ai-log').innerText())) failures.push('arrival explainer');
+await page.waitForFunction(() => /Draft filled: Treadmill, 10 min/.test(document.getElementById('ai-log')?.textContent || ''));
 if ((await page.locator('#ai-steps li.is-current').innerText()).indexOf('2)') !== 0) failures.push('step 2 not current');
 if (/Opening draft/.test(await page.locator('#ai-action-status').innerText().catch(() => ''))) failures.push('opening draft label');
 if (await page.locator('#category-board').isVisible()) failures.push('listings still cover the draft');

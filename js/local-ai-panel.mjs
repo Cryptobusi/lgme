@@ -5,7 +5,7 @@ import { localFunctionFromPrompt, saveLocalFunction } from './local-functions.mj
 import { draftWithHelper, localAiReady, pickHelperSync } from './one-tap.mjs';
 import { dockChipsOf } from './variant-schema.mjs';
 import { NOTICE, UNPUBLISHED, deletePending, editPending, holdPrivate, incognitoOn, installIncognitoGuard, listPending, setIncognito, shareApproved, sharePreview, voiceInputAllowed } from './incognito.mjs';
-import { installPressFeedback } from './press-feedback.mjs';
+import { installPressFeedback, playTick, soundsOn } from './press-feedback.mjs';
 
 const FLAG = 'Only available online with AI enabled.';
 const AI_CHIPS = ['Log a workout', 'Make an IdidIt receipt', 'What can I do here?', 'I want something', 'I have something'];
@@ -274,6 +274,17 @@ export function voiceReplyShows(mode, byVoice) {
 
 export function voiceReplySpeaks(mode, byVoice) {
   return byVoice === true && voiceReplyMode(mode) === 'speak';
+}
+
+export function speechErrorLine(code) {
+  const lines = {
+    'not-allowed': 'The microphone is blocked. Allow the microphone for lgme.app, then tap Mic again.',
+    'no-speech': 'No speech heard. Tap Mic and speak again.',
+    network: 'Speech needs a connection on this browser. Typing still works.',
+    'service-not-allowed': 'Speech is turned off for this page. Typing still works.',
+    'audio-capture': 'No microphone was found. Typing still works.'
+  };
+  return lines[code] || 'The microphone did not start. Typing still works.';
 }
 
 export function executionPlan(matched) {
@@ -555,14 +566,20 @@ function mount() {
   };
   const showFilled = () => {
     let words = '';
-    try { words = sessionStorage.getItem('lgme.prompt.note') || ''; } catch { /* the log stays */ }
+    let voiceTurn = false;
+    try {
+      words = sessionStorage.getItem('lgme.prompt.note') || '';
+      voiceTurn = sessionStorage.getItem('lgme.voice.turn') === '1';
+    } catch { /* the log stays */ }
     if (!words) return;
-    showReply(dock.querySelector('#ai-log'), words);
-    if (lastByVoice) speakAloud(words);
+    const spoken = voiceFriendly(words);
+    const guide = voiceTurn || /OK\?/.test(words);
+    showReply(dock.querySelector('#ai-log'), guide ? spoken : words);
+    if (lastByVoice || guide) speakAloud(spoken);
     if (flowStep < 3) paintSteps(2);
     try { sessionStorage.removeItem('lgme.prompt.note'); } catch { /* the log still shows */ }
   };
-  const stagePrompt = () => {
+  const stagePrompt = ({ guide = false } = {}) => {
     dock.dataset.sent = 'no';
     paint(dock);
     const text = ask.value.trim();
@@ -572,7 +589,13 @@ function mount() {
     stagedText = text;
     const route = classifyPrompt(text);
     matched.route = route;
-    if (matched.kind === 'ididit') {
+    if (guide && matched.kind !== 'help') {
+      const line = voiceFriendly(`Heard ${matched.title || matched.text || 'that'}. Check the form. Tap OK. OK?`);
+      showReply(log, line);
+      paintSteps(1);
+      try { sessionStorage.setItem('lgme.voice.turn', '1'); } catch { /* the next page still opens */ }
+      if (speakingVoice()) speakAloud(line);
+    } else if (matched.kind === 'ididit') {
       const ready = `Ready to log on IdidIt: ${matched.title || matched.text}.`;
       showReply(log, ready);
       paintSteps(1);
@@ -590,11 +613,11 @@ function mount() {
     note(dock.querySelector('#ai-send'), 'Staged');
     markOverflow();
   };
-  const executeStaged = () => {
+  const executeStaged = ({ record = true } = {}) => {
     const log = dock.querySelector('#ai-log');
     const pageConfirm = document.getElementById('gym-ididit-confirm');
     const pageTitle = document.getElementById('gym-ididit-other');
-    if (pageConfirm && pageTitle && ask.value.trim() && ask.value.trim() === pageTitle.value) {
+    if (record && pageConfirm && pageTitle && ask.value.trim() && ask.value.trim() === pageTitle.value) {
       note(dock.querySelector('#ai-confirm'), 'Recording');
       if (!incognitoOn(localStorage)) dock.dataset.sent = 'yes';
       paint(dock);
@@ -612,7 +635,9 @@ function mount() {
       const side = dock.querySelector('#ai-action-status');
       if (side) side.textContent = '';
     }
-    log.textContent = plan.openDraft ? '' : plan.message;
+    let voiceTurn = false;
+    try { voiceTurn = sessionStorage.getItem('lgme.voice.turn') === '1'; } catch { /* the guide stays */ }
+    if (!(plan.openDraft && voiceTurn)) log.textContent = plan.openDraft ? '' : plan.message;
     if (!plan.openDraft) {
       if (matched.kind === 'screen') applyMode(localStorage, matched.mode);
       if (matched.kind === 'local' && matched.item) saveLocalFunction(localStorage, matched.item);
@@ -721,33 +746,59 @@ function mount() {
     if (step) paintSteps(step);
   });
   setTimeout(showFilled, 0);
+  const micBtn = dock.querySelector('#ai-mic-btn');
+  const tick = () => { if (soundsOn(localStorage)) playTick(window); };
+  const setMicMode = (mode) => {
+    micBtn.classList.toggle('is-recording', mode === 'recording');
+    micBtn.classList.toggle('is-processing', mode === 'processing');
+    micBtn.dataset.state = mode;
+    const label = mode === 'recording' ? 'Listening… Tap to stop' : mode === 'processing' ? 'Processing' : 'Microphone';
+    micBtn.setAttribute('aria-label', label);
+    mic.hidden = mode !== 'recording';
+    mic.textContent = mode === 'recording' ? 'Listening…' : '';
+  };
+  const requestMicPrompt = () => {
+    const devices = navigator.mediaDevices;
+    if (!devices || typeof devices.getUserMedia !== 'function') return;
+    devices.getUserMedia({ audio: true }).then((stream) => {
+      for (const track of stream.getTracks?.() || []) {
+        try { track.stop(); } catch { /* the prompt already opened the mic */ }
+      }
+    }).catch(() => {
+      showReply(dock.querySelector('#ai-log'), speechErrorLine('not-allowed'));
+    });
+  };
   const startListen = () => {
+    if (micBtn.classList.contains('is-recording')) {
+      try { hearing?.stop(); } catch { /* the mic is already quiet */ }
+      setMicMode('idle');
+      tick();
+      return;
+    }
     const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
     try { localStorage.setItem('lgme.voice.used', '1'); } catch { /* the suggestion still works */ }
     if (!Speech) {
       ask.focus();
+      setMicMode('idle');
       showReply(dock.querySelector('#ai-log'), 'Voice is not on this device. Typing still works.');
       return;
     }
     const heard = new Speech();
-    const localVoice = voiceInputAllowed({ incognito: incognitoOn(localStorage), processLocally: 'processLocally' in heard });
+    const onDevice = 'processLocally' in heard;
+    const localVoice = voiceInputAllowed({ incognito: incognitoOn(localStorage), processLocally: onDevice });
     if (!localVoice.ok) {
+      setMicMode('idle');
       showReply(dock.querySelector('#ai-log'), localVoice.message);
       return;
     }
-    if (!('processLocally' in heard)) {
-      showReply(dock.querySelector('#ai-log'), 'Voice stays on this device. This browser cannot listen without sending audio away. Typing still works.');
-      return;
-    }
+    if (onDevice) heard.processLocally = true;
     heard.lang = 'en-US';
-    heard.processLocally = true;
     heard.interimResults = false;
     heard.continuous = false;
-    mic.hidden = false;
     hearing = heard;
-    const stopMic = () => { mic.hidden = true; hearing = null; };
+    const finishMic = (mode) => { setMicMode(mode); if (hearing === heard) hearing = null; };
     heard.onresult = (event) => {
-      stopMic();
+      setMicMode('processing');
       const transcript = event.results?.[0]?.[0]?.transcript || '';
       if (incognitoOn(localStorage) && transcript) holdPrivate(localStorage, { kind: 'voice', summary: transcript, shareable: false });
       const command = spokenCommand(transcript);
@@ -756,17 +807,23 @@ function mount() {
         staged = null;
         stagedText = '';
         stopSpeaking();
+        finishMic('idle');
+        tick();
         showReply(dock.querySelector('#ai-log'), 'Cancelled.');
         return;
       }
       if (command === 'undo') {
         undoMode(localStorage);
         stopSpeaking();
+        finishMic('idle');
+        tick();
         showReply(dock.querySelector('#ai-log'), 'Undone.');
         speakAloud('Undone.');
         return;
       }
       if (command === 'confirm') {
+        finishMic('idle');
+        tick();
         const pageConfirm = document.getElementById('gym-ididit-confirm');
         if (staged) { executeStaged(); return; }
         if (pageConfirm) { pageConfirm.click(); return; }
@@ -775,11 +832,29 @@ function mount() {
         return;
       }
       ask.value = transcript;
-      stagePrompt();
+      try { sessionStorage.setItem('lgme.voice.transcript', transcript); } catch { /* the field still shows it */ }
+      stagePrompt({ guide: true });
+      if (staged) executeStaged({ record: false });
+      finishMic('idle');
+      tick();
     };
-    heard.onerror = () => { stopMic(); ask.focus(); };
-    heard.onend = stopMic;
-    try { heard.start(); } catch { stopMic(); }
+    heard.onerror = (event) => {
+      const code = event?.error || '';
+      finishMic('idle');
+      tick();
+      showReply(dock.querySelector('#ai-log'), speechErrorLine(code));
+      if (code === 'not-allowed' || code === 'service-not-allowed') requestMicPrompt();
+    };
+    heard.onend = () => { if (micBtn.classList.contains('is-recording')) finishMic('idle'); };
+    setMicMode('recording');
+    tick();
+    try { heard.start(); } catch {
+      finishMic('idle');
+      showReply(dock.querySelector('#ai-log'), speechErrorLine('not-allowed'));
+      requestMicPrompt();
+      return;
+    }
+    if (!onDevice) requestMicPrompt();
     setTimeout(() => { try { heard.stop(); } catch { /* already stopped */ } }, 6000);
   };
   const review = dock.querySelector('#ai-incognito-review');
@@ -974,6 +1049,13 @@ function mount() {
   });
   window.addEventListener('online', () => paint(dock));
   window.addEventListener('offline', () => paint(dock));
+  try {
+    const savedTalk = sessionStorage.getItem('lgme.voice.transcript');
+    if (savedTalk && !ask.value) {
+      ask.value = savedTalk;
+      sessionStorage.removeItem('lgme.voice.transcript');
+    }
+  } catch { /* the typed line stays */ }
   pickHelperSync();
   dock.dataset.ready = 'yes';
 }
