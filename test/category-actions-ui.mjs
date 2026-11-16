@@ -112,9 +112,10 @@ for (const [width, height] of [[390, 844], [1280, 800]]) {
   const { context, page } = await open(browser, width, height);
   try {
     await page.goto(`${base}/gym`, { waitUntil: 'domcontentloaded' });
-    const idid = page.getByRole('button', { name: /^IdidIt/ });
-    const want = page.getByRole('button', { name: /^IwantIT/ });
-    const have = page.getByRole('button', { name: /^IhavIT/ });
+    const actions = page.locator('#category-board .category-actions');
+    const idid = actions.getByRole('button', { name: /^IdidIt/ });
+    const want = actions.getByRole('button', { name: /^IwantIT/ });
+    const have = actions.getByRole('button', { name: /^IhavIT/ });
     await idid.waitFor();
     for (const button of [idid, want, have]) {
       const box = await button.boundingBox();

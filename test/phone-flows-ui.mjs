@@ -77,7 +77,10 @@ async function onboard(page, shot) {
     await page.locator('#age-confirm').click();
   }
   if (await page.locator('#demo-confirm').count()) await page.locator('#demo-confirm').click();
-  await page.locator('#join-phone').click();
+  // Continue-on-this-phone already stores a device session, so the gym join
+  // card can skip #join-phone and open the age gate or the offer chips.
+  await page.locator('#join-phone, #health-gate, #offer-chips').first().waitFor();
+  if (await page.locator('#join-phone').count()) await page.locator('#join-phone').click();
   await Promise.race([
     page.locator('#health-gate').waitFor(),
     page.locator('#offer-chips').waitFor()

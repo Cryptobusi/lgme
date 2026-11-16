@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#0c100c" />
+  <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+  <title>Structural synthesis · lgme</title>
+  <meta name="description" content="Practical mechanics for three-party clearing on lgme.app: State US$, Floor Campus Credit (Creo), and the Third Seat. Proposed design with sample data. The Riemann Hypothesis is unproven." />
+  <link rel="canonical" href="https://lgme.app/structural-synthesis" />
+  <link rel="stylesheet" href="/menu.css" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" />
+  <style>
+    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#d5e0d2; --gold:#c6a15b; --line:#2c352b; --card:#151a15; }
+    body { background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; font-size:1.05rem; line-height:1.65; max-width:46rem; margin:0 auto; padding:1.25rem max(1rem, env(safe-area-inset-right)) 4rem max(1rem, env(safe-area-inset-left)); }
+    .kicker { margin:0; font-size:0.72rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--gold); }
+    h1,h2,h3 { font-family:Newsreader,serif; font-weight:500; letter-spacing:-0.02em; }
+    h1 { font-size:clamp(1.7rem, 6.5vw, 2.45rem); line-height:1.12; margin:0.4rem 0 0.6rem; }
+    h2 { font-size:clamp(1.35rem, 4vw, 1.7rem); line-height:1.2; margin:2.2rem 0 0.45rem; }
+    h3 { font-size:1.15rem; line-height:1.3; margin:1.4rem 0 0.35rem; }
+    p, li { overflow-wrap:anywhere; }
+    p { margin:0.7rem 0; }
+    .muted { color:var(--muted); }
+    a { color:var(--fg); }
+    nav.deskmenu a, .toc a { min-height:44px; display:inline-flex; align-items:center; }
+    a:hover { color:var(--gold); }
+    aside.note, aside.sample { border:1px solid var(--line); background:var(--card); padding:0.9rem 1rem; margin:1rem 0 1.2rem; }
+    aside.sample { border-color:var(--gold); }
+    aside p { margin:0.45rem 0; }
+    .toc { margin:0.4rem 0 1.2rem; padding:0; list-style:none; }
+    .toc li { margin:0; }
+    .toc a { text-decoration:none; }
+    .sheet { width:100%; border-collapse:collapse; margin:0.8rem 0 1.1rem; }
+    .sheet th, .sheet td { text-align:left; vertical-align:top; padding:0.65rem 0.45rem; border-bottom:1px solid var(--line); }
+    .sheet th { color:var(--gold); font-size:0.78rem; letter-spacing:0.04em; font-weight:600; }
+    .sheet caption { text-align:left; caption-side:bottom; color:var(--muted); font-size:0.88rem; padding-top:0.45rem; }
+    ul, ol { margin:0.4rem 0 0.9rem; padding-left:1.2rem; }
+    li { margin:0.4rem 0; }
+    figure.diagram { margin:1rem 0 1.2rem; }
+    figure.diagram svg { width:100%; height:auto; max-width:22rem; display:block; background:#141a14; border:1px solid var(--line); }
+    figcaption { color:var(--muted); font-size:0.92rem; margin-top:0.55rem; }
+    :focus-visible { outline:2px solid var(--gold); outline-offset:3px; }
+    @media (max-width: 700px) {
+      .sheet thead { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+      .sheet, .sheet tbody, .sheet tr, .sheet td, .sheet caption { display:block; width:100%; }
+      .sheet caption { padding:0.35rem 0 0.7rem; }
+      .sheet tr { margin:0.85rem 0; padding:0.2rem 0 0.55rem; border-bottom:1px solid var(--line); }
+      .sheet td { border:0; padding:0.28rem 0; }
+      .sheet td::before { content:attr(data-label); display:block; font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--gold); font-weight:600; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="deskmenu" aria-label="Desk">
+    <a href="/">Desk</a>
+    <a href="/structural-synthesis" aria-current="page">Structural synthesis</a>
+    <a href="/workflow">Workflow map</a>
+    <a href="/clearing-engine">Clearing engine</a>
+    <a href="/tap-entry">One-Tap Entry</a>
+    <a href="/exchange">Exchange</a>
+    <a href="/the-third-seat">Third seat</a>
+  </nav>
+  <p class="kicker">lgme · The Switch · proposed design · sample data · 16 November 2026</p>
+  <h1>Structural synthesis</h1>
+  <p class="lede">This is the action reading of the November 2026 synthesis by Jin John. <a href="https://www.egonomicanonymous.live">egonomicanonymous.live</a> is the Lens: the diagnosis. lgme.app is the Switch: the settlement step a person can take. The full synthesis is at <a href="https://hederica.com">hederica.com</a>. The essay is <a href="/the-seam-where-systems-hold">The Seam Where Systems Hold</a>.</p>
+
+  <aside class="note" aria-label="What this page is">
+    <p class="kicker">Scope</p>
+    <p>Proposed design, except where a sentence names a page that already runs. This page moves no funds, opens no new network, and does not change the Exchange, Solana $lgme payments, Campus, mutual credit, or the view switcher. It is not legal, tax, or investment advice, and it is not an offer.</p>
+  </aside>
+
+  <nav class="toc" aria-label="Contents">
+    <p class="kicker">Contents</p>
+    <ol class="toc">
+      <li><a href="#parties">Three parties</a></li>
+      <li><a href="#diagram">Diagram</a></li>
+      <li><a href="#circle">A sample clearing circle</a></li>
+      <li><a href="#seniority">Floor Seniority</a></li>
+      <li><a href="#sunset">Debt sunset</a></li>
+      <li><a href="#creo">Creo and time parity</a></li>
+      <li><a href="#seat">The Third Seat</a></li>
+      <li><a href="#map">Where to do it on this site</a></li>
+      <li><a href="#risks">Known risks and safeguards</a></li>
+      <li><a href="#framing">2026 framing</a></li>
+      <li><a href="#srh">Speculative background: ΣRH</a></li>
+    </ol>
+  </nav>
+
+  <section id="parties" aria-labelledby="parties-heading">
+    <h2 id="parties-heading">Three parties</h2>
+    <p>Clearing here has three parties, and they work alongside one another. Creo is Campus Credit for a confirmed deed. It sits beside the US dollar and beside state sovereignty. It does not stand in for either.</p>
+    <table class="sheet">
+      <caption>Three parties. Walls between the units stay up. Nothing on this page converts one unit into another.</caption>
+      <thead>
+        <tr><th>Party</th><th>Unit</th><th>Job on the Switch</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td data-label="Party"><strong>State</strong></td>
+          <td data-label="Unit">US$</td>
+          <td data-label="Job on the Switch">Sovereignty and the tax boundary. Dollars owed outside the ledger stay dollars.</td>
+        </tr>
+        <tr>
+          <td data-label="Party"><strong>Floor</strong></td>
+          <td data-label="Unit">Campus Credit (Creo)</td>
+          <td data-label="Job on the Switch">Members mint credit on verified delivery. One-for-one time parity applies inside Floor services. Enterprise goods stay priced.</td>
+        </tr>
+        <tr>
+          <td data-label="Party"><strong>Third Seat</strong></td>
+          <td data-label="Unit">$lgme</td>
+          <td data-label="Job on the Switch">The $lgme self-regulating nonprofit audits and is the arbiter who can veto. It holds $lgme only in trust for the Floor's posterity and takes no seigniorage. It does not mint.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="diagram" aria-labelledby="diagram-heading">
+    <h2 id="diagram-heading">Diagram</h2>
+    <p>The picture and the table say the same thing. The circle at the bottom is sample data, not a recorded exchange.</p>
+    <figure class="diagram">
+      <svg viewBox="0 0 340 900" role="img" aria-labelledby="d-title d-desc">
+        <title id="d-title">Three parties and a sample clearing circle</title>
+        <desc id="d-desc">Three parties work alongside one another. The State uses the US dollar and holds sovereignty and the tax boundary. The Floor uses Campus Credit, called Creo. Members mint that credit on verified delivery. One-for-one time parity applies inside Floor services, and enterprise goods stay priced. The Third Seat is the $lgme self-regulating nonprofit. It audits and is the arbiter who can veto. It holds $lgme only in trust for the Floor's posterity and takes no seigniorage. It does not mint. A sample circle follows: neighbor A delivers a Floor service to B, B delivers one to C, and C delivers one to A. The shared circle nets to zero in Campus Credit. A US dollar obligation outside the circle stays with the State. The Third Seat can veto the line. This circle is sample data, not a recorded exchange.</desc>
+        <rect width="340" height="900" fill="#141a14"/>
+        <rect x="16" y="16" width="308" height="112" rx="8" fill="#1e2820" stroke="#c6a15b" stroke-width="2"/>
+        <text x="170" y="48" text-anchor="middle" fill="#c6a15b" font-family="Figtree, sans-serif" font-size="14">State</text>
+        <text x="170" y="78" text-anchor="middle" fill="#f4f1e8" font-family="Figtree, sans-serif" font-size="22">US$</text>
+        <text x="170" y="106" text-anchor="middle" fill="#d5e0d2" font-family="Figtree, sans-serif" font-size="14">sovereignty and the tax boundary</text>
+        <line x1="170" y1="128" x2="170" y2="156" stroke="#c6a15b" stroke-width="2"/>
+        <text x="182" y="148" fill="#d5e0d2" font-family="Figtree, sans-serif" font-size="13">alongside</text>
+        <rect x="16" y="156" width="308" height="128" rx="8" fill="#1e2820" stroke="#c6a15b" stroke-width="2"/>
+        <text x="170" y="186" text-anchor="middle" fill="#c6a15b" font-family="Figtree, sans-serif" font-size="14">Floor</text>
+        <text x="170" y="216" text-anchor="middle" fill="#f4f1e8" font-family="Figtree, sans-serif" font-size="20">Campus Credit · Creo</text>
+        <text x="170" y="244" text-anchor="middle" fill="#d5e0d2" font-family="Figtree, sans-serif" font-size="14">members mint on verified delivery</text>
+        <text x="170" y="266" text-anchor="middle" fill="#d5e0d2" font-family="Figtree, sans-serif" font-size="14">1-for-1 time inside Floor services</text>
+        <line x1="170" y1="284" x2="170" y2="312" stroke="#c6a15b" stroke-width="2"/>
+        <text x="182" y="304" fill="#d5e0d2" font-family="Figtree, sans-serif" font-size="13">alongside</text>
+        <rect x="16" y="312" width="308" height="150" rx="8" fill="#1e2820" stroke="#c6a15b" stroke-width="2"/>
+        <text x="170" y="342" text-anchor="middle" fill="#c6a15b" font-family="Figtree, sans-serif" font-size="14">Third Seat</text>
+        <text x="170" y="372" text-anchor="middle" fill="#f4f1e8" font-family="Figtree, sans-serif" font-size="22">$lgme</text>
+        <text x="170" y="400" text-anchor="middle" fill="#d5e0d2" font-family="Figtree, sans-serif" font-size="14">audits · arbiter who can veto</text>
+        <text x="170" y="422" text-anchor="middle" fill="#d5e0d2" font-family="Figtree, sans-serif" font-size="14">in trust for the Floor's posterity</text>
+        <text x="170" y="444" text-anchor="middle" fill="#d5e0d2" font-family="Figtree, sans-serif" font-size="14">no seigniorage · does not mint</text>
+        <text x="170" y="496" text-anchor="middle" fill="#c6a15b" font-family="Figtree, sans-serif" font-size="14" letter-spacing="0.08em">SAMPLE CIRCLE</text>
+        <rect x="16" y="512" width="308" height="64" rx="8" fill="#1e2820" stroke="#2c352b" stroke-width="2"/>
+        <text x="170" y="540" text-anchor="middle" fill="#f4f1e8" font-family="Figtree, sans-serif" font-size="16">A delivers a Floor service to B</text>
+        <text x="170" y="562" text-anchor="middle" fill="#d5e0d2" font-family="Figtree, sans-serif" font-size="13">one sample unit</text>
+        <rect x="16" y="588" width="308" height="64" rx="8" fill="#1e2820" stroke="#2c352b" stroke-width="2"/>
+        <text x="170" y="616" text-anchor="middle" fill="#f4f1e8" font-family="Figtree, sans-serif" font-size="16">B delivers a Floor service to C</text>
+        <text x="170" y="638" text-anchor="middle" fill="#d5e0d2" font-family="Figtree, sans-serif" font-size="13">one sample unit</text>
+        <rect x="16" y="664" width="308" height="64" rx="8" fill="#1e2820" stroke="#2c352b" stroke-width="2"/>
+        <text x="170" y="692" text-anchor="middle" fill="#f4f1e8" font-family="Figtree, sans-serif" font-size="16">C delivers a Floor service to A</text>
+        <text x="170" y="714" text-anchor="middle" fill="#d5e0d2" font-family="Figtree, sans-serif" font-size="13">one sample unit · circle closes</text>
+        <rect x="16" y="748" width="308" height="132" rx="8" fill="#1e2820" stroke="#c6a15b" stroke-width="2"/>
+        <text x="170" y="778" text-anchor="middle" fill="#f4f1e8" font-family="Figtree, sans-serif" font-size="16">Shared circle nets to zero</text>
+        <text x="170" y="802" text-anchor="middle" fill="#d5e0d2" font-family="Figtree, sans-serif" font-size="14">in Campus Credit</text>
+        <text x="170" y="826" text-anchor="middle" fill="#d5e0d2" font-family="Figtree, sans-serif" font-size="14">US$ outside the circle stays US$</text>
+        <text x="170" y="850" text-anchor="middle" fill="#d5e0d2" font-family="Figtree, sans-serif" font-size="14">Third Seat can veto · does not mint</text>
+      </svg>
+      <figcaption>Three parties alongside one another, then a sample circle of three Floor services. Not a recorded exchange.</figcaption>
+    </figure>
+  </section>
+
+  <section id="circle" aria-labelledby="circle-heading">
+    <h2 id="circle-heading">A sample clearing circle</h2>
+    <p>The November 2026 draft told this with three neighbors and dollar amounts. Those amounts are <strong>SAMPLE / unverified</strong>. This page keeps the shape and drops the amounts.</p>
+    <p>Neighbors A, B, and C each deliver one sample unit of Floor service around a closed circle. Looked at one promise at a time, three promises are open. Netted inside Campus Credit, each person is owed one unit and owes one unit, so the circle is zero. The work stays on the record: the provenance of each delivery remains. A dollar price, if one was agreed outside the circle, remains a State US$ matter. The Third Seat audits the three deliveries and can veto a line that was not verified. Members minted the credit. The Third Seat did not.</p>
+    <p>If the circle is uneven, only the shared part nets to zero. The leftover is a named remainder in Campus Credit, still subject to Floor Seniority and to the debt sunset below. The <a href="/clearing-engine">clearing engine</a> draws a sample three-way loop that sums to zero. It is a canvas with sample data. It does not settle a live circle, and it does not call the network.</p>
+  </section>
+
+  <section id="seniority" aria-labelledby="seniority-heading">
+    <h2 id="seniority-heading">Floor Seniority</h2>
+    <p>Inside lgme, Floor claims rank first. A Floor service is ahead of other claims on this ledger.</p>
+    <p>Ranking Floor claims ahead of general commercial debt, outside this ledger, would require legislation: laws, mandates, and tax incentives. This site does not claim that outside creditors are already bound.</p>
+    <p>The Floor's defaults, as drawn on the <a href="/workflow">workflow map</a>, are transparency, UBI, and AI faculties. On that map the UBI entry is a UBI-like Floor earned by confirmed deeds, not a cash transfer this site pays, and the AI entry is an assistive faculty a person can refuse.</p>
+  </section>
+
+  <section id="sunset" aria-labelledby="sunset-heading">
+    <h2 id="sunset-heading">Debt sunset</h2>
+    <p>Unpaid debts sunset on a defined term. The loss is absorbed by the subfloor and the sponsors. The length of that term is not a live setting. The November 2026 draft called the window two generations. That length is <strong>SAMPLE / unverified</strong>.</p>
+    <p>Surpluses never expire. After 90 days the member covenant gives a gentle reminder, with the option to gift surplus to the Floor. There is no automatic penalty and no seizure. That 90-day reminder is the clarification already written beside <a href="/gym/covenant">the member covenant</a>. It is not a deletion of a positive balance.</p>
+    <p>The subfloor is a local reserve with published caps. It is not a bank balance, and this page does not start an automatic write-off.</p>
+  </section>
+
+  <section id="creo" aria-labelledby="creo-heading">
+    <h2 id="creo-heading">Creo and time parity</h2>
+    <p>Creo works alongside the US dollar and state sovereignty. A member mints Campus Credit when the person who received the help confirms the delivery. One verified deed is the unit. Spending it cancels it. It is not $lgme, and it is not cash.</p>
+    <p>1-for-1 time parity applies inside Floor services: an hour of Floor service clears against an hour of Floor service. Enterprise goods stay priced. A priced good does not become an hour by being written on this ledger.</p>
+    <p>Campus deeds are on <a href="/campus">Campus</a>. The mutual-credit screen can rehearse a line. Neither screen is changed by this page.</p>
+  </section>
+
+  <section id="seat" aria-labelledby="seat-heading">
+    <h2 id="seat-heading">The Third Seat</h2>
+    <p>Members mint credit on verified delivery; the Third Seat — the $lgme self-regulating nonprofit — audits and is the arbiter who can veto; it holds $lgme only in trust for the Floor's posterity and takes no seigniorage.</p>
+    <p>The Third Seat does not mint. A veto stops a line. It does not spend, and it does not replace a court. The longer curriculum, including the person's own refusal, stays on <a href="/the-third-seat">the Third Seat</a>.</p>
+    <p class="muted">A category-theory sketch in the November draft pictured verified delivery and the audit as an adjunction, with a closed circle as a colimit. That sketch is an analogy for the sentence above. It is not a proof, and it is not a function this site runs.</p>
+  </section>
+
+  <section id="map" aria-labelledby="map-heading">
+    <h2 id="map-heading">Where to do it on this site</h2>
+    <table class="sheet">
+      <caption>Each mechanic, and the page that already holds the related step. Opening a page does not enact a rule that the page itself marks as a proposal or a sample.</caption>
+      <thead>
+        <tr><th>Mechanic</th><th>Page</th><th>What is there now</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td data-label="Mechanic">Three parties, Floor defaults, the path from a deed to the Exchange</td>
+          <td data-label="Page"><a href="/workflow">Workflow map</a></td>
+          <td data-label="What is there now">A pannable map. Proposed design, sample data. The Floor defaults are on zone 6.</td>
+        </tr>
+        <tr>
+          <td data-label="Mechanic">A three-way loop that sums to zero</td>
+          <td data-label="Page"><a href="/clearing-engine">Clearing engine</a></td>
+          <td data-label="What is there now">A sample canvas. No network. Every name on it is sample.</td>
+        </tr>
+        <tr>
+          <td data-label="Mechanic">Separate-device and passkey confirmation</td>
+          <td data-label="Page"><a href="/tap-entry">One-Tap Entry</a></td>
+          <td data-label="What is there now">A demo. Two taps on one device do not show that two people agreed. A passkey, when the browser has one, binds the first confirm to that device.</td>
+        </tr>
+        <tr>
+          <td data-label="Mechanic">List a deed, or pay in $lgme from your own wallet</td>
+          <td data-label="Page"><a href="/exchange">Exchange</a></td>
+          <td data-label="What is there now">The exchange already on the site. This page does not change it. A $lgme payment, when you make one, is a Solana transfer from your wallet.</td>
+        </tr>
+        <tr>
+          <td data-label="Mechanic">The longer account of the seat, the order, and refusal</td>
+          <td data-label="Page"><a href="/the-third-seat">Third seat</a></td>
+          <td data-label="What is there now">The curriculum. Draft, pending counsel review.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="risks" aria-labelledby="risks-heading">
+    <h2 id="risks-heading">Known risks and safeguards</h2>
+    <p>Three failures are already visible in a mutual-credit circle:</p>
+    <ul>
+      <li><strong>A member leaves while negative.</strong> The open debit has no counter-service behind it.</li>
+      <li><strong>Free-riding.</strong> Someone draws Floor services and does not return work.</li>
+      <li><strong>Collusive fake loops.</strong> A closed circle of confirmations with no delivery.</li>
+    </ul>
+    <p>Safeguards:</p>
+    <ul>
+      <li><strong>Covenant -50/-200 limits.</strong> The member covenant caps a negative balance at -50 Creo, and at -200 only after community review. At the cap, outbound debits suspend until counter-services restore the balance. The limits are in Creo. A workout does not mint Creo.</li>
+      <li><strong>Two sponsors, at least one outside a closed circle.</strong> The covenant records two sponsor signatures. The gate asks that one sponsor be from the member's group, so a circle cannot confirm itself alone.</li>
+      <li><strong>Separate-device and passkey confirmation.</strong> See <a href="/tap-entry">One-Tap Entry</a>. A second confirm belongs on the other person's device.</li>
+      <li><strong>A public tape.</strong> The record of the line stays visible. A refusal stays on it.</li>
+      <li><strong>Third Seat veto.</strong> The $lgme self-regulating nonprofit audits and is the arbiter who can veto.</li>
+    </ul>
+  </section>
+
+  <section id="framing" aria-labelledby="framing-heading">
+    <h2 id="framing-heading">2026 framing</h2>
+    <p>The Lens framed four pressures for late 2026: the cost of essentials, public debt, automation beside under-supplied care, and distrust of opaque ledgers. This page treats that list as a framing. It is not an audit with findings, and it states no rate, total, or outcome.</p>
+    <aside class="sample" aria-label="Unverified figures from the draft">
+      <p class="kicker">SAMPLE / unverified</p>
+      <p>The November 2026 Gemini draft cited a federal deficit figure, an inflation rate near 3.7 percent, and a historical failure rate near 75 percent. This page does not check those figures and does not use them as findings.</p>
+    </aside>
+    <table class="sheet">
+      <caption>Framing only. The right-hand column is a page on this site, not a measured result.</caption>
+      <thead>
+        <tr><th>Pressure, as framed</th><th>Switch step</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td data-label="Pressure, as framed">Essentials competing with other claims</td>
+          <td data-label="Switch step">Floor claims rank first inside lgme. See the <a href="/workflow">workflow map</a>.</td>
+          <td data-label="Status">Inside this ledger. Outside it, legislation.</td>
+        </tr>
+        <tr>
+          <td data-label="Pressure, as framed">Obligations that do not clear</td>
+          <td data-label="Switch step">Net a sample circle on the <a href="/clearing-engine">clearing engine</a>. Unpaid debts sunset on a defined term. Surpluses never expire.</td>
+          <td data-label="Status">The canvas is sample. The sunset term is not a live setting.</td>
+        </tr>
+        <tr>
+          <td data-label="Pressure, as framed">Care and local service priced as if they were enterprise goods</td>
+          <td data-label="Switch step">One-for-one time inside Floor services. Enterprise goods stay priced. Record a deed on <a href="/campus">Campus</a> or the <a href="/exchange">Exchange</a>.</td>
+          <td data-label="Status">Campus is a pilot. The Exchange is the live listings desk.</td>
+        </tr>
+        <tr>
+          <td data-label="Pressure, as framed">A ledger no participant can check</td>
+          <td data-label="Switch step">Public tape, two-device confirm on <a href="/tap-entry">One-Tap Entry</a>, and Third Seat veto.</td>
+          <td data-label="Status">Confirm is a demo until the second device is the other person's.</td>
+        </tr>
+      </tbody>
+    </table>
+    <p>Read the diagnosis on <a href="https://www.egonomicanonymous.live">egonomicanonymous.live</a>. Read the full synthesis on <a href="https://hederica.com">hederica.com</a>.</p>
+  </section>
+
+  <section id="srh" aria-labelledby="srh-heading">
+    <h2 id="srh-heading">Speculative background: ΣRH</h2>
+    <aside class="sample" aria-label="Speculative mathematics">
+      <p class="kicker">Speculative analogy · not a proof</p>
+      <p>The Riemann Hypothesis remains unproven. The November 2026 report sketched a four-axiom picture, called ΣRH here, in the style of a Hilbert–Pólya postulate: a self-adjoint boundary whose real eigenvalues would place the non-trivial zeros on the critical line. That axiom assumes the hypothesis. It does not prove it. Showing that such a system can exist without contradiction would still be a proof, and this page does not claim one.</p>
+      <p>The analogy, and only the analogy, is that a two-sided system needs a boundary that neither side writes alone. On this site that boundary is the Third Seat sentence in the section above, not a theorem about primes.</p>
+    </aside>
+  </section>
+</body>
+</html>
