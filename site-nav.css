@@ -34,16 +34,16 @@ body.has-site-nav { padding-top: 3.25rem; scroll-padding-top: 4rem; }
 html.has-site-nav body:has(#exchange-overview),
 body.has-site-nav:has(#exchange-overview) { padding-top: 0; }
 html.has-site-nav body:has(#exchange-overview) .launch-bar { margin-top: 3.25rem; }
-html.has-site-nav body { padding-bottom: calc(25vh + env(safe-area-inset-bottom)); }
+html.has-site-nav body { padding-bottom: calc(40vh + env(safe-area-inset-bottom)); }
 html[data-screen="simple"] body { padding-bottom: calc(45vh + env(safe-area-inset-bottom)); }
 html[data-screen="full"] body { padding-bottom: calc(30vh + env(safe-area-inset-bottom)); }
 html.has-site-nav :is(button, a, input, textarea, select, label) { scroll-margin-top: 5rem; scroll-margin-bottom: 42vh; }
-html.has-site-nav body:has(nav[aria-label="Gym"]) { padding-bottom: calc(25vh + 4.5rem + env(safe-area-inset-bottom)); }
+html.has-site-nav body:has(nav[aria-label="Gym"]) { padding-bottom: calc(40vh + 4.5rem + env(safe-area-inset-bottom)); }
 html[data-screen="simple"] body:has(nav[aria-label="Gym"]) { padding-bottom: calc(45vh + 4.5rem + env(safe-area-inset-bottom)); }
 html[data-screen="full"] body:has(nav[aria-label="Gym"]) { padding-bottom: calc(30vh + 4.5rem + env(safe-area-inset-bottom)); }
 #first-open { padding-bottom: 42vh; }
 #access-fingerprint, #fingerprint-setup, #gate-passkey { position: relative; z-index: 2; pointer-events: auto; }
-#confirm-gate { z-index: 60; bottom: calc(25vh + 0.6rem); }
+#confirm-gate { z-index: 60; bottom: calc(40vh + 0.6rem); }
 html[data-screen="simple"] #confirm-gate { bottom: calc(45vh + 0.6rem); }
 html[data-screen="full"] #confirm-gate { bottom: calc(30vh + 0.6rem); }
 #ai-dock {
@@ -69,8 +69,8 @@ html[data-screen="full"] #confirm-gate { bottom: calc(30vh + 0.6rem); }
 #ai-dock.is-open {
   display: flex;
   flex-direction: column;
-  height: 25vh;
-  max-height: 25vh;
+  height: 40vh;
+  max-height: 40vh;
   border: 2px solid #c6a15b;
   border-radius: 14px;
 }
