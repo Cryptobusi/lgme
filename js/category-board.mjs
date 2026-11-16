@@ -136,7 +136,7 @@ export function mountCategoryBoard(root = document.getElementById('category-boar
     listingNew.addEventListener('click', () => { state.form = 'listing'; state.matches = []; state.message = ''; paint(); });
     const chips = el('div', { id: 'category-chips', 'aria-label': 'Other categories' });
     const others = [
-      ...CATEGORIES.filter((item) => item.id !== current.id && (!active?.chips || active.chips.includes(item.id))),
+      ...CATEGORIES.filter((item) => item.id !== current.id && item.id !== 'campus' && (!active?.chips || active.chips.includes(item.id))),
       ...promoted.filter((row) => row.name.toLowerCase() !== current.name.toLowerCase()).map((row) => ({ id: row.id, name: row.name, proposed: false, early: true })),
       ...state.proposals.filter((row) => row.kind === 'category' && row.status === 'proposed').map((row) => ({ id: row.id, name: row.name, proposed: true }))
     ];
@@ -168,9 +168,10 @@ export function mountCategoryBoard(root = document.getElementById('category-boar
     const title = el('h2', {}, [current.name]);
     const blurb = el('p', {}, [current.id === 'health' ? 'Health is open.' : 'Early / In development. Browse only.', ' ', el('a', { href: '/customize' }, ['Customize'])]);
     const actionsWrap = el('div', { class: 'category-actions' }, buttons);
+    const head = root.dataset.compact === '1' ? [] : [title, blurb];
     const pieces = active?.home === 'chips-first'
-      ? [title, blurb, chips, actionsWrap, list, more, listingNew, status]
-      : [title, blurb, actionsWrap, list, more, listingNew, status, chips];
+      ? [...head, chips, actionsWrap, list, more, listingNew, status]
+      : [...head, actionsWrap, list, more, listingNew, status, chips];
     if (state.openProposal) pieces.push(proposalCard(state, paint));
     if (state.form) pieces.push(formCard(state, paint));
     root.replaceChildren(...pieces);

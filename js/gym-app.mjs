@@ -1119,6 +1119,7 @@ async function renderMore() {
     el('p', {}, [el('a', { href: '/gym/health-data' }, ['Consumer health data']), ' · ', el('a', { href: '/gym/breach-plan' }, ['Breach plan']), ' · ', el('a', { href: '/help' }, ['Help'])]),
     localAiCard(mine),
     el('h2', {}, ['More']),
+    el('p', {}, [el('a', { href: '/campus' }, ['Campus'])]),
     todayLine(),
     el('p', {}, [el('a', { href: '/wisdom' }, ['Open Wisdom'])]),
     el('h3', {}, ['Front desk']),

@@ -27,12 +27,17 @@ test('the gym beta is a separate installable page', () => {
   assert.equal(manifest.name, 'lgme Gym');
   assert.equal(manifest.start_url, '/gym');
   assert.equal(manifest.scope, '/gym');
+  assert.equal(page.includes('class="gym-where">Gym · Health · open'), true);
+  assert.equal(page.includes('class="gym-customize" href="/customize"'), true);
+  assert.equal(page.includes('href="/campus">Campus</a>'), true);
+  assert.equal(text('js/category-board.mjs').includes("item.id !== 'campus'"), true);
+  assert.equal(text('campus.html').includes('<h1>Campus pilot</h1>'), true);
   assert.equal(home.includes('href="/gym">Gym beta</a>'), true);
   assert.equal(text('health-club.html').includes('href="/gym">Gym beta</a>'), true);
   assert.equal(text('sitemap.xml').includes('https://lgme.app/gym'), true);
   assert.equal(text('help.html').includes('Chat text is not written to Hedera.'), true);
   assert.equal(text('glossary.html').includes('App development fund'), true);
-  assert.equal(worker.includes('lgme-v209'), true);
+  assert.equal(worker.includes('lgme-v210'), true);
   assert.equal(worker.includes('key.startsWith("lgme-v")'), true);
   assert.equal(gymWorker.includes("key.startsWith('lgme-gym-')"), true);
   assert.equal(gymWorker.includes('lgme-v80'), false);

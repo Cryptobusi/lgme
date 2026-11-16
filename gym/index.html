@@ -19,9 +19,13 @@
     :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; --card:#151a15; }
     * { box-sizing: border-box; }
     body { margin:0; background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; font-size:1.05rem; line-height:1.45; }
-    header, main { padding:1rem 1rem 6.5rem; max-width:40rem; margin:0 auto; }
+    header, main { padding:0.35rem 0.7rem 6.5rem; max-width:40rem; margin:0 auto; }
     h1,h2,h3 { font-family:Newsreader,serif; font-weight:500; }
-    h1 { font-size:1.8rem; margin:0.2rem 0 0.6rem; }
+    h1 { font-size:1.15rem; margin:0; }
+    .gym-line { display:flex; align-items:center; gap:0.4rem; min-height:2.4rem; margin:0 0 0.35rem; padding:0.2rem 0.45rem 0.2rem 0.6rem; border-radius:12px; background:#1c2418; border:1px solid var(--gold); }
+    .gym-line .kicker { margin:0; font-size:0.68rem; letter-spacing:0.06em; text-transform:none; white-space:nowrap; }
+    .gym-where { margin:0; flex:1 1 auto; min-width:0; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .gym-customize { margin-left:auto; min-height:36px; min-width:44px; padding:0.15rem 0.7rem; border-radius:999px; background:var(--gold); color:#1a1408; font-size:13px; font-weight:700; text-decoration:none; white-space:nowrap; display:inline-flex; align-items:center; justify-content:center; }
     a { color:var(--fg); }
     .kicker { margin:0; letter-spacing:0.14em; text-transform:uppercase; color:var(--gold); font-size:0.75rem; }
     .muted { color:var(--muted); }
@@ -62,16 +66,19 @@
   </style>
 </head>
 <body>
-<header>
-  <p class="kicker">lgme · Gym beta</p>
-  <h1>Gym</h1>
-  <div id="category-board" data-category="health"></div>
+<header class="gym-head">
+  <div class="gym-line">
+    <p class="kicker">LGME · Gym beta</p>
+    <p class="gym-where">Gym · Health · open</p>
+    <a class="gym-customize" href="/customize">Customize</a>
+  </div>
+  <div id="category-board" data-category="health" data-compact="1"></div>
   <p id="health-anchor" data-health-anchor>Health hashes are anchored on Hedera testnet. Health data itself is never written on chain.</p>
   <p class="muted"><a href="/gym/covenant">Member Covenant</a> · <a href="/gym/intake-protocol">Intake protocol</a> · <a href="/gym/health-data">Consumer health data</a> · <a href="/helper">Set up my own AI helper</a> · <a href="/ai-help">Ask for AI help</a></p>
   <div id="device-can-host"></div>
 </header>
 <main id="gym-panel"></main>
-<footer class="gym-foot"><a href="/gym/covenant">Member Covenant</a> · <a href="/gym/health-data">Consumer health data</a> · <a href="/gym/breach-plan">Breach plan</a> · <a href="/versions">Versions</a> · <a href="/customize">Customize</a> · <a href="/help">Help</a> · <a href="/disclaimer">Disclaimer (Live beta v.5)</a></footer>
+<footer class="gym-foot"><a href="/gym/covenant">Member Covenant</a> · <a href="/gym/health-data">Consumer health data</a> · <a href="/gym/breach-plan">Breach plan</a> · <a href="/versions">Versions</a> · <a href="/campus">Campus</a> · <a href="/customize">Customize</a> · <a href="/help">Help</a> · <a href="/disclaimer">Disclaimer (Live beta v.5)</a></footer>
 <nav aria-label="Gym">
   <button type="button" data-route="/">Club</button>
   <button type="button" data-route="/train">Train</button>
