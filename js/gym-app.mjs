@@ -36,7 +36,9 @@ import { renderProtocol } from './intake-view.mjs';
 import { DISCLAIMER, DISCLAIMER_EDITION, SANDBOX_LABEL, confirmOutcome, failMediation, messageFromMirror, openDispute, publicDispute, rehearsalMembers, requestPanel, setShareConsent, signVerdict } from './dispute.mjs';
 import { mountDeviceCard } from './device-card.mjs';
 import { nextVoiceReply, readVoiceReply, voiceReplyLabel } from './local-ai-panel.mjs';
+import { NOTICE, UNPUBLISHED, incognitoOn, installIncognitoGuard, listPending, receiptStatus, setIncognito } from './incognito.mjs';
 
+installIncognitoGuard();
 let mode = localStorage.getItem(MODE_KEY) === 'demo' ? 'demo' : 'real';
 let store = mode === 'demo' ? demoStore() : realStore();
 let registered = null;
@@ -260,7 +262,7 @@ async function finish(peer, ui) {
     ...signing(ui.pass.value, ui.code.value)
   });
   workout.startedAt = '';
-  status(result.ok ? `IdidIt (verified receipt). ${EVIDENCE_UNVERIFIED}. No Creo was minted.` : result.error);
+  status(result.ok ? (incognitoOn(localStorage) ? `${UNPUBLISHED} No Creo was minted.` : `IdidIt (verified receipt). ${EVIDENCE_UNVERIFIED}. No Creo was minted.`) : result.error);
 }
 
 function cheerKey(card) {
@@ -1031,6 +1033,31 @@ function healthSettings(peer) {
 
 let voiceReplySync = null;
 
+function incognitoSettings() {
+  const notice = el('p', { id: 'incognito-notice' }, [incognitoOn(localStorage) ? NOTICE : 'Incognito is off.']);
+  const count = el('p', { id: 'incognito-count' }, [`Pending ${listPending(localStorage).length}`]);
+  const toggle = el('button', { type: 'button', id: 'incognito-toggle', 'aria-pressed': incognitoOn(localStorage) ? 'true' : 'false' }, ['Incognito']);
+  const sync = () => {
+    const on = incognitoOn(localStorage);
+    notice.textContent = on ? NOTICE : 'Incognito is off. Sign-in can still use the network. Private notes stay here until you approve them.';
+    count.textContent = `Pending ${listPending(localStorage).length}`;
+    toggle.setAttribute('aria-pressed', on ? 'true' : 'false');
+  };
+  toggle.addEventListener('click', () => {
+    setIncognito(localStorage, !incognitoOn(localStorage));
+    sync();
+    window.dispatchEvent(new CustomEvent('lgme-incognito'));
+  });
+  window.addEventListener('lgme-incognito', sync);
+  return el('section', { class: 'card', id: 'incognito-settings' }, [
+    el('h3', {}, ['Incognito']),
+    notice,
+    count,
+    toggle,
+    el('p', { class: 'muted' }, ['Turning this off does not send pending items. Review them in the AI panel and use Approve and share.'])
+  ]);
+}
+
 function voiceReplySettings() {
   const label = el('p', { id: 'voice-reply-label' }, [voiceReplyLabel(readVoiceReply(localStorage))]);
   const toggle = el('button', { type: 'button', id: 'voice-reply-toggle', 'aria-label': `Voice reply, ${label.textContent}` }, ['Voice reply']);
@@ -1063,6 +1090,7 @@ async function renderMore() {
   queueMicrotask(() => mountEmailCheck(email));
   return el('div', {}, [
     el('h2', {}, ['Settings']),
+    incognitoSettings(),
     voiceReplySettings(),
     mine && mine.example !== true ? healthSettings(mine) : null,
     el('p', {}, [el('a', { href: '/gym/health-data' }, ['Consumer health data']), ' · ', el('a', { href: '/gym/breach-plan' }, ['Breach plan']), ' · ', el('a', { href: '/help' }, ['Help'])]),
@@ -2156,9 +2184,7 @@ async function renderIdidIt() {
     window.dispatchEvent(new CustomEvent('lgme-ididit-step', { detail: { step: 3 } }));
     const result = await submitIdidIt(title.value);
     if (result.ok) window.dispatchEvent(new CustomEvent('lgme-ididit-step', { detail: { step: 4 } }));
-    statusLine.textContent = result.ok
-      ? `Recorded on testnet. ${result.transactionId || result.sequenceNumber || ''}`
-      : (result.error || 'The receipt stayed on this phone.');
+    statusLine.textContent = receiptStatus(result);
     confirm.disabled = false;
   });
   const view = el('section', { id: 'ididit-done' }, [

@@ -211,6 +211,9 @@ html[data-theme="gold"] #ai-dock.is-open {
 }
 #ai-send.is-pressed, #ai-confirm.is-pressed { outline: 2px solid #F97316; }
 #ai-voice-mode { font-size: 0.75rem; font-weight: 700; }
+#ai-incognito-notice { margin: 0.15rem 0; font-weight: 700; color: #F97316; }
+#ai-incognito-notice[hidden], #ai-incognito-review[hidden] { display: none; }
+#ai-incognito-review { margin: 0.25rem 0; }
 #ai-mic, #ai-speaking { font-weight: 700; color: #F97316; }
 #ai-mic[hidden], #ai-speaking[hidden], #ai-stop[hidden] { display: none; }
 #ai-dock.is-voice #ai-log, #ai-dock.is-voice #ai-steps { font-size: 1.35rem; line-height: 1.45; }

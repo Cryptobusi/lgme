@@ -4,6 +4,7 @@ import { activeScreen, applyMode, screenModePrompt, undoMode } from './screen-mo
 import { localFunctionFromPrompt, saveLocalFunction } from './local-functions.mjs';
 import { draftWithHelper, localAiReady, pickHelperSync } from './one-tap.mjs';
 import { dockChipsOf } from './variant-schema.mjs';
+import { NOTICE, UNPUBLISHED, deletePending, editPending, holdPrivate, incognitoOn, installIncognitoGuard, listPending, setIncognito, shareApproved, sharePreview, voiceInputAllowed } from './incognito.mjs';
 
 const FLAG = 'Only available online with AI enabled.';
 const AI_CHIPS = ['Log a workout', 'Make an IdidIt receipt', 'What can I do here?'];
@@ -280,11 +281,12 @@ export function filledLine(title) {
 }
 
 function mount() {
+  installIncognitoGuard();
   if (document.getElementById('ai-dock')) return;
   const dock = document.createElement('section');
   dock.id = 'ai-dock';
   dock.setAttribute('aria-label', 'On-device AI');
-  dock.innerHTML = '<p class="ai-top"><button type="button" id="ai-switch" class="ai-pill" role="switch" aria-checked="true" aria-live="polite" aria-label="AI on or off">AI off - tap to turn on</button><button type="button" id="ai-voice" aria-label="Speak or type">Voice</button><button type="button" id="ai-voice-reply" aria-label="Voice reply, Speak and show">Voice reply</button><span id="ai-voice-mode">Speak and show</span><button type="button" id="ai-listen" aria-pressed="false" aria-label="Listen again after speaking">Listen after</button><span id="ai-mic" hidden>Listening</span><span id="ai-speaking" hidden>Speaking</span><button type="button" id="ai-stop" hidden>Stop</button><button type="button" id="ai-smaller" aria-label="Smaller text">A-</button><button type="button" id="ai-larger" aria-label="Bigger text">A+</button><button type="button" id="ai-expand" aria-expanded="true">Close</button><a class="ai-setup-link" href="/ai-setup">Help</a></p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><div id="ai-scroll"><div id="ai-chip-row"><div id="ai-chips" class="ai-chips"></div><span id="ai-chip-hint" aria-hidden="true">›</span></div><textarea id="ai-ask" rows="1" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><pre id="ai-log"></pre><p class="ai-actions"><button type="button" id="ai-send" aria-label="Send recommends the words in the box">Send</button><button type="button" id="ai-accept" aria-label="Accept uses the top suggestion">Use suggestion</button><button type="button" id="ai-confirm" aria-label="Confirm and run">Confirm</button></p><p id="ai-more" hidden>More</p></div>';
+  dock.innerHTML = '<p class="ai-top"><button type="button" id="ai-switch" class="ai-pill" role="switch" aria-checked="true" aria-live="polite" aria-label="AI on or off">AI off - tap to turn on</button><button type="button" id="ai-voice" aria-label="Speak or type">Voice</button><button type="button" id="ai-voice-reply" aria-label="Voice reply, Speak and show">Voice reply</button><span id="ai-voice-mode">Speak and show</span><button type="button" id="ai-listen" aria-pressed="false" aria-label="Listen again after speaking">Listen after</button><span id="ai-mic" hidden>Listening</span><span id="ai-speaking" hidden>Speaking</span><button type="button" id="ai-stop" hidden>Stop</button><button type="button" id="ai-smaller" aria-label="Smaller text">A-</button><button type="button" id="ai-larger" aria-label="Bigger text">A+</button><button type="button" id="ai-expand" aria-expanded="true">Close</button><a class="ai-setup-link" href="/ai-setup">Help</a><button type="button" id="ai-incognito" aria-pressed="false">Incognito</button><button type="button" id="ai-incognito-count">Pending 0</button></p><p id="ai-incognito-notice" hidden>Incognito — stays on this phone</p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><div id="ai-scroll"><div id="ai-incognito-review" hidden></div><div id="ai-chip-row"><div id="ai-chips" class="ai-chips"></div><span id="ai-chip-hint" aria-hidden="true">›</span></div><textarea id="ai-ask" rows="1" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><pre id="ai-log"></pre><p class="ai-actions"><button type="button" id="ai-send" aria-label="Send recommends the words in the box">Send</button><button type="button" id="ai-accept" aria-label="Accept uses the top suggestion">Use suggestion</button><button type="button" id="ai-confirm" aria-label="Confirm and run">Confirm</button></p><p id="ai-more" hidden>More</p></div>';
   dock.classList.add('is-open', 'is-normal');
   try { document.documentElement.dataset.screen = activeScreen(localStorage); } catch { /* everyday height stays */ }
   try {
@@ -381,6 +383,10 @@ function mount() {
   const modeLabel = dock.querySelector('#ai-voice-mode');
   const listenButton = dock.querySelector('#ai-listen');
   let lastReply = '';
+  let lastHeld = '';
+  let reviewOpen = false;
+  let shareIds = [];
+  let paintIncognito = () => {};
   const replyMode = () => readVoiceReply(localStorage);
   const showingVoice = () => voiceReplyShows(replyMode(), lastByVoice);
   const speakingVoice = () => voiceReplySpeaks(replyMode(), lastByVoice);
@@ -391,14 +397,21 @@ function mount() {
     if (!node) return;
     lastReply = words;
     const friendly = showingVoice();
-    node.textContent = friendly ? voiceFriendly(words) : words;
+    const base = friendly ? voiceFriendly(words) : words;
+    node.textContent = incognitoOn(localStorage) && base ? `${base}\n${UNPUBLISHED}` : base;
     dock.classList.toggle('is-voice', friendly);
+    if (incognitoOn(localStorage) && words && words !== lastHeld) {
+      lastHeld = words;
+      holdPrivate(localStorage, { kind: 'reply', summary: words, shareable: false });
+      paintIncognito();
+    }
   };
   const refreshShown = () => {
     const log = dock.querySelector('#ai-log');
     if (!log || !lastReply) return;
     const friendly = voiceFriendly(lastReply);
-    if (log.textContent !== lastReply && log.textContent !== friendly) return;
+    const shown = [lastReply, friendly, `${lastReply}\n${UNPUBLISHED}`, `${friendly}\n${UNPUBLISHED}`];
+    if (!shown.includes(log.textContent)) return;
     showReply(log, lastReply);
     if (flowStep) paintSteps(flowStep);
   };
@@ -648,6 +661,11 @@ function mount() {
       return;
     }
     const heard = new Speech();
+    const localVoice = voiceInputAllowed({ incognito: incognitoOn(localStorage), processLocally: 'processLocally' in heard });
+    if (!localVoice.ok) {
+      showReply(dock.querySelector('#ai-log'), localVoice.message);
+      return;
+    }
     if (!('processLocally' in heard)) {
       showReply(dock.querySelector('#ai-log'), 'Voice stays on this device. This browser cannot listen without sending audio away. Typing still works.');
       return;
@@ -662,6 +680,7 @@ function mount() {
     heard.onresult = (event) => {
       stopMic();
       const transcript = event.results?.[0]?.[0]?.transcript || '';
+      if (incognitoOn(localStorage) && transcript) holdPrivate(localStorage, { kind: 'voice', summary: transcript, shareable: false });
       const command = spokenCommand(transcript);
       lastByVoice = true;
       if (command === 'cancel') {
@@ -694,6 +713,101 @@ function mount() {
     try { heard.start(); } catch { stopMic(); }
     setTimeout(() => { try { heard.stop(); } catch { /* already stopped */ } }, 6000);
   };
+  const review = dock.querySelector('#ai-incognito-review');
+  const notice = dock.querySelector('#ai-incognito-notice');
+  const incognitoButton = dock.querySelector('#ai-incognito');
+  const countButton = dock.querySelector('#ai-incognito-count');
+  paintIncognito = () => {
+    const on = incognitoOn(localStorage);
+    notice.hidden = !on;
+    notice.textContent = NOTICE;
+    incognitoButton.setAttribute('aria-pressed', on ? 'true' : 'false');
+    const rows = listPending(localStorage);
+    countButton.textContent = `Pending ${rows.length}`;
+    review.hidden = !reviewOpen;
+    review.replaceChildren();
+    if (!reviewOpen) return;
+    const preview = shareIds.length ? sharePreview(localStorage, shareIds) : [];
+    if (preview.length) {
+      const box = document.createElement('div');
+      box.id = 'ai-incognito-preview';
+      for (const line of preview) {
+        const item = document.createElement('p');
+        item.textContent = `${line.destination}. ${line.leaves} ${line.label}`;
+        box.append(item);
+      }
+      const confirm = document.createElement('button');
+      confirm.type = 'button';
+      confirm.id = 'ai-incognito-confirm';
+      confirm.textContent = 'Confirm share';
+      confirm.addEventListener('click', async () => {
+        const native = window.__lgmeNativeFetch || window.fetch.bind(window);
+        await shareApproved(localStorage, shareIds, native);
+        shareIds = [];
+        paintIncognito();
+      });
+      box.append(confirm);
+      review.append(box);
+    }
+    const list = document.createElement('ul');
+    for (const row of rows) {
+      const item = document.createElement('li');
+      const box = document.createElement('input');
+      box.type = 'checkbox';
+      box.checked = shareIds.includes(row.id);
+      box.addEventListener('change', () => {
+        shareIds = box.checked ? [...new Set([...shareIds, row.id])] : shareIds.filter((id) => id !== row.id);
+      });
+      const text = document.createElement('span');
+      text.textContent = `${row.summary} — ${row.destination}. ${UNPUBLISHED}`;
+      const edit = document.createElement('button');
+      edit.type = 'button';
+      edit.textContent = 'Edit';
+      edit.addEventListener('click', () => {
+        const field = document.createElement('input');
+        field.value = row.summary;
+        field.maxLength = 180;
+        const save = document.createElement('button');
+        save.type = 'button';
+        save.textContent = 'Save edit';
+        save.addEventListener('click', () => {
+          editPending(localStorage, row.id, field.value);
+          paintIncognito();
+        });
+        item.append(field, save);
+      });
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.textContent = 'Delete';
+      remove.addEventListener('click', () => {
+        deletePending(localStorage, row.id);
+        shareIds = shareIds.filter((id) => id !== row.id);
+        paintIncognito();
+      });
+      item.append(box, text, edit, remove);
+      list.append(item);
+    }
+    const approve = document.createElement('button');
+    approve.type = 'button';
+    approve.id = 'ai-incognito-approve';
+    approve.textContent = 'Approve and share';
+    approve.addEventListener('click', () => {
+      if (!shareIds.length) return;
+      paintIncognito();
+    });
+    review.append(list, approve);
+  };
+  paintIncognito();
+  incognitoButton.addEventListener('click', () => {
+    setIncognito(localStorage, !incognitoOn(localStorage));
+    paintIncognito();
+    window.dispatchEvent(new CustomEvent('lgme-incognito'));
+  });
+  countButton.addEventListener('click', () => {
+    reviewOpen = !reviewOpen;
+    paintIncognito();
+  });
+  window.addEventListener('lgme-incognito', paintIncognito);
   paintVoiceToggles();
   dock.querySelector('#ai-voice').addEventListener('click', () => startListen());
   replyButton.addEventListener('click', () => {

@@ -6,7 +6,9 @@ import { saveEmailSession } from './health-email.mjs';
 import { NO_FINGERPRINT, finishFingerprintPrompt, fingerprintSupported, prepareFingerprintPrompt, rememberFingerprintUnlock, startFingerprintPrompt } from './passkey-signin.mjs';
 import { readCredentialId } from './passkey-unlock.mjs';
 import { IDIDIT_CHIPS, IDIDIT_NAME, submitIdidIt } from './ididit-draft.mjs';
+import { installIncognitoGuard, receiptStatus } from './incognito.mjs';
 
+installIncognitoGuard();
 const root = document.getElementById('demo-root');
 if (!root) throw new Error('missing demo root');
 
@@ -135,7 +137,7 @@ function paintGuide() {
       state.busy = false;
       root.replaceChildren(el('section', { id: 'ididit-done' }, [
         el('h2', {}, [IDIDIT_NAME]),
-        el('p', { id: 'ididit-status' }, [result.ok ? `Recorded on testnet. ${result.transactionId || result.sequenceNumber || ''}` : (result.error || 'The receipt stayed on this phone.')])
+        el('p', { id: 'ididit-status' }, [receiptStatus(result)])
       ]));
       return;
     }
