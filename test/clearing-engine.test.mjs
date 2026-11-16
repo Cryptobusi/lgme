@@ -71,7 +71,7 @@ test('five cards and the labelled edges exist', () => {
     assert.equal(Number.isFinite(line.x1 + line.y1 + line.x2 + line.y2), true, edge.id);
   }
   const markup = CARDS.map((card) => renderCard(card) + cardInner(card)).join('\n');
-  for (const phrase of ['SAMPLE', 'sample topic', 'to be verified', 'PLANNED', 'Live beta', 'AI suggests, you decide', 'held by you alone', 'Cleared in Campus Credit, no US$ needed for this loop']) {
+  for (const phrase of ['SAMPLE', 'sample topic', 'to be verified', 'PLANNED', 'Live beta', 'AI suggests, you decide', 'held by you alone', 'Cleared in Campus Creo, no US$ needed for this loop']) {
     assert.equal(markup.includes(phrase), true, phrase);
   }
   for (const phrase of BANNED) assert.equal(markup.includes(phrase), false, phrase);

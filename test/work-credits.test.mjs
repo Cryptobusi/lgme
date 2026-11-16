@@ -41,12 +41,16 @@ test('attestation credits both people, blocks self and pair repeats, and quizzes
   assert.equal(paused.paused, true);
   assert.equal(paused.book.balances.ada, undefined);
   const home = readFileSync(new URL('../js/thumb-home.mjs', import.meta.url), 'utf8');
+  const help = readFileSync(new URL('../help.html', import.meta.url), 'utf8');
   assert.equal(home.includes('<details id="my-credits">'), true);
   assert.equal(home.includes('id="credits-total"'), true);
   assert.equal(home.includes('Creo 0.00'), true);
   assert.equal(home.includes("Creo is not a debt."), true);
+  for (const line of ['Debit = you owe.', 'Credit = you lend.', 'Creo = value you create (the IdidIt currency).']) {
+    assert.equal(home.includes(line), true, line);
+    assert.equal(help.includes(line), true, line);
+  }
   assert.equal(home.includes('<details id="my-credits" open>'), false);
-  const help = readFileSync(new URL('../help.html', import.meta.url), 'utf8');
   assert.equal(help.includes('id="work-credits"'), true);
   assert.match(help, /There is no leaderboard/);
 });

@@ -1152,7 +1152,7 @@ function campusDeedPanel(peers, me, full) {
     if (deed.status !== 'vetoed' && deed.thirdSeatId === me.id) {
       actions.push(h('button', { type: 'button', onClick: async () => {
         const result = await sim.vetoCampusDeed(store, me.id, deed.deedId, 'Skipped the order', { passphrase: pass.value, code: code.value, unixSeconds: Math.floor(Date.now() / 1000) });
-        setStatus(result.ok ? 'Veto recorded. No credit moves.' : result.error, result.ok ? 'ok' : 'bad');
+        setStatus(result.ok ? 'Veto recorded. No Creo moves.' : result.error, result.ok ? 'ok' : 'bad');
         if (result.ok) await render();
       } }, ['Veto']));
     }
@@ -1179,7 +1179,7 @@ function campusDeedPanel(peers, me, full) {
       });
       setStatus(result.ok ? '1 campus Creo used once. Not $lgme.' : result.error, result.ok ? 'ok' : 'bad');
       if (result.ok) await render();
-    } }, [`Redeem 1 credit · ${row.kind}`])
+    } }, [`Redeem 1 Creo · ${row.kind}`])
   ]));
   return h('section', { id: 'campus-deed' }, [
     h('h3', {}, ['Campus deed']),
@@ -1736,7 +1736,7 @@ async function renderBooks(peers, seat) {
     windowBanner(),
     h('p', { class: 'legend' }, [`Today's tape root ${dayRoot.slice(0, 16)}. Nothing on this page is anchored or written to Hedera.`]),
     hederaHost(peer),
-    h('p', { class: 'muted' }, [`Tape · public ledger. Every line below is on this peer’s book. Creo and debits come only from settlements, payments, and rewards. The running balance is a replay. Key ${finger}. Limit ${rule.creditLimit}.`]),
+    h('p', { class: 'muted' }, [`Tape · public ledger. Every line below is on this peer’s book. Credits and debits come only from settlements, payments, and rewards. The running balance is a replay. Key ${finger}. Limit ${rule.creditLimit}.`]),
     h('div', { class: 'nums' }, [
       h('div', {}, [coinMark(), h('strong', {}, [String(view.balance)]), 'Balance']),
       h('div', {}, [h('strong', {}, [String(rule.floor)]), `Floor · basic needs reserve · ${rule.floorNote}`]),

@@ -172,7 +172,7 @@ function supportControls(item) {
       return;
     }
     if (selected === 'credit') {
-      preview.textContent = `${split.skim} deed credit skim to Health and fitness. ${split.author} to the author. No $lgme moves. Confirm to sign.`;
+      preview.textContent = `${split.skim} Creo skim to Health and fitness. ${split.author} to the author. No $lgme moves. Confirm to sign.`;
       if (split.amount > 100) preview.textContent += ' Needs 3 attestations (over $100). Suggested third attester: group administrator.';
       ready = { kind: 'credit', amount: split.amount };
     } else if (selected === 'lgme') {
@@ -203,7 +203,7 @@ function supportControls(item) {
   confirm.addEventListener('click', async () => {
     if (!ready) return;
     const result = await sim.supportWisdom(store, memberId(), item.submissionId, { ...signing(), ...ready, authorId: item.authorId });
-    setStatus(result.ok ? 'Support is on the tape. The split is recorded. No credit was minted by the excerpt.' : result.error);
+    setStatus(result.ok ? 'Support is on the tape. The split is recorded. No Creo was minted by the excerpt.' : result.error);
     if (result.ok) await renderDesk();
   });
   wrap.append(kind, amount, terms, show, confirm, preview);
@@ -239,7 +239,7 @@ async function renderDesk() {
       no.textContent = 'No';
       concur.addEventListener('click', async () => {
         const result = await sim.concurWisdom(store, memberId(), item.submissionId, { ...signing(), authorId: item.authorId });
-        setStatus(result.ok ? (result.status === 'published' ? 'Published. Two other members concurred. No credit was minted.' : 'Concurrence signed. No credit was minted.') : result.error);
+        setStatus(result.ok ? (result.status === 'published' ? 'Published. Two other members concurred. No Creo was minted.' : 'Concurrence signed. No Creo was minted.') : result.error);
         if (result.ok) await renderDesk();
       });
       no.addEventListener('click', async () => {
@@ -285,7 +285,7 @@ function bindForm() {
       anonymous: byId('wisdom-anon').checked,
       groupCode: byId('wisdom-group').value
     });
-    setStatus(result.ok ? 'Submitted. It stays pending until two other members concur. No credit was minted.' : result.error);
+    setStatus(result.ok ? 'Submitted. It stays pending until two other members concur. No Creo was minted.' : result.error);
     if (result.ok) {
       byId('wisdom-text').value = '';
       await renderDesk();

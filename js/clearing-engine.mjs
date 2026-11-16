@@ -14,7 +14,7 @@ export const CARDS = [
   { id: "c2", n: "02", x: 730, y: 70, w: 540, h: 780, tone: "cyan", nav: "Local AI & UX", title: "Edge SLM & Frictionless Pre-Fill", kicker: "Private on-device reasoning, opt-in" },
   { id: "c3", n: "03", x: 1430, y: 70, w: 560, h: 760, tone: "purple", nav: "Third Seat Clearing", title: "The Third Seat Clearing Engine", kicker: "Zero-debt mutual credit parity" },
   { id: "c4", n: "04", x: 2150, y: 70, w: 540, h: 720, tone: "green", nav: "Cryptographic DAG", title: "Cryptographic Provenance & DAG", kicker: "Hedera HCS is planned · local keys stay sample" },
-  { id: "c5", n: "05", x: 730, y: 980, w: 1260, h: 640, tone: "rose", nav: "Serendipity Loop", title: "Peer Serendipity & Circular Clearing Ring", kicker: "Multilateral loop settlement in Campus Credit" }
+  { id: "c5", n: "05", x: 730, y: 980, w: 1260, h: 640, tone: "rose", nav: "Serendipity Loop", title: "Peer Serendipity & Circular Clearing Ring", kicker: "Multilateral loop settlement in Campus Creo" }
 ];
 
 export const CARD_BY_ID = Object.fromEntries(CARDS.map((card) => [card.id, card]));
@@ -86,7 +86,7 @@ export const SPECS = {
     stage: "STAGE 01 · FIVE PILLARS",
     paragraphs: [
       "This card is a picture of a proposed design. The five rows are sample vectors, not a live ledger.",
-      "On lgme.app a person logs a deed, an offer, a wish, or a duty. Campus Credit is created only when the recipient confirms the deed. It is non-convertible to $lgme or US$, it is capped, and unused credit is designed to fade. A deed creates it. Spending cancels it. It cannot be bought.",
+      "On lgme.app a person logs a deed, an offer, a wish, or a duty. Campus Creo is created only when the recipient confirms the deed. It is non-convertible to $lgme or US$, it is capped, and unused Creo is designed to fade. A deed creates it. Spending cancels it. It cannot be bought.",
       "WANT is a demand: missing tools, supplies, or a physical dependency. DID is past proof: hours and work a person says they did, still waiting on the other person's confirmation. SELL is an offer of surplus or time. WISH is a longer shared aim. DUTY / RESPONSIBLE is a pledge to clear a mutual-credit balance and to steward a commons.",
       "The five pillars feed the on-device assistant only after consent. If the person says not now, the rule-based moves still work. Nothing on this card is published."
     ]
@@ -105,7 +105,7 @@ export const SPECS = {
     paragraphs: [
       THIRD_SEAT,
       "The nonprofit is never an arbiter. A member may decline an exchange. Disputes go to peer review first, with legal recourse intact. A private hearing is not a court judgment.",
-      "Campus Credit in this design is mutual credit: a confirmed deed issues it, and consumption extinguishes it. The proposal aims at zero interest and at a cap so one participant cannot corner the book. Anything above the cap, in the proposal, is redirected toward the commons. Those limits are design rules. This site does not run them as a live contract.",
+      "Campus Creo is value a confirmed deed creates, not credit you lend. Spending it extinguishes it. The proposal aims at zero interest and at a cap so one participant cannot corner the book. Anything above the cap, in the proposal, is redirected toward the commons. Those limits are design rules. This site does not run them as a live contract.",
       "Komunitin is named only as a comparable mutual-credit pattern. It is not a live integration. A failed sample attestation would go to peer review with the hash the parties already hold. $lgme cannot buy a softer cap, a waiver, or a favorable ruling. Holders receive no yield in this design."
     ]
   },
@@ -124,7 +124,7 @@ export const SPECS = {
       "When A needs what only C offers, C wants what only B offers, and B wants what A offers, a two-person trade does not clear. The sample ring matches that three-person overlap.",
       "SAMPLE peers only: You (carpentry / a home battery), Elena (a garden / a timber greenhouse), and Marcus (storage / produce). The hour amount on every step is SAMPLE · 3.50 HRS.",
       "Step 1 issues sample credit as You frames Elena's greenhouse. Step 2 moves that sample credit as Elena delivers produce to Marcus. Step 3 closes the ring as Marcus charges the battery. Each step adds to zero by itself. At the end ΔA + ΔB + ΔC = 0.",
-      "The loop is cleared in Campus Credit, no US$ needed for this loop. Rent, tax, and any other US$ obligation outside the loop remain due. The result is a sample animation, not a settled payment and not a measured trust score."
+      "The loop is cleared in Campus Creo, no US$ needed for this loop. Rent, tax, and any other US$ obligation outside the loop remain due. The result is a sample animation, not a settled payment and not a measured trust score."
     ]
   }
 };
@@ -178,7 +178,7 @@ export function specMarkdown() {
   for (const step of doc.clearing.steps) {
     lines.push(step.id + ". " + step.text + " (" + step.hours + ") step sum " + step.stepSum);
   }
-  lines.push("", "Cleared in Campus Credit, no US$ needed for this loop.", "");
+  lines.push("", "Cleared in Campus Creo, no US$ needed for this loop.", "");
   for (const row of doc.status) lines.push("- " + row.piece + ": " + row.status + ". " + row.note);
   lines.push("");
   return lines.join("\n");
@@ -281,7 +281,7 @@ function pillar(tone, name, text, tag) {
 
 export function cardInner(card) {
   if (card.id === "c1") {
-    return `<p>Every person in this picture keeps five non-extractive sample vectors. Campus Credit, not a sterile credit card, is the unit a confirmed deed would create.</p><ul class="pillars">${pillar("amber", "WANT", "Demands, missing tooling, supplies, and physical dependencies. SAMPLE.", "Demand")}${pillar("green", "DID", "Verified labor hours and finished work. SAMPLE, until the recipient confirms.", "Past proof")}${pillar("cyan", "SELL", "Live surplus, dormant tools, available hours. SAMPLE offer.", "Offer")}${pillar("purple", "WISH", "Shared futures, civic projects, a watershed or a commons. SAMPLE.", "Long-term")}${pillar("rose", "DUTY / RESPONSIBLE", "Mutual-credit clearance pledges and commons stewardship. SAMPLE.", "Pledge parity")}</ul><p class="card-foot"><span>Discrete vectors: 5 · SAMPLE</span><span>Feeds the on-device assistant only after consent →</span></p>`;
+    return `<p>Every person in this picture keeps five non-extractive sample vectors. Campus Creo, not a sterile credit card, is the unit a confirmed deed would create.</p><ul class="pillars">${pillar("amber", "WANT", "Demands, missing tooling, supplies, and physical dependencies. SAMPLE.", "Demand")}${pillar("green", "DID", "Verified labor hours and finished work. SAMPLE, until the recipient confirms.", "Past proof")}${pillar("cyan", "SELL", "Live surplus, dormant tools, available hours. SAMPLE offer.", "Offer")}${pillar("purple", "WISH", "Shared futures, civic projects, a watershed or a commons. SAMPLE.", "Long-term")}${pillar("rose", "DUTY / RESPONSIBLE", "Mutual-credit clearance pledges and commons stewardship. SAMPLE.", "Pledge parity")}</ul><p class="card-foot"><span>Discrete vectors: 5 · SAMPLE</span><span>Feeds the on-device assistant only after consent →</span></p>`;
   }
   if (card.id === "c2") {
     return `<p>No form to grind through in this picture. An on-device assistant may pre-fill a SAMPLE attestation from signals you allow. AI suggests, you decide. No accuracy figure is claimed.</p><div class="sandbox"><header><span>Secure enclave sandbox · SAMPLE</span><span>Design aim: 0 KB leaves device</span></header><p><span>Past accounts and habits</span><strong>SAMPLE · Saturday Timber Work</strong></p><p><span>Local proximity</span><strong>SAMPLE · Clara's Workshop (Beacon #W8)</strong></p><p><span>Inferred output</span><strong>SAMPLE · +3.50 HRS · dual-sign primed</strong></p></div><button type="button" class="handshake" data-sample-action>OfferUp-style 1-tap dual handshake · SAMPLE</button><p class="card-foot"><span>On-device assistant · opt-in · no size claimed</span><span>Pushes to the Third Seat only if you confirm →</span></p>`;
@@ -292,7 +292,7 @@ export function cardInner(card) {
   if (card.id === "c4") {
     return `<p>SAMPLE attestations only. A later phase could hash them into a Merkle tree and anchor a digest. Hedera shared listings are PLANNED (testnet). $lgme payments on Solana are the Live beta.</p><ol class="steps"><li><span>1. Local dual-sign</span><strong>SAMPLE · Ed25519 (Alice) + Ed25519 (Bob)</strong></li><li><span>2. Merkle attestation</span><strong>SAMPLE · SHA-256 state root leaf</strong></li><li><span>3. Consensus anchor</span><strong>sample topic</strong></li><li><span>4. Settlement parity</span><strong>SAMPLE · Hederica Charter (proposed)</strong></li></ol><p class="card-foot"><span>Finality time: not claimed · CLPR to be verified</span><span>Tamper-evident copy is a design aim</span></p>`;
   }
-  return `<p>A two-person trade stalls when each person wants what a third person holds. This SAMPLE ring clears inside Campus Credit. No US$ is needed for this loop.</p><div class="peers" data-peers><article data-peer="A"><b>YOU</b><strong>SAMPLE · You</strong><span>Sovereign Node</span><em>Offers SAMPLE · Carpentry</em><em>Needs SAMPLE · 10 kWh battery</em></article><article data-peer="B"><b>EL</b><strong>SAMPLE · Elena</strong><span>Elena's Commons</span><em>Offers SAMPLE · Heirloom garden</em><em>Needs SAMPLE · Timber greenhouse</em></article><article data-peer="C"><b>MA</b><strong>SAMPLE · Marcus</strong><span>Marcus Microgrid</span><em>Offers SAMPLE · 10 kWh storage</em><em>Needs SAMPLE · Fresh produce / honey</em></article></div><ol class="ring-steps" data-ring-steps><li>Step 1 · SAMPLE · You frame Elena's greenhouse (SAMPLE · 3.50 HRS credit issued).</li><li>Step 2 · SAMPLE · Elena delivers produce and compost to Marcus (SAMPLE · 3.50 HRS transferred).</li><li>Step 3 · SAMPLE · Marcus charges the home battery (loop closes, SAMPLE debt balance 0).</li></ol><p class="equation" data-equation>ΔA + ΔB + ΔC = 0</p><button type="button" data-run-clearing>Run sample clearing</button><p class="card-foot"><span>Result waits on the sample run</span><span>Cleared in Campus Credit, no US$ needed for this loop</span></p>`;
+  return `<p>A two-person trade stalls when each person wants what a third person holds. This SAMPLE ring clears inside Campus Creo. No US$ is needed for this loop.</p><div class="peers" data-peers><article data-peer="A"><b>YOU</b><strong>SAMPLE · You</strong><span>Sovereign Node</span><em>Offers SAMPLE · Carpentry</em><em>Needs SAMPLE · 10 kWh battery</em></article><article data-peer="B"><b>EL</b><strong>SAMPLE · Elena</strong><span>Elena's Commons</span><em>Offers SAMPLE · Heirloom garden</em><em>Needs SAMPLE · Timber greenhouse</em></article><article data-peer="C"><b>MA</b><strong>SAMPLE · Marcus</strong><span>Marcus Microgrid</span><em>Offers SAMPLE · 10 kWh storage</em><em>Needs SAMPLE · Fresh produce / honey</em></article></div><ol class="ring-steps" data-ring-steps><li>Step 1 · SAMPLE · You frame Elena's greenhouse (SAMPLE · 3.50 HRS Creo issued).</li><li>Step 2 · SAMPLE · Elena delivers produce and compost to Marcus (SAMPLE · 3.50 HRS transferred).</li><li>Step 3 · SAMPLE · Marcus charges the home battery (loop closes, SAMPLE debt balance 0).</li></ol><p class="equation" data-equation>ΔA + ΔB + ΔC = 0</p><button type="button" data-run-clearing>Run sample clearing</button><p class="card-foot"><span>Result waits on the sample run</span><span>Cleared in Campus Creo, no US$ needed for this loop</span></p>`;
 }
 
 export function renderCard(card) {

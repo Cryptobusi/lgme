@@ -424,11 +424,11 @@ export function entryDetail(entry, names = {}) {
   if (entry.type === 'DEED_ATTESTED') return `${payload.receiptName || 'Deed'} ${payload.category || ''}`.trim();
   if (entry.type === 'EXERCISE_SESSION') return `IdidIt (verified receipt) ${payload.day || ''} ${payload.category || ''} ${payload.evidence || ''}${payload.intent ? ' · ' + payload.intent : ''}`.trim();
   if (entry.type === 'WISDOM_SUBMISSION') return `Wisdom ${payload.status || 'pending'} ${payload.theme || ''}`.trim();
-  if (entry.type === 'WISDOM_CONCUR') return 'Wisdom concurrence. No credit minted.';
+  if (entry.type === 'WISDOM_CONCUR') return 'Wisdom concurrence. No Creo minted.';
   if (entry.type === 'WISDOM_NO') return 'No. Wisdom concurrence declined.';
   if (entry.type === 'WISDOM_SUPPORT') {
     if (payload.unit === 'barter') return 'Wisdom barter. No $lgme moved.';
-    if (payload.unit === 'deed-credit') return `Wisdom deed credit ${payload.authorShare} to the author, ${payload.skim} skim to Health and fitness`.trim();
+    if (payload.unit === 'deed-credit') return `Wisdom Creo ${payload.authorShare} to the author, ${payload.skim} skim to Health and fitness`.trim();
     return `Wisdom support ${payload.authorShare} to the author, ${payload.floorShare} to the Floor, ${payload.appShare} to the App development fund`.trim();
   }
   if (entry.type === 'refusal') return payload.statement || 'REFUSAL';
@@ -707,7 +707,7 @@ export async function attestCampusDeed(store, receiverId, deedId, spec = {}) {
   const pending = receiver.campusDeeds?.[deedId];
   if (!pending) return fail('No deed is waiting on this book.');
   if (pending.receiverId !== receiverId) return fail('Only the receiving member can attest.');
-  if (pending.status === 'vetoed') return fail('Vetoed. No credit.');
+  if (pending.status === 'vetoed') return fail('Vetoed. No Creo.');
   if (pending.status === 'verified') return { ok: true, duplicate: true, deedId, credit: 1, receiptName: CAMPUS_RECEIPT };
   const keyed = await withCampusKey(receiver, spec);
   if (!keyed.ok) return keyed;
@@ -770,7 +770,7 @@ export async function redeemCampusCredit(store, holderId, creditId, spec = {}) {
   const credit = holder.campusCredits?.[creditId];
   if (!credit) return fail('No campus Creo on this book.');
   if (credit.holderId !== holderId) return fail('Only the member who earned the credit can redeem it.');
-  if (credit.status === 'vetoed') return fail('Vetoed. No credit.');
+  if (credit.status === 'vetoed') return fail('Vetoed. No Creo.');
   if (credit.status === 'redeemed' || credit.redeemed) return fail('Already redeemed.');
   const offerId = String(spec.offerId || credit.kind || '');
   if (spec.offers && !spec.offers.includes(offerId)) return fail('That offer is not in the pilot list.');
@@ -3634,7 +3634,7 @@ export async function supportWisdom(store, supporterId, submissionId, spec = {})
   if (supporterId === author.id) return fail('Someone else supports this wisdom.');
   if (item.groupCode && !supporter.clubGroups?.[item.groupCode]) return fail('A private group excerpt is supported by a member of that group.');
   const kind = String(spec.kind || '');
-  if (!['lgme', 'credit', 'usd', 'barter'].includes(kind)) return fail('Choose deed credit, $lgme, US$, or barter.');
+  if (!['lgme', 'credit', 'usd', 'barter'].includes(kind)) return fail('Choose Creo, $lgme, US$, or barter.');
   const keyed = await unlockDeed(supporter, spec);
   if (!keyed.ok) return keyed;
   const at = spec.at || nowIso();

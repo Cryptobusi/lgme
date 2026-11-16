@@ -25,7 +25,7 @@ export function confirmServiceCredit({ giver = false, receiver = false, amount =
   const figure = Math.round(Number(amount) * 100) / 100;
   if (!(figure > 0)) return { ok: false, error: 'The suggested credit has to be greater than zero.' };
   if (giver !== true || receiver !== true) {
-    return { ok: true, credit: 0, pending: true, text: 'Both members still have to confirm. No credit was recorded.' };
+    return { ok: true, credit: 0, pending: true, text: 'Both members still have to confirm. No Creo was recorded.' };
   }
   return { ok: true, credit: figure, pending: false, text: `Both confirmed ${figure}. Each member saves it on their own book.` };
 }

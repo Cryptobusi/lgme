@@ -9,8 +9,8 @@ const HEALTH = /\b(health|pain|doctor|diagnos|mood|sleep|energy|sick|symptom|med
 
 const TERMS = [
   ['floor', 'The floor is the basic-needs reserve. A gift that would spend it is refused.'],
-  ['subfloor', 'A subfloor is a category pool under the floor. Health and fitness keeps a 1% skim on deed-credit support.'],
-  ['ididit', 'IdidIt (verified receipt) is the record after the work is confirmed. A workout by itself mints no credit.'],
+  ['subfloor', 'A subfloor is a category pool under the floor. Health and fitness keeps a 1% skim on Creo support.'],
+  ['ididit', 'IdidIt (verified receipt) is the record after the work is confirmed. A workout by itself mints no Creo.'],
   ['iwantit', 'IwantIT is a request. You ask another member for a deed.'],
   ['ihavit', 'IhavIT is an offer. You offer a deed you can do.'],
   ['iselit', 'IselIT is a priced sale. A discount can come from the subfloor.'],
@@ -72,7 +72,7 @@ export function offlineAnswer(question, progressLines = []) {
     return medical('The health meter is a self-reported 1 to 10 score for energy, mood, and sleep. I cannot diagnose or advise treatment.');
   }
   if (/\bhow\b/i.test(q)) {
-    return 'Tap Start, then Finish for a session. Post IwantIT to ask, IhavIT to offer, IselIT to sell, or soBeIT to donate. Another person verifies. A workout mints no credit.';
+    return 'Tap Start, then Finish for a session. Post IwantIT to ask, IhavIT to offer, IselIT to sell, or soBeIT to donate. Another person verifies. A workout mints no Creo.';
   }
   return medical('I can explain Floor, Subfloor, IdidIt, IwantIT, IhavIT, IselIT, soBeIT, groups, and sharing. I can also suggest a maxim or draft a message that is not sent.');
 }

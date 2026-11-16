@@ -323,7 +323,7 @@ export async function personalPageView({ storage, status, go, mine, signedGym, p
     el('p', { id: 'call-actions' }, []),
     el('button', { type: 'button', id: 'revoke-contact', onClick: () => revokeContact() }, ['Revoke sharing']),
     el('button', { type: 'button', class: 'primary', id: 'contribution', onClick: () => go('/groups') }, ['Contribution']),
-    el('p', { class: 'muted' }, ['Opens the existing contribution flow. A workout mints no credit.'])
+    el('p', { class: 'muted' }, ['Opens the existing contribution flow. A workout mints no Creo.'])
   ]));
   root.append(el('p', { id: 'gym-status', role: 'status' }, []));
 

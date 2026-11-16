@@ -36,7 +36,7 @@ export function trainingOffer(peer, spec = {}) {
   if (credit && peer.intake?.status !== 'Tier-1') {
     return { ok: true, creditOpen: false, offer: { ...offer, gates: 'pending' }, note: 'Credit waits on the same 5-gate intake check.' };
   }
-  return { ok: true, creditOpen: credit, offer: { ...offer, gates: credit ? 'passed' : 'none' }, note: credit ? 'The 5 gates are passed. A session still mints no credit by itself.' : 'Listed. No credit is drawn.' };
+  return { ok: true, creditOpen: credit, offer: { ...offer, gates: credit ? 'passed' : 'none' }, note: credit ? 'The 5 gates are passed. A session still mints no Creo by itself.' : 'Listed. No Creo is drawn.' };
 }
 
 export function isGroupAdmin(peer, code) {

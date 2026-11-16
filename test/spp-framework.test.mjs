@@ -41,7 +41,7 @@ test('the page carries the disclaimer, CLPR caveat, pilot names, and proposed-de
     'not legal, tax, or investment advice',
     'not legal, tax, investment, or securities advice',
     'not an offer to sell',
-    'Campus Credit is not cash',
+    'Campus Creo is not cash',
     'holders receive no yield',
     'CLPR',
     'to be verified',

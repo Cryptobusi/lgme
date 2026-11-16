@@ -512,12 +512,12 @@ export function summaryMarkup(state) {
   const hours = weeklyHours(state);
   const cap = state.summary.weeklyCap;
   const hourRatio = cap === 0 ? 0 : Math.min(1, hours / cap);
-  const creditText = `${gauge.value} Campus Credit, sample, between debit limit ${gauge.min} and credit limit ${gauge.max}`;
+  const creditText = `${gauge.value} Campus Creo, sample, between debit limit ${gauge.min} and credit limit ${gauge.max}`;
   return `<section class="tile tile-credit" aria-labelledby="credit-heading">
       <p class="kicker">Sample</p>
-      <h2 id="credit-heading">Campus Credit</h2>
+      <h2 id="credit-heading">Campus Creo</h2>
       <p class="big"><span class="figure">+${escapeHtml(gauge.value)}</span> balance</p>
-      <div class="gauge" role="meter" aria-label="Campus Credit balance, sample" aria-valuemin="${gauge.min}" aria-valuemax="${gauge.max}" aria-valuenow="${gauge.value}" aria-valuetext="${escapeHtml(creditText)}">
+      <div class="gauge" role="meter" aria-label="Campus Creo balance, sample" aria-valuemin="${gauge.min}" aria-valuemax="${gauge.max}" aria-valuenow="${gauge.value}" aria-valuetext="${escapeHtml(creditText)}">
         <div class="gauge-track" aria-hidden="true">
           <span class="gauge-zero" style="left:${(gauge.zero * 100).toFixed(2)}%"></span>
           <span class="gauge-fill" style="width:${(gauge.ratio * 100).toFixed(2)}%"></span>

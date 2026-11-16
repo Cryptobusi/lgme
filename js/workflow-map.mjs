@@ -112,7 +112,7 @@ export const NODES = [
     w: 400,
     h: 150,
     t: "Individual / Floor",
-    s: ["Campus Credit (CC): mutual credit", "non-convertible, capped, fades unused", "no seigniorage: deeds create it"]
+    s: ["Campus Creo: value you create, not a loan", "non-convertible, capped, fades unused", "no seigniorage: deeds create it"]
   },
   { id: "r1", x: 1420, y: 920, w: 640, h: 86, t: "Right to say no", s: ["a job, deal, ruling, currency, data request, AI tip"] },
   { id: "r2", x: 1420, y: 1030, w: 640, h: 236, t: "Practical limits" },
@@ -289,7 +289,7 @@ export const ZONE_KEY = [
   "Person and onboarding: consent first; past-account data is pre-filled only with permission; on-device AI is opt-in, with a “What it learned” panel and per-item Forget.",
   "Big picture: Did, Sell / Offers, Wish, Duty, and Responsible, with progress rings, notifications, and a few recommended next moves.",
   "Activity loop: log a deed, offer, wish, match, do, confirm as an IdidIt, then record hashes and counts on the Tape.",
-  "Three seats: the State (US$, tax boundary, sovereignty), the Individual / Floor (Campus Credit), and the Third Seat, your seat, held by you alone. The nonprofit is never an arbiter. Each seat limits the other two.",
+  "Three seats: the State (US$, tax boundary, sovereignty), the Individual / Floor (Campus Creo), and the Third Seat, your seat, held by you alone. The nonprofit is never an arbiter. Each seat limits the other two.",
   "Right of refusal: the right to say no, and the ordinary limits that make a paper right differ from a real one.",
   "The Floor's defaults: transparency, a UBI-like earned Floor, and commoditized AI faculties, made durable through laws, mandates, and tax incentives; IdidIt is hypothesized to balance stress between state and firm and between debit and credit.",
   "Exchange: $lgme payments on Solana are a live beta; shared listings on Hedera testnet are planned and not yet live.",
