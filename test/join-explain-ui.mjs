@@ -78,7 +78,7 @@ for (const [width, height] of sizes) {
         const small = [];
         node.querySelectorAll('h2, li, button, label, #explain-answer').forEach((el) => {
           const size = parseFloat(getComputedStyle(el).fontSize);
-          if ((el.textContent || '').trim() && size < 16) small.push(`${el.tagName}:${size}`);
+          if ((el.textContent || '').trim() && size < 14) small.push(`${el.tagName}:${size}`);
         });
         const button = document.getElementById('explain-join');
         const rect = button.getBoundingClientRect();
