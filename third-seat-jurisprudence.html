@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#0c100c" />
+  <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+  <title>Third Seat jurisprudence · lgme</title>
+  <meta name="description" content="A structural analogy between Creo's Third Seat and legal ideas of standing, precedent, and review. Not legal advice. Creo is not positive law." />
+  <link rel="canonical" href="https://lgme.app/third-seat-jurisprudence" />
+  <link rel="stylesheet" href="/menu.css" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" />
+  <style>
+    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#d5e0d2; --gold:#c6a15b; --line:#2c352b; --card:#151a15; }
+    body { background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; font-size:1.05rem; line-height:1.65; max-width:46rem; margin:0 auto; padding:1.25rem max(1rem, env(safe-area-inset-right)) 4rem max(1rem, env(safe-area-inset-left)); }
+    .kicker { margin:0; font-size:0.72rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--gold); }
+    h1,h2 { font-family:Newsreader,serif; font-weight:500; letter-spacing:-0.02em; }
+    h1 { font-size:clamp(1.7rem, 6.5vw, 2.45rem); line-height:1.12; margin:0.4rem 0 0.6rem; }
+    h2 { font-size:clamp(1.35rem, 4vw, 1.7rem); line-height:1.2; margin:2.2rem 0 0.45rem; }
+    p, li { overflow-wrap:anywhere; }
+    p { margin:0.7rem 0; }
+    .muted { color:var(--muted); }
+    a { color:var(--fg); }
+    nav.deskmenu a, .toc a { min-height:44px; display:inline-flex; align-items:center; }
+    a:hover { color:var(--gold); }
+    aside.note { border:1px solid var(--gold); background:var(--card); padding:0.9rem 1rem; margin:1rem 0 1.2rem; }
+    aside.note p { margin:0.45rem 0; }
+    .toc { margin:0.4rem 0 1.2rem; padding:0; list-style:none; }
+    .toc li { margin:0; }
+    .toc a { text-decoration:none; }
+    .sheet { width:100%; border-collapse:collapse; margin:0.8rem 0 1.1rem; }
+    .sheet th, .sheet td { text-align:left; vertical-align:top; padding:0.65rem 0.45rem; border-bottom:1px solid var(--line); }
+    .sheet th { color:var(--gold); font-size:0.78rem; letter-spacing:0.04em; font-weight:600; }
+    .sheet caption { text-align:left; caption-side:bottom; color:var(--muted); font-size:0.88rem; padding-top:0.45rem; }
+    ul { margin:0.4rem 0 0.9rem; padding-left:1.2rem; }
+    li { margin:0.4rem 0; }
+    :focus-visible { outline:2px solid var(--gold); outline-offset:3px; }
+    @media (max-width: 700px) {
+      .sheet thead { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+      .sheet, .sheet tbody, .sheet tr, .sheet td, .sheet caption { display:block; width:100%; }
+      .sheet caption { padding:0.35rem 0 0.7rem; }
+      .sheet tr { margin:0.85rem 0; padding:0.2rem 0 0.55rem; border-bottom:1px solid var(--line); }
+      .sheet td { border:0; padding:0.28rem 0; }
+      .sheet td::before { content:attr(data-label); display:block; font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--gold); font-weight:600; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="deskmenu" aria-label="Desk">
+    <a href="/">Desk</a>
+    <a href="/third-seat-jurisprudence" aria-current="page">Third Seat jurisprudence</a>
+    <a href="/structural-synthesis">Structural synthesis</a>
+    <a href="/the-third-seat">Third seat</a>
+    <a href="/tap-entry">One-Tap Entry</a>
+    <a href="/clearing-engine">Clearing engine</a>
+  </nav>
+  <p class="kicker">lgme · The Switch · structural analogy · 16 November 2026</p>
+  <h1>Creo's Third Seat and legal jurisprudence</h1>
+  <p>This page is the action reading of a November 2026 note. It asks where a legal idea already has a step on lgme.app. The practical mechanics are on <a href="/structural-synthesis">Structural synthesis</a>. The longer curriculum is on <a href="/the-third-seat">the Third Seat</a>.</p>
+
+  <aside class="note" id="label" aria-label="How to read this page">
+    <p class="kicker">How to read this</p>
+    <p><strong>Structural analogy, not legal advice; Creo is not positive law.</strong> Nothing here is a pleading, a statute, or a holding. It does not tell you what a court will do. It does not move funds, and it does not change the Exchange, Solana $lgme payments, or the view switcher.</p>
+  </aside>
+
+  <nav class="toc" aria-label="Contents">
+    <p class="kicker">Contents</p>
+    <ol class="toc">
+      <li><a href="#standing">Fundamental standing</a></li>
+      <li><a href="#precedent">Precedent as a shore-up</a></li>
+      <li><a href="#logic">Supporting logic</a></li>
+      <li><a href="#limits">Limits of the parallel</a></li>
+      <li><a href="#map">Where each idea lives</a></li>
+    </ol>
+  </nav>
+
+  <section id="standing" aria-labelledby="standing-heading">
+    <h2 id="standing-heading">Fundamental standing</h2>
+    <p>In a court, standing is the threshold. A party needs a concrete stake in the outcome. The injury has to be traceable, and the court has to be able to address it. Without that, the claim is not one the court will hear. A court does not invent the case. It recognizes a case from the facts and from the rules already in force.</p>
+    <p>On this desk, standing is attested provenance. A claim to Campus Credit, or a clearing obligation, exists when a delivery has been confirmed. Members mint credit on verified delivery. The pair is a credit and an equal clearing mark. The Third Seat does not create that pair, and the Third Seat does not mint.</p>
+    <p>Members mint credit on verified delivery; the Third Seat — the $lgme self-regulating nonprofit — audits and is the arbiter who can veto; it holds $lgme only in trust for the Floor's posterity and takes no seigniorage.</p>
+    <p>That is the judicial posture in this analogy: the boundary can decide because the parties put an authenticated record in front of it, not because the boundary owns what they exchanged. Creo works alongside the US dollar. A dollar obligation outside the ledger stays a dollar obligation. State sovereignty is unchanged.</p>
+    <p>The confirmations you can try are on <a href="/tap-entry">One-Tap Entry</a>. Two taps on one device do not show that two people agreed. A second confirm belongs on the other person's device.</p>
+  </section>
+
+  <section id="precedent" aria-labelledby="precedent-heading">
+    <h2 id="precedent-heading">Precedent as a shore-up</h2>
+    <p>Common-law systems steady expectations with prior decisions. A later case with the same material facts is guided by the earlier one. The body of decisions is public. Someone who wants a different result has to say why. The history makes a quiet rewrite expensive.</p>
+    <p>Creo's public tape is the same kind of shore-up. A fulfillment, a clearing, a refusal, and a veto stay visible. Later lines are read against that record and against rules stated in advance: Floor claims rank first inside lgme, credit is minted on verified delivery, and unpaid debts sunset on a defined term while surpluses never expire.</p>
+    <p>The tape does not command the way a statute commands. It supplies the authenticated history the rules are applied to. A closed circle can net to zero in Campus Credit. The November draft illustrated that with three neighbors. Those amounts are <strong>SAMPLE</strong>. They are not a recorded exchange. The <a href="/clearing-engine">clearing engine</a> draws a sample loop that sums to zero. It does not call the network.</p>
+    <p class="muted">When this note says adjunction or colimit, those words are modelling metaphors. They name the picture of a delivery audited back onto a tape, and of a closed circle netting out. They are not a proof, and they are not a function this site runs.</p>
+  </section>
+
+  <section id="logic" aria-labelledby="logic-heading">
+    <h2 id="logic-heading">Supporting logic</h2>
+    <p>Both pictures rest on one conservation point.</p>
+    <ul>
+      <li>A court does not create property out of nothing. It recognizes relations that are already in the facts and in the governing rules.</li>
+      <li>The Third Seat does not mint credit in advance and does not take seigniorage. It certifies that members minted a zero-sum pair on verified delivery, and that a closed circle may net out. It is the arbiter who can veto.</li>
+    </ul>
+    <p>Floor Seniority is the priority rule inside lgme: Floor claims rank first, the way some claims rank ahead of ordinary ones in a bankruptcy schedule. Ranking Floor claims ahead of general commercial debt, outside this ledger, would require legislation: laws, mandates, and tax incentives. This site does not claim that outside creditors are already bound.</p>
+    <p>The debt sunset is the limitation rule. Unpaid debts sunset on a defined term. The loss is absorbed by the subfloor and the sponsors. Surpluses never expire. After 90 days the member covenant gives a gentle reminder and the option to gift surplus to the Floor. The length of the debt term is not a live setting. The draft's "two generations" figure is <strong>SAMPLE / unverified</strong>.</p>
+    <p>The veto is the check. It stops a line that was not verified. It does not spend, and it does not replace a court. Creo works alongside the US dollar. The three parties stay the State (US$), the Floor (Campus Credit), and the Third Seat ($lgme).</p>
+  </section>
+
+  <section id="limits" aria-labelledby="limits-heading">
+    <h2 id="limits-heading">Limits of the parallel</h2>
+    <p>The analogy is about institutional logic: an authenticated history, and a boundary that can say no without becoming a party to the trade. Creo is not positive law. A mathematical picture on another page does not prove a theorem about primes. The Riemann Hypothesis remains unproven, and it is not the subject of this page.</p>
+    <p>Extending Floor Seniority beyond the internal ledger to general commercial debt would require legislation, the way a new priority in commercial law would. The strength of the design is that the rules are stated in advance, applied to a public record, and constrained by a boundary that owns nothing it adjudicates and holds $lgme only in trust.</p>
+    <p>In short: the Third Seat is the arbiter who can veto. Its authority, in this analogy, comes from authenticated facts plus a visible history of earlier resolutions. The parallel is precise there. It stops where a lawyer would need a statute, a filing, or a judgment.</p>
+  </section>
+
+  <section id="map" aria-labelledby="map-heading">
+    <h2 id="map-heading">Where each idea lives</h2>
+    <table class="sheet">
+      <caption>A comparison, not a citation. The right-hand column is a page on this site. Opening it does not make the analogy into law.</caption>
+      <thead>
+        <tr><th>Legal concept</th><th>On this desk</th><th>Where it lives</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td data-label="Legal concept">Standing</td>
+          <td data-label="On this desk">Attested provenance. A claim exists when delivery is confirmed. Members mint on verified delivery.</td>
+          <td data-label="Where it lives"><a href="/tap-entry">One-Tap Entry</a> confirmations</td>
+        </tr>
+        <tr>
+          <td data-label="Legal concept">Precedent</td>
+          <td data-label="On this desk">A public tape of fulfillments, clearings, refusals, and vetoes. Later lines are read against that record.</td>
+          <td data-label="Where it lives">Public tape and the clearing record on the <a href="/clearing-engine">clearing engine</a></td>
+        </tr>
+        <tr>
+          <td data-label="Legal concept">A court that does not own the subject matter</td>
+          <td data-label="On this desk">The Third Seat holds $lgme only in trust for the Floor's posterity and takes no seigniorage. It does not mint.</td>
+          <td data-label="Where it lives"><a href="/the-third-seat">The Third Seat</a></td>
+        </tr>
+        <tr>
+          <td data-label="Legal concept">Bankruptcy priority</td>
+          <td data-label="On this desk">Floor Seniority. Inside lgme, Floor claims rank first. Beyond the ledger, this needs legislation.</td>
+          <td data-label="Where it lives"><a href="/structural-synthesis#seniority">Structural synthesis</a> and the <a href="/workflow">workflow map</a></td>
+        </tr>
+        <tr>
+          <td data-label="Legal concept">Statutes of limitation</td>
+          <td data-label="On this desk">Unpaid debts sunset on a defined term. Surpluses never expire.</td>
+          <td data-label="Where it lives"><a href="/structural-synthesis#sunset">Debt sunset</a> on the synthesis page</td>
+        </tr>
+        <tr>
+          <td data-label="Legal concept">Judicial review</td>
+          <td data-label="On this desk">Third Seat veto. The $lgme self-regulating nonprofit audits and is the arbiter who can veto.</td>
+          <td data-label="Where it lives"><a href="/structural-synthesis#seat">The Third Seat on the synthesis page</a></td>
+        </tr>
+      </tbody>
+    </table>
+    <p>Read the diagnosis on <a href="https://www.egonomicanonymous.live">egonomicanonymous.live</a>. The full synthesis is at <a href="https://hederica.com">hederica.com</a>.</p>
+  </section>
+</body>
+</html>
