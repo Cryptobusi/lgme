@@ -1,6 +1,6 @@
 import { applyFieldOption, fieldMeta, nextHelpField, safeHelpLine } from './field-help.mjs';
 import { classifyPrompt, routeLine } from './prompt-route.mjs';
-import { activeScreen, applyMode, screenModePrompt } from './screen-modes.mjs';
+import { activeScreen, applyMode, screenModePrompt, undoMode } from './screen-modes.mjs';
 import { localFunctionFromPrompt, saveLocalFunction } from './local-functions.mjs';
 import { draftWithHelper, localAiReady, pickHelperSync } from './one-tap.mjs';
 import { dockChipsOf } from './variant-schema.mjs';
@@ -202,6 +202,34 @@ export function stageLine(matched) {
   return readyLine(matched);
 }
 
+const STEP_WORDS = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
+
+export function voiceFriendly(text) {
+  const lines = String(text || '').split(/\n+/);
+  return lines.map((line) => {
+    let next = line.trim();
+    next = next.replace(/\b(\d+(?:\.\d+)?)\s*mph\b/gi, '$1 miles per hour');
+    next = next.replace(/\b(\d+(?:\.\d+)?)\s*km\/h\b/gi, '$1 kilometers per hour');
+    next = next.replace(/\b(\d+)\s*mins?\b/gi, '$1 minutes');
+    next = next.replace(/^\s*(\d+)\)\s*/, (_, number) => {
+      const word = STEP_WORDS[Number(number) - 1] || number;
+      return `Step ${word}. `;
+    });
+    next = next.replace(/&/g, ' and ');
+    next = next.replace(/[$%#]/g, '');
+    next = next.replace(/\s{2,}/g, ' ').trim();
+    return next;
+  }).filter(Boolean).join('\n');
+}
+
+export function spokenCommand(text) {
+  const q = String(text || '').trim().toLowerCase().replace(/[.!?]+$/g, '');
+  if (q === 'yes' || q === 'confirm' || q === 'send') return 'confirm';
+  if (q === 'cancel') return 'cancel';
+  if (q === 'undo') return 'undo';
+  return '';
+}
+
 export function executionPlan(matched) {
   if (matched?.kind === 'screen') {
     const name = String(matched.mode || 'everyday');
@@ -220,7 +248,7 @@ function mount() {
   const dock = document.createElement('section');
   dock.id = 'ai-dock';
   dock.setAttribute('aria-label', 'On-device AI');
-  dock.innerHTML = '<p class="ai-top"><button type="button" id="ai-switch" class="ai-pill" role="switch" aria-checked="true" aria-live="polite" aria-label="AI on or off">AI off - tap to turn on</button><button type="button" id="ai-voice" aria-label="Speak or type">Voice</button><button type="button" id="ai-smaller" aria-label="Smaller text">A-</button><button type="button" id="ai-larger" aria-label="Bigger text">A+</button><button type="button" id="ai-expand" aria-expanded="true">Close</button><a class="ai-setup-link" href="/ai-setup">Help</a></p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><div id="ai-scroll"><div id="ai-chip-row"><div id="ai-chips" class="ai-chips"></div><span id="ai-chip-hint" aria-hidden="true">›</span></div><textarea id="ai-ask" rows="1" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><pre id="ai-log"></pre><p class="ai-actions"><button type="button" id="ai-send" aria-label="Send recommends the words in the box">Send</button><button type="button" id="ai-accept" aria-label="Accept uses the top suggestion">Use suggestion</button><button type="button" id="ai-confirm" aria-label="Confirm and run">Confirm</button></p><p id="ai-more" hidden>More</p></div>';
+  dock.innerHTML = '<p class="ai-top"><button type="button" id="ai-switch" class="ai-pill" role="switch" aria-checked="true" aria-live="polite" aria-label="AI on or off">AI off - tap to turn on</button><button type="button" id="ai-voice" aria-label="Speak or type">Voice</button><button type="button" id="ai-speak" aria-pressed="true" aria-label="Read replies aloud after voice">Read aloud</button><button type="button" id="ai-listen" aria-pressed="false" aria-label="Listen again after speaking">Listen after</button><span id="ai-mic" hidden>Listening</span><span id="ai-speaking" hidden>Speaking</span><button type="button" id="ai-stop" hidden>Stop</button><button type="button" id="ai-smaller" aria-label="Smaller text">A-</button><button type="button" id="ai-larger" aria-label="Bigger text">A+</button><button type="button" id="ai-expand" aria-expanded="true">Close</button><a class="ai-setup-link" href="/ai-setup">Help</a></p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><div id="ai-scroll"><div id="ai-chip-row"><div id="ai-chips" class="ai-chips"></div><span id="ai-chip-hint" aria-hidden="true">›</span></div><textarea id="ai-ask" rows="1" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><pre id="ai-log"></pre><p class="ai-actions"><button type="button" id="ai-send" aria-label="Send recommends the words in the box">Send</button><button type="button" id="ai-accept" aria-label="Accept uses the top suggestion">Use suggestion</button><button type="button" id="ai-confirm" aria-label="Confirm and run">Confirm</button></p><p id="ai-more" hidden>More</p></div>';
   dock.classList.add('is-open', 'is-normal');
   try { document.documentElement.dataset.screen = activeScreen(localStorage); } catch { /* everyday height stays */ }
   try {
@@ -308,6 +336,53 @@ function mount() {
   let staged = null;
   let stagedText = '';
   let flowStep = 0;
+  let lastByVoice = false;
+  let hearing = null;
+  const mic = dock.querySelector('#ai-mic');
+  const speaking = dock.querySelector('#ai-speaking');
+  const stopButton = dock.querySelector('#ai-stop');
+  const readButton = dock.querySelector('#ai-speak');
+  const listenButton = dock.querySelector('#ai-listen');
+  const readOn = () => {
+    try { return localStorage.getItem('lgme.voice.read') !== 'off'; } catch { return true; }
+  };
+  const autoListen = () => {
+    try { return localStorage.getItem('lgme.voice.autolisten') === '1'; } catch { return false; }
+  };
+  const paintVoiceToggles = () => {
+    const read = readOn();
+    readButton.setAttribute('aria-pressed', read ? 'true' : 'false');
+    readButton.textContent = read ? 'Read aloud' : 'Silent';
+    const again = autoListen();
+    listenButton.setAttribute('aria-pressed', again ? 'true' : 'false');
+  };
+  const showReply = (node, words) => {
+    if (!node) return;
+    node.textContent = lastByVoice ? voiceFriendly(words) : words;
+    dock.classList.toggle('is-voice', lastByVoice);
+  };
+  const stopSpeaking = () => {
+    try { window.speechSynthesis?.cancel(); } catch { /* speech stays quiet */ }
+    speaking.hidden = true;
+    stopButton.hidden = true;
+  };
+  const speakAloud = (words) => {
+    const SpeechOut = window.speechSynthesis;
+    if (!SpeechOut || !lastByVoice || !readOn()) return;
+    const spoken = voiceFriendly(words);
+    if (!spoken) return;
+    stopSpeaking();
+    const utter = new SpeechSynthesisUtterance(spoken);
+    utter.lang = 'en-US';
+    utter.onstart = () => { speaking.hidden = false; stopButton.hidden = false; };
+    utter.onend = () => {
+      speaking.hidden = true;
+      stopButton.hidden = true;
+      if (autoListen()) startListen();
+    };
+    utter.onerror = () => { speaking.hidden = true; stopButton.hidden = true; };
+    SpeechOut.speak(utter);
+  };
   const paintSteps = (current) => {
     flowStep = current;
     let list = dock.querySelector('#ai-steps');
@@ -330,7 +405,8 @@ function mount() {
     lines.forEach((line, index) => {
       const item = document.createElement('li');
       const step = index + 1;
-      item.textContent = `${step}) ${line}`;
+      const numbered = `${step}) ${line}`;
+      item.textContent = lastByVoice ? voiceFriendly(numbered) : numbered;
       if (step < current) item.className = 'is-done';
       else if (step === current) item.className = 'is-current';
       list.append(item);
@@ -352,7 +428,8 @@ function mount() {
     let words = '';
     try { words = sessionStorage.getItem('lgme.prompt.note') || ''; } catch { /* the log stays */ }
     if (!words) return;
-    dock.querySelector('#ai-log').textContent = words;
+    showReply(dock.querySelector('#ai-log'), words);
+    if (lastByVoice) speakAloud(words);
     if (flowStep < 3) paintSteps(2);
     try { sessionStorage.removeItem('lgme.prompt.note'); } catch { /* the log still shows */ }
   };
@@ -365,14 +442,18 @@ function mount() {
     const route = classifyPrompt(text);
     matched.route = route;
     if (matched.kind === 'ididit') {
-      log.textContent = `Ready to log on IdidIt: ${matched.title || matched.text}.`;
+      const ready = `Ready to log on IdidIt: ${matched.title || matched.text}.`;
+      showReply(log, ready);
       paintSteps(1);
+      if (lastByVoice) speakAloud(`${ready}\n${readyLine(matched)}`);
     } else {
       paintSteps(0);
       const detail = matched.line;
-      log.textContent = route.liveWrite === false
+      const reply = route.liveWrite === false
         ? `${routeLine(route, detail)} This category is In development. Nothing is written live.`
         : `${routeLine(route, detail)}`;
+      showReply(log, reply);
+      if (lastByVoice) speakAloud(reply);
     }
     if (route.alternatives.length) paintChips(route.alternatives, null);
     note(dock.querySelector('#ai-send'), 'Staged');
@@ -447,7 +528,8 @@ function mount() {
       stagedText = text;
       paintSteps(0);
       const log = dock.querySelector('#ai-log');
-      log.textContent = plan.line;
+      showReply(log, plan.line);
+      if (lastByVoice) speakAloud(plan.line);
       paintChips(plan.categories, null);
       note(dock.querySelector('#ai-send'), 'Pick one');
       markOverflow();
@@ -472,12 +554,16 @@ function mount() {
     const now = Date.now();
     if (now - keySent < 40) return;
     keySent = now;
+    lastByVoice = false;
+    dock.classList.remove('is-voice');
     sendOrStage();
   };
   ask.addEventListener('keydown', (event) => {
     if (event.key === 'Shift') shiftHeld = true;
     if (event.key !== 'Enter' || event.shiftKey) return;
     event.preventDefault();
+    lastByVoice = false;
+    dock.classList.remove('is-voice');
     sendFromKeyboard();
   });
   ask.addEventListener('keyup', (event) => { if (event.key === 'Shift') shiftHeld = false; });
@@ -494,7 +580,7 @@ function mount() {
     staged = null;
     stagedText = '';
   });
-  dock.querySelector('#ai-send').addEventListener('click', () => sendOrStage());
+  dock.querySelector('#ai-send').addEventListener('click', () => { lastByVoice = false; dock.classList.remove('is-voice'); sendOrStage(); });
   dock.querySelector('#ai-confirm').addEventListener('click', () => executeStaged());
   window.addEventListener('lgme-draft-filled', showFilled);
   window.addEventListener('lgme-ididit-step', (event) => {
@@ -502,15 +588,76 @@ function mount() {
     if (step) paintSteps(step);
   });
   setTimeout(showFilled, 0);
-  dock.querySelector('#ai-voice').addEventListener('click', () => {
+  const startListen = () => {
     const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
     try { localStorage.setItem('lgme.voice.used', '1'); } catch { /* the suggestion still works */ }
-    if (!Speech) { ask.focus(); dock.querySelector('#ai-log').textContent = 'Voice is not on this device. Typing still works.'; return; }
+    if (!Speech) {
+      ask.focus();
+      showReply(dock.querySelector('#ai-log'), 'Voice is not on this device. Typing still works.');
+      return;
+    }
     const heard = new Speech();
+    if (!('processLocally' in heard)) {
+      showReply(dock.querySelector('#ai-log'), 'Voice stays on this device. This browser cannot listen without sending audio away. Typing still works.');
+      return;
+    }
     heard.lang = 'en-US';
-    heard.onresult = (event) => { ask.value = event.results?.[0]?.[0]?.transcript || ''; stagePrompt(); };
-    heard.onerror = () => { ask.focus(); };
-    heard.start();
+    heard.processLocally = true;
+    heard.interimResults = false;
+    heard.continuous = false;
+    mic.hidden = false;
+    hearing = heard;
+    const stopMic = () => { mic.hidden = true; hearing = null; };
+    heard.onresult = (event) => {
+      stopMic();
+      const transcript = event.results?.[0]?.[0]?.transcript || '';
+      const command = spokenCommand(transcript);
+      lastByVoice = true;
+      if (command === 'cancel') {
+        staged = null;
+        stagedText = '';
+        stopSpeaking();
+        showReply(dock.querySelector('#ai-log'), 'Cancelled.');
+        return;
+      }
+      if (command === 'undo') {
+        undoMode(localStorage);
+        stopSpeaking();
+        showReply(dock.querySelector('#ai-log'), 'Undone.');
+        speakAloud('Undone.');
+        return;
+      }
+      if (command === 'confirm') {
+        const pageConfirm = document.getElementById('gym-ididit-confirm');
+        if (staged) { executeStaged(); return; }
+        if (pageConfirm) { pageConfirm.click(); return; }
+        showReply(dock.querySelector('#ai-log'), 'Nothing is staged. Say the workout, then say confirm.');
+        speakAloud('Nothing is staged. Say the workout, then say confirm.');
+        return;
+      }
+      ask.value = transcript;
+      stagePrompt();
+    };
+    heard.onerror = () => { stopMic(); ask.focus(); };
+    heard.onend = stopMic;
+    try { heard.start(); } catch { stopMic(); }
+    setTimeout(() => { try { heard.stop(); } catch { /* already stopped */ } }, 6000);
+  };
+  paintVoiceToggles();
+  dock.querySelector('#ai-voice').addEventListener('click', () => startListen());
+  readButton.addEventListener('click', () => {
+    try { localStorage.setItem('lgme.voice.read', readOn() ? 'off' : 'on'); } catch { /* the toggle still moves */ }
+    if (!readOn()) stopSpeaking();
+    paintVoiceToggles();
+  });
+  listenButton.addEventListener('click', () => {
+    try { localStorage.setItem('lgme.voice.autolisten', autoListen() ? '0' : '1'); } catch { /* the toggle still moves */ }
+    paintVoiceToggles();
+  });
+  stopButton.addEventListener('click', () => {
+    stopSpeaking();
+    try { hearing?.stop(); } catch { /* the mic is already quiet */ }
+    mic.hidden = true;
   });
   dock.querySelector('#ai-smaller').addEventListener('click', () => applySize(SIZES[Math.max(0, SIZES.indexOf(dock.classList.contains('is-tall') ? 'tall' : dock.classList.contains('is-compact') ? 'compact' : 'normal') - 1)]));
   dock.querySelector('#ai-larger').addEventListener('click', () => applySize(SIZES[Math.min(2, SIZES.indexOf(dock.classList.contains('is-tall') ? 'tall' : dock.classList.contains('is-compact') ? 'compact' : 'normal') + 1)]));

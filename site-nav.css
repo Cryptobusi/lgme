@@ -203,6 +203,9 @@ html[data-theme="gold"] #ai-dock.is-open {
   button, a { font-size: 18px; }
 }
 #ai-send.is-pressed, #ai-confirm.is-pressed { outline: 2px solid #F97316; }
+#ai-mic, #ai-speaking { font-weight: 700; color: #F97316; }
+#ai-mic[hidden], #ai-speaking[hidden], #ai-stop[hidden] { display: none; }
+#ai-dock.is-voice #ai-log, #ai-dock.is-voice #ai-steps { font-size: 1.35rem; line-height: 1.45; }
 #ai-action-status { margin: 0.2rem 0 0; font-size: 0.8rem; }
 #ai-dock .ai-actions { display: flex; gap: 0.4rem; margin: 0.25rem 0 0; }
 #ai-dock button { min-height: 44px; min-width: 44px; font: inherit; font-weight: 700; border-radius: 999px; border: 1px solid #c6a15b; background: transparent; color: #f4f1e8; padding: 0.3rem 0.8rem; }
