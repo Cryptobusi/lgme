@@ -35,6 +35,7 @@ import { IDIDIT_CHIPS, IDIDIT_NAME, submitIdidIt } from './ididit-draft.mjs';
 import { renderProtocol } from './intake-view.mjs';
 import { DISCLAIMER, DISCLAIMER_EDITION, SANDBOX_LABEL, confirmOutcome, failMediation, messageFromMirror, openDispute, publicDispute, rehearsalMembers, requestPanel, setShareConsent, signVerdict } from './dispute.mjs';
 import { mountDeviceCard } from './device-card.mjs';
+import { nextVoiceReply, readVoiceReply, voiceReplyLabel } from './local-ai-panel.mjs';
 
 let mode = localStorage.getItem(MODE_KEY) === 'demo' ? 'demo' : 'real';
 let store = mode === 'demo' ? demoStore() : realStore();
@@ -1028,6 +1029,33 @@ function healthSettings(peer) {
   ]);
 }
 
+let voiceReplySync = null;
+
+function voiceReplySettings() {
+  const label = el('p', { id: 'voice-reply-label' }, [voiceReplyLabel(readVoiceReply(localStorage))]);
+  const toggle = el('button', { type: 'button', id: 'voice-reply-toggle', 'aria-label': `Voice reply, ${label.textContent}` }, ['Voice reply']);
+  const sync = () => {
+    const mode = readVoiceReply(localStorage);
+    const name = voiceReplyLabel(mode);
+    label.textContent = name;
+    toggle.setAttribute('aria-label', `Voice reply, ${name}`);
+  };
+  toggle.addEventListener('click', () => {
+    try { localStorage.setItem('lgme.voice.reply', nextVoiceReply(readVoiceReply(localStorage))); } catch { /* the label still moves */ }
+    sync();
+    window.dispatchEvent(new CustomEvent('lgme-voice-reply'));
+  });
+  if (voiceReplySync) window.removeEventListener('lgme-voice-reply', voiceReplySync);
+  voiceReplySync = sync;
+  window.addEventListener('lgme-voice-reply', sync);
+  return el('section', { class: 'card', id: 'voice-reply-settings' }, [
+    el('h3', {}, ['Voice reply']),
+    label,
+    toggle,
+    el('p', { class: 'muted' }, ['Speak and show, Show only, or Off. This stays on this phone.'])
+  ]);
+}
+
 async function renderMore() {
   const mine = await seat();
   const email = el('div', { id: 'gym-email' });
@@ -1035,6 +1063,7 @@ async function renderMore() {
   queueMicrotask(() => mountEmailCheck(email));
   return el('div', {}, [
     el('h2', {}, ['Settings']),
+    voiceReplySettings(),
     mine && mine.example !== true ? healthSettings(mine) : null,
     el('p', {}, [el('a', { href: '/gym/health-data' }, ['Consumer health data']), ' · ', el('a', { href: '/gym/breach-plan' }, ['Breach plan']), ' · ', el('a', { href: '/help' }, ['Help'])]),
     localAiCard(mine),

@@ -230,6 +230,42 @@ export function spokenCommand(text) {
   return '';
 }
 
+const VOICE_REPLIES = [
+  { id: 'speak', label: 'Speak and show' },
+  { id: 'show', label: 'Show only' },
+  { id: 'off', label: 'Off' }
+];
+
+export function voiceReplyMode(value) {
+  return VOICE_REPLIES.some((item) => item.id === value) ? value : 'speak';
+}
+
+export function readVoiceReply(storage) {
+  try {
+    const saved = storage.getItem('lgme.voice.reply');
+    if (saved) return voiceReplyMode(saved);
+    if (storage.getItem('lgme.voice.read') === 'off') return 'show';
+  } catch { /* Speak and show stays the default */ }
+  return 'speak';
+}
+
+export function nextVoiceReply(mode) {
+  const order = VOICE_REPLIES.map((item) => item.id);
+  return order[(order.indexOf(voiceReplyMode(mode)) + 1) % order.length];
+}
+
+export function voiceReplyLabel(mode) {
+  return VOICE_REPLIES.find((item) => item.id === voiceReplyMode(mode)).label;
+}
+
+export function voiceReplyShows(mode, byVoice) {
+  return byVoice === true && voiceReplyMode(mode) !== 'off';
+}
+
+export function voiceReplySpeaks(mode, byVoice) {
+  return byVoice === true && voiceReplyMode(mode) === 'speak';
+}
+
 export function executionPlan(matched) {
   if (matched?.kind === 'screen') {
     const name = String(matched.mode || 'everyday');
@@ -248,7 +284,7 @@ function mount() {
   const dock = document.createElement('section');
   dock.id = 'ai-dock';
   dock.setAttribute('aria-label', 'On-device AI');
-  dock.innerHTML = '<p class="ai-top"><button type="button" id="ai-switch" class="ai-pill" role="switch" aria-checked="true" aria-live="polite" aria-label="AI on or off">AI off - tap to turn on</button><button type="button" id="ai-voice" aria-label="Speak or type">Voice</button><button type="button" id="ai-speak" aria-pressed="true" aria-label="Read replies aloud after voice">Read aloud</button><button type="button" id="ai-listen" aria-pressed="false" aria-label="Listen again after speaking">Listen after</button><span id="ai-mic" hidden>Listening</span><span id="ai-speaking" hidden>Speaking</span><button type="button" id="ai-stop" hidden>Stop</button><button type="button" id="ai-smaller" aria-label="Smaller text">A-</button><button type="button" id="ai-larger" aria-label="Bigger text">A+</button><button type="button" id="ai-expand" aria-expanded="true">Close</button><a class="ai-setup-link" href="/ai-setup">Help</a></p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><div id="ai-scroll"><div id="ai-chip-row"><div id="ai-chips" class="ai-chips"></div><span id="ai-chip-hint" aria-hidden="true">›</span></div><textarea id="ai-ask" rows="1" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><pre id="ai-log"></pre><p class="ai-actions"><button type="button" id="ai-send" aria-label="Send recommends the words in the box">Send</button><button type="button" id="ai-accept" aria-label="Accept uses the top suggestion">Use suggestion</button><button type="button" id="ai-confirm" aria-label="Confirm and run">Confirm</button></p><p id="ai-more" hidden>More</p></div>';
+  dock.innerHTML = '<p class="ai-top"><button type="button" id="ai-switch" class="ai-pill" role="switch" aria-checked="true" aria-live="polite" aria-label="AI on or off">AI off - tap to turn on</button><button type="button" id="ai-voice" aria-label="Speak or type">Voice</button><button type="button" id="ai-voice-reply" aria-label="Voice reply, Speak and show">Voice reply</button><span id="ai-voice-mode">Speak and show</span><button type="button" id="ai-listen" aria-pressed="false" aria-label="Listen again after speaking">Listen after</button><span id="ai-mic" hidden>Listening</span><span id="ai-speaking" hidden>Speaking</span><button type="button" id="ai-stop" hidden>Stop</button><button type="button" id="ai-smaller" aria-label="Smaller text">A-</button><button type="button" id="ai-larger" aria-label="Bigger text">A+</button><button type="button" id="ai-expand" aria-expanded="true">Close</button><a class="ai-setup-link" href="/ai-setup">Help</a></p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><div id="ai-scroll"><div id="ai-chip-row"><div id="ai-chips" class="ai-chips"></div><span id="ai-chip-hint" aria-hidden="true">›</span></div><textarea id="ai-ask" rows="1" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><pre id="ai-log"></pre><p class="ai-actions"><button type="button" id="ai-send" aria-label="Send recommends the words in the box">Send</button><button type="button" id="ai-accept" aria-label="Accept uses the top suggestion">Use suggestion</button><button type="button" id="ai-confirm" aria-label="Confirm and run">Confirm</button></p><p id="ai-more" hidden>More</p></div>';
   dock.classList.add('is-open', 'is-normal');
   try { document.documentElement.dataset.screen = activeScreen(localStorage); } catch { /* everyday height stays */ }
   try {
@@ -341,25 +377,40 @@ function mount() {
   const mic = dock.querySelector('#ai-mic');
   const speaking = dock.querySelector('#ai-speaking');
   const stopButton = dock.querySelector('#ai-stop');
-  const readButton = dock.querySelector('#ai-speak');
+  const replyButton = dock.querySelector('#ai-voice-reply');
+  const modeLabel = dock.querySelector('#ai-voice-mode');
   const listenButton = dock.querySelector('#ai-listen');
-  const readOn = () => {
-    try { return localStorage.getItem('lgme.voice.read') !== 'off'; } catch { return true; }
-  };
+  let lastReply = '';
+  const replyMode = () => readVoiceReply(localStorage);
+  const showingVoice = () => voiceReplyShows(replyMode(), lastByVoice);
+  const speakingVoice = () => voiceReplySpeaks(replyMode(), lastByVoice);
   const autoListen = () => {
     try { return localStorage.getItem('lgme.voice.autolisten') === '1'; } catch { return false; }
   };
-  const paintVoiceToggles = () => {
-    const read = readOn();
-    readButton.setAttribute('aria-pressed', read ? 'true' : 'false');
-    readButton.textContent = read ? 'Read aloud' : 'Silent';
-    const again = autoListen();
-    listenButton.setAttribute('aria-pressed', again ? 'true' : 'false');
-  };
   const showReply = (node, words) => {
     if (!node) return;
-    node.textContent = lastByVoice ? voiceFriendly(words) : words;
-    dock.classList.toggle('is-voice', lastByVoice);
+    lastReply = words;
+    const friendly = showingVoice();
+    node.textContent = friendly ? voiceFriendly(words) : words;
+    dock.classList.toggle('is-voice', friendly);
+  };
+  const refreshShown = () => {
+    const log = dock.querySelector('#ai-log');
+    if (!log || !lastReply) return;
+    const friendly = voiceFriendly(lastReply);
+    if (log.textContent !== lastReply && log.textContent !== friendly) return;
+    showReply(log, lastReply);
+    if (flowStep) paintSteps(flowStep);
+  };
+  const paintVoiceToggles = () => {
+    const mode = replyMode();
+    const label = voiceReplyLabel(mode);
+    modeLabel.textContent = label;
+    replyButton.setAttribute('aria-label', `Voice reply, ${label}`);
+    const again = autoListen();
+    listenButton.setAttribute('aria-pressed', again ? 'true' : 'false');
+    refreshShown();
+    if (mode !== 'speak') stopSpeaking();
   };
   const stopSpeaking = () => {
     try { window.speechSynthesis?.cancel(); } catch { /* speech stays quiet */ }
@@ -368,7 +419,7 @@ function mount() {
   };
   const speakAloud = (words) => {
     const SpeechOut = window.speechSynthesis;
-    if (!SpeechOut || !lastByVoice || !readOn()) return;
+    if (!SpeechOut || !speakingVoice()) return;
     const spoken = voiceFriendly(words);
     if (!spoken) return;
     stopSpeaking();
@@ -406,7 +457,7 @@ function mount() {
       const item = document.createElement('li');
       const step = index + 1;
       const numbered = `${step}) ${line}`;
-      item.textContent = lastByVoice ? voiceFriendly(numbered) : numbered;
+      item.textContent = showingVoice() ? voiceFriendly(numbered) : numbered;
       if (step < current) item.className = 'is-done';
       else if (step === current) item.className = 'is-current';
       list.append(item);
@@ -645,11 +696,13 @@ function mount() {
   };
   paintVoiceToggles();
   dock.querySelector('#ai-voice').addEventListener('click', () => startListen());
-  readButton.addEventListener('click', () => {
-    try { localStorage.setItem('lgme.voice.read', readOn() ? 'off' : 'on'); } catch { /* the toggle still moves */ }
-    if (!readOn()) stopSpeaking();
+  replyButton.addEventListener('click', () => {
+    const next = nextVoiceReply(replyMode());
+    try { localStorage.setItem('lgme.voice.reply', next); } catch { /* the label still moves */ }
     paintVoiceToggles();
+    window.dispatchEvent(new CustomEvent('lgme-voice-reply'));
   });
+  window.addEventListener('lgme-voice-reply', paintVoiceToggles);
   listenButton.addEventListener('click', () => {
     try { localStorage.setItem('lgme.voice.autolisten', autoListen() ? '0' : '1'); } catch { /* the toggle still moves */ }
     paintVoiceToggles();

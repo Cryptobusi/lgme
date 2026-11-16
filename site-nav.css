@@ -165,10 +165,12 @@ html[data-theme="paper"] #ai-dock button:not(#ai-switch),
 html[data-theme="paper"] #ai-dock .ai-setup-link,
 html[data-theme="paper"] #ai-log,
 html[data-theme="paper"] #ai-ask,
+html[data-theme="paper"] #ai-voice-mode,
 html[data-screen="simple"] #ai-dock button:not(#ai-switch),
 html[data-screen="simple"] #ai-dock .ai-setup-link,
 html[data-screen="simple"] #ai-log,
-html[data-screen="simple"] #ai-ask {
+html[data-screen="simple"] #ai-ask,
+html[data-screen="simple"] #ai-voice-mode {
   color: #1a1408;
   border-color: #1a1408;
 }
@@ -203,6 +205,7 @@ html[data-theme="gold"] #ai-dock.is-open {
   button, a { font-size: 18px; }
 }
 #ai-send.is-pressed, #ai-confirm.is-pressed { outline: 2px solid #F97316; }
+#ai-voice-mode { font-size: 0.75rem; font-weight: 700; }
 #ai-mic, #ai-speaking { font-weight: 700; color: #F97316; }
 #ai-mic[hidden], #ai-speaking[hidden], #ai-stop[hidden] { display: none; }
 #ai-dock.is-voice #ai-log, #ai-dock.is-voice #ai-steps { font-size: 1.35rem; line-height: 1.45; }

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { spokenCommand, voiceFriendly } from '../js/local-ai-panel.mjs';
+import { nextVoiceReply, readVoiceReply, spokenCommand, voiceFriendly, voiceReplyLabel, voiceReplyShows, voiceReplySpeaks } from '../js/local-ai-panel.mjs';
 
 test('voice replies spell minutes, speed, and steps', () => {
   const line = voiceFriendly('Ready to log on IdidIt: Walk, 30 min.\n1) Press Send again or tap Confirm to open the filled-in draft.\n2) Check the activity and minutes.');
@@ -20,6 +20,31 @@ test('voice replies spell minutes, speed, and steps', () => {
   assert.equal(panel.includes('speechSynthesis'), true);
   assert.equal(panel.includes('processLocally = true'), true);
   assert.equal(panel.includes('id="ai-speaking"'), true);
+  assert.equal(panel.includes('id="ai-voice-mode"'), true);
   assert.equal(panel.includes('>Stop<'), true);
   assert.equal(panel.includes('>Listening<'), true);
+  assert.equal(voiceReplyLabel('speak'), 'Speak and show');
+  assert.equal(voiceReplyLabel('show'), 'Show only');
+  assert.equal(voiceReplyLabel('off'), 'Off');
+  assert.equal(nextVoiceReply('speak'), 'show');
+  assert.equal(nextVoiceReply('show'), 'off');
+  assert.equal(nextVoiceReply('off'), 'speak');
+  assert.equal(voiceReplyShows('speak', true), true);
+  assert.equal(voiceReplyShows('show', true), true);
+  assert.equal(voiceReplyShows('off', true), false);
+  assert.equal(voiceReplyShows('speak', false), false);
+  assert.equal(voiceReplySpeaks('speak', true), true);
+  assert.equal(voiceReplySpeaks('show', true), false);
+  assert.equal(voiceReplySpeaks('off', true), false);
+  const memory = new Map();
+  const storage = { getItem: (key) => memory.get(key) ?? null, setItem: (key, value) => memory.set(key, value) };
+  assert.equal(readVoiceReply(storage), 'speak');
+  storage.setItem('lgme.voice.read', 'off');
+  assert.equal(readVoiceReply(storage), 'show');
+  storage.setItem('lgme.voice.reply', 'off');
+  assert.equal(readVoiceReply(storage), 'off');
+  const gym = readFileSync(new URL('../js/gym-app.mjs', import.meta.url), 'utf8');
+  assert.equal(gym.includes('id: \'voice-reply-settings\''), true);
+  assert.equal(gym.includes('id: \'voice-reply-toggle\''), true);
+  assert.equal(gym.includes('Speak and show, Show only, or Off.'), true);
 });
