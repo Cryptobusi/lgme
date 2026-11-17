@@ -67,7 +67,7 @@ const off = await page.locator('#ai-mic-btn').evaluate((node) => ({
   pressed: node.getAttribute('aria-pressed'),
   bg: getComputedStyle(node).backgroundColor
 }));
-if (!off.off || off.pressed !== 'false' || !/107,\s*114,\s*128/.test(off.bg)) failures.push(`mic off ${JSON.stringify(off)}`);
+if (!off.off || off.pressed !== 'false' || !/176,\s*0,\s*32/.test(off.bg)) failures.push(`mic off ${JSON.stringify(off)}`);
 await page.locator('#ai-mic-btn').click();
 const listening = await page.locator('#ai-mic-btn').evaluate((node) => ({
   on: node.classList.contains('is-listening'),
@@ -76,9 +76,9 @@ const listening = await page.locator('#ai-mic-btn').evaluate((node) => ({
   voice: document.getElementById('ai-voice').className,
   dot: document.querySelector('#ai-status [data-voice]')?.className || ''
 }));
-if (!listening.on || listening.pressed !== 'true' || !/176,\s*0,\s*32/.test(listening.bg)) failures.push(`mic listen ${JSON.stringify(listening)}`);
+if (!listening.on || listening.pressed !== 'true' || !/198,\s*161,\s*91/.test(listening.bg)) failures.push(`mic listen ${JSON.stringify(listening)}`);
 if (!listening.voice.includes('is-listening') || listening.dot !== 'voice-listening') failures.push(`voice match ${JSON.stringify(listening)}`);
-if (!/Listening/.test(await page.locator('#ai-mic').innerText())) failures.push('listening label');
+if (!/Listening/.test(await page.locator('#ai-mic-btn').getAttribute('aria-label') || '')) failures.push('listening label');
 await page.evaluate(() => window.__speech.onresult({ results: [{ 0: { transcript: 'log fi' }, isFinal: false }] }));
 if ((await page.locator('#ai-ask').inputValue()) !== 'log fi') failures.push('interim missing');
 await page.evaluate(() => window.__speech.onresult({ results: [{ 0: { transcript: 'log 5min walk' }, isFinal: true }] }));

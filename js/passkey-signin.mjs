@@ -41,7 +41,7 @@ export function fingerprintGuideHtml(step, detail = '') {
     if (n === current && step === 'fail') cls = 'is-failed';
     else if ((n === current && step === 'ok') || (n < current && step !== 'fail')) cls = 'is-done';
     else if (n === current) cls = 'is-current';
-    return `<li class="${cls}"><i></i><span>${n} ${label}</span></li>`;
+    return `<li class="${cls}" aria-label="${n} ${label}"><i></i></li>`;
   }).join('');
   const again = step === 'fail' ? '<button type="button" class="fingerprint-again">Try again</button>' : '';
   return `<ol class="fingerprint-steps">${items}</ol>${again}`;

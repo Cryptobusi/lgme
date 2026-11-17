@@ -69,12 +69,12 @@ test('a fingerprint tap opens the prompt before any await', async () => {
   assert.equal(manifest.display, 'standalone');
   const sensor = fingerprintGuideHtml(2);
   assert.match(sensor, /class="is-current"/);
-  assert.match(sensor, /2 Touch the sensor on your phone/);
+  assert.match(sensor, /aria-label="2 Touch the sensor on your phone"/);
   const holding = fingerprintGuideHtml(3);
-  assert.match(holding, /3 Hold until it buzzes/);
+  assert.match(holding, /aria-label="3 Hold until it buzzes"/);
   assert.match(holding, /class="is-current"/);
   const opened = fingerprintGuideHtml('ok');
-  assert.match(opened, /4 Unlocked/);
+  assert.match(opened, /aria-label="4 Unlocked"/);
   assert.match(opened, /class="is-done"/);
   const blocked = fingerprintGuideHtml('fail', fingerprintErrorLine({ name: 'NotAllowedError' }));
   assert.match(blocked, /class="is-failed"/);
