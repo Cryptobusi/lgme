@@ -2,11 +2,120 @@ import { attestBadges } from './attest-follow.mjs';
 import { deleteLocalFunction, exportLocalFunctions, importLocalFunctions, readLocalFunctions } from './local-functions.mjs';
 import { applyMode, recommendMode, screenChosen, screenPresets, undoMode } from './screen-modes.mjs';
 import { formatCredits } from './work-credits.mjs';
+import { listPending } from './incognito.mjs';
+import { readHealthConsent } from './health-safeguards.mjs';
 import { compactCode } from './email-check-core.mjs';
 import { localAiReady } from './one-tap.mjs';
 import { gateDecision, nextAccess, signinAllowed } from './confirm-gate.mjs';
 import { ensureDeviceKey, signDevice } from './device-sign.mjs';
 import { NO_FINGERPRINT, fingerprintErrorLine, fingerprintGuideHtml, finishFingerprintPrompt, fingerprintSupported, prepareFingerprintPrompt, startFingerprintPrompt } from './passkey-signin.mjs';
+
+function setDot(id, kind, label) {
+  const dot = document.getElementById(id);
+  if (!dot) return;
+  dot.className = `dash-dot is-${kind}`;
+  dot.setAttribute('aria-label', label);
+}
+
+function paintDash(book, member) {
+  if (!document.getElementById('home-board')) return;
+  const rows = member ? (book?.history || []).filter((row) => row.member === member) : [];
+  const credit = rows.reduce((sum, row) => sum + (Number(row.amount) > 0 ? Number(row.amount) : 0), 0);
+  const debit = rows.reduce((sum, row) => sum + (Number(row.amount) < 0 ? Number(row.amount) : 0), 0);
+  const creo = document.getElementById('dash-creo-figure');
+  const debitLine = document.getElementById('dash-debit');
+  const creditLine = document.getElementById('dash-credit');
+  if (!rows.length) {
+    if (creo) creo.textContent = 'None yet';
+    if (debitLine) debitLine.textContent = 'None yet';
+    if (creditLine) creditLine.textContent = 'None yet';
+    setDot('dash-creo-dot', 'wait', 'No Creo yet');
+  } else {
+    if (creo) creo.textContent = formatCredits(book.balances?.[member] || 0);
+    if (debitLine) debitLine.textContent = formatCredits(debit);
+    if (creditLine) creditLine.textContent = formatCredits(credit);
+    setDot('dash-creo-dot', 'go', 'Creo on this phone');
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  const todays = rows.filter((row) => String(row.when || '').slice(0, 10) === today);
+  const todayFigure = document.getElementById('dash-today-figure');
+  const todayList = document.getElementById('dash-today-list');
+  if (todayFigure) todayFigure.textContent = todays.length ? String(todays.length) : 'None yet';
+  if (todayList) {
+    todayList.replaceChildren();
+    if (!todays.length) todayList.append(Object.assign(document.createElement('li'), { textContent: 'Nothing logged today.' }));
+    todays.slice(-4).forEach((row) => todayList.append(Object.assign(document.createElement('li'), { textContent: `${row.why || 'Activity'} ${formatCredits(row.amount)}` })));
+  }
+  setDot('dash-today-dot', todays.length ? 'go' : 'wait', todays.length ? 'Activity today' : 'Nothing logged today');
+  const receipt = [...rows].reverse().find((row) => /receipt|ididit/i.test(String(row.why || '')));
+  const receiptFigure = document.getElementById('dash-receipt-figure');
+  const receiptDetail = document.getElementById('dash-receipt-detail');
+  if (receipt) {
+    if (receiptFigure) receiptFigure.textContent = formatCredits(receipt.amount);
+    if (receiptDetail) receiptDetail.textContent = `${receipt.why} · ${receipt.when || ''}`.trim();
+    setDot('dash-receipt-dot', 'go', 'Receipt on this phone');
+  } else {
+    if (receiptFigure) receiptFigure.textContent = 'None yet';
+    if (receiptDetail) receiptDetail.textContent = 'No receipt yet.';
+    setDot('dash-receipt-dot', 'wait', 'No receipt yet');
+  }
+  const consent = readHealthConsent(localStorage);
+  const consentFigure = document.getElementById('dash-consent-figure');
+  const consentDetail = document.getElementById('dash-consent-detail');
+  if (!consent) {
+    if (consentFigure) consentFigure.textContent = 'None yet';
+    if (consentDetail) consentDetail.textContent = 'Not answered.';
+    setDot('dash-consent-dot', 'wait', 'Health consent not answered');
+  } else if (consent.adult) {
+    if (consentFigure) consentFigure.textContent = consent.collect ? 'On' : 'Age only';
+    if (consentDetail) consentDetail.textContent = `Collect ${consent.collect ? 'on' : 'off'}. Share ${consent.share ? 'on' : 'off'}.`;
+    setDot('dash-consent-dot', 'go', 'Health consent saved');
+  } else {
+    if (consentFigure) consentFigure.textContent = 'Not confirmed';
+    if (consentDetail) consentDetail.textContent = 'Age is not confirmed.';
+    setDot('dash-consent-dot', 'stop', 'Health consent needs age');
+  }
+  const pending = listPending(localStorage);
+  const held = document.getElementById('dash-incognito-figure');
+  const heldDetail = document.getElementById('dash-incognito-detail');
+  if (pending.length) {
+    if (held) held.textContent = String(pending.length);
+    if (heldDetail) heldDetail.textContent = `${pending.length} waiting on this phone.`;
+    setDot('dash-incognito-dot', 'wait', 'Incognito items waiting');
+  } else {
+    if (held) held.textContent = 'None';
+    if (heldDetail) heldDetail.textContent = 'Nothing is waiting.';
+    setDot('dash-incognito-dot', 'go', 'No Incognito items waiting');
+  }
+  const notice = document.getElementById('notice-text')?.textContent?.trim() || '';
+  const noticeFigure = document.getElementById('dash-notice-figure');
+  const noticeDetail = document.getElementById('dash-notice-detail');
+  if (notice) {
+    if (noticeFigure) noticeFigure.textContent = 'Testnet';
+    if (noticeDetail) noticeDetail.textContent = notice;
+    setDot('dash-notice-dot', 'go', 'Testnet notice');
+  } else {
+    if (noticeFigure) noticeFigure.textContent = 'None';
+    if (noticeDetail) noticeDetail.textContent = 'No notice.';
+    setDot('dash-notice-dot', 'stop', 'Testnet notice missing');
+  }
+}
+
+function wireDash() {
+  document.querySelectorAll('#home-board .dash-head').forEach((head) => {
+    if (head.dataset.wired) return;
+    head.dataset.wired = '1';
+    head.addEventListener('click', () => {
+      const body = document.getElementById(head.getAttribute('aria-controls') || '');
+      if (!body) return;
+      const open = head.getAttribute('aria-expanded') === 'true';
+      head.setAttribute('aria-expanded', open ? 'false' : 'true');
+      body.hidden = open;
+      const mark = head.querySelector('.dash-chevron');
+      if (mark) mark.textContent = open ? '+' : '–';
+    });
+  });
+}
 
 const root = document.getElementById('category-grid');
 if (root) {
@@ -467,6 +576,7 @@ if (root) {
       });
     }
     board.querySelector('#my-credits-balance').textContent = member ? `Balance ${formatCredits(book.balances?.[member] || 0)}` : 'Sign in to see your Creo.';
+    paintDash(book, member);
     const list = board.querySelector('#my-credits-history');
     list.replaceChildren(...(book.history || []).filter((row) => row.member === member).map((row) => {
       const item = document.createElement('li');
@@ -525,5 +635,6 @@ if (root) {
   reopen.addEventListener('click', () => { screen.hidden = false; });
   paint();
   paintBadges();
-  paintCredits();
+  wireDash();
+paintCredits();
 }

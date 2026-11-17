@@ -49,6 +49,23 @@ const failures = [];
 const page = await context.newPage();
 await page.goto(`${base}/?picker=1`, { waitUntil: 'domcontentloaded' });
 await page.locator('#profile-board').waitFor();
+const glance = await page.evaluate(() => {
+  const head = document.querySelector('#dash-creo .dash-head');
+  const box = head.getBoundingClientRect();
+  const figure = document.getElementById('dash-creo-figure').textContent;
+  head.click();
+  return {
+    height: box.height,
+    figure,
+    debit: document.getElementById('dash-debit').textContent,
+    open: head.getAttribute('aria-expanded') === 'true',
+    columns: getComputedStyle(document.getElementById('home-board')).gridTemplateColumns.split(' ').filter(Boolean).length
+  };
+});
+if (glance.figure !== 'None yet' || glance.debit !== 'None yet') failures.push(`mock creo ${glance.figure}`);
+if (!glance.open) failures.push('card stayed closed');
+if (glance.height < 44) failures.push(`dash tap ${glance.height}`);
+if (glance.columns < 2) failures.push('dash is one column');
 await page.locator('#one-more').click();
 await page.locator('#function-row').waitFor();
 await page.locator('#ai-dock').waitFor();
@@ -113,11 +130,29 @@ await page.locator('#access-grant').click();
 if ((await page.evaluate(() => localStorage.getItem('lgme.access'))) !== 'full') failures.push('access not granted');
 await page.locator('#function-row a[data-sensitive]').click();
 await page.locator('#gate-passkey').click();
-await page.waitForFunction(() => /fingerprint/i.test(document.getElementById('gate-status')?.textContent || ''));
+await page.waitForFunction(() => /fingerprint/i.test(document.getElementById('gate-status')?.innerHTML || ''));
 const gateBox = await page.locator('#gate-passkey').boundingBox();
 const dockNow = await page.locator('#ai-dock').boundingBox();
 if (!gateBox || await page.locator('#gate-passkey').isDisabled()) failures.push('gate fingerprint hidden');
 if (gateBox && dockNow && gateBox.y < dockNow.y + dockNow.height && gateBox.y + gateBox.height > dockNow.y) failures.push('gate fingerprint covered');
+await page.evaluate(() => {
+  const day = new Date().toISOString().slice(0, 10);
+  localStorage.setItem('lgme.member.id', 'ada');
+  localStorage.setItem('lgme.credits.mine', JSON.stringify({ balances: { ada: 150 }, history: [{ member: 'ada', amount: 200, why: 'IdidIt receipt', when: day }, { member: 'ada', amount: -50, why: 'Spent', when: day }] }));
+  localStorage.setItem('lgme.incognito.pending', JSON.stringify([{ path: '/api/hedera/queue' }]));
+});
+await page.reload({ waitUntil: 'domcontentloaded' });
+await page.locator('#dash-creo-figure').waitFor();
+const filled = await page.evaluate(() => ({
+  creo: document.getElementById('dash-creo-figure').textContent,
+  debit: document.getElementById('dash-debit').textContent,
+  credit: document.getElementById('dash-credit').textContent,
+  today: document.getElementById('dash-today-figure').textContent,
+  receipt: document.getElementById('dash-receipt-figure').textContent,
+  held: document.getElementById('dash-incognito-figure').textContent
+}));
+if (filled.creo !== '1.50' || filled.debit !== '-0.50' || filled.credit !== '2.00') failures.push(`book ${filled.creo} ${filled.debit} ${filled.credit}`);
+if (filled.today !== '2' || filled.receipt !== '2.00' || filled.held !== '1') failures.push(`glance ${filled.today} ${filled.receipt} ${filled.held}`);
 await browser.close();
 server.close();
 if (failures.length) { console.log(failures.join('\n')); process.exit(1); }
