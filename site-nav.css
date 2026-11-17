@@ -180,6 +180,13 @@ html.is-one-tab body:has(nav[aria-label="Gym"]) #ai-dock { bottom: 0; }
 .ai-suggest { display: flex; align-items: center; gap: 0.35rem; margin: 0.2rem 0.35rem 0.35rem; padding: 0.15rem 0.35rem; border-radius: 8px; background: rgba(244, 241, 232, 0.28); }
 .ai-suggest { margin-bottom: 0.45rem; }
 .ai-suggest-line { flex: 1 1 auto; min-width: 0; font-size: 14px; line-height: 1.4; font-weight: 700; }
+.ai-step-no, #ai-do-all { min-width: 44px; min-height: 44px; }
+.ai-step-no { width: 44px; padding: 0; border-radius: 50%; font-weight: 700; }
+#ai-do-all { margin: 0.2rem 0.35rem 0.45rem; }
+#ai-explain-steps { margin: 0.2rem 0.5rem 0.45rem; padding: 0; list-style: none; font-size: 14px; line-height: 1.4; }
+#ai-explain-steps li { margin: 0.28rem 0; }
+#ai-dock.is-compact #ai-explain-steps { font-size: 13px; }
+#ai-dock.is-tall #ai-explain-steps { font-size: 16px; }
 .ai-yesno { display: inline-flex; gap: 0.25rem; flex: 0 0 auto; }
 #ai-dock .ai-yes, #ai-dock .ai-no { width: 44px; min-width: 44px; height: 44px; min-height: 44px; padding: 0; font-size: 18px; line-height: 1; }
 #ai-dock .ai-yes { border-radius: 999px; background: #146c43; color: #fff; border-color: #146c43; }

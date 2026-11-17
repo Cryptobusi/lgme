@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { nextVoiceReply, readVoiceReply, setSpeakChoice, speakApproved, speechErrorLine, spokenCommand, voiceFriendly, voiceReplyLabel, voiceReplyShows, voiceReplySpeaks } from '../js/local-ai-panel.mjs';
+import { nextVoiceReply, readVoiceReply, setSpeakChoice, speakApproved, speechErrorLine, spokenCommand, stepPick, voiceFriendly, voiceReplyLabel, voiceReplyShows, voiceReplySpeaks } from '../js/local-ai-panel.mjs';
 
 test('voice replies spell minutes, speed, and steps', () => {
   const line = voiceFriendly('Ready to log on IdidIt: Walk, 30 min.\n1) Press Send again or tap Confirm to open the filled-in draft.\n2) Check the activity and minutes.');
@@ -16,7 +16,13 @@ test('voice replies spell minutes, speed, and steps', () => {
   assert.equal(spokenCommand('cancel'), 'cancel');
   assert.equal(spokenCommand('undo'), 'undo');
   assert.equal(spokenCommand('Walked 30 min'), '');
+  assert.equal(stepPick('do 2'), 2);
+  assert.equal(stepPick('step 3'), 3);
+  assert.equal(stepPick('2'), 2);
+  assert.equal(stepPick('log a workout'), 0);
   const panel = readFileSync(new URL('../js/local-ai-panel.mjs', import.meta.url), 'utf8');
+  assert.equal(panel.includes('Do all in order'), true);
+  assert.equal(panel.includes('ai-step-no'), true);
   assert.equal(panel.includes('speechSynthesis'), true);
   assert.equal(panel.includes('processLocally = true'), true);
   assert.equal(panel.includes('id="ai-speaking"'), true);

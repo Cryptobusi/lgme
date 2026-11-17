@@ -241,6 +241,15 @@ export function spokenCommand(text) {
   return '';
 }
 
+export function stepPick(text) {
+  const q = String(text || '').trim().toLowerCase();
+  const named = q.match(/\b(?:do|step|number)\s+#?(\d+)\b/);
+  const bare = q.match(/^#?(\d+)\b/);
+  const match = named || bare;
+  const n = match ? Number(match[1]) : 0;
+  return n > 0 ? n : 0;
+}
+
 const VOICE_REPLIES = [
   { id: 'speak', label: 'Speak and show' },
   { id: 'show', label: 'Show only' },
@@ -331,7 +340,7 @@ function mount() {
   const dock = document.createElement('section');
   dock.id = 'ai-dock';
   dock.setAttribute('aria-label', 'On-device AI');
-  dock.innerHTML = '<p class="ai-top"><button type="button" id="ai-controls" aria-expanded="false" aria-label="Show or hide controls">Controls</button><span id="ai-status">AI off · Voice · Speak+show</span><button type="button" id="ai-switch" class="ai-pill" role="switch" aria-checked="true" aria-live="polite" aria-label="AI on or off">AI off</button><button type="button" id="ai-voice" class="ai-detail is-off" aria-pressed="false" aria-label="Voice off">Voice</button><button type="button" id="ai-voice-reply" class="ai-detail" aria-label="Voice reply, Speak and show">Reply</button><span id="ai-voice-mode" class="ai-detail">Speak+show</span><button type="button" id="ai-listen" class="ai-detail" aria-pressed="false" aria-label="Listen again after speaking">Listen</button><span id="ai-mic" hidden>Listening</span><span id="ai-speaking" hidden>Speaking</span><button type="button" id="ai-stop" hidden>Stop</button><button type="button" id="ai-smaller" class="ai-detail" aria-label="Smaller text">A-</button><button type="button" id="ai-larger" class="ai-detail" aria-label="Bigger text">A+</button><a class="ai-setup-link ai-detail" href="/ai-setup">Help</a><button type="button" id="ai-incognito" class="ai-detail" aria-pressed="false">Incognito</button><button type="button" id="ai-incognito-count" class="ai-detail">Pending 0</button><button type="button" id="ai-expand" aria-expanded="true">Close</button></p><p id="ai-incognito-notice" hidden>Incognito — stays on this phone</p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><div id="ai-chip-row"><div id="ai-chips" class="ai-chips"></div><span id="ai-chip-hint" aria-hidden="true">›</span></div><div id="ai-scroll"><div id="ai-incognito-review" hidden></div><div id="ai-log-frame"><pre id="ai-log"></pre><div id="ai-suggestions"></div></div><p id="ai-more" hidden>More</p></div><div class="ai-compose"><div id="ai-input-frame"><textarea id="ai-ask" rows="1" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><p id="ai-send-state" class="is-held" role="status" aria-label="Not sent. Held on this phone."><i></i></p><p class="ai-actions"><span id="speak-ask" class="is-wait" role="group" aria-label="Speak reply?"><span>Speak reply?</span><button type="button" id="speak-yes" aria-label="Yes, speak replies">Yes</button><button type="button" id="speak-no" aria-label="No, do not speak replies">No</button></span><button type="button" id="ai-mic-btn" class="is-off" data-state="off" aria-pressed="false" aria-label="Microphone off"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg></button><button type="button" id="ai-send" aria-label="Send">Send</button><button type="button" id="ai-accept" aria-label="Hint">Hint</button><button type="button" id="ai-confirm" aria-label="Confirm">OK</button></p></div></div>';
+  dock.innerHTML = '<p class="ai-top"><button type="button" id="ai-controls" aria-expanded="false" aria-label="Show or hide controls">Controls</button><span id="ai-status">AI off · Voice · Speak+show</span><button type="button" id="ai-switch" class="ai-pill" role="switch" aria-checked="true" aria-live="polite" aria-label="AI on or off">AI off</button><button type="button" id="ai-voice" class="ai-detail is-off" aria-pressed="false" aria-label="Voice off">Voice</button><button type="button" id="ai-voice-reply" class="ai-detail" aria-label="Voice reply, Speak and show">Reply</button><span id="ai-voice-mode" class="ai-detail">Speak+show</span><button type="button" id="ai-listen" class="ai-detail" aria-pressed="false" aria-label="Listen again after speaking">Listen</button><span id="ai-mic" hidden>Listening</span><span id="ai-speaking" hidden>Speaking</span><button type="button" id="ai-stop" hidden>Stop</button><button type="button" id="ai-smaller" class="ai-detail" aria-label="Smaller text">A-</button><button type="button" id="ai-larger" class="ai-detail" aria-label="Bigger text">A+</button><a class="ai-setup-link ai-detail" href="/ai-setup">Help</a><button type="button" id="ai-incognito" class="ai-detail" aria-pressed="false">Incognito</button><button type="button" id="ai-incognito-count" class="ai-detail">Pending 0</button><button type="button" id="ai-expand" aria-expanded="true">Close</button></p><p id="ai-incognito-notice" hidden>Incognito — stays on this phone</p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><div id="ai-chip-row"><div id="ai-chips" class="ai-chips"></div><span id="ai-chip-hint" aria-hidden="true">›</span></div><div id="ai-scroll"><div id="ai-incognito-review" hidden></div><div id="ai-log-frame"><pre id="ai-log"></pre><ol id="ai-explain-steps"></ol><div id="ai-suggestions"></div></div><p id="ai-more" hidden>More</p></div><div class="ai-compose"><div id="ai-input-frame"><textarea id="ai-ask" rows="1" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><p id="ai-send-state" class="is-held" role="status" aria-label="Not sent. Held on this phone."><i></i></p><p class="ai-actions"><span id="speak-ask" class="is-wait" role="group" aria-label="Speak reply?"><span>Speak reply?</span><button type="button" id="speak-yes" aria-label="Yes, speak replies">Yes</button><button type="button" id="speak-no" aria-label="No, do not speak replies">No</button></span><button type="button" id="ai-mic-btn" class="is-off" data-state="off" aria-pressed="false" aria-label="Microphone off"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg></button><button type="button" id="ai-send" aria-label="Send">Send</button><button type="button" id="ai-accept" aria-label="Hint">Hint</button><button type="button" id="ai-confirm" aria-label="Confirm">OK</button></p></div></div>';
   dock.classList.add('is-open', 'is-normal');
   try { document.documentElement.dataset.screen = activeScreen(localStorage); } catch { /* everyday height stays */ }
   try {
@@ -354,14 +363,34 @@ function mount() {
   const chips = dock.querySelector('#ai-chips');
   const dismissed = new Set();
   let fieldToken = 0;
+  const visibleSteps = (labels) => labels.filter((label) => !dismissed.has(label));
+  const paintExplainSteps = (labels) => {
+    const list = dock.querySelector('#ai-explain-steps');
+    if (!list) return;
+    list.replaceChildren();
+    visibleSteps(labels).forEach((label, index) => {
+      const item = document.createElement('li');
+      const n = index + 1;
+      item.innerHTML = `<strong>${n}.</strong> ${label.replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]))}`;
+      list.append(item);
+    });
+  };
   const paintSuggestions = (labels, field) => {
     const host = dock.querySelector('#ai-suggestions');
     if (!host) return;
     host.replaceChildren();
-    for (const label of labels) {
-      if (dismissed.has(label)) continue;
+    const steps = visibleSteps(labels);
+    paintExplainSteps(labels);
+    steps.forEach((label, index) => {
+      const n = index + 1;
       const row = document.createElement('div');
       row.className = 'ai-suggest';
+      row.dataset.step = String(n);
+      const badge = document.createElement('button');
+      badge.type = 'button';
+      badge.className = 'ai-step-no';
+      badge.textContent = String(n);
+      badge.setAttribute('aria-label', `Do ${n}`);
       const line = document.createElement('span');
       line.className = 'ai-suggest-line';
       line.textContent = label;
@@ -397,11 +426,27 @@ function mount() {
           if (chip.textContent === label) chip.remove();
         }
       });
+      badge.addEventListener('click', () => {
+        if (field) return;
+        ask.value = label;
+        lastByVoice = false;
+        dock.classList.remove('is-voice');
+        dock.dataset.sent = 'no';
+        stagePrompt();
+      });
       const pair = document.createElement('span');
       pair.className = 'ai-yesno';
       pair.append(yes, no);
-      row.append(line, pair);
+      row.append(badge, line, pair);
       host.append(row);
+    });
+    if (!field && steps.length > 1) {
+      const all = document.createElement('button');
+      all.type = 'button';
+      all.id = 'ai-do-all';
+      all.textContent = 'Do all in order';
+      all.addEventListener('click', () => startAll(steps));
+      host.append(all);
     }
   };
   const paintChips = (labels, field) => {
@@ -702,6 +747,12 @@ function mount() {
   };
   const sendOrStage = () => {
     const text = ask.value.trim();
+    if (/^do all\b/i.test(text)) {
+      startAll([...dock.querySelectorAll('.ai-suggest-line')].map((node) => node.textContent));
+      return;
+    }
+    const picked = stepPick(text);
+    if (picked && stageByNumber(picked)) return;
     const plan = planSend({ staged, stagedText, text });
     if (plan.action === 'open') {
       executeStaged();
@@ -765,7 +816,44 @@ function mount() {
     stagedText = '';
   });
   dock.querySelector('#ai-send').addEventListener('click', () => { lastByVoice = false; dock.classList.remove('is-voice'); sendOrStage(); });
-  dock.querySelector('#ai-confirm').addEventListener('click', () => executeStaged());
+  let stepQueue = [];
+  const saveQueue = (labels) => {
+    stepQueue = labels;
+    try {
+      if (labels.length) sessionStorage.setItem('lgme.step.queue', JSON.stringify(labels));
+      else sessionStorage.removeItem('lgme.step.queue');
+    } catch { /* the next OK still advances */ }
+  };
+  const stageLabel = (label) => {
+    ask.value = label;
+    lastByVoice = false;
+    dock.classList.remove('is-voice');
+    dock.dataset.sent = 'no';
+    stagePrompt();
+  };
+  const stageByNumber = (n) => {
+    const line = dock.querySelector(`.ai-suggest[data-step="${n}"] .ai-suggest-line`);
+    if (!line) return false;
+    saveQueue([]);
+    stageLabel(line.textContent);
+    return true;
+  };
+  const startAll = (labels) => {
+    const steps = labels.filter(Boolean);
+    if (!steps.length) return;
+    saveQueue(steps);
+    stageLabel(steps[0]);
+  };
+  dock.querySelector('#ai-confirm').addEventListener('click', () => {
+    const rest = stepQueue.slice(1);
+    const opens = staged && executionPlan(staged).openDraft;
+    if (opens && rest[0]) {
+      try { sessionStorage.setItem('lgme.step.pending', rest[0]); } catch { /* the queue still advances here */ }
+    }
+    saveQueue(rest);
+    executeStaged();
+    if (!opens && rest[0]) stageLabel(rest[0]);
+  });
   window.addEventListener('lgme-draft-filled', showFilled);
   window.addEventListener('lgme-ididit-step', (event) => {
     const step = Number(event.detail?.step);
@@ -875,6 +963,13 @@ function mount() {
       ask.value = transcript;
       try { sessionStorage.setItem('lgme.voice.transcript', transcript); } catch { /* the field still shows it */ }
       setMicMode('done');
+      const picked = stepPick(transcript);
+      if (/^do all\b/i.test(transcript)) {
+        startAll([...dock.querySelectorAll('.ai-suggest-line')].map((node) => node.textContent));
+        tick();
+        return;
+      }
+      if (picked && stageByNumber(picked)) { tick(); return; }
       stagePrompt({ guide: true });
       if (staged) executeStaged({ record: false });
       tick();
@@ -1124,6 +1219,16 @@ function mount() {
       sessionStorage.removeItem('lgme.voice.transcript');
     }
   } catch { /* the typed line stays */ }
+  try {
+    const savedQueue = JSON.parse(sessionStorage.getItem('lgme.step.queue') || '[]');
+    if (Array.isArray(savedQueue)) stepQueue = savedQueue.filter((item) => typeof item === 'string');
+    const pending = sessionStorage.getItem('lgme.step.pending');
+    if (pending) {
+      sessionStorage.removeItem('lgme.step.pending');
+      ask.value = pending;
+      stagePrompt();
+    }
+  } catch { /* the queue stays on this page */ }
   pickHelperSync();
   dock.dataset.ready = 'yes';
 }
