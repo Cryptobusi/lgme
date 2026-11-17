@@ -1,6 +1,6 @@
 (function () {
   var EPOCH = '2';
-  var CURRENT = { 'lgme-v222': 1, 'lgme-gym-v81': 1 };
+  var CURRENT = { 'lgme-v223': 1, 'lgme-gym-v81': 1 };
   function keep(name) {
     if (!name) return true;
     if (name === 'lgme.reset.epoch' || name === 'lgme.reset.note' || name === 'lgme.device.key' || name === 'lgme-gym.seat' || name === 'lgme.health.book' || name === 'lgme.health.email' || name === 'lgme.health.plan' || name === 'lgme.health.contact' || name === 'lgme.health.contactGrants' || name === 'lgme.health.consent' || name === 'lgme.demo.member') return true;
@@ -65,16 +65,25 @@
     var back = document.createElement('button');
     back.type = 'button';
     back.id = 'site-back';
-    back.textContent = 'Back';
+    back.setAttribute('aria-label', 'Back');
+    back.textContent = '‹';
     var home = document.createElement('a');
     home.id = 'site-home';
     home.href = '/?home=1';
-    home.textContent = 'Home';
+    home.setAttribute('aria-label', 'Home');
+    home.textContent = '⌂';
+    var next = document.createElement('button');
+    next.type = 'button';
+    next.id = 'site-next';
+    next.setAttribute('aria-label', 'Next');
+    next.textContent = '›';
+    next.hidden = true;
     var mark = document.createElement('span');
     mark.id = 'ai-head';
     mark.textContent = 'AI off';
     bar.appendChild(back);
     bar.appendChild(home);
+    bar.appendChild(next);
     bar.appendChild(mark);
     document.body.prepend(bar);
   }
@@ -113,9 +122,91 @@
   var backButton = bar.querySelector('#site-back');
   if (backButton && !backButton.dataset.bound) {
     backButton.dataset.bound = '1';
+    backButton.setAttribute('aria-label', 'Back');
+    backButton.textContent = '‹';
     backButton.addEventListener('click', function () {
       if (history.length > 1) history.back();
       else location.assign('/?home=1');
     });
+  }
+  var homeLink = bar.querySelector('#site-home');
+  if (homeLink) {
+    homeLink.setAttribute('aria-label', 'Home');
+    homeLink.textContent = '⌂';
+  }
+  var nextButton = bar.querySelector('#site-next');
+  if (!nextButton) {
+    nextButton = document.createElement('button');
+    nextButton.type = 'button';
+    nextButton.id = 'site-next';
+    nextButton.setAttribute('aria-label', 'Next');
+    nextButton.textContent = '›';
+    nextButton.hidden = true;
+    var markSlot = bar.querySelector('#ai-head');
+    if (markSlot) bar.insertBefore(nextButton, markSlot);
+    else bar.appendChild(nextButton);
+  }
+  function shown(el) {
+    if (!el || el.hidden || el.disabled) return false;
+    if (el.closest('#ai-dock, #site-nav, [hidden]')) return false;
+    var box = el.getBoundingClientRect();
+    return box.width > 0 && box.height > 0;
+  }
+  function inView(el) {
+    if (!shown(el)) return false;
+    var box = el.getBoundingClientRect();
+    return box.bottom > 36 && box.top < window.innerHeight * 0.72;
+  }
+  function findNext() {
+    var picks = [];
+    var sections = ['step-email', 'step-fingerprint', 'step-ai'].map(function (id) { return document.getElementById(id); }).filter(shown);
+    var current = 0;
+    sections.forEach(function (section, index) {
+      if (section.getBoundingClientRect().top < 72) current = index;
+    });
+    if (sections[current] && inView(sections[current]) && sections[current + 1]) picks.push(sections[current + 1]);
+    var screen = document.querySelector('#onboarding .screen:not([hidden])');
+    var jump = screen && screen.querySelector('[data-next]');
+    if (screen && jump && inView(screen) && shown(jump)) picks.push(jump);
+    var stepper = document.getElementById('stepper-next');
+    if (stepper && inView(stepper) && (stepper.textContent || '').trim() === 'Next') picks.push(stepper);
+    var buttons = document.querySelectorAll('button');
+    for (var i = 0; i < buttons.length; i += 1) {
+      var button = buttons[i];
+      if (button.id === 'site-next') continue;
+      if ((button.textContent || '').trim() !== 'Next') continue;
+      if (inView(button)) picks.push(button);
+    }
+    var articles = document.querySelectorAll('.steps > article');
+    for (var s = 0; s < articles.length - 1; s += 1) {
+      if (inView(articles[s]) && shown(articles[s + 1])) { picks.push(articles[s + 1]); break; }
+    }
+    if (!picks.length) return null;
+    picks.sort(function (a, b) { return a.getBoundingClientRect().top - b.getBoundingClientRect().top; });
+    return picks[0];
+  }
+  function syncNext() {
+    var show = !!findNext();
+    if (nextButton.hidden === !show) return;
+    nextButton.hidden = !show;
+  }
+  if (!nextButton.dataset.bound) {
+    nextButton.dataset.bound = '1';
+    nextButton.addEventListener('click', function () {
+      var target = findNext();
+      if (!target) { syncNext(); return; }
+      if (target.matches && target.matches('button, a')) target.click();
+      else target.scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    });
+    var queued = 0;
+    var schedule = function () {
+      if (queued) return;
+      queued = requestAnimationFrame(function () { queued = 0; syncNext(); });
+    };
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('hashchange', schedule);
+    window.addEventListener('resize', schedule);
+    if (document.body) new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'disabled'] });
+    schedule();
   }
 })();

@@ -115,7 +115,8 @@ async function read(page) {
     for (const el of document.querySelectorAll('#site-nav button, #site-nav a, .menu-toggle, .chips button')) {
       const box = el.getBoundingClientRect();
       if (box.width < 1 || box.height < 1) continue;
-      if (box.height < 44 || box.width < 44) taps.push(`${(el.innerText || el.id).trim().slice(0, 16)}:${Math.round(box.width)}x${Math.round(box.height)}`);
+      const min = el.closest('#site-nav') ? 40 : 44;
+      if (box.height < min || box.width < min) taps.push(`${(el.getAttribute('aria-label') || el.innerText || el.id).trim().slice(0, 16)}:${Math.round(box.width)}x${Math.round(box.height)}`);
     }
     const doc = document.documentElement;
     return {

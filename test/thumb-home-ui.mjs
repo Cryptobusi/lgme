@@ -49,6 +49,27 @@ const failures = [];
 const page = await context.newPage();
 await page.goto(`${base}/?picker=1`, { waitUntil: 'domcontentloaded' });
 await page.locator('#profile-board').waitFor();
+const navBits = await page.evaluate(() => {
+  const back = document.getElementById('site-back');
+  const home = document.getElementById('site-home');
+  const next = document.getElementById('site-next');
+  const bar = document.getElementById('site-nav').getBoundingClientRect();
+  const hit = back.getBoundingClientRect();
+  return {
+    back: back.getAttribute('aria-label'),
+    home: home.getAttribute('aria-label'),
+    next: next.getAttribute('aria-label'),
+    icons: `${back.textContent}${home.textContent}${next.textContent}`,
+    bar: Math.round(bar.height),
+    hit: Math.round(Math.min(hit.width, hit.height)),
+    nextOn: next.hidden === false
+  };
+});
+if (navBits.back !== 'Back' || navBits.home !== 'Home' || navBits.next !== 'Next') failures.push('nav labels');
+if (navBits.icons !== '‹⌂›') failures.push(`nav icons ${navBits.icons}`);
+if (navBits.bar > 32) failures.push(`nav row ${navBits.bar}`);
+if (navBits.hit < 40) failures.push(`nav tap ${navBits.hit}`);
+if (!navBits.nextOn) failures.push('next hidden on the sign-in steps');
 const glance = await page.evaluate(() => {
   const head = document.querySelector('#dash-creo .dash-head');
   const box = head.getBoundingClientRect();
