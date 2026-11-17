@@ -97,7 +97,6 @@
     navigator.clipboard.writeText(button.getAttribute('data-copy')).then(function () { button.textContent = 'Copied'; }).catch(function () {});
   });
   var armOneTab = function () {
-    document.documentElement.classList.add('is-one-tab');
     var button = document.getElementById('one-more');
     if (!button) return;
     if (button.dataset.bound === '1') return;
