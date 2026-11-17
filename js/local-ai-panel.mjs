@@ -256,8 +256,31 @@ export function readVoiceReply(storage) {
     const saved = storage.getItem('lgme.voice.reply');
     if (saved) return voiceReplyMode(saved);
     if (storage.getItem('lgme.voice.read') === 'off') return 'show';
-  } catch { /* Speak and show stays the default */ }
-  return 'speak';
+  } catch { /* Show only stays the default until Speak reply is approved */ }
+  return 'show';
+}
+
+export function speakApproved(storage) {
+  try { return storage.getItem('lgme.voice.speak') === 'yes'; } catch { return false; }
+}
+
+export function setSpeakChoice(storage, yes) {
+  storage.setItem('lgme.voice.speak', yes ? 'yes' : 'no');
+  storage.setItem('lgme.voice.reply', yes ? 'speak' : 'show');
+  return yes ? 'yes' : 'no';
+}
+
+export function formatReply(text) {
+  const raw = String(text || '').replace(/\r/g, '').trim();
+  if (!raw) return '';
+  let lines = raw.split(/\n+/).map((line) => line.trim()).filter(Boolean);
+  if (lines.length === 1) lines = lines[0].split(/(?<=[.?!])\s+/).map((line) => line.trim()).filter(Boolean);
+  const escape = (value) => value.replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+  return lines.map((line, index) => {
+    const body = /^\d+[.)]/.test(line) ? line : `${index + 1}. ${line}`;
+    const safe = escape(body).replace(/\b(OK\??|Confirm|Tap [A-Za-z]+|Check)\b/g, '<strong>$1</strong>');
+    return `<p>${safe}</p>`;
+  }).join('');
 }
 
 export function nextVoiceReply(mode) {
@@ -308,7 +331,7 @@ function mount() {
   const dock = document.createElement('section');
   dock.id = 'ai-dock';
   dock.setAttribute('aria-label', 'On-device AI');
-  dock.innerHTML = '<p class="ai-top"><button type="button" id="ai-controls" aria-expanded="false" aria-label="Show or hide controls">Controls</button><span id="ai-status">AI off · Voice · Speak+show</span><button type="button" id="ai-switch" class="ai-pill" role="switch" aria-checked="true" aria-live="polite" aria-label="AI on or off">AI off</button><button type="button" id="ai-voice" class="ai-detail is-off" aria-pressed="false" aria-label="Voice off">Voice</button><button type="button" id="ai-voice-reply" class="ai-detail" aria-label="Voice reply, Speak and show">Reply</button><span id="ai-voice-mode" class="ai-detail">Speak+show</span><button type="button" id="ai-listen" class="ai-detail" aria-pressed="false" aria-label="Listen again after speaking">Listen</button><span id="ai-mic" hidden>Listening</span><span id="ai-speaking" hidden>Speaking</span><button type="button" id="ai-stop" hidden>Stop</button><button type="button" id="ai-smaller" class="ai-detail" aria-label="Smaller text">A-</button><button type="button" id="ai-larger" class="ai-detail" aria-label="Bigger text">A+</button><a class="ai-setup-link ai-detail" href="/ai-setup">Help</a><button type="button" id="ai-incognito" class="ai-detail" aria-pressed="false">Incognito</button><button type="button" id="ai-incognito-count" class="ai-detail">Pending 0</button><button type="button" id="ai-expand" aria-expanded="true">Close</button></p><p id="ai-incognito-notice" hidden>Incognito — stays on this phone</p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><div id="ai-chip-row"><div id="ai-chips" class="ai-chips"></div><span id="ai-chip-hint" aria-hidden="true">›</span></div><div id="ai-scroll"><div id="ai-incognito-review" hidden></div><div id="ai-log-frame"><pre id="ai-log"></pre><div id="ai-suggestions"></div></div><p id="ai-more" hidden>More</p></div><div class="ai-compose"><div id="ai-input-frame"><textarea id="ai-ask" rows="1" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><p id="ai-send-state" class="is-held" role="status" aria-label="Not sent. Held on this phone."><i></i></p><p class="ai-actions"><button type="button" id="ai-mic-btn" class="is-off" data-state="off" aria-pressed="false" aria-label="Microphone off"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg></button><button type="button" id="ai-send" aria-label="Send">Send</button><button type="button" id="ai-accept" aria-label="Hint">Hint</button><button type="button" id="ai-confirm" aria-label="Confirm">OK</button></p></div></div>';
+  dock.innerHTML = '<p class="ai-top"><button type="button" id="ai-controls" aria-expanded="false" aria-label="Show or hide controls">Controls</button><span id="ai-status">AI off · Voice · Speak+show</span><button type="button" id="ai-switch" class="ai-pill" role="switch" aria-checked="true" aria-live="polite" aria-label="AI on or off">AI off</button><button type="button" id="ai-voice" class="ai-detail is-off" aria-pressed="false" aria-label="Voice off">Voice</button><button type="button" id="ai-voice-reply" class="ai-detail" aria-label="Voice reply, Speak and show">Reply</button><span id="ai-voice-mode" class="ai-detail">Speak+show</span><button type="button" id="ai-listen" class="ai-detail" aria-pressed="false" aria-label="Listen again after speaking">Listen</button><span id="ai-mic" hidden>Listening</span><span id="ai-speaking" hidden>Speaking</span><button type="button" id="ai-stop" hidden>Stop</button><button type="button" id="ai-smaller" class="ai-detail" aria-label="Smaller text">A-</button><button type="button" id="ai-larger" class="ai-detail" aria-label="Bigger text">A+</button><a class="ai-setup-link ai-detail" href="/ai-setup">Help</a><button type="button" id="ai-incognito" class="ai-detail" aria-pressed="false">Incognito</button><button type="button" id="ai-incognito-count" class="ai-detail">Pending 0</button><button type="button" id="ai-expand" aria-expanded="true">Close</button></p><p id="ai-incognito-notice" hidden>Incognito — stays on this phone</p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><div id="ai-chip-row"><div id="ai-chips" class="ai-chips"></div><span id="ai-chip-hint" aria-hidden="true">›</span></div><div id="ai-scroll"><div id="ai-incognito-review" hidden></div><div id="ai-log-frame"><pre id="ai-log"></pre><div id="ai-suggestions"></div></div><p id="ai-more" hidden>More</p></div><div class="ai-compose"><div id="ai-input-frame"><textarea id="ai-ask" rows="1" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><p id="ai-send-state" class="is-held" role="status" aria-label="Not sent. Held on this phone."><i></i></p><p class="ai-actions"><span id="speak-ask" class="is-wait" role="group" aria-label="Speak reply?"><span>Speak reply?</span><button type="button" id="speak-yes" aria-label="Yes, speak replies">Yes</button><button type="button" id="speak-no" aria-label="No, do not speak replies">No</button></span><button type="button" id="ai-mic-btn" class="is-off" data-state="off" aria-pressed="false" aria-label="Microphone off"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg></button><button type="button" id="ai-send" aria-label="Send">Send</button><button type="button" id="ai-accept" aria-label="Hint">Hint</button><button type="button" id="ai-confirm" aria-label="Confirm">OK</button></p></div></div>';
   dock.classList.add('is-open', 'is-normal');
   try { document.documentElement.dataset.screen = activeScreen(localStorage); } catch { /* everyday height stays */ }
   try {
@@ -473,7 +496,9 @@ function mount() {
     lastReply = words;
     const friendly = showingVoice();
     const base = friendly ? voiceFriendly(words) : words;
-    node.textContent = incognitoOn(localStorage) && base ? `${base}\n${UNPUBLISHED}` : base;
+    const shown = incognitoOn(localStorage) && base ? `${base}\n${UNPUBLISHED}` : base;
+    node.dataset.plain = shown;
+    node.innerHTML = formatReply(shown);
     dock.classList.toggle('is-voice', friendly);
     if (incognitoOn(localStorage) && words && words !== lastHeld) {
       lastHeld = words;
@@ -486,7 +511,7 @@ function mount() {
     if (!log || !lastReply) return;
     const friendly = voiceFriendly(lastReply);
     const shown = [lastReply, friendly, `${lastReply}\n${UNPUBLISHED}`, `${friendly}\n${UNPUBLISHED}`];
-    if (!shown.includes(log.textContent)) return;
+    if (log.dataset.plain && !shown.includes(log.dataset.plain)) return;
     showReply(log, lastReply);
     if (flowStep) paintSteps(flowStep);
   };
@@ -508,7 +533,7 @@ function mount() {
   };
   const speakAloud = (words) => {
     const SpeechOut = window.speechSynthesis;
-    if (!SpeechOut || !speakingVoice()) return;
+    if (!speakApproved(localStorage) || !SpeechOut || !speakingVoice()) return;
     const spoken = voiceFriendly(words);
     if (!spoken) return;
     stopSpeaking();
@@ -967,11 +992,37 @@ function mount() {
   });
   window.addEventListener('lgme-incognito', paintIncognito);
   paintVoiceToggles();
+  const speakAsk = dock.querySelector('#speak-ask');
+  const paintSpeakAsk = () => {
+    const choice = speakApproved(localStorage) ? 'yes' : (localStorage.getItem('lgme.voice.speak') === 'no' ? 'no' : '');
+    speakAsk.classList.toggle('is-wait', choice === '');
+    speakAsk.classList.toggle('is-yes', choice === 'yes');
+    speakAsk.classList.toggle('is-no', choice === 'no');
+    speakAsk.setAttribute('aria-label', choice === 'yes' ? 'Speak reply? Yes' : choice === 'no' ? 'Speak reply? No' : 'Speak reply?');
+  };
+  dock.querySelector('#speak-yes').addEventListener('click', () => {
+    try { setSpeakChoice(localStorage, true); } catch { /* the pill still moves */ }
+    paintSpeakAsk();
+    paintVoiceToggles();
+    window.dispatchEvent(new CustomEvent('lgme-voice-reply'));
+  });
+  dock.querySelector('#speak-no').addEventListener('click', () => {
+    try { setSpeakChoice(localStorage, false); } catch { /* the pill still moves */ }
+    stopSpeaking();
+    paintSpeakAsk();
+    paintVoiceToggles();
+    window.dispatchEvent(new CustomEvent('lgme-voice-reply'));
+  });
+  paintSpeakAsk();
+  window.addEventListener('lgme-voice-reply', paintSpeakAsk);
   dock.querySelector('#ai-voice').addEventListener('click', () => startListen());
   dock.querySelector('#ai-mic-btn').addEventListener('click', () => startListen());
   replyButton.addEventListener('click', () => {
     const next = nextVoiceReply(replyMode());
-    try { localStorage.setItem('lgme.voice.reply', next); } catch { /* the label still moves */ }
+    try {
+      localStorage.setItem('lgme.voice.reply', next);
+      localStorage.setItem('lgme.voice.speak', next === 'speak' ? 'yes' : 'no');
+    } catch { /* the label still moves */ }
     paintVoiceToggles();
     window.dispatchEvent(new CustomEvent('lgme-voice-reply'));
   });

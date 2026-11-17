@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { nextVoiceReply, readVoiceReply, speechErrorLine, spokenCommand, voiceFriendly, voiceReplyLabel, voiceReplyShows, voiceReplySpeaks } from '../js/local-ai-panel.mjs';
+import { nextVoiceReply, readVoiceReply, setSpeakChoice, speakApproved, speechErrorLine, spokenCommand, voiceFriendly, voiceReplyLabel, voiceReplyShows, voiceReplySpeaks } from '../js/local-ai-panel.mjs';
 
 test('voice replies spell minutes, speed, and steps', () => {
   const line = voiceFriendly('Ready to log on IdidIt: Walk, 30 min.\n1) Press Send again or tap Confirm to open the filled-in draft.\n2) Check the activity and minutes.');
@@ -55,9 +55,18 @@ test('voice replies spell minutes, speed, and steps', () => {
   assert.equal(voiceReplySpeaks('off', true), false);
   const memory = new Map();
   const storage = { getItem: (key) => memory.get(key) ?? null, setItem: (key, value) => memory.set(key, value) };
-  assert.equal(readVoiceReply(storage), 'speak');
+  assert.equal(readVoiceReply(storage), 'show');
   storage.setItem('lgme.voice.read', 'off');
   assert.equal(readVoiceReply(storage), 'show');
+  storage.delete?.('lgme.voice.read');
+  memory.delete('lgme.voice.read');
+  assert.equal(speakApproved(storage), false);
+  assert.equal(setSpeakChoice(storage, true), 'yes');
+  assert.equal(speakApproved(storage), true);
+  assert.equal(readVoiceReply(storage), 'speak');
+  assert.equal(panel.includes('id="speak-ask"'), true);
+  assert.equal(panel.includes('Speak reply?'), true);
+  assert.equal(panel.includes('speakApproved'), true);
   storage.setItem('lgme.voice.reply', 'off');
   assert.equal(readVoiceReply(storage), 'off');
   const gym = readFileSync(new URL('../js/gym-app.mjs', import.meta.url), 'utf8');

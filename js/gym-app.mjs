@@ -1090,7 +1090,11 @@ function voiceReplySettings() {
     toggle.setAttribute('aria-label', `Voice reply, ${name}`);
   };
   toggle.addEventListener('click', () => {
-    try { localStorage.setItem('lgme.voice.reply', nextVoiceReply(readVoiceReply(localStorage))); } catch { /* the label still moves */ }
+    try {
+      const next = nextVoiceReply(readVoiceReply(localStorage));
+      localStorage.setItem('lgme.voice.reply', next);
+      localStorage.setItem('lgme.voice.speak', next === 'speak' ? 'yes' : 'no');
+    } catch { /* the label still moves */ }
     sync();
     window.dispatchEvent(new CustomEvent('lgme-voice-reply'));
   });

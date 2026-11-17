@@ -178,7 +178,8 @@ html.is-one-tab body:has(nav[aria-label="Gym"]) #ai-dock { bottom: 0; }
 #ai-send-state.is-sent i { background: #22c55e; animation: none; opacity: 1; }
 .sr-only { position: absolute; width: 0; height: 0; padding: 0; margin: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .ai-suggest { display: flex; align-items: center; gap: 0.35rem; margin: 0.2rem 0.35rem 0.35rem; padding: 0.15rem 0.35rem; border-radius: 8px; background: rgba(244, 241, 232, 0.28); }
-.ai-suggest-line { flex: 1 1 auto; min-width: 0; font-weight: 700; }
+.ai-suggest { margin-bottom: 0.45rem; }
+.ai-suggest-line { flex: 1 1 auto; min-width: 0; font-size: 14px; line-height: 1.4; font-weight: 700; }
 .ai-yesno { display: inline-flex; gap: 0.25rem; flex: 0 0 auto; }
 #ai-dock .ai-yes, #ai-dock .ai-no { width: 44px; min-width: 44px; height: 44px; min-height: 44px; padding: 0; font-size: 18px; line-height: 1; }
 #ai-dock .ai-yes { border-radius: 999px; background: #146c43; color: #fff; border-color: #146c43; }
@@ -190,12 +191,13 @@ html.is-one-tab body:has(nav[aria-label="Gym"]) #ai-dock { bottom: 0; }
   box-sizing: border-box;
   margin: 0;
   height: auto;
-  line-height: 1.35;
+  line-height: 1.4;
   overflow: visible;
   white-space: normal;
   text-overflow: clip;
   font: inherit;
-  font-size: 16px;
+  font-size: 14px;
+  line-height: 1.4;
   padding: 0.35rem 0.5rem;
   border: 0;
   border-radius: 0;
@@ -204,8 +206,9 @@ html.is-one-tab body:has(nav[aria-label="Gym"]) #ai-dock { bottom: 0; }
 #ai-scroll { position: relative; flex: 1 1 auto; min-height: 0; max-height: none; overflow: auto; }
 #ai-dock.is-open #ai-scroll { min-height: 0; }
 #ai-steps { list-style: none; margin: 0.15rem 0 0; padding: 0; }
-#ai-steps.is-brief li:not(.is-current) { display: none; }
-#ai-steps li { margin: 0; padding: 0.1rem 0.35rem; border-radius: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#ai-log p { margin: 0.35rem 0; }
+#ai-log strong { font-weight: 700; }
+#ai-steps li { margin: 0.28rem 0; padding: 0.15rem 0.35rem; border-radius: 8px; white-space: normal; line-height: 1.4; font-size: 14px; }
 #ai-steps li.is-current { outline: 2px solid #F97316; background: #241c10; }
 #ai-steps li.is-done { opacity: 0.75; }
 #function-row, #my-functions, #profile-board { scroll-margin-bottom: 42vh; }
@@ -278,7 +281,14 @@ html[data-screen="simple"] body { font-size: 18px; }
 #ai-incognito-review { margin: 0.25rem 0; }
 #ai-mic, #ai-speaking { font-weight: 700; color: #F97316; }
 #ai-mic[hidden], #ai-speaking[hidden], #ai-stop[hidden] { display: none; }
-#ai-dock.is-voice #ai-log, #ai-dock.is-voice #ai-steps { font-size: 1.35rem; line-height: 1.45; }
+#ai-dock.is-compact #ai-log, #ai-dock.is-compact .ai-suggest-line, #ai-dock.is-compact #ai-steps { font-size: 13px; }
+#ai-dock.is-tall #ai-log, #ai-dock.is-tall .ai-suggest-line, #ai-dock.is-tall #ai-steps { font-size: 16px; }
+#ai-dock.is-voice #ai-log, #ai-dock.is-voice #ai-steps { line-height: 1.4; }
+#speak-ask { display: inline-flex; align-items: center; gap: 0.15rem; min-height: 44px; padding: 0 0.3rem; border-radius: 999px; border: 1px solid #c6a15b; background: #c6a15b; color: #1a1408; font-size: 13px; line-height: 1.2; font-weight: 700; }
+#speak-ask.is-wait { animation: lgme-status-blink 1.5s ease-in-out infinite; }
+#speak-ask.is-yes { background: #22c55e; color: #1a1408; border-color: #22c55e; animation: none; }
+#speak-ask.is-no { background: #6b7280; color: #f4f1e8; border-color: #6b7280; animation: none; }
+#speak-ask button { min-width: 44px; min-height: 44px; margin: 0; padding: 0 0.35rem; }
 #ai-action-status { margin: 0.2rem 0 0; font-size: 0.8rem; }
 #ai-dock .ai-actions { display: flex; flex-direction: row; flex-wrap: nowrap; justify-content: flex-end; align-items: center; gap: 0.2rem; margin: 0.15rem 0.2rem 0.2rem; overflow-x: auto; }
 #ai-mic-btn, #ai-send, #ai-accept, #ai-confirm { width: auto; min-width: 44px; height: 44px; min-height: 44px; padding: 0 0.35rem; font-size: 12px; line-height: 1; flex: 0 0 auto; }
@@ -335,7 +345,7 @@ html[data-theme="paper"] #ai-dock #ai-confirm, html[data-screen="simple"] #ai-do
 @media (prefers-reduced-motion: reduce) {
   .is-next, #ai-mic-btn.is-listening, #ai-voice.is-listening,
   #ai-send-state.is-held i, #ai-status .voice-listening i, #ai-status .voice-processing i,
-  .fingerprint-steps .is-current i { animation: none; opacity: 0.45; }
+  .fingerprint-steps .is-current i, #speak-ask.is-wait { animation: none; opacity: 0.45; }
 }
 #ai-dock.is-controls-shut .ai-detail { display: none; }
 button:active, [role="button"]:active, button.is-pressed, [role="button"].is-pressed { transform: scale(0.96); filter: brightness(1.2); }
