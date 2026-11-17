@@ -6,7 +6,7 @@ import { compactCode } from './email-check-core.mjs';
 import { localAiReady } from './one-tap.mjs';
 import { gateDecision, nextAccess, signinAllowed } from './confirm-gate.mjs';
 import { ensureDeviceKey, signDevice } from './device-sign.mjs';
-import { NO_FINGERPRINT, finishFingerprintPrompt, fingerprintSupported, prepareFingerprintPrompt, startFingerprintPrompt } from './passkey-signin.mjs';
+import { NO_FINGERPRINT, fingerprintErrorLine, fingerprintGuideHtml, finishFingerprintPrompt, fingerprintSupported, prepareFingerprintPrompt, startFingerprintPrompt } from './passkey-signin.mjs';
 
 const root = document.getElementById('category-grid');
 if (root) {
@@ -187,61 +187,71 @@ if (root) {
     note.hidden = false;
     note.textContent = NO_FINGERPRINT;
   });
-  const scanLine = (button) => {
-    let scan = button.parentElement?.querySelector('.is-scan');
-    if (!scan) {
-      scan = document.createElement('p');
-      scan.className = 'is-scan';
-      scan.id = button.id === 'access-fingerprint' ? 'fingerprint-scan' : `${button.id}-scan`;
-      button.insertAdjacentElement('afterend', scan);
+  const showGuide = (button, step, detail = '') => {
+    let host = button.parentElement?.querySelector('.fingerprint-guide');
+    if (!host) {
+      host = document.createElement('div');
+      host.className = 'fingerprint-guide';
+      button.insertAdjacentElement('afterend', host);
     }
-    return scan;
+    host.innerHTML = fingerprintGuideHtml(step, detail);
+    const again = host.querySelector('.fingerprint-again');
+    if (again) again.addEventListener('click', () => button.click());
+    return host;
+  };
+  const unlockMember = (button) => {
+    codeOk = true;
+    if (!memberId) memberId = 'device';
+    showGuide(button, 'ok');
+    mark(button, 'ok', 'Unlocked');
+    paint();
   };
   const tapFingerprint = (button, allow) => {
     button.addEventListener('click', () => {
-      const scan = scanLine(button);
-      scan.hidden = false;
-      scan.textContent = 'Touch the sensor to scan';
+      showGuide(button, 2);
       button.classList.add('is-scanning');
-      const stopScan = (kind, text) => {
-        button.classList.remove('is-scanning');
-        scan.textContent = text;
-        mark(button, kind, text);
-      };
       if (allow && !allow()) {
-        stopScan('error', 'Verify email or the authenticator before saving a fingerprint.');
+        button.classList.remove('is-scanning');
+        showGuide(button, 'fail', 'Verify email or the authenticator before saving a fingerprint.');
         return;
       }
       const ready = fingerReady;
       if (!ready?.ok) {
-        stopScan('error', ready?.message || 'Tap again to show the fingerprint prompt. Or use the authenticator code.');
+        button.classList.remove('is-scanning');
+        showGuide(button, 'fail', ready?.message || 'Tap again to show the fingerprint prompt. Or use the authenticator code.');
         armFingerprint();
         return;
       }
       let pending;
       try { pending = startFingerprintPrompt(ready); }
       catch (error) {
-        stopScan('error', error.message || 'The fingerprint prompt did not open. Use the authenticator code.');
+        button.classList.remove('is-scanning');
+        showGuide(button, 'fail', fingerprintErrorLine(error));
         armFingerprint();
         return;
       }
+      showGuide(button, 3);
       fingerReady = null;
       armFingerprint();
       pending.then(async (started) => {
         const saved = await finishFingerprintPrompt(started, memberId);
         if (started.kind === 'create') {
-          stopScan('ok', 'Fingerprint saved. Tap again to sign in, or use the authenticator code.');
-          armFingerprint();
+          const next = await prepareFingerprintPrompt();
+          if (next?.ok && next.kind === 'get') {
+            showGuide(button, 2);
+            const verified = await startFingerprintPrompt(next);
+            const check = await finishFingerprintPrompt(verified, memberId);
+            if (check?.verified === true) { unlockMember(button); return; }
+          }
+          showGuide(button, 'fail', 'Fingerprint saved. Tap Try again to unlock.');
+          mark(button, 'ok', 'Fingerprint saved. Tap again to sign in, or use the authenticator code.');
           return;
         }
-        if (saved?.verified === true) {
-          codeOk = true;
-          if (!memberId) memberId = 'device';
-          stopScan('ok', 'Verified');
-          paint();
-        } else stopScan('error', 'The fingerprint was not accepted. Use the authenticator code.');
+        if (saved?.verified === true) unlockMember(button);
+        else showGuide(button, 'fail', 'The fingerprint was not accepted. Use the authenticator code.');
       }).catch((error) => {
-        stopScan('error', error.message || 'The fingerprint prompt did not open. Use the authenticator code.');
+        button.classList.remove('is-scanning');
+        showGuide(button, 'fail', fingerprintErrorLine(error));
       });
     });
   };
@@ -384,13 +394,12 @@ if (root) {
       try { emailHash = JSON.parse(localStorage.getItem('lgme.demo.member') || '{}').emailHash || ''; } catch { /* the code path stays */ }
       const statusLine = dialog.querySelector('#gate-status');
       const button = dialog.querySelector('#gate-passkey');
-      statusLine.textContent = 'Touch the sensor to scan';
-      statusLine.className = 'is-scan';
+      statusLine.innerHTML = fingerprintGuideHtml(2);
       button.classList.add('is-scanning');
       const ready = gateReady;
       if (!ready?.ok) {
         button.classList.remove('is-scanning');
-        statusLine.textContent = ready?.message || 'Tap again to show the fingerprint prompt. Or use the authenticator code.';
+        statusLine.innerHTML = fingerprintGuideHtml('fail', ready?.message || 'Tap again to show the fingerprint prompt. Or use the authenticator code.');
         armGate();
         return;
       }
@@ -398,21 +407,34 @@ if (root) {
       try { pending = startFingerprintPrompt(ready); }
       catch (error) {
         button.classList.remove('is-scanning');
-        statusLine.textContent = error.message || 'The fingerprint prompt did not open. Use the authenticator code.';
+        statusLine.innerHTML = fingerprintGuideHtml('fail', fingerprintErrorLine(error));
         armGate();
         return;
       }
+      statusLine.innerHTML = fingerprintGuideHtml(3);
       gateReady = null;
       armGate();
       pending.then(async (started) => {
         const saved = await finishFingerprintPrompt(started, emailHash);
         if (started.kind === 'create') {
-          statusLine.textContent = 'Fingerprint saved. Tap again, or use the authenticator code.';
+          const next = await prepareFingerprintPrompt();
+          if (next?.ok && next.kind === 'get') {
+            statusLine.innerHTML = fingerprintGuideHtml(2);
+            const verified = await startFingerprintPrompt(next);
+            const check = await finishFingerprintPrompt(verified, emailHash);
+            if (check?.verified === true) {
+              statusLine.innerHTML = fingerprintGuideHtml('ok');
+              finish(gateDecision({ human: true, method: 'passkey', verified: true }));
+              return;
+            }
+          }
+          statusLine.innerHTML = fingerprintGuideHtml('fail', 'Fingerprint saved. Tap Try again to unlock.');
           return;
         }
+        statusLine.innerHTML = fingerprintGuideHtml(saved?.verified === true ? 'ok' : 'fail', 'The fingerprint was not accepted. Use the authenticator code.');
         finish(gateDecision({ human: true, method: 'passkey', verified: saved?.verified === true }));
       }).catch((error) => {
-        statusLine.textContent = error.message || 'The fingerprint prompt did not open. Use the authenticator code.';
+        statusLine.innerHTML = fingerprintGuideHtml('fail', fingerprintErrorLine(error));
       });
     };
     dialog.querySelector('#gate-totp-go').onclick = async () => {

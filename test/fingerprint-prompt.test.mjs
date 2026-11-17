@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { fingerprintKind, startFingerprintPrompt } from '../js/passkey-signin.mjs';
+import { fingerprintErrorLine, fingerprintGuideHtml, fingerprintKind, startFingerprintPrompt } from '../js/passkey-signin.mjs';
 
 const root = new URL('..', import.meta.url);
 
@@ -67,4 +67,22 @@ test('a fingerprint tap opens the prompt before any await', async () => {
   assert.equal(csp.includes('publickey-credentials'), false);
   const manifest = JSON.parse(readFileSync(new URL('manifest.webmanifest', root), 'utf8'));
   assert.equal(manifest.display, 'standalone');
+  const sensor = fingerprintGuideHtml(2);
+  assert.match(sensor, /class="is-current"/);
+  assert.match(sensor, /2 Touch the sensor on your phone/);
+  const holding = fingerprintGuideHtml(3);
+  assert.match(holding, /3 Hold until it buzzes/);
+  assert.match(holding, /class="is-current"/);
+  const opened = fingerprintGuideHtml('ok');
+  assert.match(opened, /4 Unlocked/);
+  assert.match(opened, /class="is-done"/);
+  const blocked = fingerprintGuideHtml('fail', fingerprintErrorLine({ name: 'NotAllowedError' }));
+  assert.match(blocked, /class="is-failed"/);
+  assert.match(blocked, /Try again/);
+  assert.match(blocked, /cancelled or blocked/);
+  assert.match(fingerprintErrorLine({ name: 'InvalidStateError' }), /already saved/);
+  assert.match(fingerprintErrorLine({ name: 'SecurityError' }), /lgme\.app/);
+  const page = readFileSync(new URL('index.html', root), 'utf8');
+  assert.match(page, /publickey-credentials-get=\(self\)/);
+  assert.match(page, /publickey-credentials-create=\(self\)/);
 });

@@ -13,8 +13,38 @@ export function fingerprintKind(storage) {
 }
 
 export async function fingerprintSupported(scope = globalThis) {
+  const Cred = scope.PublicKeyCredential;
+  if (typeof Cred !== 'function' || typeof Cred.isUserVerifyingPlatformAuthenticatorAvailable !== 'function') return false;
   if (!browserSupportsWebAuthn()) return false;
-  try { return await platformAuthenticatorIsAvailable(); } catch { return false; }
+  try { return await Cred.isUserVerifyingPlatformAuthenticatorAvailable(); } catch { return await platformAuthenticatorIsAvailable(); }
+}
+
+export function fingerprintErrorLine(error) {
+  const name = error?.name || error?.cause?.name || '';
+  if (name === 'NotAllowedError') return 'The fingerprint was cancelled or blocked. Allow it for lgme.app, then try again.';
+  if (name === 'InvalidStateError') return 'A fingerprint is already saved on this phone. Try again to unlock.';
+  if (name === 'SecurityError') return 'This page cannot use the fingerprint. Open https://lgme.app and try again.';
+  return error?.message || 'The fingerprint prompt did not open. Use the authenticator code.';
+}
+
+export function fingerprintGuideHtml(step, detail = '') {
+  const labels = [
+    'Tap Use fingerprint',
+    'Touch the sensor on your phone',
+    'Hold until it buzzes',
+    step === 'fail' ? (detail || 'The fingerprint prompt did not open.') : 'Unlocked'
+  ];
+  const current = step === 'ok' || step === 'fail' ? 4 : Number(step) || 1;
+  const items = labels.map((label, index) => {
+    const n = index + 1;
+    let cls = '';
+    if (n === current && step === 'fail') cls = 'is-failed';
+    else if ((n === current && step === 'ok') || (n < current && step !== 'fail')) cls = 'is-done';
+    else if (n === current) cls = 'is-current';
+    return `<li class="${cls}"><i></i><span>${n} ${label}</span></li>`;
+  }).join('');
+  const again = step === 'fail' ? '<button type="button" class="fingerprint-again">Try again</button>' : '';
+  return `<ol class="fingerprint-steps">${items}</ol>${again}`;
 }
 
 export function passkeyUserId(emailHash, x) {

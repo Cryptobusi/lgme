@@ -385,6 +385,15 @@ html.is-one-tab nav[aria-label="Gym"] #one-menu[hidden] { display: none; }
 html.is-one-tab nav[aria-label="Gym"] #one-menu button { min-width: 44px; min-height: 44px; margin: 0; background: #151a15; color: #f4f1e8; border: 1px solid #c6a15b; }
 #ididit-done { display: flex; flex-direction: column; align-items: stretch; }
 #gym-ididit-confirm, #open-dispute, #demo-confirm { align-self: flex-end; min-width: 44px; }
+.fingerprint-steps { list-style: none; margin: 0.35rem 0; padding: 0; }
+.fingerprint-steps li { display: flex; align-items: center; gap: 0.4rem; min-height: 28px; margin: 0; }
+.fingerprint-steps i { width: 0.7rem; height: 0.7rem; border-radius: 50%; background: #6b7280; flex: 0 0 auto; }
+.fingerprint-steps .is-current i { background: #22c55e; animation: lgme-next 0.9s ease-in-out infinite; }
+.fingerprint-steps .is-done { color: #8fd6a8; }
+.fingerprint-steps .is-done i { background: #22c55e; }
+.fingerprint-steps .is-failed { color: #fca5a5; }
+.fingerprint-steps .is-failed i { background: #b00020; }
+.fingerprint-again { min-height: 44px; min-width: 44px; }
 .is-scan { display: flex; align-items: center; gap: 0.45rem; margin: 0.25rem 0; font-weight: 700; color: #8fd6a8; }
 .is-scan[hidden] { display: none; }
 .is-scan::before, #access-fingerprint.is-scanning::after {
@@ -397,5 +406,5 @@ html.is-one-tab nav[aria-label="Gym"] #one-menu button { min-width: 44px; min-he
 }
 #access-fingerprint.is-scanning { outline: 3px solid #22c55e; outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) {
-  .is-scan::before, #access-fingerprint.is-scanning::after { animation: none; }
+  .is-scan::before, #access-fingerprint.is-scanning::after, .fingerprint-steps .is-current i { animation: none; }
 }
