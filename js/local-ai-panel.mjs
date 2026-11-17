@@ -281,10 +281,10 @@ export function voiceReplySpeaks(mode, byVoice) {
 
 export function speechErrorLine(code) {
   const lines = {
-    'not-allowed': 'The microphone is blocked. Allow the microphone for lgme.app, then tap Mic again.',
-    'no-speech': 'No speech heard. Tap Mic and speak again.',
-    network: 'Speech needs a connection on this browser. Typing still works.',
-    'service-not-allowed': 'Speech is turned off for this page. Typing still works.',
+    'not-allowed': 'Mic blocked: allow microphone in site settings',
+    'service-not-allowed': 'Mic blocked: allow microphone in site settings',
+    'no-speech': 'No speech heard. Tap the mic and speak again.',
+    network: 'Mic needs a connection on this browser. Typing still works.',
     'audio-capture': 'No microphone was found. Typing still works.'
   };
   return lines[code] || 'The microphone did not start. Typing still works.';
@@ -310,7 +310,7 @@ function mount() {
   const dock = document.createElement('section');
   dock.id = 'ai-dock';
   dock.setAttribute('aria-label', 'On-device AI');
-  dock.innerHTML = '<p class="ai-top"><button type="button" id="ai-controls" aria-expanded="false" aria-label="Show or hide controls">Controls</button><span id="ai-status">AI off · Voice · Speak+show</span><button type="button" id="ai-switch" class="ai-pill" role="switch" aria-checked="true" aria-live="polite" aria-label="AI on or off">AI off</button><button type="button" id="ai-voice" class="ai-detail" aria-label="Speak or type">Voice</button><button type="button" id="ai-voice-reply" class="ai-detail" aria-label="Voice reply, Speak and show">Reply</button><span id="ai-voice-mode" class="ai-detail">Speak+show</span><button type="button" id="ai-listen" class="ai-detail" aria-pressed="false" aria-label="Listen again after speaking">Listen</button><span id="ai-mic" hidden>Listening</span><span id="ai-speaking" hidden>Speaking</span><button type="button" id="ai-stop" hidden>Stop</button><button type="button" id="ai-smaller" class="ai-detail" aria-label="Smaller text">A-</button><button type="button" id="ai-larger" class="ai-detail" aria-label="Bigger text">A+</button><a class="ai-setup-link ai-detail" href="/ai-setup">Help</a><button type="button" id="ai-incognito" class="ai-detail" aria-pressed="false">Incognito</button><button type="button" id="ai-incognito-count" class="ai-detail">Pending 0</button><button type="button" id="ai-expand" aria-expanded="true">Close</button></p><p id="ai-incognito-notice" hidden>Incognito — stays on this phone</p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><div id="ai-chip-row"><div id="ai-chips" class="ai-chips"></div><span id="ai-chip-hint" aria-hidden="true">›</span></div><div id="ai-scroll"><div id="ai-incognito-review" hidden></div><div id="ai-log-frame"><pre id="ai-log"></pre><div id="ai-suggestions"></div></div><p id="ai-more" hidden>More</p></div><div class="ai-compose"><div id="ai-input-frame"><textarea id="ai-ask" rows="1" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><p id="ai-send-state" class="is-held" role="status" aria-label="Not sent. Held on this phone."><i></i><b>Held</b></p><p class="ai-actions"><button type="button" id="ai-mic-btn" aria-label="Microphone"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg></button><button type="button" id="ai-send" aria-label="Send">Send</button><button type="button" id="ai-accept" aria-label="Hint">Hint</button><button type="button" id="ai-confirm" aria-label="Confirm">OK</button></p></div></div>';
+  dock.innerHTML = '<p class="ai-top"><button type="button" id="ai-controls" aria-expanded="false" aria-label="Show or hide controls">Controls</button><span id="ai-status">AI off · Voice · Speak+show</span><button type="button" id="ai-switch" class="ai-pill" role="switch" aria-checked="true" aria-live="polite" aria-label="AI on or off">AI off</button><button type="button" id="ai-voice" class="ai-detail is-off" aria-pressed="false" aria-label="Voice off">Voice</button><button type="button" id="ai-voice-reply" class="ai-detail" aria-label="Voice reply, Speak and show">Reply</button><span id="ai-voice-mode" class="ai-detail">Speak+show</span><button type="button" id="ai-listen" class="ai-detail" aria-pressed="false" aria-label="Listen again after speaking">Listen</button><span id="ai-mic" hidden>Listening</span><span id="ai-speaking" hidden>Speaking</span><button type="button" id="ai-stop" hidden>Stop</button><button type="button" id="ai-smaller" class="ai-detail" aria-label="Smaller text">A-</button><button type="button" id="ai-larger" class="ai-detail" aria-label="Bigger text">A+</button><a class="ai-setup-link ai-detail" href="/ai-setup">Help</a><button type="button" id="ai-incognito" class="ai-detail" aria-pressed="false">Incognito</button><button type="button" id="ai-incognito-count" class="ai-detail">Pending 0</button><button type="button" id="ai-expand" aria-expanded="true">Close</button></p><p id="ai-incognito-notice" hidden>Incognito — stays on this phone</p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><div id="ai-chip-row"><div id="ai-chips" class="ai-chips"></div><span id="ai-chip-hint" aria-hidden="true">›</span></div><div id="ai-scroll"><div id="ai-incognito-review" hidden></div><div id="ai-log-frame"><pre id="ai-log"></pre><div id="ai-suggestions"></div></div><p id="ai-more" hidden>More</p></div><div class="ai-compose"><div id="ai-input-frame"><textarea id="ai-ask" rows="1" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><p id="ai-send-state" class="is-held" role="status" aria-label="Not sent. Held on this phone."><i></i><b>Held</b></p><p class="ai-actions"><button type="button" id="ai-mic-btn" class="is-off" data-state="off" aria-pressed="false" aria-label="Microphone off"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg></button><button type="button" id="ai-send" aria-label="Send">Send</button><button type="button" id="ai-accept" aria-label="Hint">Hint</button><button type="button" id="ai-confirm" aria-label="Confirm">OK</button></p></div></div>';
   dock.classList.add('is-open', 'is-normal');
   try { document.documentElement.dataset.screen = activeScreen(localStorage); } catch { /* everyday height stays */ }
   try {
@@ -750,31 +750,31 @@ function mount() {
   });
   setTimeout(showFilled, 0);
   const micBtn = dock.querySelector('#ai-mic-btn');
+  const voiceBtn = dock.querySelector('#ai-voice');
   const tick = () => { if (soundsOn(localStorage)) playTick(window); };
+  const MIC_MODES = ['off', 'listening', 'processing', 'done'];
   const setMicMode = (mode) => {
-    micBtn.classList.toggle('is-recording', mode === 'recording');
-    micBtn.classList.toggle('is-processing', mode === 'processing');
-    micBtn.dataset.state = mode;
-    const label = mode === 'recording' ? 'Listening… Tap to stop' : mode === 'processing' ? 'Processing' : 'Microphone';
+    const next = MIC_MODES.includes(mode) ? mode : 'off';
+    for (const name of MIC_MODES) {
+      micBtn.classList.toggle(`is-${name}`, name === next);
+      voiceBtn.classList.toggle(`is-${name}`, name === next);
+    }
+    micBtn.dataset.state = next;
+    const pressed = next === 'listening' ? 'true' : 'false';
+    micBtn.setAttribute('aria-pressed', pressed);
+    voiceBtn.setAttribute('aria-pressed', pressed);
+    const label = next === 'listening' ? 'Listening… Tap to stop' : next === 'processing' ? 'Processing' : next === 'done' ? 'Heard' : 'Microphone off';
     micBtn.setAttribute('aria-label', label);
-    mic.hidden = mode !== 'recording';
-    mic.textContent = mode === 'recording' ? 'Listening…' : '';
-  };
-  const requestMicPrompt = () => {
-    const devices = navigator.mediaDevices;
-    if (!devices || typeof devices.getUserMedia !== 'function') return;
-    devices.getUserMedia({ audio: true }).then((stream) => {
-      for (const track of stream.getTracks?.() || []) {
-        try { track.stop(); } catch { /* the prompt already opened the mic */ }
-      }
-    }).catch(() => {
-      showReply(dock.querySelector('#ai-log'), speechErrorLine('not-allowed'));
-    });
+    voiceBtn.setAttribute('aria-label', next === 'off' ? 'Voice off' : `Voice ${next}`);
+    const dot = dock.querySelector('#ai-status [data-voice]');
+    if (dot) dot.className = `voice-${next}`;
+    mic.hidden = next !== 'listening';
+    mic.textContent = next === 'listening' ? 'Listening…' : '';
   };
   const startListen = () => {
-    if (micBtn.classList.contains('is-recording')) {
+    if (micBtn.classList.contains('is-listening')) {
       try { hearing?.stop(); } catch { /* the mic is already quiet */ }
-      setMicMode('idle');
+      setMicMode('off');
       tick();
       return;
     }
@@ -782,35 +782,50 @@ function mount() {
     try { localStorage.setItem('lgme.voice.used', '1'); } catch { /* the suggestion still works */ }
     if (!Speech) {
       ask.focus();
-      setMicMode('idle');
+      setMicMode('off');
       showReply(dock.querySelector('#ai-log'), 'Voice is not on this device. Typing still works.');
       return;
     }
     const heard = new Speech();
     const onDevice = 'processLocally' in heard;
-    const localVoice = voiceInputAllowed({ incognito: incognitoOn(localStorage), processLocally: onDevice });
-    if (!localVoice.ok) {
-      setMicMode('idle');
-      showReply(dock.querySelector('#ai-log'), localVoice.message);
+    const hidden = incognitoOn(localStorage);
+    if (hidden && !onDevice) {
+      setMicMode('off');
+      showReply(dock.querySelector('#ai-log'), voiceInputAllowed({ incognito: true, processLocally: false }).message);
       return;
     }
-    if (onDevice) heard.processLocally = true;
-    heard.lang = 'en-US';
-    heard.interimResults = false;
+    if (hidden && onDevice) heard.processLocally = true;
+    heard.lang = navigator.language || 'en-US';
+    heard.interimResults = true;
     heard.continuous = false;
     hearing = heard;
     const finishMic = (mode) => { setMicMode(mode); if (hearing === heard) hearing = null; };
     heard.onresult = (event) => {
+      let finalText = '';
+      let interim = '';
+      const results = event.results || [];
+      for (let index = 0; index < results.length; index += 1) {
+        const row = results[index];
+        const piece = row?.[0]?.transcript || '';
+        if (row?.isFinal === false) interim += piece;
+        else finalText += piece;
+      }
+      const live = `${finalText}${interim}`.trim();
+      if (live) ask.value = live;
+      if (!finalText.trim() || interim) {
+        setMicMode('listening');
+        return;
+      }
+      const transcript = finalText.trim();
       setMicMode('processing');
-      const transcript = event.results?.[0]?.[0]?.transcript || '';
-      if (incognitoOn(localStorage) && transcript) holdPrivate(localStorage, { kind: 'voice', summary: transcript, shareable: false });
+      if (hidden && transcript) holdPrivate(localStorage, { kind: 'voice', summary: transcript, shareable: false });
       const command = spokenCommand(transcript);
       lastByVoice = true;
       if (command === 'cancel') {
         staged = null;
         stagedText = '';
         stopSpeaking();
-        finishMic('idle');
+        finishMic('off');
         tick();
         showReply(dock.querySelector('#ai-log'), 'Cancelled.');
         return;
@@ -818,14 +833,14 @@ function mount() {
       if (command === 'undo') {
         undoMode(localStorage);
         stopSpeaking();
-        finishMic('idle');
+        finishMic('off');
         tick();
         showReply(dock.querySelector('#ai-log'), 'Undone.');
         speakAloud('Undone.');
         return;
       }
       if (command === 'confirm') {
-        finishMic('idle');
+        finishMic('done');
         tick();
         const pageConfirm = document.getElementById('gym-ididit-confirm');
         if (staged) { executeStaged(); return; }
@@ -836,28 +851,25 @@ function mount() {
       }
       ask.value = transcript;
       try { sessionStorage.setItem('lgme.voice.transcript', transcript); } catch { /* the field still shows it */ }
+      setMicMode('done');
       stagePrompt({ guide: true });
       if (staged) executeStaged({ record: false });
-      finishMic('idle');
       tick();
     };
     heard.onerror = (event) => {
       const code = event?.error || '';
-      finishMic('idle');
+      finishMic('off');
       tick();
       showReply(dock.querySelector('#ai-log'), speechErrorLine(code));
-      if (code === 'not-allowed' || code === 'service-not-allowed') requestMicPrompt();
     };
-    heard.onend = () => { if (micBtn.classList.contains('is-recording')) finishMic('idle'); };
-    setMicMode('recording');
+    heard.onend = () => { if (micBtn.classList.contains('is-listening')) finishMic('off'); };
+    setMicMode('listening');
     tick();
     try { heard.start(); } catch {
-      finishMic('idle');
+      finishMic('off');
       showReply(dock.querySelector('#ai-log'), speechErrorLine('not-allowed'));
-      requestMicPrompt();
       return;
     }
-    if (!onDevice) requestMicPrompt();
     setTimeout(() => { try { heard.stop(); } catch { /* already stopped */ } }, 6000);
   };
   const review = dock.querySelector('#ai-incognito-review');
@@ -991,10 +1003,10 @@ function mount() {
     const mode = voiceReplyLabel(replyMode());
     const short = mode === 'Speak and show' ? 'Speak+show' : mode === 'Show only' ? 'Show' : 'Off';
     const live = aiOn() && localAiReady();
-    const voiceReady = typeof window.SpeechRecognition === 'function' || typeof window.webkitSpeechRecognition === 'function';
+    const voiceMode = micBtn?.dataset.state || 'off';
     const dots = [
       ['AI', aiOn()],
-      ['Voice', voiceReady],
+      ['Voice', voiceMode],
       ['Speak', replyMode() === 'speak'],
       ['Listen', autoListen()],
       ['Incog', incognitoOn(localStorage)]
@@ -1002,7 +1014,9 @@ function mount() {
     statusLine.replaceChildren();
     for (const [name, on] of dots) {
       const item = document.createElement('span');
-      item.className = on ? 'is-on' : 'is-off';
+      if (name === 'Voice') item.className = `voice-${voiceMode}`;
+      else item.className = on ? 'is-on' : 'is-off';
+      if (name === 'Voice') item.dataset.voice = '1';
       const dot = document.createElement('i');
       item.append(dot, document.createTextNode(name));
       statusLine.append(item);
@@ -1018,6 +1032,7 @@ function mount() {
   });
   markOverflow();
   paint(dock);
+  setMicMode('off');
   dock.querySelector('#ai-expand').addEventListener('click', () => {
     const open = dock.classList.toggle('is-open');
     dock.querySelector('#ai-expand').setAttribute('aria-expanded', open ? 'true' : 'false');

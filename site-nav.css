@@ -280,10 +280,16 @@ html[data-screen="simple"] body { font-size: 18px; }
 #ai-action-status { margin: 0.2rem 0 0; font-size: 0.8rem; }
 #ai-dock .ai-actions { display: flex; flex-direction: row; flex-wrap: nowrap; justify-content: flex-end; align-items: center; gap: 0.2rem; margin: 0.15rem 0.2rem 0.2rem; overflow-x: auto; }
 #ai-mic-btn, #ai-send, #ai-accept, #ai-confirm { width: auto; min-width: 44px; height: 44px; min-height: 44px; padding: 0 0.35rem; font-size: 12px; line-height: 1; flex: 0 0 auto; }
-#ai-mic-btn { background: #6d28d9; color: #fff; border-color: #6d28d9; }
+#ai-mic-btn { background: #6b7280; color: #f4f1e8; border-color: #6b7280; }
 #ai-mic-btn svg { display: block; }
-#ai-mic-btn.is-recording { background: #b00020; color: #fff; border-color: #b00020; animation: lgme-mic 0.9s ease-in-out infinite; }
-#ai-mic-btn.is-processing { background: #c6a15b; color: #1a1408; border-color: #c6a15b; }
+#ai-dock #ai-mic-btn.is-off, #ai-dock #ai-voice.is-off { background: #6b7280; color: #f4f1e8; border-color: #6b7280; }
+#ai-dock #ai-mic-btn.is-listening, #ai-dock #ai-voice.is-listening { background: #b00020; color: #fff; border-color: #b00020; animation: lgme-mic 0.9s ease-in-out infinite; }
+#ai-dock #ai-mic-btn.is-processing, #ai-dock #ai-voice.is-processing { background: #d97706; color: #1a1408; border-color: #d97706; }
+#ai-dock #ai-mic-btn.is-done, #ai-dock #ai-voice.is-done { background: #146c43; color: #fff; border-color: #146c43; }
+#ai-status .voice-off i { background: #6b7280; }
+#ai-status .voice-listening i { background: #b00020; }
+#ai-status .voice-processing i { background: #d97706; }
+#ai-status .voice-done i { background: #22c55e; }
 @keyframes lgme-mic {
   0%, 100% { box-shadow: 0 0 0 0 rgba(176, 0, 32, 0.75); }
   50% { box-shadow: 0 0 0 7px rgba(176, 0, 32, 0); }
@@ -326,7 +332,7 @@ html[data-theme="paper"] #ai-dock #ai-confirm, html[data-screen="simple"] #ai-do
 #ididit-done, #draft-suggestion { scroll-margin-bottom: 42vh; }
 #draft-suggestion { margin: 0.2rem 0; font-weight: 700; color: #8fd6a8; }
 @media (prefers-reduced-motion: reduce) {
-  .is-next, #ai-mic-btn.is-recording { animation: none; }
+  .is-next, #ai-mic-btn.is-listening, #ai-voice.is-listening { animation: none; }
 }
 #ai-dock.is-controls-shut .ai-detail { display: none; }
 button:active, [role="button"]:active, button.is-pressed, [role="button"].is-pressed { transform: scale(0.96); filter: brightness(1.2); }

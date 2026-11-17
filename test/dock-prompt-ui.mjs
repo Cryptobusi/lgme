@@ -62,10 +62,26 @@ await page.evaluate(() => {
   window.SpeechRecognition = LocalSpeech;
   window.webkitSpeechRecognition = LocalSpeech;
 });
+const off = await page.locator('#ai-mic-btn').evaluate((node) => ({
+  off: node.classList.contains('is-off'),
+  pressed: node.getAttribute('aria-pressed'),
+  bg: getComputedStyle(node).backgroundColor
+}));
+if (!off.off || off.pressed !== 'false' || !/107,\s*114,\s*128/.test(off.bg)) failures.push(`mic off ${JSON.stringify(off)}`);
 await page.locator('#ai-mic-btn').click();
-if (!(await page.locator('#ai-mic-btn').evaluate((node) => node.classList.contains('is-recording')))) failures.push('mic not recording');
+const listening = await page.locator('#ai-mic-btn').evaluate((node) => ({
+  on: node.classList.contains('is-listening'),
+  pressed: node.getAttribute('aria-pressed'),
+  bg: getComputedStyle(node).backgroundColor,
+  voice: document.getElementById('ai-voice').className,
+  dot: document.querySelector('#ai-status [data-voice]')?.className || ''
+}));
+if (!listening.on || listening.pressed !== 'true' || !/176,\s*0,\s*32/.test(listening.bg)) failures.push(`mic listen ${JSON.stringify(listening)}`);
+if (!listening.voice.includes('is-listening') || listening.dot !== 'voice-listening') failures.push(`voice match ${JSON.stringify(listening)}`);
 if (!/Listening/.test(await page.locator('#ai-mic').innerText())) failures.push('listening label');
-await page.evaluate(() => window.__speech.onresult({ results: [[{ transcript: 'log 5min walk' }]] }));
+await page.evaluate(() => window.__speech.onresult({ results: [{ 0: { transcript: 'log fi' }, isFinal: false }] }));
+if ((await page.locator('#ai-ask').inputValue()) !== 'log fi') failures.push('interim missing');
+await page.evaluate(() => window.__speech.onresult({ results: [{ 0: { transcript: 'log 5min walk' }, isFinal: true }] }));
 await page.locator('#gym-ididit-activity').waitFor();
 await page.waitForFunction(() => document.getElementById('gym-ididit-activity')?.value === 'Walk' && /OK\?/.test(document.getElementById('ai-log')?.textContent || ''));
 if ((await page.locator('#ai-ask').inputValue()) !== 'log 5min walk') failures.push('transcript missing');
@@ -96,8 +112,8 @@ await page.evaluate(() => {
 });
 await page.locator('#ai-mic-btn').click();
 await page.waitForTimeout(200);
-const micError = await page.evaluate(() => ({ log: document.getElementById('ai-log')?.textContent || '', prompt: window.__micPrompt === true }));
-if (!/microphone is blocked/i.test(micError.log) || micError.prompt !== true) failures.push(`mic error ${JSON.stringify(micError)}`);
+const micError = await page.evaluate(() => document.getElementById('ai-log')?.textContent || '');
+if (!/Mic blocked: allow microphone in site settings/.test(micError)) failures.push(`mic error ${micError}`);
 const panel = await page.locator('#ai-dock').evaluate((node) => node.getBoundingClientRect().height / window.innerHeight);
 if (panel < 0.38 || panel > 0.42) failures.push(`panel ${panel}`);
 const chip = await page.locator('.ai-chip').first().evaluate((node) => {
