@@ -79,6 +79,7 @@ await again.addInitScript(() => {
 });
 const next = await again.newPage();
 await next.goto(`${base}/gym`, { waitUntil: 'domcontentloaded' });
+await next.locator('#one-more').click();
 for (const name of [/^IdidIt/, /^IwantIT/, /^IhavIT/]) {
   await next.getByRole('button', { name }).first().click();
 }
