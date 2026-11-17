@@ -2389,7 +2389,7 @@ async function boot() {
   mountDeviceCard(deviceHost).catch(() => {});
   startAgentLoop();
   window.addEventListener('hashchange', () => { render(); });
-  document.querySelectorAll('nav button').forEach((button) => {
+  document.querySelectorAll('nav button[data-route]').forEach((button) => {
     button.addEventListener('click', () => go(button.dataset.route));
   });
   await render();

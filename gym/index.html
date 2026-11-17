@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="is-one-tab">
 <head>
   <link id="category-board-css" rel="stylesheet" href="/category-board.css" />
   <link rel="stylesheet" href="/site-nav.css" />
@@ -80,11 +80,15 @@
 <main id="gym-panel"></main>
 <footer class="gym-foot"><a href="/gym/covenant">Member Covenant</a> · <a href="/gym/health-data">Consumer health data</a> · <a href="/gym/breach-plan">Breach plan</a> · <a href="/versions">Versions</a> · <a href="/campus">Campus</a> · <a href="/customize">Customize</a> · <a href="/help">Help</a> · <a href="/disclaimer">Disclaimer (Live beta v.5)</a></footer>
 <nav aria-label="Gym">
-  <button type="button" data-route="/">Club</button>
-  <button type="button" data-route="/train">Train</button>
-  <button type="button" data-route="/people">People</button>
-  <button type="button" data-route="/groups">Groups</button>
-  <button type="button" data-route="/more">More</button>
+  <button type="button" id="one-more" aria-expanded="false" aria-controls="one-menu">More</button>
+  <div id="one-menu" hidden>
+    <button type="button" data-route="/">Club</button>
+    <button type="button" data-route="/train">Train</button>
+    <button type="button" data-route="/people">People</button>
+    <button type="button" data-route="/groups">Groups</button>
+    <button type="button" data-route="/ididit">IdidIt</button>
+    <button type="button" data-route="/more">Settings</button>
+  </div>
 </nav>
 <script src="/js/vendor/qrcode.js"></script>
 <script type="module" src="/js/category-board.mjs"></script>

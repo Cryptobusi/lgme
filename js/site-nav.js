@@ -1,6 +1,6 @@
 (function () {
   var EPOCH = '2';
-  var CURRENT = { 'lgme-v214': 1, 'lgme-gym-v81': 1 };
+  var CURRENT = { 'lgme-v215': 1, 'lgme-gym-v81': 1 };
   function keep(name) {
     if (!name) return true;
     if (name === 'lgme.reset.epoch' || name === 'lgme.reset.note' || name === 'lgme.device.key' || name === 'lgme-gym.seat' || name === 'lgme.health.book' || name === 'lgme.health.email' || name === 'lgme.health.plan' || name === 'lgme.health.contact' || name === 'lgme.health.contactGrants' || name === 'lgme.health.consent' || name === 'lgme.demo.member') return true;
@@ -96,6 +96,21 @@
     if (!button || !navigator.clipboard || !navigator.clipboard.writeText) return;
     navigator.clipboard.writeText(button.getAttribute('data-copy')).then(function () { button.textContent = 'Copied'; }).catch(function () {});
   });
+  var armOneTab = function () {
+    document.documentElement.classList.add('is-one-tab');
+    var button = document.getElementById('one-more');
+    if (!button) return;
+    if (button.dataset.bound === '1') return;
+    button.dataset.bound = '1';
+    var menu = document.getElementById('one-menu');
+    button.addEventListener('click', function () {
+      var open = document.documentElement.classList.toggle('is-more-open');
+      button.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (menu) menu.hidden = !open;
+    });
+  };
+  if (document.body) armOneTab();
+  else document.addEventListener('DOMContentLoaded', armOneTab);
   var backButton = bar.querySelector('#site-back');
   if (backButton && !backButton.dataset.bound) {
     backButton.dataset.bound = '1';

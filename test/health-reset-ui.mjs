@@ -91,6 +91,7 @@ await home.addInitScript(() => {
 await home.route('**/*', (route) => route.request().url().includes('fonts.g') ? route.abort() : route.continue());
 const homePage = await home.newPage();
 await homePage.goto(`${base}/`, { waitUntil: 'domcontentloaded' });
+await homePage.locator('#one-more').click();
 await homePage.locator('.badge', { hasText: 'In development' }).first().waitFor();
 await homePage.screenshot({ path: '/opt/cursor/artifacts/health-first-390.png', timeout: 8000, animations: 'disabled' });
 await homePage.locator('#ai-switch').click();

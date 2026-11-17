@@ -214,17 +214,41 @@ function paintDisclaimer() {
     offerReady = { ok: false, message: error.message || NO_FINGERPRINT };
   });
   finger.addEventListener('click', () => {
+    let scan = finger.parentElement?.querySelector('.is-scan');
+    if (!scan) {
+      scan = document.createElement('p');
+      scan.className = 'is-scan';
+      scan.id = 'fingerprint-scan';
+      finger.insertAdjacentElement('afterend', scan);
+    }
+    scan.hidden = false;
+    scan.textContent = 'Touch the sensor to scan';
+    finger.classList.add('is-scanning');
     const ready = offerReady;
     if (!ready?.ok || ready.kind !== 'create') {
-      finger.textContent = ready?.message || 'Tap again to show the fingerprint prompt. Or use the authenticator code.';
+      finger.classList.remove('is-scanning');
+      const text = ready?.message || 'Tap again to show the fingerprint prompt. Or use the authenticator code.';
+      scan.textContent = text;
+      finger.textContent = text;
       return;
     }
-    const pending = startFingerprintPrompt(ready);
+    let pending;
+    try { pending = startFingerprintPrompt(ready); }
+    catch (error) {
+      finger.classList.remove('is-scanning');
+      scan.textContent = error.message || 'The fingerprint prompt did not open.';
+      finger.textContent = scan.textContent;
+      return;
+    }
     offerReady = null;
     pending.then((started) => finishFingerprintPrompt(started)).then(() => {
+      finger.classList.remove('is-scanning');
+      scan.textContent = 'Fingerprint saved on this phone.';
       finger.textContent = 'Fingerprint saved on this phone.';
     }).catch((error) => {
-      finger.textContent = error.message || 'Use the authenticator code.';
+      finger.classList.remove('is-scanning');
+      scan.textContent = error.message || 'Use the authenticator code.';
+      finger.textContent = scan.textContent;
     });
   });
   button.addEventListener('click', () => {
@@ -358,12 +382,22 @@ function paintEmail() {
     unlockReady = { ok: false, message: error.message || NO_FINGERPRINT };
   });
   unlock.addEventListener('click', () => {
+    status.textContent = 'Touch the sensor to scan';
+    status.className = 'is-scan';
+    unlock.classList.add('is-scanning');
     const ready = unlockReady;
     if (!ready?.ok || ready.kind !== 'get') {
+      unlock.classList.remove('is-scanning');
       status.textContent = ready?.message || 'Tap again to show the fingerprint prompt. Or use the authenticator code.';
       return;
     }
-    const pending = startFingerprintPrompt(ready);
+    let pending;
+    try { pending = startFingerprintPrompt(ready); }
+    catch (error) {
+      unlock.classList.remove('is-scanning');
+      status.textContent = error.message || 'The fingerprint prompt did not open. Use the authenticator code.';
+      return;
+    }
     unlockReady = null;
     pending.then(async (started) => {
       const saved = await finishFingerprintPrompt(started);

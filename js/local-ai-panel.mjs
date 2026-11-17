@@ -42,7 +42,10 @@ function signedIn() {
 }
 
 function aiOn() {
-  try { return localStorage.getItem('lgme.ai.enabled') !== '0'; } catch { return true; }
+  try {
+    if (localStorage.getItem('lgme.ai.enabled') == null) localStorage.setItem('lgme.ai.enabled', '1');
+    return localStorage.getItem('lgme.ai.enabled') !== '0';
+  } catch { return true; }
 }
 
 function paint(dock) {
@@ -54,10 +57,10 @@ function paint(dock) {
   const toggle = dock.querySelector('#ai-switch');
   const live = enabled && ready;
   dock.classList.toggle('is-off', !enabled);
-  toggle.classList.toggle('is-on', live);
-  toggle.dataset.state = live ? 'on' : 'off';
+  toggle.classList.toggle('is-on', enabled);
+  toggle.dataset.state = enabled ? 'on' : 'off';
   toggle.setAttribute('aria-checked', enabled ? 'true' : 'false');
-  toggle.textContent = live ? 'AI on' : 'AI off';
+  toggle.textContent = enabled ? 'AI on' : 'AI off';
   const head = document.getElementById('ai-head');
   if (head) {
     head.textContent = live ? 'AI on' : 'AI off';
@@ -990,7 +993,7 @@ function mount() {
     const live = aiOn() && localAiReady();
     const voiceReady = typeof window.SpeechRecognition === 'function' || typeof window.webkitSpeechRecognition === 'function';
     const dots = [
-      ['AI', live],
+      ['AI', aiOn()],
       ['Voice', voiceReady],
       ['Speak', replyMode() === 'speak'],
       ['Listen', autoListen()],
@@ -1022,7 +1025,7 @@ function mount() {
   });
   dock.querySelector('#ai-switch').addEventListener('click', () => {
     try {
-      if (aiOn() && localAiReady()) localStorage.setItem('lgme.ai.enabled', '0');
+      if (aiOn()) localStorage.setItem('lgme.ai.enabled', '0');
       else {
         localStorage.setItem('lgme.ai.enabled', '1');
         if (!localAiReady()) localStorage.setItem('lgme.localModel.ready', '1');

@@ -112,6 +112,7 @@ for (const [width, height] of [[390, 844], [1280, 800]]) {
   const { context, page } = await open(browser, width, height);
   try {
     await page.goto(`${base}/gym`, { waitUntil: 'domcontentloaded' });
+    await page.locator('#one-more').click();
     const actions = page.locator('#category-board .category-actions');
     const idid = actions.getByRole('button', { name: /^IdidIt/ });
     const want = actions.getByRole('button', { name: /^IwantIT/ });
@@ -164,6 +165,7 @@ for (const [width, height] of [[390, 844], [1280, 800]]) {
     for (const [member, label] of steps) {
       await page.evaluate((id) => localStorage.setItem('lgme.member', id), member);
       await page.reload({ waitUntil: 'domcontentloaded' });
+      await page.locator('#one-more').click();
       await tap(page, `#category-chips button:has-text("${nameOption}")`);
       await tap(page, '#evolve-attest');
       await page.waitForFunction((next) => document.getElementById('evolve-count')?.textContent === next, label);

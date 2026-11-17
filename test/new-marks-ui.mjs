@@ -32,6 +32,7 @@ const context = await browser.newContext({ viewport: { width: 390, height: 844 }
 const page = await context.newPage();
 const failures = [];
 await page.goto(`${base}/gym`, { waitUntil: 'domcontentloaded' });
+await page.locator('#one-more').click();
 const want = page.getByRole('button', { name: /IwantIT, \d|IwantIT, 9\+/ });
 await want.waitFor();
 const before = await want.getAttribute('aria-label');
@@ -43,6 +44,7 @@ if (/new/.test(after || '')) failures.push(`count stayed ${after}`);
 const heightAfter = await page.locator('#category-board .category-actions button', { hasText: 'IwantIT' }).evaluate((node) => node.getBoundingClientRect().height);
 if (Math.abs(heightAfter - height) > 2) failures.push('badge shifted the button');
 await page.reload({ waitUntil: 'domcontentloaded' });
+await page.locator('#one-more').click();
 const kept = await page.locator('#category-board .category-actions button', { hasText: 'IwantIT' }).getAttribute('aria-label');
 if (/new/.test(kept || '')) failures.push('count returned after reload');
 await page.goto(`${base}/`, { waitUntil: 'domcontentloaded' });

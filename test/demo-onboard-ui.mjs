@@ -59,6 +59,7 @@ for (const [width, height] of [[390, 844], [768, 1024], [1280, 800]]) {
       await page.screenshot({ path: '/opt/cursor/artifacts/category-first-390.png' });
     }
     if (width === 1280) await page.screenshot({ path: '/opt/cursor/artifacts/category-first-1280.png' });
+    await page.locator('#one-more').click();
     await page.locator('a[href="/campus"]').first().click();
     await page.waitForURL(/\/campus/);
     assert(await page.evaluate(() => localStorage.getItem('lgme.demo.member')) === null, 'browse stored an account');

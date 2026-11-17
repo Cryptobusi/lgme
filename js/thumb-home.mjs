@@ -187,36 +187,61 @@ if (root) {
     note.hidden = false;
     note.textContent = NO_FINGERPRINT;
   });
+  const scanLine = (button) => {
+    let scan = button.parentElement?.querySelector('.is-scan');
+    if (!scan) {
+      scan = document.createElement('p');
+      scan.className = 'is-scan';
+      scan.id = button.id === 'access-fingerprint' ? 'fingerprint-scan' : `${button.id}-scan`;
+      button.insertAdjacentElement('afterend', scan);
+    }
+    return scan;
+  };
   const tapFingerprint = (button, allow) => {
     button.addEventListener('click', () => {
-      if (allow && !allow()) return;
+      const scan = scanLine(button);
+      scan.hidden = false;
+      scan.textContent = 'Touch the sensor to scan';
+      button.classList.add('is-scanning');
+      const stopScan = (kind, text) => {
+        button.classList.remove('is-scanning');
+        scan.textContent = text;
+        mark(button, kind, text);
+      };
+      if (allow && !allow()) {
+        stopScan('error', 'Verify email or the authenticator before saving a fingerprint.');
+        return;
+      }
       const ready = fingerReady;
       if (!ready?.ok) {
-        mark(button, 'error', ready?.message || 'Tap again to show the fingerprint prompt. Or use the authenticator code.');
+        stopScan('error', ready?.message || 'Tap again to show the fingerprint prompt. Or use the authenticator code.');
         armFingerprint();
         return;
       }
-      const pending = startFingerprintPrompt(ready);
+      let pending;
+      try { pending = startFingerprintPrompt(ready); }
+      catch (error) {
+        stopScan('error', error.message || 'The fingerprint prompt did not open. Use the authenticator code.');
+        armFingerprint();
+        return;
+      }
       fingerReady = null;
       armFingerprint();
-      busy(button, async () => {
-        try {
-          const started = await pending;
-          const saved = await finishFingerprintPrompt(started, memberId);
-          if (started.kind === 'create') {
-            mark(button, 'ok', 'Fingerprint saved. Tap again to sign in, or use the authenticator code.');
-            armFingerprint();
-            return;
-          }
-          if (saved?.verified === true) {
-            codeOk = true;
-            if (!memberId) memberId = 'device';
-            mark(button, 'ok', 'Verified');
-            paint();
-          } else mark(button, 'error', 'The fingerprint was not accepted. Use the authenticator code.');
-        } catch (error) {
-          mark(button, 'error', error.message || 'The fingerprint prompt did not open. Use the authenticator code.');
+      pending.then(async (started) => {
+        const saved = await finishFingerprintPrompt(started, memberId);
+        if (started.kind === 'create') {
+          stopScan('ok', 'Fingerprint saved. Tap again to sign in, or use the authenticator code.');
+          armFingerprint();
+          return;
         }
+        if (saved?.verified === true) {
+          codeOk = true;
+          if (!memberId) memberId = 'device';
+          stopScan('ok', 'Verified');
+          paint();
+        } else stopScan('error', 'The fingerprint was not accepted. Use the authenticator code.');
+      }).catch((error) => {
+        stopScan('error', error.message || 'The fingerprint prompt did not open. Use the authenticator code.');
       });
     });
   };
@@ -358,13 +383,25 @@ if (root) {
       let emailHash = '';
       try { emailHash = JSON.parse(localStorage.getItem('lgme.demo.member') || '{}').emailHash || ''; } catch { /* the code path stays */ }
       const statusLine = dialog.querySelector('#gate-status');
+      const button = dialog.querySelector('#gate-passkey');
+      statusLine.textContent = 'Touch the sensor to scan';
+      statusLine.className = 'is-scan';
+      button.classList.add('is-scanning');
       const ready = gateReady;
       if (!ready?.ok) {
+        button.classList.remove('is-scanning');
         statusLine.textContent = ready?.message || 'Tap again to show the fingerprint prompt. Or use the authenticator code.';
         armGate();
         return;
       }
-      const pending = startFingerprintPrompt(ready);
+      let pending;
+      try { pending = startFingerprintPrompt(ready); }
+      catch (error) {
+        button.classList.remove('is-scanning');
+        statusLine.textContent = error.message || 'The fingerprint prompt did not open. Use the authenticator code.';
+        armGate();
+        return;
+      }
       gateReady = null;
       armGate();
       pending.then(async (started) => {

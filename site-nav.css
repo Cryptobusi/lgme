@@ -42,6 +42,8 @@ html[data-screen="simple"] body { padding-bottom: calc(45vh + env(safe-area-inse
 html[data-screen="full"] body { padding-bottom: calc(30vh + env(safe-area-inset-bottom)); }
 html.has-site-nav :is(button, a, input, textarea, select, label) { scroll-margin-top: 5rem; scroll-margin-bottom: 42vh; }
 html.has-site-nav body:has(nav[aria-label="Gym"]) { padding-bottom: calc(40vh + 4.5rem + env(safe-area-inset-bottom)); }
+html.is-one-tab.has-site-nav body:has(nav[aria-label="Gym"]),
+html.is-one-tab body:has(nav[aria-label="Gym"]) { padding-bottom: calc(40vh + env(safe-area-inset-bottom)); }
 html[data-screen="simple"] body:has(nav[aria-label="Gym"]) { padding-bottom: calc(45vh + 4.5rem + env(safe-area-inset-bottom)); }
 html[data-screen="full"] body:has(nav[aria-label="Gym"]) { padding-bottom: calc(30vh + 4.5rem + env(safe-area-inset-bottom)); }
 #first-open { padding-bottom: 42vh; }
@@ -108,6 +110,7 @@ html[data-screen="full"] #ai-dock.is-open { height: 30vh; max-height: 30vh; }
 #ai-switch.is-on::before { content: ''; display: inline-block; width: 0.55rem; height: 0.55rem; margin-right: 0.35rem; border-radius: 50%; background: #b7f0c8; vertical-align: middle; }
 #ai-switch:not(.is-on) { background: #3a3f3a; color: #f4f1e8; }
 body:has(nav[aria-label="Gym"]) #ai-dock { bottom: calc(4.5rem + env(safe-area-inset-bottom)); }
+html.is-one-tab body:has(nav[aria-label="Gym"]) #ai-dock { bottom: 0; }
 .ai-top { display: flex; flex-wrap: nowrap; align-items: center; gap: 0.25rem; margin: 0 0 0.1rem; overflow-x: auto; }
 #ai-dock.is-open .ai-actions { position: relative; z-index: 2; }
 .ai-label { margin: 0; font-size: 0.72rem; letter-spacing: 0.16em; font-weight: 700; color: #F97316; }
@@ -332,3 +335,61 @@ button:active, [role="button"]:active, button.is-pressed, [role="button"].is-pre
   button:active, [role="button"]:active, button.is-pressed, [role="button"].is-pressed { transform: none; }
 }
 #ai-accept:disabled { opacity: 0.7; }
+html.is-one-tab:not(.is-more-open) #function-row,
+html.is-one-tab:not(.is-more-open) .entry-tile:not(.health),
+html.is-one-tab:not(.is-more-open) #category-board:not(:has(#prompt-draft)),
+html.is-one-tab:not(.is-more-open) #health-floor,
+html.is-one-tab:not(.is-more-open) #device-can-host,
+html.is-one-tab:not(.is-more-open) footer.gym-foot,
+html.is-one-tab:not(.is-more-open) header > p.muted { display: none; }
+html.is-one-tab:not(.is-more-open) #category-board:has(#prompt-draft) { display: block; min-height: 0; }
+html.is-one-tab #one-more {
+  position: fixed;
+  right: 0.45rem;
+  bottom: calc(40vh + 0.45rem);
+  z-index: 46;
+  min-width: 44px;
+  min-height: 44px;
+  margin: 0;
+  padding: 0 0.7rem;
+  border-radius: 999px;
+  border: 1px solid #c6a15b;
+  background: #c6a15b;
+  color: #1a1408;
+  font: inherit;
+  font-weight: 700;
+}
+html.is-one-tab nav[aria-label="Gym"] {
+  left: auto;
+  right: 0.45rem;
+  width: auto;
+  bottom: calc(40vh + 0.45rem);
+  z-index: 46;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-end;
+  gap: 0.25rem;
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+html.is-one-tab nav[aria-label="Gym"] #one-more { position: static; }
+html.is-one-tab nav[aria-label="Gym"] #one-menu { display: flex; flex-direction: column; align-items: stretch; gap: 0.25rem; }
+html.is-one-tab nav[aria-label="Gym"] #one-menu[hidden] { display: none; }
+html.is-one-tab nav[aria-label="Gym"] #one-menu button { min-width: 44px; min-height: 44px; margin: 0; background: #151a15; color: #f4f1e8; border: 1px solid #c6a15b; }
+#ididit-done { display: flex; flex-direction: column; align-items: stretch; }
+#gym-ididit-confirm, #open-dispute, #demo-confirm { align-self: flex-end; min-width: 44px; }
+.is-scan { display: flex; align-items: center; gap: 0.45rem; margin: 0.25rem 0; font-weight: 700; color: #8fd6a8; }
+.is-scan[hidden] { display: none; }
+.is-scan::before, #access-fingerprint.is-scanning::after {
+  content: '';
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: lgme-next 0.9s ease-in-out infinite;
+}
+#access-fingerprint.is-scanning { outline: 3px solid #22c55e; outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  .is-scan::before, #access-fingerprint.is-scanning::after { animation: none; }
+}
