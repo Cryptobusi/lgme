@@ -142,7 +142,12 @@ export async function sendVisit(payload, env = {}, fetchImpl = fetch) {
       })
     });
     const body = await response.json().catch(() => ({}));
-    return { ok: response.ok === true, id: typeof body.id === 'string' ? body.id : '', skipped: false };
+    return {
+      ok: response.ok === true,
+      id: typeof body.id === 'string' ? body.id : '',
+      status: response.status,
+      skipped: false
+    };
   } catch {
     return { ok: false, id: '', skipped: false };
   } finally {
