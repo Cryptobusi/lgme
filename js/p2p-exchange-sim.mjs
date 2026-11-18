@@ -3254,6 +3254,7 @@ export function listingCore(spec) {
     referenceId: spec.referenceId || null,
     referenceAvg: spec.referenceAvg == null || spec.referenceAvg === '' ? null : spec.referenceAvg,
     photoHash: String(spec.photoHash || ''),
+    ...(Array.isArray(spec.mediaHashes) && spec.mediaHashes.length ? { mediaHashes: spec.mediaHashes.map((item) => ({ hash: String(item.hash || '').toLowerCase(), mime: String(item.mime || '').slice(0, 80) })).filter((item) => /^[0-9a-f]{64}$/.test(item.hash)) } : {}),
     kind: spec.kind === 'IwanIT' || spec.kind === 'IprovIT' ? spec.kind : 'ihavIT',
     description: String(spec.description || '').trim(),
     unit: '$lgme'

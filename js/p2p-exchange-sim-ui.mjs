@@ -18,6 +18,8 @@ import { ensureDeviceKey, signDevice } from './device-sign.mjs';
 import { REPAIR_STATUSES } from './repair-follow.mjs';
 import { DEV_TEAM_HREF, helpPath } from './category-help.mjs';
 import { askDevice } from './device-ask.mjs';
+import { addMedia, browserMediaStore, listForListing, publicMedia, storageMeter, verifyFile } from './listing-media.mjs';
+import { incognitoOn } from './incognito.mjs';
 
 const sessionKeys = new Map();
 const sessionCrypto = new Map();
@@ -114,7 +116,8 @@ let signedSms = null;
 let matchNote = '';
 let openCall = null;
 let listStep = 1;
-let listDraft = { photo: '', photoHash: '', title: '', category: 'Goods', condition: 'Good', pickup: 'Pickup', circle: '', area: '', amount: '', referenceId: '' };
+let listDraft = { photo: '', photoHash: '', title: '', category: 'Goods', condition: 'Good', pickup: 'Pickup', circle: '', area: '', amount: '', referenceId: '', mediaHashes: [] };
+const listingFiles = browserMediaStore();
 
 function h(tag, attrs = {}, children = []) {
   const node = document.createElement(tag);
@@ -3458,6 +3461,22 @@ async function renderMarket(peers, seat) {
         h('p', { class: 'muted' }, [`${card.condition} · ${card.pickup}${card.area ? ' · ' + card.area : ''}`]),
         card.referenceAvg == null ? null : h('p', { class: 'legend' }, [`Reference only, not a price. About ${card.referenceAvg}.`]),
         h('p', { class: 'legend' }, [card.signatureOk ? `Origin ${shortHash(card.originHash)} verifies.` : 'Origin hash does not verify.']),
+        ...(card.mediaHashes || []).map((item) => h('p', {}, [
+          card.sellerId === seat ? `On this phone · ${item.mime} · ${String(item.hash).slice(0, 8)}` : `File held by owner, fingerprint recorded ${String(item.hash).slice(0, 8)}`,
+          card.sellerId === seat ? h('button', { type: 'button', onClick: async () => {
+            const saved = await listForListing(listingFiles, 'draft');
+            const record = saved.find((row) => row.hash === item.hash) || saved[0];
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.addEventListener('change', async () => {
+              const chosen = input.files && input.files[0];
+              if (!chosen || !record) return;
+              const checked = await verifyFile(new Uint8Array(await chosen.arrayBuffer()), record);
+              setStatus(checked.label, checked.match ? 'ok' : 'bad');
+            });
+            input.click();
+          } }, ['Verify']) : null
+        ])),
         profileCard(profile),
         openOfferFor === card.id ? offerForm(seat, { listingId: card.id, title: card.title, amount: card.amount, toId: card.sellerId === seat ? '' : card.sellerId }, serviceList) : null,
         h('div', { class: 'actions' }, actions)
@@ -3845,6 +3864,17 @@ async function renderList(seat) {
     const file = h('input', { type: 'file', accept: 'image/*,video/*', capture: 'environment' });
     const video = h('video', { class: 'cam', playsinline: true, muted: true });
     video.hidden = true;
+    const attach = h('input', { type: 'file', id: 'listing-attach', accept: 'image/*,video/*,application/pdf,.doc,.docx,.txt' });
+    attach.addEventListener('change', async () => {
+      const chosen = attach.files && attach.files[0];
+      if (!chosen) return;
+      const label = chosen.type.startsWith('video/') ? 'File' : chosen.type === 'application/pdf' ? 'Manual' : 'Condition photo';
+      const saved = await addMedia(listingFiles, { listingId: 'draft', file: chosen, bytes: new Uint8Array(await chosen.arrayBuffer()), mime: chosen.type, size: chosen.size, label }, { storage: localStorage, incognito: incognitoOn(localStorage), prepare: chosen.type.startsWith('image/') });
+      if (!saved.ok) { setStatus(saved.error, 'bad'); return; }
+      listDraft.mediaHashes = [...(listDraft.mediaHashes || []), { ...saved.record, label }];
+      setStatus(saved.held ? 'Held until you approve. Nothing was posted.' : 'File kept on this phone. Only the hash can be anchored.', 'ok');
+      await render();
+    });
     file.addEventListener('change', async () => {
       const chosen = file.files && file.files[0];
       if (!chosen) return;
@@ -3864,6 +3894,23 @@ async function renderList(seat) {
       h('p', { class: 'muted' }, ['Take a photo or choose one. It is scaled down in this browser and kept on the listing locally.']),
       listDraft.photo ? h('img', { class: 'shot', alt: '', src: listDraft.photo, width: '224', height: '224', loading: 'lazy' }) : null,
       field('Photo', file),
+      field('Attach', attach),
+      h('div', { class: 'actions' }, [
+        h('button', { type: 'button', id: 'listing-attach-camera', onClick: () => askDevice({ kind: 'camera', purpose: 'The camera takes a photo for this listing. The file stays on this phone. Nothing is uploaded.', allow: () => document.getElementById('listing-attach')?.click() }) }, ['Camera']),
+        h('button', { type: 'button', id: 'attach-ihavit', onClick: async () => {
+          const { readItems } = await import('./ihavit.mjs');
+          const items = readItems(localStorage);
+          if (!items.length) { setStatus('No IhavIt items on this phone.', 'bad'); return; }
+          const item = items[0];
+          const saved = await addMedia(listingFiles, { listingId: 'draft', bytes: new TextEncoder().encode(`${item.id}:${item.name}`), mime: 'text/plain', label: 'Receipt', size: item.name.length }, { salt: item.id || 'ihavit', storage: localStorage, prepare: false });
+          if (!saved.ok) { setStatus(saved.error, 'bad'); return; }
+          listDraft.mediaHashes = [...(listDraft.mediaHashes || []), { ...saved.record, label: 'Receipt' }];
+          setStatus('IhavIt fingerprint kept on this phone.', 'ok');
+          await render();
+        } }, ['Attach from IhavIt'])
+      ]),
+      h('div', { id: 'listing-media-chips' }, (listDraft.mediaHashes || []).map((item) => h('p', {}, [`${item.label || 'File'} · ${item.mime || ''} · ${String(item.hash || '').slice(0, 8)} `, h('button', { type: 'button', onClick: async () => { listDraft.mediaHashes = listDraft.mediaHashes.filter((row) => row.hash !== item.hash); await render(); } }, ['x'])]))),
+      h('p', { class: 'legend' }, [storageMeter(0).label, '. A floor listing is not penalized for no files. A refusal carries no penalty.']),
       video,
       h('div', { class: 'actions' }, [
         h('button', { type: 'button', id: 'list-camera', onClick: () => showCapture(seat, {
@@ -3934,6 +3981,7 @@ async function renderList(seat) {
   const form = h('form', {}, [
     field('Value in $lgme', amount),
     field('Optional $ reference', reference),
+    h('p', { id: 'hedera-media-preview' }, [(listDraft.mediaHashes || []).length ? `Hedera would receive only ${JSON.stringify((listDraft.mediaHashes || []).map(publicMedia))}. Nothing is posted until you sign.` : 'No extra files. A floor listing is not penalized.']),
     hint,
     h('div', { class: 'actions' }, [
       h('button', { type: 'button', onClick: () => {
@@ -3952,6 +4000,7 @@ async function renderList(seat) {
       const item = catalog.find((row) => row.id === reference.value);
       const created = await sim.createListing(store, seat, {
         ...listDraft,
+        mediaHashes: (listDraft.mediaHashes || []).map(publicMedia),
         amount: amount.value,
         referenceId: item ? item.id : null,
         referenceAvg: item ? item.avg_value_usd : null
@@ -3962,7 +4011,7 @@ async function renderList(seat) {
         const peer = await store.get(seat);
         if (made.ok && peer?.privateKeyJwk) await saveMediaFile(seat, peer.privateKeyJwk, made.hash, listDraft.mediaBytes, listDraft.mediaMime);
       }
-      listDraft = { photo: '', photoHash: '', title: '', category: 'Goods', condition: 'Good', pickup: 'Pickup', circle: '', area: '', amount: '', referenceId: '' };
+      listDraft = { photo: '', photoHash: '', title: '', category: 'Goods', condition: 'Good', pickup: 'Pickup', circle: '', area: '', amount: '', referenceId: '', mediaHashes: [] };
       listStep = 1;
       openListingId = created.listing.id;
       setStatus('Listed and signed on this phone. Testnet only. The photo stayed on this device.', 'ok');

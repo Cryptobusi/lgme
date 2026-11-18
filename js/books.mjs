@@ -82,7 +82,8 @@ export function proofPanel(item, files = []) {
     notes: item?.notes || '',
     photos,
     receipts,
-    line: `Proof from IhavIt: ${item?.name || 'item'}, condition ${item?.condition || 'unknown'}. Not an appraisal.`
+    media: Array.isArray(item?.mediaHashes) ? item.mediaHashes : [],
+    line: `Proof from IhavIt: ${item?.name || 'item'}, condition ${item?.condition || 'unknown'}.${Array.isArray(item?.mediaHashes) && item.mediaHashes.length ? ` ${item.mediaHashes.length} file fingerprint${item.mediaHashes.length === 1 ? '' : 's'}.` : ''} Not an appraisal.`
   };
 }
 
