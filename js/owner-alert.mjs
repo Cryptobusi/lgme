@@ -33,7 +33,7 @@ export function signupText(spec, now = Date.now()) {
   ].join('\n');
 }
 
-async function sendAlert(env, text, fetchImpl) {
+async function sendAlert(env, text, fetchImpl, subject = 'New lgme member') {
   const key = String(env.RESEND_API_KEY || '').trim();
   const from = String(env.EMAIL_FROM || '').trim();
   const to = String(env.OWNER_NOTIFY_EMAIL || '').trim();
@@ -46,7 +46,7 @@ async function sendAlert(env, text, fetchImpl) {
       from,
       to: to || copy,
       ...(to && copy && copy !== to ? { cc: copy } : {}),
-      subject: 'New lgme member',
+      subject,
       text
     })
   });
@@ -73,6 +73,26 @@ export async function notifyNewMember(store, spec, { env = {}, fetchImpl = globa
   } catch {
     return { ok: true, sent: false };
   }
+}
+
+export async function notifyOwnerInbox(store, spec, { env = {}, fetchImpl = globalThis.fetch, now = Date.now() } = {}) {
+  const notice = {
+    category: spec.category || 'Hold',
+    title: spec.title || 'Help resolve',
+    at: new Date(now).toISOString(),
+    link: spec.link || '/owner',
+    kind: spec.kind || 'hold',
+    detail: spec.detail || ''
+  };
+  try {
+    const prior = (await store.get('owner:signups')) || [];
+    await store.set('owner:signups', [...prior, notice].slice(-40));
+  } catch {
+    return { ok: true, inbox: false, email: false };
+  }
+  let email = false;
+  try { email = await sendAlert(env, notice.detail, fetchImpl, notice.title); } catch { email = false; }
+  return { ok: true, inbox: true, email };
 }
 
 export async function listSignupNotices(store) {

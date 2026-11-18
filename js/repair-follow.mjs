@@ -148,10 +148,10 @@ function confirmRate(state, handle, payload) {
   if (!hold.ok) return { ...hold, status: 400 };
   if (hold.pending) {
     item.settlement = 'pending';
-    item.note = ATTESTATION_NOTE;
+    item.note = hold.note;
     const record = hold.record;
     state.highValue = [...(state.highValue || []).filter((row) => row.id !== record.id), record];
-    return { ok: true, item, pending: true, recorded: false, note: ATTESTATION_NOTE };
+    return { ok: true, item, pending: true, recorded: false, note: hold.note };
   }
   const split = deedCreditSplit(amount);
   item.settlement = 'recorded';

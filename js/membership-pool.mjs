@@ -1,5 +1,5 @@
 import { sha256Hex } from './device-sign.mjs';
-import { ATTESTATION_NOTE, addAttestation, evaluateHold, rememberRow } from './high-value.mjs';
+import { ATTESTATION_NOTE, addAttestation, addRefusal, adminAct, evaluateHold, rememberRow } from './high-value.mjs';
 import { PRICE_UNAVAILABLE, lgmeForUsd, withinPeg } from './lgme-price.mjs';
 import { LISTINGS_OPERATOR, LISTINGS_TOPIC } from './exchange-listing.mjs';
 import { SETUP_ADDRESS, SETUP_MINT, confirmSetupTransfer } from './setup-fee.mjs';
@@ -160,7 +160,7 @@ async function creditGift(pool, spec, kind) {
   if (hold.needed) {
     next.holds = rememberRow(next.holds, hold.record);
     next.pending = [...next.pending, { hash, usd: amount, at, kind }];
-    return { ok: true, pending: true, note: ATTESTATION_NOTE, hash, pool: next, view: poolView(next) };
+    return { ok: true, pending: true, note: hold.note, hash, pool: next, view: poolView(next) };
   }
   next.inUsd = round2(next.inUsd + (kind === 'credit' ? amount : 0));
   next.hashes = [...next.hashes, hash];
@@ -237,7 +237,7 @@ export async function donateLgme(pool, spec = {}) {
     next.holds = rememberRow(next.holds, hold.record);
     next.pending = [...next.pending, { hash, usd, at, kind: 'lgme' }];
     next.hashes = [...next.hashes, hash];
-    return { ok: true, pending: true, note: ATTESTATION_NOTE, hash, pool: next, view: poolView(next) };
+    return { ok: true, pending: true, note: hold.note, hash, pool: next, view: poolView(next) };
   }
   next.inUsd = round2(next.inUsd + usd);
   next.hashes = [...next.hashes, hash];
@@ -286,7 +286,7 @@ export async function attestPoolDonation(pool, spec = {}) {
   const next = clonePool(pool);
   if (!added.ready) {
     next.holds = rememberRow(next.holds, added.record);
-    return { ok: true, pending: true, note: ATTESTATION_NOTE, hash, pool: next, view: poolView(next) };
+    return { ok: true, pending: true, note: added.record.note || ATTESTATION_NOTE, hash, pool: next, view: poolView(next) };
   }
   const cleared = { ...added.record, status: 'cleared' };
   next.holds = rememberRow(next.holds, cleared);
@@ -296,6 +296,36 @@ export async function attestPoolDonation(pool, spec = {}) {
   return { ok: true, pending: false, hash, pool: next, view: poolView(next) };
 }
 
+export async function refusePoolDonation(pool, spec = {}) {
+  const hash = String(spec.entryId || '');
+  const record = (pool?.holds || []).find((row) => row.id === hash);
+  if (!record) return { ok: false, error: 'That donation is not pending.' };
+  const refused = await addRefusal(record, spec);
+  if (!refused.ok) return refused;
+  const next = clonePool(pool);
+  next.holds = rememberRow(rememberRow(next.holds, refused.record), refused.entry);
+  return { ok: true, pending: true, penalty: 0, hidden: false, hash, pool: next, view: poolView(next) };
+}
+
+export async function adminPoolDonation(pool, spec = {}) {
+  const hash = String(spec.entryId || '');
+  const record = (pool?.holds || []).find((row) => row.id === hash);
+  if (!record) return { ok: false, error: 'That donation is not pending.' };
+  const acted = await adminAct(record, spec);
+  if (!acted.ok) return acted;
+  const next = clonePool(pool);
+  if (!acted.ready) {
+    next.holds = rememberRow(next.holds, acted.record);
+    return { ok: true, pending: acted.record.status !== 'unresolved', autoApproved: false, hash, pool: next, view: poolView(next) };
+  }
+  const pending = (next.pending || []).find((row) => row.hash === hash);
+  const cleared = { ...acted.record, status: 'cleared' };
+  next.holds = rememberRow(next.holds, cleared);
+  next.pending = next.pending.filter((row) => row.hash !== hash);
+  if (pending) next.inUsd = round2(next.inUsd + pending.usd);
+  return { ok: true, pending: false, autoApproved: false, hash, pool: next, view: poolView(next) };
+}
+
 export async function applyPoolAction(pool, payload = {}, confirmation) {
   if (payload.action === 'pool-credit') return donateCredit(pool, payload);
   if (payload.action === 'pool-lgme') return donateLgme(pool, { ...payload, confirmation });
@@ -303,6 +333,8 @@ export async function applyPoolAction(pool, payload = {}, confirmation) {
   if (payload.action === 'pool-draw') return drawPool(pool, payload);
   if (payload.action === 'pool-accept') return acceptSponsor(pool, payload);
   if (payload.action === 'pool-attest') return attestPoolDonation(pool, { ...payload, sig: payload.sig || payload.attestSig });
+  if (payload.action === 'pool-refuse') return refusePoolDonation(pool, payload);
+  if (payload.action === 'pool-admin') return adminPoolDonation(pool, payload);
   return { ok: false, error: 'That pool action is not available.' };
 }
 

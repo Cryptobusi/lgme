@@ -111,3 +111,13 @@ All ten cases fail the test if left unstructured. Cases 1–5 closed by L0/L1. C
 Floor stays senior. Same rules bind all three. An unpublished change is not a change.
 
 See [Nested commitment](Nested_Commitment.md).
+
+## 11. Attestation thresholds
+
+**Result: Holds when the published line is the one in force.**
+
+Up to $100 bilateral; over $100 three independent attestations; over $1,000/day three plus admin approval until DAO path published; any refusal stays on record, no penalty; An unpublished change is not a change; Floor stays senior. Same rules bind state, firm, and person.
+
+A receipt over $100 stays pending until three independent third-member device signatures. A pair's rolling 24-hour total over $1,000 stays pending until those three signatures and an administrator device signature. The approval label is "until a member DAO publishes its approval path." A refusal, including a Third Seat refusal, stays on the record. It carries no penalty and is not hidden. Nothing in this rule approves itself. The hold deadline is 24 hours from opening. Three hours before that deadline, if the signatures or the approval are still short, both parties, the suggested attesters, and the administrator are told. The administrator may attest, approve, extend once, or mark the hold unresolved.
+
+See [Nested commitment](Nested_Commitment.md).

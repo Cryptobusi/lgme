@@ -20,6 +20,8 @@ import { DEV_TEAM_HREF, helpPath } from './category-help.mjs';
 import { askDevice } from './device-ask.mjs';
 import { addMedia, browserMediaStore, listForListing, publicMedia, storageMeter, verifyFile } from './listing-media.mjs';
 import { incognitoOn } from './incognito.mjs';
+import { RULE_SHORT } from './high-value.mjs';
+import { armHoldReminders, holdFromLocation, renderAttestCard } from './attest-card.mjs';
 
 const sessionKeys = new Map();
 const sessionCrypto = new Map();
@@ -834,6 +836,7 @@ async function renderNow() {
   nameById = namesOf(peers);
   const seat = currentSeat(peers);
   renderSeats(peers, seat);
+  paintHolds(peers, seat);
   renderTabs();
   const tab = tabName();
   if (tab === 'market') await renderMarket(peers, seat);
@@ -848,6 +851,23 @@ async function renderNow() {
   else if (tab === 'help') renderHelp();
   else if (tab === 'resources') renderResources();
   else await renderExchange(peers, seat);
+}
+
+function paintHolds(peers, seat) {
+  const host = document.getElementById('hold-card');
+  if (!host) return;
+  const wanted = holdFromLocation(location.search);
+  const rows = peers.flatMap((peer) => peer.highValue || []);
+  const record = rows.find((row) => row && row.status === 'pending' && (!wanted || row.id === wanted)) || null;
+  if (!record) {
+    host.replaceChildren();
+    return;
+  }
+  renderAttestCard(host, record, {
+    onAttest: (signed) => sim.attestHighValue(store, seat, record.id, { publicJwk: signed.publicJwk, sig: signed.sig, at: signed.payload.at }).then(() => render()),
+    onRefuse: (signed) => sim.refuseHighValue(store, seat, record.id, { publicJwk: signed.publicJwk, sig: signed.sig, at: signed.payload.at, seat: 'third' }).then(() => render())
+  });
+  armHoldReminders(rows);
 }
 
 function renderSeats(peers, seat) {
@@ -4505,6 +4525,7 @@ function renderHelp() {
   ]);
   panel.replaceChildren(
     h('h2', {}, ['Help']),
+    h('p', { class: 'muted', id: 'barrier-rule' }, [RULE_SHORT]),
     h('p', { class: 'muted' }, ['Beta. Real $lgme moves only when your Solana wallet signs. This page does not send a message for you and does not write to Hedera.']),
     h('p', {}, [h('a', { href: '/marketing' }, ['Marketing & Adoption'])]),
     h('p', {}, [h('a', { href: '/good-deeds' }, ['Every good deed deserves another'])]),

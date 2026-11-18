@@ -1,5 +1,5 @@
 // lgme.app shell. HTML is fetched from the network first so a published change shows.
-const CACHE_NAME = "lgme-v235";
+const CACHE_NAME = "lgme-v236";
 const NET_MS = 8000;
 const SHELL = [
   "/",
@@ -160,6 +160,8 @@ const SHELL = [
   "/js/equipment-referral.mjs",
   "/js/equipment-card.mjs",
   "/js/repair-follow.mjs",
+  "/js/high-value.mjs",
+  "/js/attest-card.mjs",
   "/js/gym-progress.mjs",
   "/wisdom",
   "/wisdom.html",

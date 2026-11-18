@@ -13,7 +13,7 @@ import { commonsSplit, deedCreditSplit } from './commons-split.mjs';
 import { publicWisdom, wisdomSplit } from './wisdom.mjs';
 import { listingMessage } from './shared-listings.mjs';
 import { circleGate } from './covenant.mjs';
-import { ATTESTATION_NOTE, addAttestation, evaluateHold, pendingCount, rememberRow, suggestThird, withdrawEntry } from './high-value.mjs';
+import { ATTESTATION_NOTE, addAttestation, addRefusal, adminAct, evaluateHold, pendingCount, rememberRow, suggestThird, withdrawEntry } from './high-value.mjs';
 import { intakeCreditLimit } from './intake.mjs';
 
 export { bilateralNet, clearingRules, clearingWindow, cycleNetStub, merkleProofFor, merkleRootOf, nextWindow, verifyMerkleProof };
@@ -894,7 +894,7 @@ export async function attestHighValue(store, attesterId, entryId, spec = {}) {
     ok: true,
     ready: added.ready,
     count: added.count,
-    note: ATTESTATION_NOTE,
+    note: added.record?.note || ATTESTATION_NOTE,
     hash: added.hash,
     topic: added.topic,
     pending: pendingCount(attester.highValue)
@@ -910,6 +910,34 @@ export async function withdrawHighValue(store, partyId, entryId) {
   await mirrorHigh(store, party, withdrawn.record, record.fromId === partyId ? record.toId : record.fromId);
   await store.set(partyId, party);
   return { ok: true, status: 'withdrawn', pending: pendingCount(party.highValue) };
+}
+
+export async function refuseHighValue(store, attesterId, entryId, spec = {}) {
+  const attester = await store.get(attesterId);
+  if (!attester) return fail('Unknown peer.');
+  let record = (attester.highValue || []).find((row) => row.id === entryId) || null;
+  if (!record) return fail('That entry is not pending.');
+  const refused = await addRefusal(record, { ...spec, handle: attesterId });
+  if (!refused.ok) return refused;
+  await mirrorHigh(store, attester, refused.record, refused.record.fromId);
+  await mirrorHigh(store, attester, refused.record, refused.record.toId);
+  await mirrorHigh(store, attester, refused.entry, refused.record.fromId);
+  await mirrorHigh(store, attester, refused.entry, refused.record.toId);
+  await store.set(attesterId, attester);
+  return { ok: true, penalty: 0, hidden: false, pending: pendingCount(attester.highValue) };
+}
+
+export async function adminHighValue(store, adminId, entryId, spec = {}) {
+  const admin = await store.get(adminId);
+  if (!admin) return fail('Unknown peer.');
+  const record = (admin.highValue || []).find((row) => row.id === entryId);
+  if (!record) return fail('That entry is not pending.');
+  const acted = await adminAct(record, { ...spec, handle: adminId, role: 'administrator' });
+  if (!acted.ok) return acted;
+  await mirrorHigh(store, admin, acted.record, acted.record.fromId);
+  await mirrorHigh(store, admin, acted.record, acted.record.toId);
+  await store.set(adminId, admin);
+  return { ok: true, ready: acted.ready === true, autoApproved: false, pending: pendingCount(admin.highValue) };
 }
 
 export function suggestedAttester(members, fromId, toId) {
@@ -1163,11 +1191,11 @@ export async function attestDeedReceipt(store, peerId, postId, spec = {}) {
     saveHigh(provider, record);
     for (const peer of [buyer, provider]) {
       peer.deedPosts = peer.deedPosts || {};
-      peer.deedPosts[postId] = { ...post, status: 'pending-attestation', receiptName: RECEIPT_NAME, attestationNote: ATTESTATION_NOTE, attestationCount: hold.count || 0, suggestion: suggestion.text };
+      peer.deedPosts[postId] = { ...post, status: 'pending-attestation', receiptName: RECEIPT_NAME, attestationNote: hold.note || ATTESTATION_NOTE, attestationCount: hold.count || 0, suggestion: suggestion.text };
       if (peer.wallet?.ciphertext) releaseLockedKey(peer);
       await store.set(peer.id, peer);
     }
-    return { ok: true, pending: true, note: ATTESTATION_NOTE, count: hold.count || 0, suggestion: suggestion.text, receiptName: RECEIPT_NAME };
+    return { ok: true, pending: true, note: hold.note || ATTESTATION_NOTE, count: hold.count || 0, suggestion: suggestion.text, receiptName: RECEIPT_NAME };
   }
   const attested = {
     entryId: `attest:${postId}`,
@@ -3474,7 +3502,7 @@ export async function acceptExerciseSupport(store, authorId, supportId, spec = {
       releaseLockedKey(author);
       await store.set(authorId, author);
       await store.set(giver.id, giver);
-      return { ok: true, pending: true, note: ATTESTATION_NOTE, count: hold.count || 0, suggestion: suggestion.text };
+      return { ok: true, pending: true, note: hold.note || ATTESTATION_NOTE, count: hold.count || 0, suggestion: suggestion.text };
     }
   }
   if (offer.kind === 'contribute-lgme') {
@@ -3738,7 +3766,7 @@ export async function supportWisdom(store, supporterId, submissionId, spec = {})
       releaseLockedKey(supporter);
       await store.set(supporterId, supporter);
       await store.set(author.id, author);
-      return { ok: true, pending: true, note: ATTESTATION_NOTE, count: hold.count || 0, suggestion: suggestion.text, creditMinted: false };
+      return { ok: true, pending: true, note: hold.note || ATTESTATION_NOTE, count: hold.count || 0, suggestion: suggestion.text, creditMinted: false };
     }
   }
   const supportId = await sha256(canonicalJSON({ supporterId, submissionId, kind, amount, at }));
@@ -5465,7 +5493,7 @@ export async function payInvoice(store, payerId, invoiceId, spec = {}) {
     saveHigh(worker, record);
     await store.set(payerId, payer);
     await store.set(worker.id, worker);
-    return { ok: true, pending: true, paid: false, reward: 0, note: ATTESTATION_NOTE, count: hold.count || 0, suggestion: suggestion.text };
+    return { ok: true, pending: true, paid: false, reward: 0, note: hold.note || ATTESTATION_NOTE, count: hold.count || 0, suggestion: suggestion.text };
   }
   if (priceUsd > 0) {
     const hold = evaluateHold(payer.highValue || [], { id: invoiceId, fromId: payerId, toId: invoice.workerId, kind: 'lgme', amount: figure, price: priceUsd, at });
@@ -5477,7 +5505,7 @@ export async function payInvoice(store, payerId, invoiceId, spec = {}) {
       saveHigh(worker, record);
       await store.set(payerId, payer);
       await store.set(worker.id, worker);
-      return { ok: true, pending: true, paid: false, note: ATTESTATION_NOTE, count: hold.count || 0, suggestion: suggestion.text };
+      return { ok: true, pending: true, paid: false, note: hold.note || ATTESTATION_NOTE, count: hold.count || 0, suggestion: suggestion.text };
     }
   }
   const paymentId = await sha256(canonicalJSON({ invoiceId, amount: figure, at }));
@@ -6541,7 +6569,7 @@ export async function attestOffchainPayment(store, payeeId, spec = {}) {
         await store.set(payer.id, payer);
       }
       await store.set(payeeId, payee);
-      return { ok: true, pending: true, status: 'pending-attestation', note: ATTESTATION_NOTE, count: hold.count || 0, suggestion: suggestion.text, unchanged: true };
+      return { ok: true, pending: true, status: 'pending-attestation', note: hold.note || ATTESTATION_NOTE, count: hold.count || 0, suggestion: suggestion.text, unchanged: true };
     }
   }
   const payload = { ...source, status: 'pending-attestation', role: 'payee', payeeId, payerId: source.payerId, penalty: false };
