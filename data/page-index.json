@@ -37,7 +37,7 @@
   {
     "title": "Bigcapital",
     "href": "/bigcapital",
-    "summary": "lgme · Bigcapital + HomeBox"
+    "summary": "What works now is Inventory CSV on this phone. This page does not call Bigcapital."
   },
   {
     "title": "Breach plan",
@@ -217,7 +217,7 @@
   {
     "title": "HomeBox",
     "href": "/homebox",
-    "summary": "lgme · HomeBox Integration"
+    "summary": "What works now is Inventory CSV on this phone. This page does not call HomeBox."
   },
   {
     "title": "Hosts",
@@ -258,6 +258,11 @@
     "title": "Introduction",
     "href": "/introduction",
     "summary": "A short summary of lgme and a searchable index of every page on this phone."
+  },
+  {
+    "title": "Inventory",
+    "href": "/inventory",
+    "summary": "A local inventory of IhavIt items. CSV can move rows to HomeBox or Bigcapital. Nothing is uploaded."
   },
   {
     "title": "Join Health",

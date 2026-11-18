@@ -1,6 +1,6 @@
 (function () {
   var EPOCH = '2';
-  var CURRENT = { 'lgme-v228': 1, 'lgme-gym-v81': 1 };
+  var CURRENT = { 'lgme-v229': 1, 'lgme-gym-v81': 1 };
   function keep(name) {
     if (!name) return true;
     if (name === 'lgme.reset.epoch' || name === 'lgme.reset.note' || name === 'lgme.device.key' || name === 'lgme-gym.seat' || name === 'lgme.health.book' || name === 'lgme.health.email' || name === 'lgme.health.plan' || name === 'lgme.health.contact' || name === 'lgme.health.contactGrants' || name === 'lgme.health.consent' || name === 'lgme.demo.member') return true;
@@ -131,6 +131,13 @@
       intro.textContent = 'Introduction';
     }
     if (menu.firstElementChild !== intro) menu.insertBefore(intro, menu.firstChild);
+    if (!menu.querySelector('#inventory-open')) {
+      var inventory = document.createElement('a');
+      inventory.href = '/inventory';
+      inventory.id = 'inventory-open';
+      inventory.textContent = 'Inventory';
+      intro.insertAdjacentElement('afterend', inventory);
+    }
     var tape = menu.querySelector('#tape-sound');
     if (!tape) {
       tape = document.createElement('button');

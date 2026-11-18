@@ -61,6 +61,9 @@ export function saveItem(storage, spec, ok) {
     condition: CONDITIONS.includes(spec.condition) ? spec.condition : 'good',
     notes: String(spec.notes || '').trim().slice(0, 280),
     warranty: String(spec.warranty || '').slice(0, 10),
+    location: String(spec.location || '').trim().slice(0, 40),
+    quantity: Math.max(0, Math.round(Number(spec.quantity ?? 1) || 0)),
+    plan: spec.plan === 'buy' || spec.plan === 'maintain' || spec.plan === 'sell' ? spec.plan : '',
     care: spec.id ? (spec.care || null) : null
   };
   const items = readItems(storage).filter((row) => row.id !== item.id);

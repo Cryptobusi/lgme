@@ -154,6 +154,7 @@ export function matchPrompt(text) {
   const q = raw.toLowerCase();
   if (!q) return { kind: 'help', text: '', line: 'Type log a workout, I want something, or I have something.' };
   if (/what can i do|help me|show help/.test(q)) return { kind: 'help', text: '', line: 'You can log a workout, say I want something, or say I have something.' };
+  if (/^(open\s+)?inventory\b/.test(q)) return { kind: 'inventory', text: 'Inventory', line: 'Opened Inventory. Nothing was saved.' };
   const screen = screenModePrompt(raw);
   if (screen) return { kind: 'screen', mode: screen.mode, text: '', line: screen.line };
   const local = localFunctionFromPrompt(raw);
@@ -725,6 +726,10 @@ function mount() {
         weight: matched.weight || ''
       }));
     } catch { /* the line still shows */ }
+    if (matched.kind === 'inventory') {
+      location.assign('/inventory');
+      return;
+    }
     const here = location.pathname.startsWith('/gym');
     if (matched.route && matched.route.liveWrite === false) {
       location.assign(matched.route.href);
