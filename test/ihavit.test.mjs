@@ -1,0 +1,35 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { confirmCare, listingDraft, reminderList, saveItem, suggestCare, valueRange } from '../js/ihavit.mjs';
+
+test('things stay on the phone until OK and never post', () => {
+  const data = new Map();
+  const storage = { getItem: (key) => data.get(key) ?? null, setItem: (key, value) => data.set(key, value) };
+  assert.equal(saveItem(storage, { name: 'City bike', price: '400', purchased: '2024-01-01', condition: 'good' }, false).ok, false);
+  const saved = saveItem(storage, { name: 'City bike', category: 'bike', price: '400', purchased: '2024-01-01', condition: 'good', notes: 'blue' }, true);
+  assert.equal(saved.ok, true);
+  assert.equal(saved.item.care, null);
+  assert.deepEqual(suggestCare('City bike', 'bike').everyDays, 90);
+  assert.equal(confirmCare(storage, saved.item.id, suggestCare('City bike'), false).ok, false);
+  assert.equal(confirmCare(storage, saved.item.id, { everyDays: 90, task: 'Check the chain, tires, and brakes.' }, true).ok, true);
+  const range = valueRange({ price: 400, purchased: '2024-01-01', condition: 'good', today: '2026-01-01' });
+  assert.equal(range.note.includes('Not an appraisal'), true);
+  assert.equal(range.low < range.high, true);
+  const draft = listingDraft({ name: 'City bike', condition: 'good', notes: 'blue', price: '400', purchased: '2024-01-01' }, '2026-01-01');
+  assert.equal(draft.posted, false);
+  assert.equal(draft.title, 'City bike');
+  assert.equal(draft.priceLow <= draft.priceHigh, true);
+  const due = reminderList([{ ...saved.item, care: { everyDays: 1, task: 'Check', from: '2020-01-01' } }], '2026-01-01');
+  assert.equal(due[0].ready, true);
+  const page = readFileSync(new URL('../ihavit.html', import.meta.url), 'utf8');
+  assert.match(page, /Debit = you owe/);
+  assert.match(page, /IselIt/);
+  const ask = readFileSync(new URL('../js/device-ask.mjs', import.meta.url), 'utf8');
+  assert.match(ask, /id="device-ask-x"/);
+  assert.match(ask, />Allow</);
+  assert.match(ask, />Not now</);
+  assert.equal(ask.includes('getUserMedia'), false);
+  assert.equal(ask.includes('requestPermission'), false);
+  assert.equal(ask.includes('credentials'), false);
+});

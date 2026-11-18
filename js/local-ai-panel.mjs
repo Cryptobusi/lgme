@@ -6,6 +6,7 @@ import { draftWithHelper, localAiReady, pickHelperSync } from './one-tap.mjs';
 import { dockChipsOf } from './variant-schema.mjs';
 import { NOTICE, UNPUBLISHED, deletePending, editPending, holdPrivate, incognitoOn, installIncognitoGuard, listPending, setIncognito, shareApproved, sharePreview, voiceInputAllowed } from './incognito.mjs';
 import { installPressFeedback, playTick, soundsOn } from './press-feedback.mjs';
+import { askDevice, deviceAllowed } from './device-ask.mjs';
 
 const FLAG = 'Only available online with AI enabled.';
 const AI_CHIPS = ['Log a workout', 'Make an IdidIt receipt', 'What can I do here?', 'I want something', 'I have something'];
@@ -890,6 +891,14 @@ function mount() {
       return;
     }
     if (hidden && onDevice) heard.processLocally = true;
+    if (!deviceAllowed('microphone')) {
+      askDevice({
+        kind: 'microphone',
+        purpose: 'The microphone types what you say on this phone. Audio is not sent. The browser asks only after Allow.',
+        allow: () => startListen()
+      });
+      return;
+    }
     heard.lang = navigator.language || 'en-US';
     heard.interimResults = true;
     heard.continuous = false;

@@ -17,6 +17,7 @@ import { fetchLgmePrice as quoteLgme } from './lgme-price.mjs';
 import { ensureDeviceKey, signDevice } from './device-sign.mjs';
 import { REPAIR_STATUSES } from './repair-follow.mjs';
 import { DEV_TEAM_HREF, helpPath } from './category-help.mjs';
+import { askDevice } from './device-ask.mjs';
 
 const sessionKeys = new Map();
 const sessionCrypto = new Map();
@@ -2135,7 +2136,7 @@ function selfieStep(peer) {
   const start = h('button', { type: 'button', onClick: async () => {
     stopAnyCamera();
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      const stream = await new Promise((resolve, reject) => askDevice({ kind: 'camera', purpose: 'The camera preview stays on this phone. Nothing is uploaded. The browser asks only after Allow.', allow: () => navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } }).then(resolve, reject), deny: () => reject(new Error('Not now')) }));
       video.hidden = false;
       video.srcObject = stream;
       await video.play();
@@ -2422,7 +2423,7 @@ async function startScan(video, incoming, preview, onFound) {
     return;
   }
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    const stream = await new Promise((resolve, reject) => askDevice({ kind: 'camera', purpose: 'The camera reads a code on this phone. Nothing is uploaded. The browser asks only after Allow.', allow: () => navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }).then(resolve, reject), deny: () => reject(new Error('Not now')) }));
     video.hidden = false;
     video.srcObject = stream;
     await video.play();
@@ -2699,7 +2700,7 @@ function showCapture(seat, link = {}) {
     save.hidden = true;
     shutter.hidden = false;
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: false });
+      stream = await new Promise((resolve, reject) => askDevice({ kind: 'camera', purpose: 'The camera stays on this phone. Nothing is uploaded. The browser asks only after Allow.', allow: () => navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: false }).then(resolve, reject), deny: () => reject(new Error('Not now')) }));
       live.srcObject = stream;
       await live.play();
       stopCamera = stopStream;
@@ -4340,8 +4341,16 @@ async function renderSources() {
           setStatus('This browser has no notification setting. The badge still works.', 'bad');
           return;
         }
-        const choice = await Notification.requestPermission();
-        setStatus(choice === 'granted' ? 'Notifications allowed on this device. Nothing was contacted.' : 'Notifications stay off. The badge still works.', choice === 'granted' ? 'ok' : 'bad');
+        askDevice({
+          kind: 'notifications',
+          purpose: 'A badge can remind you on this phone. The browser asks only after Allow. Nothing is contacted.',
+          allow: () => {
+            Notification.requestPermission().then((choice) => {
+              setStatus(choice === 'granted' ? 'Notifications allowed on this device. Nothing was contacted.' : 'Notifications stay off. The badge still works.', choice === 'granted' ? 'ok' : 'bad');
+            }).catch(() => setStatus('Notifications stay off. The badge still works.', 'bad'));
+          },
+          deny: () => setStatus('Notifications stay off. The badge still works.', 'bad')
+        });
       } }, ['Allow notifications'])
     ])
   ]);

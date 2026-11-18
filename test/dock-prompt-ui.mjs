@@ -69,6 +69,7 @@ const off = await page.locator('#ai-mic-btn').evaluate((node) => ({
 }));
 if (!off.off || off.pressed !== 'false' || !/176,\s*0,\s*32/.test(off.bg)) failures.push(`mic off ${JSON.stringify(off)}`);
 await page.locator('#ai-mic-btn').click();
+await page.locator('#device-allow').click();
 const listening = await page.locator('#ai-mic-btn').evaluate((node) => ({
   on: node.classList.contains('is-listening'),
   pressed: node.getAttribute('aria-pressed'),

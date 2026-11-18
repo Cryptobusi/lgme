@@ -1,5 +1,6 @@
 import { draftWithHelper, pickHelperSync } from './one-tap.mjs';
 import { VOICE_BLOCKED, incognitoOn, voiceInputAllowed } from './incognito.mjs';
+import { askDevice, deviceAllowed } from './device-ask.mjs';
 
 export function rankPages(pages, query) {
   const words = String(query || '').toLowerCase().split(/[^a-z0-9]+/).filter((word) => word.length > 1);
@@ -96,6 +97,14 @@ if (list && form && field) {
       return;
     }
     if (incognitoOn(localStorage) && onDevice) heard.processLocally = true;
+    if (!deviceAllowed('microphone')) {
+      askDevice({
+        kind: 'microphone',
+        purpose: 'The microphone types what you want on this phone. Audio is not sent. The browser asks only after Allow.',
+        allow: () => mic.click()
+      });
+      return;
+    }
     heard.lang = navigator.language || 'en-US';
     heard.interimResults = true;
     heard.continuous = false;

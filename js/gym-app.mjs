@@ -26,6 +26,7 @@ import { CLARIFICATIONS, COVENANT_TITLE, FIELD_LABELS, covenantHash, covenantSec
 import { LEGACY_TOPIC, TESTNET_TOPIC, creditReport, mirrorMatch, sponsorshipReady } from './sponsor-report.mjs';
 import { suggestThird } from './high-value.mjs';
 import { AGE_LABEL, COLLECT_LABEL, SHARE_LABEL, healthConsent, mayCollect, mayShare, readHealthConsent, revokeShare, writeHealthConsent } from './health-safeguards.mjs';
+import { askDevice } from './device-ask.mjs';
 import { paintHealthAnchor } from './health-anchor.mjs';
 import { addReview, approveLimitRaise, breakSplit, intakeParts, intakeStatusText, publicIntake, requestLimitRaise, reviewHash } from './intake.mjs';
 import { changeSteward, groupSteward, isGroupAdmin, isTrainer, majoritySteward, queueFor, routeSteward, setTrainer, sponsorIds, stewardEligible, trainingOffer } from './steward.mjs';
@@ -809,7 +810,11 @@ async function keepAgent(text) {
   const saved = saveAgent(localStorage, text);
   if (!saved.ok) { status(saved.error); return; }
   if (needsPermission(saved.agent) && before === 0 && globalThis.Notification && Notification.permission === 'default') {
-    try { await Notification.requestPermission(); } catch { /* permission stays unset */ }
+    askDevice({
+      kind: 'notifications',
+      purpose: 'A helper can remind you on this phone. The browser asks only after Allow. Nothing is sent.',
+      allow: () => { try { Notification.requestPermission(); } catch { /* permission stays unset */ } }
+    });
   }
   await arm(saved.agent);
   const note = document.createElement('p');

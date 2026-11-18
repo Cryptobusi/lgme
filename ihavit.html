@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en" class="is-one-tab">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>IhavIt · My things</title>
+  <meta name="description" content="Things you own, kept on this phone, with a care schedule and an estimate that is not an appraisal." />
+  <link rel="stylesheet" href="/site-nav.css" />
+  <style>
+    body { margin:0 auto; max-width:40rem; background:#0c100c; color:#f4f1e8; font:13px/1.4 Figtree, sans-serif; padding:0.6rem 0.7rem 42vh; }
+    h1 { font-size:18px; margin:0.2rem 0; }
+    h2, h3 { font-size:16px; margin:0.4rem 0; }
+    label { display:block; font-size:11px; letter-spacing:0.04em; text-transform:uppercase; color:#c6a15b; margin-top:0.35rem; }
+    input, select, textarea { width:100%; box-sizing:border-box; min-height:44px; font:inherit; padding:0.4rem 0.55rem; border:1px solid #c6a15b; border-radius:8px; background:#0c100c; color:#f4f1e8; }
+    button { min-height:44px; min-width:44px; margin:0.35rem 0.35rem 0 0; font:inherit; border-radius:8px; border:1px solid #c6a15b; background:#c6a15b; color:#1a1408; font-weight:700; }
+    .frame { border:1px solid #c6a15b; border-radius:8px; padding:0.55rem 0.65rem; margin:0.45rem 0; }
+    ul { list-style:none; margin:0; padding:0; }
+    #iselit-draft[hidden] { display:none; }
+  </style>
+</head>
+<body>
+  <article class="frame">
+    <h1>IhavIt · My things</h1>
+    <p>Health is the only open category. These items stay on this phone. Nothing is written to mainnet. Nothing is kept until you tap OK.</p>
+    <ul>
+      <li>Debit = you owe.</li>
+      <li>Credit = you lend.</li>
+      <li>Creo = value you create (the IdidIt currency).</li>
+    </ul>
+  </article>
+  <form class="frame" id="ihavit-form">
+    <label for="ihavit-name">Name</label><input id="ihavit-name" maxlength="80" />
+    <label for="ihavit-category">Category</label><input id="ihavit-category" maxlength="40" />
+    <label for="ihavit-photo">Photo, optional</label><input id="ihavit-photo" type="file" accept="image/*" />
+    <label for="ihavit-purchased">Purchase date</label><input id="ihavit-purchased" type="date" />
+    <label for="ihavit-price">Purchase price</label><input id="ihavit-price" inputmode="decimal" maxlength="12" />
+    <label for="ihavit-condition">Condition</label>
+    <select id="ihavit-condition"><option>new</option><option>like new</option><option>good</option><option>fair</option><option>poor</option></select>
+    <label for="ihavit-notes">Serial or notes</label><textarea id="ihavit-notes" maxlength="280"></textarea>
+    <label for="ihavit-warranty">Warranty date</label><input id="ihavit-warranty" type="date" />
+    <button type="button" id="ihavit-save">OK</button>
+    <p id="ihavit-status" role="status"></p>
+  </form>
+  <h2>On this phone</h2>
+  <ul id="ihavit-list"></ul>
+  <article class="frame" id="iselit-draft" hidden>
+    <h2>IselIt draft</h2>
+    <p id="iselit-title"></p>
+    <p id="iselit-body"></p>
+    <button type="button" id="iselit-ok">OK</button>
+  </article>
+  <h2>Reminders</h2>
+  <button type="button" id="ihavit-remind">Remind me</button>
+  <ul id="ihavit-reminders"></ul>
+  <script type="module" src="/js/ihavit.mjs"></script>
+  <script src="/js/site-nav.js"></script>
+</body>
+</html>

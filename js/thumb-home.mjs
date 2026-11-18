@@ -9,6 +9,7 @@ import { localAiReady } from './one-tap.mjs';
 import { gateDecision, nextAccess, signinAllowed } from './confirm-gate.mjs';
 import { ensureDeviceKey, signDevice } from './device-sign.mjs';
 import { NO_FINGERPRINT, fingerprintErrorLine, fingerprintGuideHtml, finishFingerprintPrompt, fingerprintSupported, prepareFingerprintPrompt, startFingerprintPrompt } from './passkey-signin.mjs';
+import { askDevice } from './device-ask.mjs';
 
 function setDot(id, kind, label) {
   const dot = document.getElementById(id);
@@ -155,7 +156,7 @@ if (root) {
       ['Inanity', '/ihelpit', false],
       ['Settings', '/gym#/more', false],
       ['IwantIT', '/gym#/', false],
-      ['IhavIT', '/gym#/', false],
+      ['IhavIT', '/ihavit', false],
       ['IhelpIT', '/ihelpit', false]
     ]) {
       const link = document.createElement('a');
@@ -367,6 +368,15 @@ if (root) {
   };
   const tapFingerprint = (button, allow) => {
     button.addEventListener('click', () => {
+      askDevice({
+        kind: 'fingerprint',
+        purpose: 'This uses the fingerprint sensor to sign in on this phone. The browser asks only after Allow.',
+        allow: () => { runFingerprintTap(button, allow); }
+      });
+    });
+  };
+  const runFingerprintTap = (button, allow) => {
+    {
       showGuide(button, 2);
       button.classList.add('is-scanning');
       if (allow && !allow()) {
@@ -393,7 +403,7 @@ if (root) {
       fingerReady = null;
       armFingerprint();
       followFingerprint(button, pending);
-    });
+    }
   };
   tapFingerprint(board.querySelector('#access-fingerprint'));
   tapFingerprint(board.querySelector('#fingerprint-setup'), () => {
@@ -530,6 +540,13 @@ if (root) {
     };
     armGate();
     dialog.querySelector('#gate-passkey').onclick = () => {
+      askDevice({
+        kind: 'fingerprint',
+        purpose: 'This uses the fingerprint sensor so a person can confirm. The browser asks only after Allow.',
+        allow: () => { runGateFingerprint(); }
+      });
+    };
+    const runGateFingerprint = () => {
       let emailHash = '';
       try { emailHash = JSON.parse(localStorage.getItem('lgme.demo.member') || '{}').emailHash || ''; } catch { /* the code path stays */ }
       const statusLine = dialog.querySelector('#gate-status');
@@ -576,29 +593,29 @@ if (root) {
       }).catch((error) => {
         statusLine.innerHTML = fingerprintGuideHtml('fail', fingerprintErrorLine(error), { setup: error?.kind === 'get' || error?.code === 'missing' });
       });
-    };
-    if (statusLine.dataset.guide !== '1') statusLine.dataset.guide = '1';
-    else return;
-    statusLine.addEventListener('click', (event) => {
-      if (event.target.closest('.fingerprint-again')) button.click();
-      if (!event.target.closest('.fingerprint-setup')) return;
-      const ready = fingerCreate?.ok ? fingerCreate : (gateReady?.kind === 'create' ? gateReady : null);
-      statusLine.innerHTML = fingerprintGuideHtml(2);
-      if (!ready?.ok) {
-        statusLine.innerHTML = fingerprintGuideHtml('fail', ready?.message || 'No passkey on this phone yet.', { setup: true });
-        return;
-      }
-      let pending;
-      try { pending = startFingerprintPrompt({ ...ready, kind: 'create' }); }
-      catch (error) {
-        statusLine.innerHTML = fingerprintGuideHtml('fail', fingerprintErrorLine(error), { setup: error.code === 'missing' });
-        return;
-      }
-      statusLine.innerHTML = fingerprintGuideHtml(3);
-      pending.catch((error) => {
-        statusLine.innerHTML = fingerprintGuideHtml('fail', fingerprintErrorLine(error), { setup: true });
+      if (statusLine.dataset.guide === '1') return;
+      statusLine.dataset.guide = '1';
+      statusLine.addEventListener('click', (event) => {
+        if (event.target.closest('.fingerprint-again')) button.click();
+        if (!event.target.closest('.fingerprint-setup')) return;
+        const nextReady = fingerCreate?.ok ? fingerCreate : (gateReady?.kind === 'create' ? gateReady : null);
+        statusLine.innerHTML = fingerprintGuideHtml(2);
+        if (!nextReady?.ok) {
+          statusLine.innerHTML = fingerprintGuideHtml('fail', nextReady?.message || 'No passkey on this phone yet.', { setup: true });
+          return;
+        }
+        let createPending;
+        try { createPending = startFingerprintPrompt({ ...nextReady, kind: 'create' }); }
+        catch (error) {
+          statusLine.innerHTML = fingerprintGuideHtml('fail', fingerprintErrorLine(error), { setup: error.code === 'missing' });
+          return;
+        }
+        statusLine.innerHTML = fingerprintGuideHtml(3);
+        createPending.catch((error) => {
+          statusLine.innerHTML = fingerprintGuideHtml('fail', fingerprintErrorLine(error), { setup: true });
+        });
       });
-    });
+    };
     dialog.querySelector('#gate-totp-go').onclick = async () => {
       let address = '';
       try { address = sessionStorage.getItem('lgme.access.email') || ''; } catch { /* ask for the email code */ }
@@ -626,6 +643,29 @@ if (root) {
       messages.addEventListener('click', () => {
         const badges = board.querySelector('#attest-badges');
         badges.hidden = !badges.hidden;
+        const panel = document.getElementById('message-panel');
+        if (!panel) return;
+        panel.hidden = false;
+        const list = document.getElementById('message-list');
+        const empty = document.getElementById('message-empty');
+        let rows = [];
+        try { rows = JSON.parse(localStorage.getItem('lgme.messages.mine') || '[]'); } catch { rows = []; }
+        list.replaceChildren(...(Array.isArray(rows) ? rows : []).map((row) => Object.assign(document.createElement('li'), { textContent: row.text || '' })));
+        empty.hidden = list.childElementCount > 0;
+        const ok = document.getElementById('message-ok');
+        if (ok && ok.dataset.bound !== '1') {
+          ok.dataset.bound = '1';
+          ok.addEventListener('click', () => {
+            const text = document.getElementById('message-draft').value.trim();
+            if (!text) { document.getElementById('message-status').textContent = 'Write a message, then tap OK.'; return; }
+            rows = Array.isArray(rows) ? rows : [];
+            rows.push({ text, sent: false });
+            localStorage.setItem('lgme.messages.mine', JSON.stringify(rows));
+            document.getElementById('message-status').textContent = 'Kept on this phone. Not sent.';
+            list.append(Object.assign(document.createElement('li'), { textContent: text }));
+            empty.hidden = true;
+          });
+        }
       });
     }
     board.querySelector('#my-credits-balance').textContent = member ? `Balance ${formatCredits(book.balances?.[member] || 0)}` : 'Sign in to see your Creo.';
