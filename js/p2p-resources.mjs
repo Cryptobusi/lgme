@@ -157,5 +157,16 @@ export const ARTICLES = [
       { type: 'p', text: 'Each $lgme bundle on this book carries a serial from the opening line. A receipt checks that chain. If the same serial names two next owners, both books get a signed fraud proof and the cheater’s floor and standing move against them.' },
       { type: 'p', text: 'The service worker can keep the app shell for the next visit. It does not make an offline spend valid.' }
     ]
+  },
+  {
+    id: 'resources-public',
+    kicker: 'Outside pages',
+    title: 'Public sources',
+    deck: 'Three public pages. They do not decide changes here.',
+    blocks: [
+      { type: 'link', href: 'https://ica.coop/en/cooperatives/cooperative-identity', text: 'The ICA Statement on the Cooperative Identity gives the definition of a cooperative, including one member, one vote in a primary cooperative, as an outside reference for later. Until a majority member-governance threshold is established, the original developer remains the sole decider on changes.' },
+      { type: 'link', href: 'https://www.nature.com/articles/s41598-023-33184-1', text: 'Mattsson, Criscione, and Takes (2023), in Scientific Reports, use Sarafu’s real transactions in Kenya to show that this community currency circulated locally among people who farm, labour, sell food, and run shops.' },
+      { type: 'link', href: 'https://www.nature.com/articles/s41597-022-01539-4', text: 'The Sarafu Community Inclusion Currency 2020–2021 paper in Scientific Data describes the published dataset of Sarafu accounts and transactions, a public account a reader can check.' }
+    ]
   }
 ];

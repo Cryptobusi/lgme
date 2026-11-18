@@ -596,10 +596,22 @@ test('resources magazine keeps the explainer sections', () => {
     'Found on OfferUp (DC area)',
     'Reconcile as donation to the floor',
     'THANK YOU FOR YOUR SUPPORT.',
-    'How this desk stays shut'
+    'How this desk stays shut',
+    'Public sources',
+    'https://ica.coop/en/cooperatives/cooperative-identity',
+    'https://www.nature.com/articles/s41598-023-33184-1',
+    'https://www.nature.com/articles/s41597-022-01539-4',
+    'one member, one vote in a primary cooperative',
+    'original developer remains the sole decider on changes',
+    'majority member-governance threshold'
   ]) {
     assert.equal(text.includes(phrase), true, phrase);
   }
+  const sources = text.slice(text.indexOf("id: 'resources-public'"));
+  assert.equal(sources.includes('$Trust'), false);
+  assert.equal(/members (now |already )?(decide|vote on) changes/i.test(sources), false);
+  assert.equal(sources.includes('cooperative is formed'), false);
+  assert.equal(sources.includes('mutual credit'), false);
 });
 
 test('pages stay simulation-only', () => {
