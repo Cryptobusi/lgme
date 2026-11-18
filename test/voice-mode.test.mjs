@@ -21,7 +21,7 @@ test('voice replies spell minutes, speed, and steps', () => {
   assert.equal(stepPick('2'), 2);
   assert.equal(stepPick('log a workout'), 0);
   const panel = readFileSync(new URL('../js/local-ai-panel.mjs', import.meta.url), 'utf8');
-  assert.equal(panel.includes('Do all in order'), true);
+  assert.equal(panel.includes('Do all in order'), false);
   assert.equal(panel.includes('ai-step-no'), true);
   assert.equal(panel.includes('speechSynthesis'), true);
   assert.equal(panel.includes('processLocally = true'), true);

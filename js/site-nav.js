@@ -1,6 +1,6 @@
 (function () {
   var EPOCH = '2';
-  var CURRENT = { 'lgme-v223': 1, 'lgme-gym-v81': 1 };
+  var CURRENT = { 'lgme-v224': 1, 'lgme-gym-v81': 1 };
   function keep(name) {
     if (!name) return true;
     if (name === 'lgme.reset.epoch' || name === 'lgme.reset.note' || name === 'lgme.device.key' || name === 'lgme-gym.seat' || name === 'lgme.health.book' || name === 'lgme.health.email' || name === 'lgme.health.plan' || name === 'lgme.health.contact' || name === 'lgme.health.contactGrants' || name === 'lgme.health.consent' || name === 'lgme.demo.member') return true;
@@ -111,11 +111,37 @@
     if (button.dataset.bound === '1') return;
     button.dataset.bound = '1';
     var menu = document.getElementById('one-menu');
-    button.addEventListener('click', function () {
+    if (!menu) {
+      menu = document.createElement('div');
+      menu.id = 'one-menu';
+      menu.hidden = true;
+      button.insertAdjacentElement('afterend', menu);
+    }
+    var intro = menu.querySelector('[data-intro]');
+    if (!intro) {
+      intro = document.createElement('a');
+      intro.href = '/introduction';
+      intro.dataset.intro = '1';
+      intro.textContent = 'Introduction';
+    }
+    if (menu.firstElementChild !== intro) menu.insertBefore(intro, menu.firstChild);
+    var last = 0;
+    var toggle = function () {
+      var now = Date.now();
+      if (now - last < 450) return;
+      last = now;
       var open = document.documentElement.classList.toggle('is-more-open');
       button.setAttribute('aria-expanded', open ? 'true' : 'false');
-      if (menu) menu.hidden = !open;
+      menu.hidden = !open;
+    };
+    button.addEventListener('pointerdown', function (event) {
+      if (event.button && event.button !== 0) return;
+      if (button.setPointerCapture && event.pointerId != null) {
+        try { button.setPointerCapture(event.pointerId); } catch (error) { /* the tap still counts */ }
+      }
     });
+    button.addEventListener('pointerup', toggle);
+    button.addEventListener('click', toggle);
   };
   if (document.body) armOneTab();
   else document.addEventListener('DOMContentLoaded', armOneTab);

@@ -1,0 +1,597 @@
+[
+  {
+    "title": "$lgme on Solana",
+    "href": "/lgme-coin",
+    "summary": "Real $lgme token on Solana. Not financial advice. High risk; you may lose everything. Always verify the mint address."
+  },
+  {
+    "title": "1000 Seniors",
+    "href": "/test-1000",
+    "summary": "lgme · 20 October 2026 · 6-month run"
+  },
+  {
+    "title": "5000 Seniors",
+    "href": "/test-5000",
+    "summary": "lgme · 20 October 2026 · 6-month run"
+  },
+  {
+    "title": "AI + DLT for Human Agency",
+    "href": "/ai-dlt-human-agency",
+    "summary": "A design reading: pair AI with a public ledger so people keep the constraints. The browser desk is a demo. Hedera receipts, personal agents,"
+  },
+  {
+    "title": "AI help",
+    "href": "/ai-help",
+    "summary": "A page in the app."
+  },
+  {
+    "title": "Architectural foundations",
+    "href": "/foundations",
+    "summary": "Mathematical soundness of constitutional mutual credit. Floor seniority, zero-sum clearing, cross-ratio invariance, and the Two-Generation S"
+  },
+  {
+    "title": "Architecture",
+    "href": "/architecture",
+    "summary": "Architecture"
+  },
+  {
+    "title": "Bigcapital",
+    "href": "/bigcapital",
+    "summary": "lgme · Bigcapital + HomeBox"
+  },
+  {
+    "title": "Breach plan",
+    "href": "/gym/breach-plan",
+    "summary": "Draft plan for a health-data breach in the Gym beta."
+  },
+  {
+    "title": "Campus pilot",
+    "href": "/campus",
+    "summary": "A campus pilot kit for 50 to 100 members. Log a deed, attest it, and print volunteer hours."
+  },
+  {
+    "title": "Campus preview",
+    "href": "/preview-campus",
+    "summary": "Beta preview, coming next"
+  },
+  {
+    "title": "Check and balance",
+    "href": "/balance",
+    "summary": "From the study film · 23 October 2026"
+  },
+  {
+    "title": "Circles",
+    "href": "/circles",
+    "summary": "In development. Browse the example. Use IwanIT to take part."
+  },
+  {
+    "title": "Circles preview",
+    "href": "/preview-circles",
+    "summary": "Beta preview, coming next"
+  },
+  {
+    "title": "Clearing engine",
+    "href": "/clearing-engine",
+    "summary": "Sample canvas of the sovereign workflow and mutual clearing engine. Proposed design. The Third Seat is your seat, held by you alone."
+  },
+  {
+    "title": "Consciousness & Reality",
+    "href": "/consciousness",
+    "summary": "Video review · design research · alignment note"
+  },
+  {
+    "title": "Consumer health data",
+    "href": "/gym/health-data",
+    "summary": "What the Gym beta keeps on your phone, what sharing requires, and how to delete it."
+  },
+  {
+    "title": "Countermeasure",
+    "href": "/countermeasure",
+    "summary": "DTCC asset tokenization, what it changes for a retail holder, and how that rollout sits against Egonomic Anonymous, the Sovereign Provenance"
+  },
+  {
+    "title": "Credit Commons × Hederica Integration",
+    "href": "/credit-commons-hederica",
+    "summary": "Protocol Interoperability"
+  },
+  {
+    "title": "Customize",
+    "href": "/customize",
+    "summary": "Health"
+  },
+  {
+    "title": "Deployment Manifest",
+    "href": "/deployment-manifest",
+    "summary": "Hederica Index Registry: lgme.app Deployment Profile — Komunitin Mutual Credit + Hedera HCS"
+  },
+  {
+    "title": "Developer Notes",
+    "href": "/developer-notes",
+    "summary": "Below the floor"
+  },
+  {
+    "title": "Disclaimer",
+    "href": "/disclaimer",
+    "summary": "Use of lgme.app is voluntary. No liability coverage is provided. The Third Seat does not replace a court."
+  },
+  {
+    "title": "Disclosures",
+    "href": "/disclosures",
+    "summary": "What lgme is and is not: commentary and research, not an offer, not investment advice."
+  },
+  {
+    "title": "Dominion",
+    "href": "/dominion",
+    "summary": "lgme"
+  },
+  {
+    "title": "Draft bylaws",
+    "href": "/bylaws",
+    "summary": "Draft bylaws for a Hederica cooperative. Not adopted, not filed, and not legal advice. This page admits no members."
+  },
+  {
+    "title": "Draft membership agreement",
+    "href": "/membership",
+    "summary": "Draft Hederica membership agreement. Not an offer, not open for signature, and not legal advice. This page admits no members."
+  },
+  {
+    "title": "Dual-Pressure Report",
+    "href": "/dual-pressure-report",
+    "summary": "Session Report · ARCHIVE · NOT AN OFFER"
+  },
+  {
+    "title": "Egonomist",
+    "href": "/egonomist",
+    "summary": "← back to lgme"
+  },
+  {
+    "title": "Every good deed deserves another",
+    "href": "/good-deeds",
+    "summary": "How a deed locks its value, how a category pool fills, and how that pool pays for discounted help."
+  },
+  {
+    "title": "Examine",
+    "href": "/examine",
+    "summary": "Notes and papers being read for lgme.app, newest first, with a plain summary and open questions."
+  },
+  {
+    "title": "Exchange",
+    "href": "/exchange",
+    "summary": "Beta. Peer-to-peer exchange that settles real $lgme from your own Solana wallet. Separate books, countersigned agreements, third-seat refusa"
+  },
+  {
+    "title": "Exchange preview",
+    "href": "/preview-exchange",
+    "summary": "Beta preview, coming next"
+  },
+  {
+    "title": "From Debit and Credit to Creo",
+    "href": "/from-debit-and-credit-to-creo",
+    "summary": "Etymological epistemology, potential-energy monetary theory, and the tripartite cooperative architecture of Creo."
+  },
+  {
+    "title": "Game Theory",
+    "href": "/game-theory",
+    "summary": "lgme · 20 October 2026 · game theory"
+  },
+  {
+    "title": "Gem",
+    "href": "/gem",
+    "summary": "Research view. Draft an IDidIt receipt and check a line against the canonical order. Drafts stay on this device. The tape reads the testnet "
+  },
+  {
+    "title": "Glossary",
+    "href": "/glossary",
+    "summary": "Framework words, everyday names, and what they do on lgme.app."
+  },
+  {
+    "title": "Grants",
+    "href": "/grants",
+    "summary": "Research program for design research and community pilots. Not written to Hedera. A real gift uses soBeIT on the coin page."
+  },
+  {
+    "title": "Health club community",
+    "href": "/health-club",
+    "summary": "A health club time-and-deed bank: members, trainers, and the front desk."
+  },
+  {
+    "title": "Healthy, Wealthy, and Wise",
+    "href": "/healthy-wealthy-wise",
+    "summary": "Theoretical Evaluation & Systems Architecture"
+  },
+  {
+    "title": "Hederica",
+    "href": "/hederica",
+    "summary": "A non-profit mutual book. Unrecorded civic work, inscribed on Hedera for a tenth of a cent, ahead of any speculative mint."
+  },
+  {
+    "title": "Help",
+    "href": "/help",
+    "summary": "What lgme.app is, how to start, and what is live."
+  },
+  {
+    "title": "Help develop a category",
+    "href": "/develop",
+    "summary": "Categories"
+  },
+  {
+    "title": "HomeBox",
+    "href": "/homebox",
+    "summary": "lgme · HomeBox Integration"
+  },
+  {
+    "title": "Hosts",
+    "href": "/hosts",
+    "summary": "In development. Browse the example. Use IwanIT to take part."
+  },
+  {
+    "title": "Hosts preview",
+    "href": "/preview-hosts",
+    "summary": "Beta preview, coming next"
+  },
+  {
+    "title": "How it works",
+    "href": "/how-it-works",
+    "summary": "Beta. How lgme.app settles real Solana $lgme, keeps the floor senior, and lets the third seat refuse. Definitions from Egonomic Anonymous."
+  },
+  {
+    "title": "How the order works",
+    "href": "/order",
+    "summary": "A plain-English explainer of the nine-stage order. One cycle of the book, with worked numbers. Not a price and not a claim that the site alr"
+  },
+  {
+    "title": "Human Nature & the Egonomic Architecture",
+    "href": "/human-nature-synthesis",
+    "summary": "Synthesis · Human Nature · Relational Dynamics · Architecture"
+  },
+  {
+    "title": "IhelpIT",
+    "href": "/ihelpit",
+    "summary": "Proposed. In development. Not built. Browse only."
+  },
+  {
+    "title": "Introduction",
+    "href": "/introduction",
+    "summary": "A short summary of lgme and a searchable index of every page on this phone."
+  },
+  {
+    "title": "Join Health",
+    "href": "/join",
+    "summary": "Open a Health invite. Verify your email, confirm you are 18 or older, then the setup fee."
+  },
+  {
+    "title": "lgme",
+    "href": "/index",
+    "summary": "Notice: back in testnet for troubleshooting. Keep learning, earning, never boring. A- A+ x"
+  },
+  {
+    "title": "lgme Gym",
+    "href": "/gym",
+    "summary": "The health club beta. Sessions, groups, and support on your phone."
+  },
+  {
+    "title": "LGME.APP",
+    "href": "/my-picture",
+    "summary": "Prototype. Sample LGME.APP phone for sovereign mutual clearing. Data stays on this device."
+  },
+  {
+    "title": "lgme.app • Mutual credit",
+    "href": "/mutual-credit",
+    "summary": "Komunitin Mutual Credit Clearing + Auto-Secure Bilateral Ed25519. Nothing on this page is anchored or written to Hedera."
+  },
+  {
+    "title": "Live check",
+    "href": "/live-check",
+    "summary": "23 October 2026 · all five"
+  },
+  {
+    "title": "Manifesto",
+    "href": "/manifesto",
+    "summary": "Manifesto"
+  },
+  {
+    "title": "Marketing &amp; Adoption",
+    "href": "/marketing",
+    "summary": "How people can start using lgme.app. What is live, what is partly live, and what is still a plan."
+  },
+  {
+    "title": "Member Covenant",
+    "href": "/gym/covenant",
+    "summary": "lgme · Gym beta"
+  },
+  {
+    "title": "Member Covenant",
+    "href": "/gym-covenant",
+    "summary": "lgme · Gym beta"
+  },
+  {
+    "title": "Member Intake",
+    "href": "/gym/intake-protocol",
+    "summary": "lgme · Gym beta"
+  },
+  {
+    "title": "Memory That Walks: Video Synthesis & lgme.app Recommendations",
+    "href": "/memory-that-walks-recommendations",
+    "summary": "Epistemology, Provenance & Systemic Memory"
+  },
+  {
+    "title": "My Picture",
+    "href": "/my-picture-classic",
+    "summary": "Prototype. Sample My Picture for deeds, offers, wishes, and duties. Data stays on this device."
+  },
+  {
+    "title": "Neighbor help preview",
+    "href": "/neighbors",
+    "summary": "Beta preview, coming next"
+  },
+  {
+    "title": "Neighbor help preview",
+    "href": "/preview-neighbor",
+    "summary": "Beta preview, coming next"
+  },
+  {
+    "title": "Next milestones",
+    "href": "/milestones",
+    "summary": "lgme"
+  },
+  {
+    "title": "NSWO",
+    "href": "/nswo",
+    "summary": "lgme"
+  },
+  {
+    "title": "One-Tap Entry demo",
+    "href": "/tap-entry",
+    "summary": "Sample demo. Capture a Did, Sell, Wish, Duty, or Responsible entry, correct an on-device pre-fill, and dual-confirm it onto a sample Tape. N"
+  },
+  {
+    "title": "Opportunity",
+    "href": "/opportunity",
+    "summary": "Observed parallel: Sovereign Provenance (Modern Ancients) and the lgme book. Design note, not an offer."
+  },
+  {
+    "title": "Owner notices",
+    "href": "/owner",
+    "summary": "Desk"
+  },
+  {
+    "title": "Photo credits",
+    "href": "/credits",
+    "summary": "Authors and licenses for the photographs on lgme.app."
+  },
+  {
+    "title": "Plain English",
+    "href": "/plain-english",
+    "summary": "What the campus desk is, how to log a deed, how Creo works, and how to stay safe."
+  },
+  {
+    "title": "Preparation",
+    "href": "/preparation",
+    "summary": "lgme / Preparation"
+  },
+  {
+    "title": "Programmable credit",
+    "href": "/mock-programmable-money",
+    "summary": "lgme · on the desk · not an offer"
+  },
+  {
+    "title": "Protocol reading",
+    "href": "/protocol",
+    "summary": "lgme · appended 15 November 2026"
+  },
+  {
+    "title": "Pumpup The Floor",
+    "href": "/pumpup",
+    "summary": "Sovereign Provenance Protocol"
+  },
+  {
+    "title": "Redirecting to soBEIT",
+    "href": "/icmdit",
+    "summary": "This page has been renamed. Continue to soBEIT ."
+  },
+  {
+    "title": "Redirecting to soBEIT",
+    "href": "/sobit",
+    "summary": "This page has been renamed. Continue to soBEIT ."
+  },
+  {
+    "title": "Redirecting to soBEIT marketing",
+    "href": "/icmdit-marketing",
+    "summary": "This page has been renamed. Continue to soBEIT marketing ."
+  },
+  {
+    "title": "Redirecting to soBEIT marketing",
+    "href": "/sobit-marketing",
+    "summary": "This page has been renamed. Continue to soBEIT marketing ."
+  },
+  {
+    "title": "Revelation",
+    "href": "/revelation",
+    "summary": "Revelation. The pre-Fed counterfactual, and a policy brief on algorithmic liquidity, public floor seniority, and what the overlay does not r"
+  },
+  {
+    "title": "Reversal",
+    "href": "/reversal",
+    "summary": "Four reversals of institutional entrapment: the third seat, floor-first seniority, AGI as a local clerk, and hybrid coexistence. Follows Cou"
+  },
+  {
+    "title": "Reviving the American Dream",
+    "href": "/chetty-review",
+    "summary": "Editorial review by the lgme.app administrator of Raj Chetty's mobility research, and how local Creo differs from that prescription."
+  },
+  {
+    "title": "Run summary",
+    "href": "/mock-runs-report",
+    "summary": "lgme · summary"
+  },
+  {
+    "title": "Set up my own AI helper",
+    "href": "/helper",
+    "summary": "A page in the app."
+  },
+  {
+    "title": "soBEIT",
+    "href": "/sobeit",
+    "summary": "Programmable endowment · design research"
+  },
+  {
+    "title": "soBEIT marketing",
+    "href": "/sobeit-marketing",
+    "summary": "Marketing material · design research · not an offer"
+  },
+  {
+    "title": "soBEIT Trial",
+    "href": "/sobeit-trial",
+    "summary": "soBEIT grant trial live on Hedera testnet. EAS schemas registered. Design research."
+  },
+  {
+    "title": "SOP",
+    "href": "/sop",
+    "summary": "Strategic proposal. lgme.app as a standard operating procedure for the post-bureaucratic economy. Providence through provenance. Not an offe"
+  },
+  {
+    "title": "Sovereign Provenance Protocol",
+    "href": "/spp",
+    "summary": "lgme · 21 October 2026"
+  },
+  {
+    "title": "SoverX",
+    "href": "/soverx",
+    "summary": "SoverX · trial under lgme.app"
+  },
+  {
+    "title": "SPP framework",
+    "href": "/spp-framework",
+    "summary": "Proposed design research for the Sovereign Provenance Protocol: three seats, three currencies, and comparable real-world pilots. Not legal, "
+  },
+  {
+    "title": "SPP Workflow Map",
+    "href": "/workflow",
+    "summary": "A pannable map of the Sovereign Provenance Protocol on lgme.app. Proposed design with sample data. The Third Seat is your seat, held by you "
+  },
+  {
+    "title": "Stories",
+    "href": "/stories",
+    "summary": "In development. Browse the example. Use IwanIT to take part."
+  },
+  {
+    "title": "Stories preview",
+    "href": "/preview-stories",
+    "summary": "Beta preview, coming next"
+  },
+  {
+    "title": "Structural synthesis",
+    "href": "/structural-synthesis",
+    "summary": "Practical mechanics for three-party clearing on lgme.app: State US$, Floor Campus Credit (Creo), and the Third Seat. Proposed design with sa"
+  },
+  {
+    "title": "Study/Prerequisite",
+    "href": "/study",
+    "summary": "Before the desk"
+  },
+  {
+    "title": "Summary Test",
+    "href": "/summary-test",
+    "summary": "lgme · 20 October 2026 · summary of 6-month runs"
+  },
+  {
+    "title": "Synthesis",
+    "href": "/synthesis",
+    "summary": "lgme · 25 October 2026"
+  },
+  {
+    "title": "Technical",
+    "href": "/technical",
+    "summary": "lgme / Technical"
+  },
+  {
+    "title": "Test 300 Students",
+    "href": "/test-300",
+    "summary": "lgme · 20 October 2026 · 6-month run"
+  },
+  {
+    "title": "Testnet review",
+    "href": "/testnet-review",
+    "summary": "lgme · testnet only"
+  },
+  {
+    "title": "The Archive That Cannot Walk",
+    "href": "/archive-that-cannot-walk",
+    "summary": "Epistemology, Provenance & Systemic Memory"
+  },
+  {
+    "title": "The broken car",
+    "href": "/story",
+    "summary": "Story"
+  },
+  {
+    "title": "The latch",
+    "href": "/latch",
+    "summary": "Result · 26 October 2026 · Reference"
+  },
+  {
+    "title": "The Memory That Walks",
+    "href": "/memory-that-walks",
+    "summary": "Epistemology, Provenance & Systemic Memory"
+  },
+  {
+    "title": "The Most Secured Technology: Blockchain Applications & Provenance",
+    "href": "/blockchain-applications",
+    "summary": "Study · Blockchain · Provenance"
+  },
+  {
+    "title": "The Operating System of Enclosure",
+    "href": "/operating-system-of-enclosure",
+    "summary": "Essay · Enclosure · Provenance · Dignity"
+  },
+  {
+    "title": "The Seam Where Systems Hold",
+    "href": "/the-seam-where-systems-hold",
+    "summary": "Shorter page for a user-supplied essay on the Third Seat, Floor Seniority, and mutual-credit clearing. The full essay is on egonomicanonymou"
+  },
+  {
+    "title": "The Third Seat",
+    "href": "/the-third-seat",
+    "summary": "Egonomic Anonymous · Third edition · 30 October 2026"
+  },
+  {
+    "title": "Third Seat jurisprudence",
+    "href": "/third-seat-jurisprudence",
+    "summary": "A structural analogy between Creo's Third Seat and legal ideas of standing, precedent, and review. Not legal advice. Creo is not positive la"
+  },
+  {
+    "title": "Transcript",
+    "href": "/transcript-seat",
+    "summary": "Written report · transcription"
+  },
+  {
+    "title": "Transcript",
+    "href": "/transcript-study",
+    "summary": "Written report · transcription"
+  },
+  {
+    "title": "Turn on AI",
+    "href": "/ai-setup",
+    "summary": "How to turn on the on-device helper in this browser."
+  },
+  {
+    "title": "Versions",
+    "href": "/versions",
+    "summary": "Categories · Customize"
+  },
+  {
+    "title": "Whitepaper",
+    "href": "/whitepaper",
+    "summary": "Draft for formatting purposes only. Proposed design for the Sovereign Provenance Protocol. Not legal advice, and not a description of functi"
+  },
+  {
+    "title": "Why Must We",
+    "href": "/why-must-we",
+    "summary": "Ignoramius Rokedamius Maximus · Sovereign Provenance Research Group · 25 October 2026"
+  },
+  {
+    "title": "Wisdom &amp; motivation",
+    "href": "/wisdom",
+    "summary": "Sober Poverty maxims, a device-only daily checklist, and member wisdom."
+  }
+]

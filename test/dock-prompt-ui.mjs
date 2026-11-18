@@ -141,10 +141,14 @@ const shapes = await page.evaluate(() => {
   return { yes: yes.borderRadius, no: no.borderRadius, yesBg: yes.backgroundColor, noBg: no.backgroundColor };
 });
 if (shapes.yes === shapes.no || shapes.yesBg === shapes.noBg) failures.push('yes and no look the same');
+if ((await page.locator('#ai-do-all').count()) !== 0) failures.push('do all still shown');
 await page.locator('.ai-yes').first().click();
-if (await page.locator('#gym-ididit-confirm').count()) failures.push('yes recorded');
-if (!/Ready to log|Category:|Opened|You can log/.test(await page.locator('#ai-log').innerText())) failures.push('yes did not stage');
+await page.locator('#gym-ididit-other').waitFor();
+if (/recorded|queued/i.test(await page.locator('#ididit-status').innerText())) failures.push('yes saved');
 if (!/Not sent/.test(await page.locator('#ai-send-state').getAttribute('aria-label') || '')) failures.push('yes sent');
+await page.goto(`${base}/`, { waitUntil: 'domcontentloaded' });
+await page.locator('#ai-dock').waitFor();
+await page.locator('.ai-suggest').first().waitFor();
 const linesBefore = await page.locator('.ai-suggest').count();
 await page.locator('.ai-no').last().click();
 if (!((await page.locator('.ai-suggest').count()) < linesBefore)) failures.push('no did not dismiss');

@@ -417,6 +417,7 @@ function mount() {
         dock.classList.remove('is-voice');
         dock.dataset.sent = 'no';
         stagePrompt();
+        if (staged) executeStaged({ record: false });
       });
       no.addEventListener('click', () => {
         dismissed.add(label);
@@ -440,14 +441,6 @@ function mount() {
       row.append(badge, line, pair);
       host.append(row);
     });
-    if (!field && steps.length > 1) {
-      const all = document.createElement('button');
-      all.type = 'button';
-      all.id = 'ai-do-all';
-      all.textContent = 'Do all in order';
-      all.addEventListener('click', () => startAll(steps));
-      host.append(all);
-    }
   };
   const paintChips = (labels, field) => {
     chips.replaceChildren();
@@ -701,7 +694,7 @@ function mount() {
     staged = null;
     stagedText = '';
     rememberUse(ask.value.trim());
-    if (!plan.openDraft) note(dock.querySelector('#ai-confirm'), 'Done');
+    if (!plan.openDraft) note(dock.querySelector('#ai-confirm'), record ? 'Done' : 'Staged');
     else {
       const side = dock.querySelector('#ai-action-status');
       if (side) side.textContent = '';
@@ -710,8 +703,9 @@ function mount() {
     try { voiceTurn = sessionStorage.getItem('lgme.voice.turn') === '1'; } catch { /* the guide stays */ }
     if (!(plan.openDraft && voiceTurn)) log.textContent = plan.openDraft ? '' : plan.message;
     if (!plan.openDraft) {
-      if (matched.kind === 'screen') applyMode(localStorage, matched.mode);
-      if (matched.kind === 'local' && matched.item) saveLocalFunction(localStorage, matched.item);
+      if (record && matched.kind === 'screen') applyMode(localStorage, matched.mode);
+      if (record && matched.kind === 'local' && matched.item) saveLocalFunction(localStorage, matched.item);
+      if (!record) log.textContent = `${plan.message} Tap OK to keep it.`;
       markOverflow();
       return;
     }
@@ -747,10 +741,6 @@ function mount() {
   };
   const sendOrStage = () => {
     const text = ask.value.trim();
-    if (/^do all\b/i.test(text)) {
-      startAll([...dock.querySelectorAll('.ai-suggest-line')].map((node) => node.textContent));
-      return;
-    }
     const picked = stepPick(text);
     if (picked && stageByNumber(picked)) return;
     const plan = planSend({ staged, stagedText, text });
@@ -837,12 +827,6 @@ function mount() {
     saveQueue([]);
     stageLabel(line.textContent);
     return true;
-  };
-  const startAll = (labels) => {
-    const steps = labels.filter(Boolean);
-    if (!steps.length) return;
-    saveQueue(steps);
-    stageLabel(steps[0]);
   };
   dock.querySelector('#ai-confirm').addEventListener('click', () => {
     const rest = stepQueue.slice(1);
@@ -964,11 +948,6 @@ function mount() {
       try { sessionStorage.setItem('lgme.voice.transcript', transcript); } catch { /* the field still shows it */ }
       setMicMode('done');
       const picked = stepPick(transcript);
-      if (/^do all\b/i.test(transcript)) {
-        startAll([...dock.querySelectorAll('.ai-suggest-line')].map((node) => node.textContent));
-        tick();
-        return;
-      }
       if (picked && stageByNumber(picked)) { tick(); return; }
       stagePrompt({ guide: true });
       if (staged) executeStaged({ record: false });

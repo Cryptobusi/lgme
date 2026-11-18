@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en" class="is-one-tab">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Introduction · lgme</title>
+  <meta name="description" content="A short summary of lgme and a searchable index of every page on this phone." />
+  <link rel="stylesheet" href="/site-nav.css" />
+  <style>
+    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; }
+    body { margin:0 auto; max-width:40rem; background:var(--bg); color:var(--fg); font-family:Figtree, sans-serif; font-size:13px; line-height:1.4; padding:0.6rem 0.7rem 42vh; }
+    h1 { font-size:18px; margin:0.2rem 0; }
+    h2 { font-size:16px; margin:0.8rem 0 0.3rem; }
+    .frame { border:1px solid #c6a15b; border-radius:8px; padding:0.55rem 0.65rem; margin:0.45rem 0; }
+    label { display:block; font-size:11px; letter-spacing:0.04em; text-transform:uppercase; color:var(--gold); }
+    input { width:100%; box-sizing:border-box; min-height:44px; font:inherit; padding:0.4rem 0.55rem; border:1px solid #c6a15b; border-radius:8px; background:var(--bg); color:var(--fg); }
+    .find { display:flex; gap:0.35rem; align-items:center; margin-top:0.35rem; }
+    .find input { flex:1; }
+    button { min-height:44px; min-width:44px; font:inherit; border-radius:8px; border:1px solid #c6a15b; background:#c6a15b; color:#1a1408; font-weight:700; }
+    #intro-list, #intro-hits { list-style:none; margin:0; padding:0; }
+    #intro-list li, #intro-hits li { margin:0.35rem 0; }
+    a { color:var(--fg); }
+    .sum { display:block; color:var(--muted); font-size:13px; }
+    #intro-note { min-height:1.2em; }
+  </style>
+</head>
+<body>
+  <article class="frame" id="intro-summary">
+    <h1>Introduction</h1>
+    <p>lgme is the phone app for logging what you did, keeping Creo on this phone, and reading the papers. Health is in beta. Other categories are in development. This build is testnet. Nothing on this page is sent, saved, or minted.</p>
+    <ul id="creo-glossary">
+      <li>Debit = you owe.</li>
+      <li>Credit = you lend.</li>
+      <li>Creo = value you create (the IdidIt currency).</li>
+    </ul>
+  </article>
+  <form class="frame" id="intro-find">
+    <label for="intro-q">Find a page</label>
+    <div class="find">
+      <input id="intro-q" name="q" maxlength="160" autocomplete="off" aria-label="Find a page" />
+      <button type="button" id="intro-mic" aria-label="Say what you want">Mic</button>
+      <button type="submit">Search</button>
+    </div>
+    <p id="intro-note" role="status"></p>
+    <ul id="intro-hits"></ul>
+  </form>
+  <h2>All pages</h2>
+  <ul id="intro-list"></ul>
+  <script type="module" src="/js/introduction.mjs"></script>
+  <script src="/js/site-nav.js"></script>
+</body>
+</html>
