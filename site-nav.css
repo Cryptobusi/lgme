@@ -135,7 +135,7 @@ html[data-screen="full"] #ai-dock.is-open { height: 30vh; max-height: 30vh; }
 #ai-switch:not(.is-on) { background: #3a3f3a; color: #f4f1e8; }
 body:has(nav[aria-label="Gym"]) #ai-dock { bottom: calc(4.5rem + env(safe-area-inset-bottom)); }
 html.is-one-tab body:has(nav[aria-label="Gym"]) #ai-dock { bottom: 0; }
-.ai-top { display: flex; flex-wrap: nowrap; align-items: center; gap: 0.25rem; margin: 0 0 0.1rem; overflow-x: auto; }
+.ai-top { position: relative; z-index: 3; display: flex; flex: 0 0 auto; flex-wrap: nowrap; align-items: center; gap: 0.25rem; margin: 0 0 0.1rem; overflow-x: auto; }
 #ai-dock.is-open .ai-actions { position: relative; z-index: 2; }
 .ai-label { margin: 0; font-size: 0.72rem; letter-spacing: 0.16em; font-weight: 700; color: #F97316; }
 .ai-setup-link { min-height: 32px; display: inline-flex; align-items: center; color: #f4f1e8; }

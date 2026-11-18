@@ -5,7 +5,8 @@
   "dependencies": {
     "@hashgraph/sdk": "2.81.0",
     "@simplewebauthn/browser": "^13.2.2",
-    "@simplewebauthn/server": "^13.2.2"
+    "@simplewebauthn/server": "^13.2.2",
+    "@vercel/functions": "^3.11.3"
   },
   "overrides": {
     "@grpc/grpc-js": "1.14.7",

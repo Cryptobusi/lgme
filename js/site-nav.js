@@ -112,6 +112,11 @@
     panel.src = '/js/local-ai-panel.mjs';
     document.body.appendChild(panel);
   }
+  if (!document.querySelector('script[src="/js/visit-notice.js"]')) {
+    var visitNotice = document.createElement('script');
+    visitNotice.src = '/js/visit-notice.js';
+    document.body.appendChild(visitNotice);
+  }
   document.addEventListener('click', function (event) {
     var button = event.target.closest && event.target.closest('[data-copy]');
     if (!button || !navigator.clipboard || !navigator.clipboard.writeText) return;
