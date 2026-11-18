@@ -4,17 +4,38 @@ import { headerMap, json, readBody, readEnv } from '../lib/http.mjs';
 import { redisRest } from '../../js/redis-env.mjs';
 import { upstashStore } from '../lib/upstash.mjs';
 
+function fromAddress(value) {
+  const raw = String(value || '').trim().replace(/^["']|["']$/g, '');
+  const named = raw.match(/<([^>]+)>/);
+  const bare = raw.match(/[^\s<]+@[^\s>]+/);
+  const email = (named ? named[1] : bare ? bare[0] : '').trim();
+  if (!email.includes('@')) return '';
+  return `lgme <${email}>`;
+}
+
 async function sendWithResend(env, email, code) {
+  const from = fromAddress(env.EMAIL_FROM);
+  const fromDomain = from.split('@')[1]?.replace(/[>\s]/g, '') || 'missing';
+  if (!from) {
+    console.error(JSON.stringify({ event: 'resend.send', status: 0, fromDomain }));
+    return { ok: false };
+  }
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, 'content-type': 'application/json' },
     body: JSON.stringify({
-      from: env.EMAIL_FROM,
+      from,
       to: email,
       subject: 'Your Hederica code',
       text: `Your Hederica code is ${code}. It expires in 10 minutes. If you did not ask, ignore this message.`
     })
   });
+  let name = '';
+  try {
+    const body = await response.clone().json();
+    name = String(body?.name || '').replace(/[^a-z0-9_-]/gi, '').slice(0, 40);
+  } catch { /* status is enough */ }
+  if (!response.ok) console.error(JSON.stringify({ event: 'resend.send', status: response.status, fromDomain, name }));
   return { ok: response.ok };
 }
 
