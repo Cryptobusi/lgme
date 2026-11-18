@@ -61,7 +61,7 @@ export function saveItem(storage, spec, ok) {
     condition: CONDITIONS.includes(spec.condition) ? spec.condition : 'good',
     notes: String(spec.notes || '').trim().slice(0, 280),
     warranty: String(spec.warranty || '').slice(0, 10),
-    care: null
+    care: spec.id ? (spec.care || null) : null
   };
   const items = readItems(storage).filter((row) => row.id !== item.id);
   items.unshift(item);
@@ -77,9 +77,84 @@ export function confirmCare(storage, id, care, ok) {
   const items = readItems(storage);
   const item = items.find((row) => row.id === id);
   if (!item) return { ok: false, error: 'That item is not on this phone.' };
-  item.care = { everyDays: days, task, from: new Date().toISOString().slice(0, 10) };
+  item.care = {
+    everyDays: days,
+    task,
+    from: new Date().toISOString().slice(0, 10),
+    quote: String(care?.quote || '').slice(0, 180),
+    page: care?.page || null,
+    source: care?.source === 'manual' ? 'manual' : 'general'
+  };
   storage.setItem(ITEM_KEY, JSON.stringify(items));
   return { ok: true, item };
+}
+
+export const FILE_LIMITS = Object.freeze({ photo: 2000000, video: 8000000, manual: 4000000, receipt: 2000000, total: 40000000 });
+export const OCR_NOTE = 'Words are read from PDF manuals. A photo or scanned page is stored, but this phone does not read words off a picture.';
+
+export function acceptFile(kind, size, used) {
+  const cap = FILE_LIMITS[kind];
+  if (!cap || size <= 0) return { ok: false, error: 'That file is not one of the kinds this page keeps.' };
+  if (size > cap) return { ok: false, error: `That ${kind} is over the limit.` };
+  if (used + size > FILE_LIMITS.total) return { ok: false, error: 'This phone is full for My things.' };
+  return { ok: true };
+}
+
+export function storageMeter(used) {
+  const total = FILE_LIMITS.total;
+  const safe = Math.max(0, Number(used) || 0);
+  return { used: safe, total, label: `${(safe / 1000000).toFixed(1)} MB of ${(total / 1000000).toFixed(0)} MB on this phone` };
+}
+
+export function careFromManual(pages, name, category = '') {
+  const unit = { day: 1, days: 1, week: 7, weeks: 7, month: 30, months: 30, year: 365, years: 365 };
+  const suggestions = [];
+  for (const sheet of pages || []) {
+    const text = String(sheet?.text || '');
+    const pattern = /([^.|\n]{0,90}\bevery\s+(\d{1,3})\s+(day|days|week|weeks|month|months|year|years)\b[^.|\n]{0,90})/gi;
+    let match = pattern.exec(text);
+    while (match) {
+      suggestions.push({
+        task: match[1].replace(/\s+/g, ' ').trim().slice(0, 160),
+        everyDays: Number(match[2]) * unit[match[3].toLowerCase()],
+        page: sheet.page || 1,
+        quote: match[1].replace(/\s+/g, ' ').trim().slice(0, 180),
+        source: 'manual'
+      });
+      match = pattern.exec(text);
+    }
+  }
+  if (!suggestions.length) {
+    const general = suggestCare(name, category);
+    return {
+      found: false,
+      note: 'No routine was found in the manual.',
+      suggestions: [{ ...general, page: null, quote: '', source: 'general', label: 'General guidance, not from the manual.' }]
+    };
+  }
+  return { found: true, note: 'From the manual. Tap OK before a reminder is created.', suggestions: suggestions.slice(0, 6) };
+}
+
+export function receiptHints(text) {
+  const src = String(text || '');
+  const iso = src.match(/\b(20\d{2}-\d{2}-\d{2})\b/);
+  const us = src.match(/\b(\d{1,2})\/(\d{1,2})\/(20\d{2})\b/);
+  const money = src.match(/(?:total|amount|price)\s*[: ]\s*\$?\s*(\d{1,6}(?:\.\d{2})?)/i) || src.match(/\$\s*(\d{1,6}(?:\.\d{2})?)/);
+  let purchased = '';
+  if (iso) purchased = iso[1];
+  else if (us) purchased = `${us[3]}-${us[1].padStart(2, '0')}-${us[2].padStart(2, '0')}`;
+  return { purchased, price: money ? money[1] : '', note: 'Suggestion from the receipt. Tap OK to keep it. Nothing was saved.' };
+}
+
+export function searchThings(items, files, query) {
+  const words = String(query || '').toLowerCase().split(/[^a-z0-9]+/).filter((word) => word.length > 1);
+  if (!words.length) return [];
+  return (items || []).map((item) => {
+    const extra = (files || []).filter((file) => file.itemId === item.id).map((file) => file.text || '').join(' ');
+    const hay = `${item.name} ${item.category} ${item.notes} ${extra}`.toLowerCase();
+    const score = words.reduce((total, word) => total + (hay.includes(word) ? 1 : 0), 0);
+    return { item, score };
+  }).filter((row) => row.score > 0).sort((a, b) => b.score - a.score || a.item.name.localeCompare(b.item.name)).map((row) => row.item);
 }
 
 export function reminderList(items, today = new Date().toISOString().slice(0, 10)) {
@@ -91,6 +166,34 @@ export function reminderList(items, today = new Date().toISOString().slice(0, 10
   });
 }
 
+function readPdf(buffer) {
+  return new Promise((resolve) => {
+    try {
+      const worker = new Worker('/js/pdf-text-worker.js', { type: 'module' });
+      const timer = setTimeout(() => { worker.terminate(); resolve([]); }, 4000);
+      worker.onmessage = (event) => { clearTimeout(timer); worker.terminate(); resolve(event.data?.pages || []); };
+      worker.onerror = () => { clearTimeout(timer); worker.terminate(); resolve([]); };
+      worker.postMessage(buffer);
+    } catch { resolve([]); }
+  });
+}
+
+function openFileDb() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('lgme-ihavit-files', 1);
+    request.onupgradeneeded = () => request.result.createObjectStore('files', { keyPath: 'id' });
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function fileKind(file) {
+  if (file.type === 'application/pdf' || /\.pdf$/i.test(file.name || '')) return 'manual';
+  if ((file.type || '').startsWith('video/')) return 'video';
+  if (/receipt/i.test(file.name || '')) return 'receipt';
+  return 'photo';
+}
+
 function boot() {
   const root = document.getElementById('ihavit-app');
   if (!root) return;
@@ -99,11 +202,16 @@ function boot() {
   const list = document.getElementById('ihavit-list');
   const reminders = document.getElementById('ihavit-reminders');
   const say = (text) => { if (status) status.textContent = text; };
+  let files = [];
+  let query = '';
   const paint = () => {
-    const items = readItems(storage);
+    const meter = document.getElementById('ihavit-meter');
+    if (meter) meter.textContent = storageMeter(files.reduce((sum, file) => sum + (file.size || 0), 0)).label;
+    const items = searchThings(readItems(storage), files, query);
+    const shown = query ? items : readItems(storage);
     list.replaceChildren();
-    if (!items.length) list.append(Object.assign(document.createElement('li'), { textContent: 'No things yet.' }));
-    for (const item of items) {
+    if (!shown.length) list.append(Object.assign(document.createElement('li'), { textContent: query ? 'Nothing matched.' : 'No things yet.' }));
+    for (const item of shown) {
       const row = document.createElement('li');
       row.className = 'frame';
       const range = valueRange(item);
@@ -114,27 +222,57 @@ function boot() {
       const estimate = document.createElement('p');
       estimate.textContent = range ? `Estimate ${range.low}–${range.high}. ${range.note}` : 'Add a purchase price to see an estimate. Not an appraisal.';
       row.append(title, meta, estimate);
+      const attached = files.filter((file) => file.itemId === item.id);
+      if (attached.length) {
+        const names = document.createElement('p');
+        names.textContent = `Files: ${attached.map((file) => file.name).join(', ')}`;
+        row.append(names);
+      }
       if (!item.care) {
-        const idea = suggestCare(item.name, item.category);
-        const days = document.createElement('input');
-        days.value = String(idea.everyDays);
-        days.setAttribute('aria-label', `Days between care for ${item.name}`);
-        const task = document.createElement('input');
-        task.value = idea.task;
-        task.setAttribute('aria-label', `Care task for ${item.name}`);
-        const keep = document.createElement('button');
-        keep.type = 'button';
-        keep.textContent = 'OK';
-        keep.addEventListener('click', () => {
-          const saved = confirmCare(storage, item.id, { everyDays: days.value, task: task.value }, true);
-          say(saved.ok ? 'Schedule kept on this phone.' : saved.error);
-          paint();
-        });
-        row.append(days, task, keep);
+        const manuals = attached.filter((file) => file.kind === 'manual' && file.pages);
+        const fromManual = careFromManual(manuals.flatMap((file) => file.pages || []), item.name, item.category);
+        const note = document.createElement('p');
+        note.textContent = fromManual.found ? fromManual.note : `${fromManual.note} ${fromManual.suggestions[0].label}`;
+        row.append(note);
+        for (const idea of fromManual.suggestions) {
+          const days = document.createElement('input');
+          days.value = String(idea.everyDays);
+          days.setAttribute('aria-label', `Days between care for ${item.name}`);
+          const task = document.createElement('input');
+          task.value = idea.task;
+          task.setAttribute('aria-label', `Care task for ${item.name}`);
+          const source = document.createElement('p');
+          source.textContent = idea.source === 'manual' ? `Page ${idea.page}: “${idea.quote}”` : 'General guidance, not from the manual.';
+          const keep = document.createElement('button');
+          keep.type = 'button';
+          keep.textContent = 'OK';
+          keep.addEventListener('click', () => {
+            const saved = confirmCare(storage, item.id, { everyDays: days.value, task: task.value, quote: idea.quote, page: idea.page, source: idea.source }, true);
+            say(saved.ok ? 'Reminder kept on this phone.' : saved.error);
+            paint();
+          });
+          row.append(source, days, task, keep);
+        }
       } else {
         const care = document.createElement('p');
-        care.textContent = `Every ${item.care.everyDays} days: ${item.care.task}`;
+        care.textContent = item.care.source === 'manual' && item.care.quote
+          ? `Every ${item.care.everyDays} days: ${item.care.task} Page ${item.care.page}: “${item.care.quote}”`
+          : `Every ${item.care.everyDays} days: ${item.care.task}`;
         row.append(care);
+      }
+      for (const file of attached.filter((row) => row.kind === 'receipt')) {
+        const hint = receiptHints(file.text || '');
+        const line = document.createElement('p');
+        line.textContent = `${hint.note} ${hint.purchased || 'No date'} · ${hint.price || 'No price'}`;
+        const use = document.createElement('button');
+        use.type = 'button';
+        use.textContent = 'OK';
+        use.addEventListener('click', () => {
+          const saved = saveItem(storage, { ...item, purchased: hint.purchased || item.purchased, price: hint.price || item.price }, true);
+          say(saved.ok ? 'Receipt details kept on this phone.' : saved.error);
+          paint();
+        });
+        row.append(line, use);
       }
       const sell = document.createElement('button');
       sell.type = 'button';
@@ -150,32 +288,75 @@ function boot() {
       row.append(sell);
       list.append(row);
     }
-    const due = reminderList(items);
+    const due = reminderList(readItems(storage));
     reminders.replaceChildren();
     if (!due.length) reminders.append(Object.assign(document.createElement('li'), { textContent: 'No reminders yet.' }));
     for (const row of due) reminders.append(Object.assign(document.createElement('li'), { textContent: `${row.ready ? 'Due' : 'Later'} · ${row.name}: ${row.task} (${row.due})` }));
   };
-  document.getElementById('ihavit-save').addEventListener('click', () => {
-    const photo = document.getElementById('ihavit-photo');
-    const keep = (src) => {
-      const saved = saveItem(storage, {
-        name: document.getElementById('ihavit-name').value,
-        category: document.getElementById('ihavit-category').value,
-        purchased: document.getElementById('ihavit-purchased').value,
-        price: document.getElementById('ihavit-price').value,
-        condition: document.getElementById('ihavit-condition').value,
-        notes: document.getElementById('ihavit-notes').value,
-        warranty: document.getElementById('ihavit-warranty').value,
-        photo: src || ''
-      }, true);
-      say(saved.ok ? `Kept ${saved.item.name}. Suggested care: every ${saved.suggestion.everyDays} days. Tap OK on the item to keep the schedule.` : saved.error);
-      paint();
-    };
-    const file = photo.files?.[0];
-    if (!file) { keep(''); return; }
-    const reader = new FileReader();
-    reader.onload = () => keep(String(reader.result || ''));
-    reader.readAsDataURL(file);
+  const readChosen = () => {
+    const picked = [...(document.getElementById('ihavit-files')?.files || []), ...(document.getElementById('ihavit-capture')?.files || [])];
+    return picked.map((file) => ({ file, kind: /receipt/i.test(file.name || '') ? 'receipt' : fileKind(file) }));
+  };
+  document.getElementById('ihavit-camera')?.addEventListener('click', () => {
+    import('./device-ask.mjs').then(({ askDevice }) => {
+      askDevice({
+        kind: 'camera',
+        purpose: 'The camera takes a photo for this thing. The picture stays on this phone. Nothing is uploaded.',
+        allow: () => document.getElementById('ihavit-capture')?.click()
+      });
+    });
+  });
+  document.getElementById('ihavit-q')?.addEventListener('input', (event) => {
+    query = event.target.value;
+    paint();
+  });
+  document.getElementById('ihavit-save').addEventListener('click', async () => {
+    const chosen = readChosen();
+    const used = files.reduce((sum, file) => sum + (file.size || 0), 0);
+    for (const row of chosen) {
+      const gate = acceptFile(row.kind, row.file.size, used);
+      if (!gate.ok) { say(gate.error); return; }
+    }
+    const saved = saveItem(storage, {
+      name: document.getElementById('ihavit-name').value,
+      category: document.getElementById('ihavit-category').value,
+      purchased: document.getElementById('ihavit-purchased').value,
+      price: document.getElementById('ihavit-price').value,
+      condition: document.getElementById('ihavit-condition').value,
+      notes: document.getElementById('ihavit-notes').value,
+      warranty: document.getElementById('ihavit-warranty').value
+    }, true);
+    if (!saved.ok) { say(saved.error); return; }
+    if (chosen.length && globalThis.indexedDB) {
+      const db = await openFileDb();
+      for (const row of chosen) {
+        const buffer = await row.file.arrayBuffer();
+        let pages = [];
+        if (row.kind === 'manual' || row.kind === 'receipt') {
+          pages = await readPdf(buffer);
+        }
+        const record = {
+          id: `file-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          itemId: saved.item.id,
+          kind: row.kind,
+          name: row.file.name,
+          type: row.file.type,
+          size: row.file.size,
+          text: pages.map((page) => page.text).join('\n'),
+          pages,
+          blob: buffer
+        };
+        await new Promise((resolve, reject) => {
+          const tx = db.transaction('files', 'readwrite');
+          tx.objectStore('files').put(record);
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error);
+        });
+        files.push(record);
+      }
+    }
+    say(`Kept ${saved.item.name}. Review the schedule, then tap OK before a reminder is created.`);
+    paint();
   });
   document.getElementById('iselit-ok').addEventListener('click', () => {
     const id = document.getElementById('iselit-draft').dataset.item;
@@ -200,7 +381,13 @@ function boot() {
       });
     });
   });
-  paint();
+  if (globalThis.indexedDB) {
+    openFileDb().then((db) => new Promise((resolve) => {
+      const request = db.transaction('files').objectStore('files').getAll();
+      request.onsuccess = () => { files = request.result || []; resolve(); };
+      request.onerror = () => resolve();
+    })).then(paint).catch(() => paint());
+  } else paint();
 }
 
 if (typeof document !== 'undefined') boot();
