@@ -51,7 +51,7 @@ test('the Hederica gate sends one code and a 30 day token', async () => {
   assert.equal(later.ok, false);
   const repeat = await verifyGate(store, { email: 'ada@hederica.com', code: makeCode(), pepper }, { env, now: 3_000, headers: {}, fetchImpl: async () => ({ ok: true }) });
   assert.equal(repeat.ok, false);
-  const snippet = readFileSync(new URL('../public/hederica-gate-snippet.html', import.meta.url), 'utf8');
+  const snippet = readFileSync(new URL('../hederica-gate-snippet.html', import.meta.url), 'utf8');
   assert.match(snippet, /We email a code; the administrator is notified of new visitors\./);
   assert.match(snippet, /lgme\.hederica\.gate/);
   assert.equal(readFileSync(new URL('../js/gate-core.mjs', import.meta.url), 'utf8').includes('/api/hedera'), false);
