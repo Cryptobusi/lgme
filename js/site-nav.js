@@ -1,6 +1,6 @@
 (function () {
   var EPOCH = '2';
-  var CURRENT = { 'lgme-v230': 1, 'lgme-gym-v81': 1 };
+  var CURRENT = { 'lgme-v231': 1, 'lgme-gym-v81': 1 };
   function keep(name) {
     if (!name) return true;
     if (name === 'lgme.reset.epoch' || name === 'lgme.reset.note' || name === 'lgme.device.key' || name === 'lgme-gym.seat' || name === 'lgme.health.book' || name === 'lgme.health.email' || name === 'lgme.health.plan' || name === 'lgme.health.contact' || name === 'lgme.health.contactGrants' || name === 'lgme.health.consent' || name === 'lgme.demo.member') return true;
@@ -93,6 +93,12 @@
     var updater = document.createElement('script');
     updater.src = '/js/sw-update.js';
     document.body.appendChild(updater);
+  }
+  if (!document.querySelector('script[src="/js/hedera-choices.mjs"]')) {
+    var hederaChoices = document.createElement('script');
+    hederaChoices.type = 'module';
+    hederaChoices.src = '/js/hedera-choices.mjs';
+    document.body.appendChild(hederaChoices);
   }
   if (!document.querySelector('script[src="/js/tape-scroll.mjs"]')) {
     var tapeScroll = document.createElement('script');
