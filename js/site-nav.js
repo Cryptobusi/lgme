@@ -1,6 +1,6 @@
 (function () {
   var EPOCH = '2';
-  var CURRENT = { 'lgme-v229': 1, 'lgme-gym-v81': 1 };
+  var CURRENT = { 'lgme-v230': 1, 'lgme-gym-v81': 1 };
   function keep(name) {
     if (!name) return true;
     if (name === 'lgme.reset.epoch' || name === 'lgme.reset.note' || name === 'lgme.device.key' || name === 'lgme-gym.seat' || name === 'lgme.health.book' || name === 'lgme.health.email' || name === 'lgme.health.plan' || name === 'lgme.health.contact' || name === 'lgme.health.contactGrants' || name === 'lgme.health.consent' || name === 'lgme.demo.member') return true;
@@ -137,6 +137,15 @@
       inventory.id = 'inventory-open';
       inventory.textContent = 'Inventory';
       intro.insertAdjacentElement('afterend', inventory);
+    }
+    if (!menu.querySelector('#sobeit-open')) {
+      var sobeit = document.createElement('a');
+      sobeit.href = '/books';
+      sobeit.id = 'sobeit-open';
+      sobeit.textContent = 'SobeIt';
+      var inventoryLink = menu.querySelector('#inventory-open');
+      if (inventoryLink) inventoryLink.insertAdjacentElement('afterend', sobeit);
+      else intro.insertAdjacentElement('afterend', sobeit);
     }
     var tape = menu.querySelector('#tape-sound');
     if (!tape) {

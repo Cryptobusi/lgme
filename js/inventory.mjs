@@ -1,4 +1,5 @@
 import { DRAFT_KEY, listingDraft, readItems, saveItem, valueRange } from './ihavit.mjs';
+import { proofPanel } from './books.mjs';
 
 export const LINK_KEY = 'lgme.inventory.link';
 const CONDITION_RANK = { new: 0, 'like new': 1, good: 2, fair: 3, poor: 4 };
@@ -255,8 +256,9 @@ function boot() {
   document.getElementById('sell-draft').addEventListener('click', () => {
     const item = readItems(storage).find((row) => row.plan === 'sell');
     if (!item) { say('Mark an item as sell, then tap OK.'); return; }
-    sessionStorage.setItem(DRAFT_KEY, JSON.stringify(listingDraft(item)));
-    say(`IselIt draft for ${item.name} is on this phone. Not posted.`);
+    const draft = { ...listingDraft(item), proof: proofPanel(item) };
+    sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    say(`${draft.proof.line} Not posted.`);
   });
   paint();
 }

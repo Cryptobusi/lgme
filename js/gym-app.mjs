@@ -2258,6 +2258,10 @@ async function renderIdidIt() {
     window.dispatchEvent(new CustomEvent('lgme-ididit-step', { detail: { step: 3 } }));
     const result = await submitIdidIt(title.value);
     if (result.ok) window.dispatchEvent(new CustomEvent('lgme-ididit-step', { detail: { step: 4 } }));
+    if (result.ok) {
+      const { postIdidIt } = await import('./books.mjs');
+      postIdidIt(localStorage, { title: title.value, item: activity.value || title.value }, true);
+    }
     statusLine.textContent = receiptStatus(result);
     confirm.disabled = false;
   });

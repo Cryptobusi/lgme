@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en" class="is-one-tab">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>SobeIt books</title>
+  <meta name="description" content="Local Creo and $lgme drafts, equipment upkeep, and a testnet review. Nothing is paid. Consult a professional." />
+  <link rel="stylesheet" href="/site-nav.css" />
+  <style>
+    body { margin:0 auto; max-width:40rem; background:#0c100c; color:#f4f1e8; font:13px/1.4 Figtree, sans-serif; padding:0.6rem 0.7rem 42vh; }
+    h1,h2 { font-size:16px; margin:0.3rem 0; }
+    label { display:block; font-size:11px; letter-spacing:0.04em; text-transform:uppercase; color:#c6a15b; margin-top:0.35rem; }
+    input, select { width:100%; box-sizing:border-box; min-height:44px; font:inherit; padding:0.4rem 0.55rem; border:1px solid #c6a15b; border-radius:8px; background:#0c100c; color:#f4f1e8; }
+    button { min-height:44px; min-width:44px; margin:0.35rem 0.35rem 0 0; font:inherit; border-radius:8px; border:1px solid #c6a15b; background:#c6a15b; color:#1a1408; font-weight:700; }
+    .frame { border:1px solid #c6a15b; border-radius:8px; padding:0.55rem 0.65rem; margin:0.45rem 0; }
+    pre { white-space:pre-wrap; }
+  </style>
+</head>
+<body>
+  <article class="frame" id="books-app">
+    <h1>SobeIt books</h1>
+    <p>Creo and $lgme lines stay on this phone. LGME_CONTRIB_LIVE is off. Nothing is paid or written to mainnet until a later switch you turn on. Consult a professional. This is not tax or legal advice.</p>
+    <ul>
+      <li>Debit = you owe.</li>
+      <li>Credit = you lend.</li>
+      <li>Creo = value you create (the IdidIt currency).</li>
+    </ul>
+    <p><a href="/inventory">Inventory</a> · <a href="/ihavit">IhavIt</a> · <a href="/sobeit">SobeIt note</a> · <a href="/homebox">HomeBox</a> · <a href="/bigcapital">Bigcapital</a></p>
+    <p id="books-status" role="status"></p>
+  </article>
+  <article class="frame">
+    <h2>Balance sheet</h2>
+    <p id="books-balance"></p>
+    <h2>P&amp;L</h2>
+    <p id="books-pnl"></p>
+    <button type="button" id="books-export">Testnet review</button>
+    <pre id="books-report"></pre>
+  </article>
+  <form class="frame">
+    <h2>Shared equipment</h2>
+    <label for="gear-name">Name</label><input id="gear-name" maxlength="80" />
+    <label for="gear-days">Days between care</label><input id="gear-days" inputmode="numeric" value="30" />
+    <label for="gear-task">Task</label><input id="gear-task" maxlength="120" />
+    <button type="button" id="gear-ok">OK</button>
+    <button type="button" id="upkeep-ok">Log upkeep</button>
+    <p id="books-gear"></p>
+  </form>
+  <form class="frame">
+    <h2>Contribution draft</h2>
+    <p>100 Creo per US$1. Health Floor and Collective fund split 50/50. Not paid.</p>
+    <label for="contrib-usd">US$</label><input id="contrib-usd" inputmode="decimal" value="1" />
+    <button type="button" id="contrib-ok">OK</button>
+  </form>
+  <form class="frame">
+    <h2>Donate</h2>
+    <label for="donate-kind">What</label>
+    <select id="donate-kind"><option value="item">Item</option><option value="creo">Creo</option><option value="lgme">$lgme</option></select>
+    <label for="donate-name">Name</label><input id="donate-name" maxlength="80" />
+    <label for="donate-amount">Amount</label><input id="donate-amount" maxlength="20" />
+    <button type="button" id="donate-ok">OK</button>
+  </form>
+  <script type="module" src="/js/books.mjs"></script>
+  <script src="/js/site-nav.js"></script>
+</body>
+</html>

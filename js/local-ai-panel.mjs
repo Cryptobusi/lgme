@@ -155,6 +155,7 @@ export function matchPrompt(text) {
   if (!q) return { kind: 'help', text: '', line: 'Type log a workout, I want something, or I have something.' };
   if (/what can i do|help me|show help/.test(q)) return { kind: 'help', text: '', line: 'You can log a workout, say I want something, or say I have something.' };
   if (/^(open\s+)?inventory\b/.test(q)) return { kind: 'inventory', text: 'Inventory', line: 'Opened Inventory. Nothing was saved.' };
+  if (/^(open\s+)?sobe\s?it\b/.test(q)) return { kind: 'sobeit', text: 'SobeIt', line: 'Opened SobeIt. Nothing was paid.' };
   const screen = screenModePrompt(raw);
   if (screen) return { kind: 'screen', mode: screen.mode, text: '', line: screen.line };
   const local = localFunctionFromPrompt(raw);
@@ -728,6 +729,10 @@ function mount() {
     } catch { /* the line still shows */ }
     if (matched.kind === 'inventory') {
       location.assign('/inventory');
+      return;
+    }
+    if (matched.kind === 'sobeit') {
+      location.assign('/books');
       return;
     }
     const here = location.pathname.startsWith('/gym');
