@@ -15,6 +15,36 @@ export function motionReduced(media = globalThis.matchMedia) {
 
 let audioCtx;
 
+export function tapeTicksOn({ storage, media, incognito } = {}) {
+  if (incognito) return false;
+  let saved = null;
+  try { saved = storage?.getItem('lgme.tape.sound') ?? null; } catch { saved = null; }
+  if (saved === 'off') return false;
+  if (!soundsOn(storage)) return false;
+  if (saved !== 'on' && motionReduced(media)) return false;
+  return true;
+}
+
+export function playTapeTick(scope = globalThis) {
+  const Ctx = scope.AudioContext || scope.webkitAudioContext;
+  if (!Ctx) return false;
+  if (!audioCtx) audioCtx = new Ctx();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  const now = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'square';
+  osc.frequency.setValueAtTime(920, now);
+  osc.frequency.exponentialRampToValueAtTime(240, now + 0.028);
+  gain.gain.setValueAtTime(0.015, now);
+  gain.gain.exponentialRampToValueAtTime(0.0008, now + 0.03);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start(now);
+  osc.stop(now + 0.032);
+  return true;
+}
+
 export function playTick(scope = globalThis) {
   const Ctx = scope.AudioContext || scope.webkitAudioContext;
   if (!Ctx) return false;

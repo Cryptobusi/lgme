@@ -1,6 +1,6 @@
 (function () {
   var EPOCH = '2';
-  var CURRENT = { 'lgme-v226': 1, 'lgme-gym-v81': 1 };
+  var CURRENT = { 'lgme-v227': 1, 'lgme-gym-v81': 1 };
   function keep(name) {
     if (!name) return true;
     if (name === 'lgme.reset.epoch' || name === 'lgme.reset.note' || name === 'lgme.device.key' || name === 'lgme-gym.seat' || name === 'lgme.health.book' || name === 'lgme.health.email' || name === 'lgme.health.plan' || name === 'lgme.health.contact' || name === 'lgme.health.contactGrants' || name === 'lgme.health.consent' || name === 'lgme.demo.member') return true;
@@ -94,6 +94,12 @@
     updater.src = '/js/sw-update.js';
     document.body.appendChild(updater);
   }
+  if (!document.querySelector('script[src="/js/tape-scroll.mjs"]')) {
+    var tapeScroll = document.createElement('script');
+    tapeScroll.type = 'module';
+    tapeScroll.src = '/js/tape-scroll.mjs';
+    document.body.appendChild(tapeScroll);
+  }
   if (!document.querySelector('script[src="/js/local-ai-panel.mjs"]')) {
     var panel = document.createElement('script');
     panel.type = 'module';
@@ -125,6 +131,36 @@
       intro.textContent = 'Introduction';
     }
     if (menu.firstElementChild !== intro) menu.insertBefore(intro, menu.firstChild);
+    var tape = menu.querySelector('#tape-sound');
+    if (!tape) {
+      tape = document.createElement('button');
+      tape.type = 'button';
+      tape.id = 'tape-sound';
+      intro.insertAdjacentElement('afterend', tape);
+    }
+    var paintTape = function () {
+      var saved = '';
+      var hidden = false;
+      var quiet = false;
+      var sounds = true;
+      try { saved = localStorage.getItem('lgme.tape.sound') || ''; } catch (error) { saved = ''; }
+      try { hidden = localStorage.getItem('lgme.incognito') === '1'; } catch (error) { hidden = false; }
+      try { sounds = localStorage.getItem('lgme.sounds') !== 'off'; } catch (error) { sounds = true; }
+      try { quiet = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (error) { quiet = false; }
+      var on = !hidden && sounds && saved !== 'off' && (saved === 'on' || !quiet);
+      tape.setAttribute('aria-pressed', on ? 'true' : 'false');
+      tape.textContent = on ? 'Tape sound on' : 'Tape sound off';
+    };
+    if (tape.dataset.bound !== '1') {
+      tape.dataset.bound = '1';
+      tape.addEventListener('click', function () {
+        var saved = '';
+        try { saved = localStorage.getItem('lgme.tape.sound') || ''; } catch (error) { saved = ''; }
+        try { localStorage.setItem('lgme.tape.sound', saved === 'off' ? 'on' : 'off'); } catch (error) { /* the button still shows the choice */ }
+        paintTape();
+      });
+    }
+    paintTape();
     var last = 0;
     var toggle = function () {
       var now = Date.now();

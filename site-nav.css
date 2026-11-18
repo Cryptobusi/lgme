@@ -1,3 +1,20 @@
+html.tape { background: #cfc4b0; }
+html.tape body {
+  max-width: 26rem;
+  color: #1a1612;
+  font-family: Figtree, ui-sans-serif, system-ui, sans-serif;
+  background-color: #f7f1e4;
+  background-image:
+    radial-gradient(circle at 7px 7px, #cfc4b0 2.5px, transparent 3px),
+    repeating-linear-gradient(to bottom, transparent 0 1.35rem, rgba(92, 69, 24, 0.16) 1.35rem 1.4rem),
+    linear-gradient(90deg, rgba(120, 90, 40, 0.16), transparent 10px, transparent calc(100% - 12px), rgba(90, 70, 40, 0.2)),
+    linear-gradient(#f7f1e4, #f3ead8);
+  background-size: 14px 14px, auto, auto, auto;
+  background-repeat: repeat-y, repeat, no-repeat, no-repeat;
+  box-shadow: 0 0 0 1px rgba(90, 70, 40, 0.18);
+}
+html.tape :is(h1, h2, h3, h4) { font-family: Figtree, ui-sans-serif, system-ui, sans-serif; color: #1a1612; }
+html.tape { --fg: #1a1612; --muted: #3f3830; --bg: #f7f1e4; --card: #fffaf2; --line: #e4d7bf; }
 #site-nav {
   position: fixed;
   top: 0;

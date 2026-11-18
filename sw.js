@@ -1,5 +1,5 @@
 // lgme.app shell. HTML is fetched from the network first so a published change shows.
-const CACHE_NAME = "lgme-v226";
+const CACHE_NAME = "lgme-v227";
 const NET_MS = 8000;
 const SHELL = [
   "/",
@@ -181,6 +181,7 @@ const SHELL = [
   "/ihavit.html",
   "/js/ihavit.mjs",
   "/js/device-ask.mjs",
+  "/js/tape-scroll.mjs",
   "/data/page-index.json",
   "/js/sw-update.js",
   "/js/local-ai-panel.mjs",
