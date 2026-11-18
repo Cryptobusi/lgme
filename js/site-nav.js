@@ -1,9 +1,9 @@
 (function () {
   var EPOCH = '2';
-  var CURRENT = { 'lgme-v236': 1, 'lgme-gym-v81': 1 };
+  var CURRENT = { 'lgme-v237': 1, 'lgme-gym-v81': 1 };
   function keep(name) {
     if (!name) return true;
-    if (name === 'lgme.reset.epoch' || name === 'lgme.reset.note' || name === 'lgme.device.key' || name === 'lgme-gym.seat' || name === 'lgme.health.book' || name === 'lgme.health.email' || name === 'lgme.health.plan' || name === 'lgme.health.contact' || name === 'lgme.health.contactGrants' || name === 'lgme.health.consent' || name === 'lgme.demo.member') return true;
+    if (name === 'lgme.reset.epoch' || name === 'lgme.reset.note' || name === 'lgme.device.key' || name === 'lgme.display.step' || name === 'lgme.display.easy' || name === 'lgme-gym.seat' || name === 'lgme.health.book' || name === 'lgme.health.email' || name === 'lgme.health.plan' || name === 'lgme.health.contact' || name === 'lgme.health.contactGrants' || name === 'lgme.health.consent' || name === 'lgme.demo.member') return true;
     return name.indexOf('lgme-sim:peer:') === 0 || name.indexOf('lgme.health.page:') === 0;
   }
   function arm() {
@@ -87,6 +87,50 @@
     bar.appendChild(mark);
     document.body.prepend(bar);
   }
+  function fitButton(id, text, label, detail) {
+    var button = document.createElement('button');
+    button.type = 'button';
+    button.id = id;
+    button.textContent = text;
+    button.setAttribute('aria-label', label);
+    button.addEventListener('click', function () {
+      document.dispatchEvent(new CustomEvent('lgme-display', { detail: detail }));
+    });
+    return button;
+  }
+  if (!bar.querySelector('#font-chip')) {
+    var chip = document.createElement('span');
+    chip.id = 'font-chip';
+    chip.setAttribute('role', 'group');
+    chip.setAttribute('aria-label', 'Text size');
+    chip.appendChild(fitButton('font-down', 'A−', 'Smaller text', { step: -1 }));
+    chip.appendChild(fitButton('font-reset', 'A', 'Default text', { reset: true }));
+    chip.appendChild(fitButton('font-up', 'A+', 'Larger text', { step: 1 }));
+    var easy = document.createElement('button');
+    easy.type = 'button';
+    easy.id = 'easy-read';
+    easy.setAttribute('aria-label', 'Easy read');
+    easy.setAttribute('aria-pressed', 'false');
+    easy.textContent = 'Easy';
+    var slot = bar.querySelector('#ai-head');
+    if (slot) {
+      bar.insertBefore(chip, slot);
+      bar.insertBefore(easy, slot);
+    } else {
+      bar.appendChild(chip);
+      bar.appendChild(easy);
+    }
+    document.addEventListener('lgme-display-state', function (event) {
+      var on = !!(event.detail && event.detail.easy);
+      easy.setAttribute('aria-pressed', on ? 'true' : 'false');
+      easy.textContent = on ? 'Standard' : 'Easy';
+      var menuEasy = document.getElementById('easy-read-menu');
+      if (menuEasy) {
+        menuEasy.setAttribute('aria-pressed', on ? 'true' : 'false');
+        menuEasy.textContent = on ? 'Standard text' : 'Easy read';
+      }
+    });
+  }
   document.documentElement.classList.add('has-site-nav');
   document.body.classList.add('has-site-nav');
   if (!document.querySelector('script[src="/js/sw-update.js"]')) {
@@ -111,6 +155,12 @@
     panel.type = 'module';
     panel.src = '/js/local-ai-panel.mjs';
     document.body.appendChild(panel);
+  }
+  if (!document.querySelector('script[src="/js/display-fit.mjs"]')) {
+    var displayFit = document.createElement('script');
+    displayFit.type = 'module';
+    displayFit.src = '/js/display-fit.mjs';
+    document.body.appendChild(displayFit);
   }
   if (!document.querySelector('script[src="/js/visit-notice.js"]')) {
     var visitNotice = document.createElement('script');
@@ -188,6 +238,35 @@
       });
     }
     paintTape();
+    if (!menu.querySelector('#font-steps')) {
+      var steps = document.createElement('div');
+      steps.id = 'font-steps';
+      steps.setAttribute('role', 'group');
+      steps.setAttribute('aria-label', 'Text size');
+      [['font-down-menu', 'A−', 'Smaller text', -1], ['font-reset-menu', 'A', 'Default text', 0], ['font-up-menu', 'A+', 'Larger text', 1]].forEach(function (spec) {
+        var control = document.createElement('button');
+        control.type = 'button';
+        control.id = spec[0];
+        control.textContent = spec[1];
+        control.setAttribute('aria-label', spec[2]);
+        control.addEventListener('click', function () {
+          document.dispatchEvent(new CustomEvent('lgme-display', { detail: spec[3] === 0 ? { reset: true } : { step: spec[3] } }));
+        });
+        steps.appendChild(control);
+      });
+      menu.appendChild(steps);
+    }
+    if (!menu.querySelector('#easy-read-menu')) {
+      var easyMenu = document.createElement('button');
+      easyMenu.type = 'button';
+      easyMenu.id = 'easy-read-menu';
+      easyMenu.setAttribute('aria-pressed', 'false');
+      easyMenu.textContent = 'Easy read';
+      easyMenu.addEventListener('click', function () {
+        document.dispatchEvent(new CustomEvent('lgme-display', { detail: { easy: true } }));
+      });
+      menu.appendChild(easyMenu);
+    }
     var last = 0;
     var toggle = function () {
       var now = Date.now();

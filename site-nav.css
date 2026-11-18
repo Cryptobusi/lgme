@@ -470,6 +470,56 @@ html.is-one-tab nav[aria-label="Gym"] {
   padding: 0;
 }
 html.is-one-tab nav[aria-label="Gym"] #one-more { position: static; }
+:root {
+  --lgme-font: 1;
+  --lgme-os: 1;
+  --lgme-space: 0.75rem;
+  --lgme-type: clamp(0.95rem, 0.9rem + 0.35vw, 1.08rem);
+}
+html { font-size: calc(100% * var(--lgme-font)); }
+html[data-density="compact"] { --lgme-space: 0.45rem; --lgme-type: clamp(0.9rem, 0.84rem + 0.3vw, 1rem); }
+html[data-density="roomy"] { --lgme-space: 1.05rem; --lgme-type: clamp(1.02rem, 0.95rem + 0.4vw, 1.22rem); }
+html[data-density] body { font-size: var(--lgme-type); }
+html[data-density] :is(.card, .dash-card, article) { margin-block: var(--lgme-space); }
+html[data-density] #home-board { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 100%; }
+html[data-density="compact"] #home-board,
+html[data-density="compact"] .entry-grid { grid-template-columns: minmax(0, 1fr); }
+html[data-density="compact"] article.card:not(.is-open) > :not(h2):not(h3):not(summary) { display: none; }
+html[data-density="compact"] table,
+html[data-density="compact"] thead,
+html[data-density="compact"] tbody,
+html[data-density="compact"] tr,
+html[data-density="compact"] th,
+html[data-density="compact"] td { display: block; width: 100%; max-width: 100%; box-sizing: border-box; }
+html[data-density="compact"] thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+#font-chip { display: inline-flex; align-items: center; gap: 0; }
+#site-nav #font-chip button,
+#site-nav #easy-read {
+  width: auto;
+  min-width: 40px;
+  font-size: 14px;
+  font-weight: 700;
+}
+#one-menu #font-steps { display: flex; gap: 0.25rem; }
+html.is-easy { --fg: #14110c; --muted: #2c261e; --bg: #fffdf8; --card: #fff; --line: #5c4a22; }
+html.is-easy body { font-size: max(18px, 1.125rem); color: #14110c; }
+html.is-easy.tape body { color: #14110c; }
+html.is-easy :is(button, a, input, textarea, select, summary, label) {
+  min-height: 48px;
+  min-width: 48px;
+  font-size: max(22px, 1.15rem);
+}
+html.is-easy :focus-visible { outline: 3px solid #8a5a00; outline-offset: 3px; }
+html.is-easy #home-board,
+html.is-easy .entry-grid { grid-template-columns: minmax(0, 1fr); }
+html.is-easy #ai-log,
+html.is-easy #ai-steps,
+html.is-easy .ai-suggest-line { font-size: 22px; line-height: 1.45; }
+html.is-easy #ai-chips .ai-chip:nth-child(n+4) { display: none; }
+html.is-easy #site-nav { background: #14110c; color: #f4f1e8; }
+html.is-easy #site-back,
+html.is-easy #site-home,
+html.is-easy #site-next { font-size: 24px; }
 html.is-one-tab nav[aria-label="Gym"] #one-menu { display: flex; flex-direction: column; align-items: stretch; gap: 0.25rem; }
 html.is-one-tab nav[aria-label="Gym"] #one-menu[hidden] { display: none; }
 html.is-one-tab nav[aria-label="Gym"] #one-menu button { min-width: 44px; min-height: 44px; margin: 0; background: #151a15; color: #f4f1e8; border: 1px solid #c6a15b; }
