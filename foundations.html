@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Architectural foundations — lgme</title>
+  <meta name="description" content="Mathematical soundness of constitutional mutual credit. Floor seniority, zero-sum clearing, cross-ratio invariance, and the Two-Generation Sunset." />
+  <link rel="icon" href="/icons/icon-192.png" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500&display=swap" />
+  <style>
+    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; }
+    body { margin: 0 auto; max-width: 46rem; padding: 1.25rem 1.25rem 4rem; background: var(--bg); color: var(--fg); font-family: Figtree, sans-serif; line-height: 1.5; }
+    h1, h2 { font-family: Newsreader, serif; font-weight: 500; letter-spacing: -0.02em; }
+    h1 { font-size: clamp(2.1rem, 6vw, 3.2rem); line-height: 0.98; margin: 0.2rem 0 0.6rem; }
+    h2 { font-size: 1.55rem; line-height: 1.15; margin: 2rem 0 0.5rem; }
+    a { color: var(--fg); }
+    .kicker { margin: 0; font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); }
+    .muted { color: var(--muted); }
+    .formula { font-family: ui-monospace, monospace; font-size: 0.92rem; border-left: 2px solid var(--gold); padding: 0.2rem 0 0.2rem 0.8rem; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+    th, td { text-align: left; padding: 0.55rem 0.35rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--gold); font-weight: 500; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  </style>
+</head>
+<body>
+  <p class="kicker">Technical whitepaper · lgme.app · egonomicanonymous.live · hederica.com</p>
+  <h1>Architectural foundations</h1>
+  <p class="muted">Mathematical soundness of constitutional mutual credit. Design research. Not legal advice. Not a solicitation. Not a token sale. The desk is not yet the Hedera mainnet ledger described below.</p>
+
+  <h2>Abstract</h2>
+  <p>Fiat and debt-money mix two operations that do not belong on one ledger. Human work adds in a straight line. Interest compounds. The second outruns the first, and the unit of account bends.</p>
+  <p>The accounting engine across <a href="https://lgme.app">lgme.app</a> and <a href="https://egonomicanonymous.live">egonomicanonymous.live</a>, under the Sovereign Provenance Protocol and the Third Seat, is built to avoid that mix. Three results are claimed. Zero-sum mutual credit conserves attested provenance above a pre-market survival baseline. Federated clearing keeps a cross-ratio, so a local unit cannot be stretched onto a neighbor. The Two-Generation Sunset folds aged surplus back to the Floor.</p>
+
+  <h2>Five guarantees</h2>
+  <table>
+    <thead><tr><th>Property</th><th>Mechanism</th><th>Guarantee</th></tr></thead>
+    <tbody>
+      <tr><td>Pre-axiomatic ground</td><td>Floor seniority</td><td>Survival essentials cannot be liquidated by a market deficit.</td></tr>
+      <tr><td>Zero-sum</td><td>Attested mutual credit</td><td>No parasitic interest. A closed trade cycle nets to zero.</td></tr>
+      <tr><td>Projective invariance</td><td>Federated cross-ratio</td><td>Communities clear fairly when local units differ.</td></tr>
+      <tr><td>Modular bound</td><td>Two-Generation Sunset</td><td>Wealth and debt do not run away across generations.</td></tr>
+      <tr><td>Entire kernel</td><td>Decay polynomial</td><td>The compound-interest pole is not in the ledger.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>1. The Floor comes before the numbers</h2>
+  <p>A formal account needs a boundary. On one side is what a market may clear. On the other is what participation itself requires. In the foundations of arithmetic, a pre-numeric ground precedes counting. Here that ground is the Floor.</p>
+  <p class="formula">Ω = F₀ ⊕ E, and the edge of E does not meet F₀.</p>
+  <p>F₀ is essential nutrition, shelter, and foundational care. E is enterprise clearing. On the book now in force, maintenance of lgme.app is also part of the Floor, including after a DAO.</p>
+  <p><strong>Axiom.</strong> The clearing operator stays inside E. A negative balance in E cannot place a lien on the Floor, and it cannot liquidate it. A recorded exchange is voluntary. It is not a sale of someone’s survival.</p>
+
+  <h2>2. Zero-sum credit</h2>
+  <p>Credit here is not an interest-bearing balance. It is one attested delivery, signed, and ordered in time. A person’s balance is attested inflows minus attested outflows.</p>
+  <p class="formula">Σ bᵢ(t) = 0</p>
+  <p>Every edge is counted once as a plus and once as a minus, so the whole ledger is zero. On a closed cycle, netting the smallest weight around the loop reduces exposure and leaves every net balance unchanged. The imbalance cancels. It does not harden into debt.</p>
+
+  <h2>3. The ratio that a change of unit cannot bend</h2>
+  <p>A single global ruler distorts a town. A town that inflates its own unit can also rob the next town, if settlement uses the raw number. Projective geometry keeps a four-point cross-ratio still when lengths are stretched.</p>
+  <p class="formula">I(e₁, e₂; e₃, e₄) = (w₃ − w₁)(w₄ − w₂) / ((w₃ − w₂)(w₄ − w₁))</p>
+  <p>Under any non-degenerate change of local unit, that ratio is unchanged. Federated clearing, including with Komunitin and Credit Commons, settles on the proportion of attested work. A node cannot export debasement to its neighbor.</p>
+
+  <h2>4. The Two-Generation Sunset</h2>
+  <p>A zero-sum ledger can still freeze if one balance runs to positive infinity and another to negative infinity. The modular inversion that sends an extreme magnitude back inside a bounded region is the model. The Sunset is that bound on enterprise balances.</p>
+  <p>The generational horizon is nominally two times twenty-five years, fifty years. Inside the active window, an unspent surplus is left whole, so present work is not punished. After that window it attenuates smoothly, by a squared cosine, and at the horizon it is zero. The same attenuation applies to a non-predatory legacy deficit, so the ledger remains zero-sum at every step. Aged surplus folds back into the Floor.</p>
+  <p class="formula">|bᵢ(t)| stays finite, bounded by maximum delivery, times degree, times the horizon.</p>
+
+  <h2>5. No compound-interest pole</h2>
+  <p>The sequence of attested exchanges can be written as a generating function. Because inflows and outflows are opposites, the sum of balances remains zero as an algebraic identity. Closed loops are the factors of a graph zeta function, and each such loop can be cleared without changing nets.</p>
+  <p>Interest-bearing debt has a generating series with a pole inside the unit disk. The Sunset kernel is a polynomial. A polynomial has no such pole. Aged surplus is the residual that returns to the Floor, and the active balance does not diverge.</p>
+
+  <h2>What this does not yet do</h2>
+  <p>These invariants are the formal target of the protocol. The live desk records the Floor, the shown deed, the refusal, and the sunset rule. It does not yet write the Ed25519 and Hedera Consensus Service ledger this paper analyzes. Until that tape is the book, the page is the account of the design, not a claim that the pole has already been removed from a live network.</p>
+  <p class="muted">The same page is on <a href="https://lgme.app/foundations">lgme.app</a>, <a href="https://hederica.com/foundations">hederica.com</a>, and <a href="https://egonomicanonymous.live/foundations.html">egonomicanonymous.live</a>.</p>
+</body>
+</html>
