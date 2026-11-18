@@ -1,4 +1,5 @@
 import { acceptHelpWant, listHelpWants } from '../../js/develop-want.mjs';
+import { listSignupNotices } from '../../js/owner-alert.mjs';
 import { guardRequest, json, readBody, readEnv } from '../lib/http.mjs';
 import { redisRest } from '../../js/redis-env.mjs';
 import { upstashStore } from '../lib/upstash.mjs';
@@ -31,7 +32,7 @@ export default async function handler(req, res) {
   }
   if (req.method === 'GET') {
     if (!admin(req, env)) return json(res, 401, { ok: false, error: 'The owner inbox needs the admin token.' });
-    const notices = await listHelpWants(store);
+    const notices = (await listHelpWants(store)).concat(await listSignupNotices(store));
     return json(res, 200, { ok: true, count: notices.length, notices });
   }
   if (req.method !== 'POST') return json(res, 405, { ok: false, error: 'Use GET or POST.' });

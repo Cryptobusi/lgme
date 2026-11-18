@@ -28,6 +28,11 @@ function paint(notices, openIds = new Set()) {
     link.href = notice.link;
     link.textContent = notice.kind === 'version' ? 'Open the version' : 'Open the IwanIT';
     card.append(title, meta, link);
+    if (notice.detail) {
+      const detail = document.createElement('p');
+      detail.textContent = notice.detail;
+      card.append(detail);
+    }
     if (notice.versionId && openIds.has(notice.versionId)) {
       const reason = document.createElement('input');
       if (!controlMarked) reason.id = 'version-reason';
