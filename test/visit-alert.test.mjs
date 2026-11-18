@@ -89,6 +89,13 @@ test('the mail call returns an id and swallows a timeout without writing the key
   assert.match(seen.init.body, /Site Visits <onboarding@resend.dev>/);
   assert.match(seen.init.body, /egonomist@mail\.grokbot\.com/);
   assert.match(seen.init.body, /\[lgme\.app\] Visit: \/privacy/);
+  const verified = await sendVisit({ path: '/', text: 'Site: lgme.app' }, { ...env, EMAIL_FROM: 'desk@lgme.app' }, async (_url, init) => {
+    seen = { init };
+    return { ok: true, json: async () => ({ id: 're_verified' }) };
+  });
+  assert.equal(verified.id, 're_verified');
+  assert.match(seen.init.body, /Site Visits <desk@lgme.app>/);
+  assert.equal(seen.init.body.includes('onboarding@resend.dev'), false);
   const skipped = await sendVisit({ path: '/', text: 'Site: lgme.app' }, {}, async () => { throw new Error('called'); });
   assert.equal(skipped.skipped, true);
   const timed = await sendVisit({ path: '/', text: 'Site: lgme.app' }, env, (_url, init) => new Promise((_resolve, reject) => {

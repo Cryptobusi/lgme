@@ -5,6 +5,13 @@ export const SEEN_COOKIE = 'va_seen=1; HttpOnly; Secure; SameSite=Lax; Max-Age=8
 const FROM = 'Site Visits <onboarding@resend.dev>';
 const TO = 'egonomist@mail.grokbot.com';
 
+export function visitFrom(env = {}) {
+  const configured = String(env.EMAIL_FROM || '').trim();
+  const email = (configured.match(/<([^>]+)>/) || [, configured])[1].trim();
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && !/resend\.dev$/i.test(email)) return `Site Visits <${email}>`;
+  return FROM;
+}
+
 function header(headers, name) {
   if (!headers) return '';
   if (typeof headers.get === 'function') return headers.get(name) || '';
@@ -135,7 +142,7 @@ export async function sendVisit(payload, env = {}, fetchImpl = fetch) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: FROM,
+        from: visitFrom(env),
         to: [TO],
         subject: `[lgme.app] Visit: ${payload.path}`,
         text: payload.text
@@ -146,6 +153,7 @@ export async function sendVisit(payload, env = {}, fetchImpl = fetch) {
       ok: response.ok === true,
       id: typeof body.id === 'string' ? body.id : '',
       status: response.status,
+      error: typeof body.name === 'string' ? body.name.slice(0, 40) : '',
       skipped: false
     };
   } catch {

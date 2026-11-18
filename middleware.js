@@ -13,7 +13,10 @@ export default async function middleware(request) {
   if (plan.revealId) {
     const result = await pending;
     if (result.id) headers['x-visit-id'] = result.id;
-    else if (result.status) headers['x-visit-status'] = String(result.status);
+    else {
+      delete headers['set-cookie'];
+      if (result.status) headers['x-visit-status'] = [result.status, result.error].filter(Boolean).join(' ');
+    }
     return next({ headers });
   }
   try { waitUntil(pending); } catch { /* a missed note must not block the page */ }
