@@ -20,10 +20,12 @@
   font-family: Figtree, sans-serif;
   font-size: 0.92rem;
   line-height: 1.35;
+  pointer-events: none;
 }
 #visit-notice p { margin: 0; min-width: 0; }
-#visit-notice a { color: #f4f1e8; }
+#visit-notice a { color: #f4f1e8; pointer-events: auto; }
 #visit-notice button {
+  pointer-events: auto;
   min-height: 44px;
   min-width: 44px;
   border: 0;

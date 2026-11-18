@@ -115,6 +115,7 @@ test('the privacy page, footer, sitemap, and notice leave the exchange alone', (
   assert.equal(text('index.html').includes('href="/privacy">Privacy</a>'), true);
   assert.equal(text('js/site-nav.js').includes('/js/visit-notice.js'), true);
   assert.match(notice, /lgme\.visit\.notice/);
+  assert.match(notice, /pointer-events:none/);
   assert.match(notice, /exchange\|campus\|mutual-credit/);
   assert.match(middleware, /waitUntil/);
   assert.match(middleware, /@vercel\/functions/);

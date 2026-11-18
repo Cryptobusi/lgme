@@ -99,12 +99,13 @@ async function onboard(page, shot) {
     await page.screenshot({ path: '/opt/cursor/artifacts/gym-onboard-390.png', timeout: 8000, animations: 'disabled' });
   }
   await page.locator('#agree-all').click();
-  await page.getByRole('button', { name: 'Next', exact: true }).click();
+  const stepNext = () => page.locator('button.primary').filter({ hasText: /^Next$/ });
+  await stepNext().click();
   await page.locator('#intake-chips').waitFor();
-  await page.getByRole('button', { name: 'Next', exact: true }).click();
+  await stepNext().click();
   await page.locator('#handle-chips').waitFor();
-  await page.getByRole('button', { name: 'Next', exact: true }).click();
-  await page.getByRole('button', { name: 'Next', exact: true }).click();
+  await stepNext().click();
+  await stepNext().click();
   await page.getByRole('button', { name: 'Skip', exact: true }).click();
   await page.locator('#setup-fee').waitFor();
   const status = await page.locator('#gym-status').innerText().catch(() => '');
