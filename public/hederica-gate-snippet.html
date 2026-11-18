@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Hederica gate snippet</title>
+</head>
+<body>
+<p>Paste the div and the script into hederica.com. The page stays hidden until the code is verified.</p>
+<div id="hederica-gate" style="position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:#0c100c;color:#f4f1e8;font:16px/1.4 Figtree,sans-serif;padding:1rem">
+  <form id="hederica-gate-form" style="width:min(100%,24rem);border:1px solid #c6a15b;border-radius:8px;padding:1rem;background:#151a15">
+    <h2 style="margin:0 0 0.4rem;font-size:1.2rem">Enter Hederica</h2>
+    <p style="margin:0 0 0.6rem">We email a code; the administrator is notified of new visitors.</p>
+    <label>Email<br><input id="hederica-email" type="email" autocomplete="email" required style="width:100%;min-height:44px;margin:0.3rem 0"></label>
+    <button type="button" id="hederica-send" style="min-height:44px;min-width:44px">Send code</button>
+    <label>Code<br><input id="hederica-code" inputmode="numeric" maxlength="6" style="width:100%;min-height:44px;margin:0.3rem 0"></label>
+    <button type="button" id="hederica-verify" style="min-height:44px;min-width:44px">Verify</button>
+    <p id="hederica-error" role="status"></p>
+    <button type="button" id="hederica-again" hidden style="min-height:44px">Try again</button>
+  </form>
+</div>
+<script>
+(function () {
+  var API = 'https://lgme.app';
+  var KEY = 'lgme.hederica.gate';
+  var root = document.getElementById('hederica-gate');
+  var error = document.getElementById('hederica-error');
+  var again = document.getElementById('hederica-again');
+  function hidePage(locked) {
+    document.documentElement.style.visibility = locked ? 'hidden' : '';
+    if (root) root.style.visibility = 'visible';
+    if (root) root.hidden = !locked;
+  }
+  function fail(text) {
+    error.textContent = text || 'Try again';
+    again.hidden = false;
+  }
+  async function check(token) {
+    var res = await fetch(API + '/api/gate/check?token=' + encodeURIComponent(token));
+    var body = await res.json().catch(function () { return {}; });
+    return body.ok === true;
+  }
+  async function boot() {
+    hidePage(true);
+    var saved = '';
+    try { saved = localStorage.getItem(KEY) || ''; } catch (e) { saved = ''; }
+    if (saved && await check(saved)) { hidePage(false); return; }
+  }
+  document.getElementById('hederica-send').addEventListener('click', async function () {
+    error.textContent = '';
+    var res = await fetch(API + '/api/gate/start', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: document.getElementById('hederica-email').value, site: 'hederica' }) });
+    var body = await res.json().catch(function () { return {}; });
+    if (!res.ok || !body.ok) fail(body.error || 'Try again');
+    else error.textContent = 'Code sent.';
+  });
+  document.getElementById('hederica-verify').addEventListener('click', async function () {
+    var res = await fetch(API + '/api/gate/verify', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: document.getElementById('hederica-email').value, code: document.getElementById('hederica-code').value }) });
+    var body = await res.json().catch(function () { return {}; });
+    if (!res.ok || !body.token) { fail(body.error || 'Try again'); return; }
+    try { localStorage.setItem(KEY, body.token); } catch (e) { /* the gate stays up */ }
+    if (await check(body.token)) hidePage(false);
+    else fail('Try again');
+  });
+  again.addEventListener('click', function () { error.textContent = ''; again.hidden = true; });
+  boot();
+})();
+</script>
+</body>
+</html>

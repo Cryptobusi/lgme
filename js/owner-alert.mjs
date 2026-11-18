@@ -28,6 +28,7 @@ export function signupText(spec, now = Date.now()) {
     `Category: ${spec.category || 'home'}`,
     `Source: ${spec.source || 'none'}`,
     `Region: ${spec.region || 'unknown'}`,
+    `Site: ${spec.site || spec.category || 'home'}`,
     `Member: ${String(spec.memberId || '').slice(0, 16)}`
   ].join('\n');
 }
@@ -61,7 +62,7 @@ export async function notifyNewMember(store, spec, { env = {}, fetchImpl = globa
     const stamps = ((await store.get(`owner:signup:ip:${ip}`)) || []).filter((stamp) => now - stamp < 60 * 60 * 1000);
     if (stamps.length >= 10) return { ok: true, limited: true };
     const detail = signupText({ ...spec, memberId: id }, now);
-    const notice = { category: 'Sign-up', title: 'New member', at: new Date(now).toISOString(), link: '/owner', kind: 'signup', detail };
+    const notice = { category: 'Sign-up', title: spec.title || 'New member', at: new Date(now).toISOString(), link: '/owner', kind: 'signup', detail };
     const prior = (await store.get('owner:signups')) || [];
     await store.set('owner:signups', [...prior, notice].slice(-40));
     await store.set(`owner:new:${id}`, { at: notice.at });
