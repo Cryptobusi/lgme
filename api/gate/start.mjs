@@ -3,21 +3,13 @@ import { applyGateCors, startGate } from '../../js/gate-core.mjs';
 import { headerMap, json, readBody, readEnv } from '../lib/http.mjs';
 import { redisRest } from '../../js/redis-env.mjs';
 import { upstashStore } from '../lib/upstash.mjs';
-
-function fromAddress(value) {
-  const raw = String(value || '').trim().replace(/^["']|["']$/g, '');
-  const named = raw.match(/<([^>]+)>/);
-  const bare = raw.match(/[^\s<]+@[^\s>]+/);
-  const email = (named ? named[1] : bare ? bare[0] : '').trim();
-  if (!email.includes('@')) return '';
-  return `lgme <${email}>`;
-}
+import { visitFrom } from '../../js/visit-alert.mjs';
 
 async function sendWithResend(env, email, code) {
-  const from = fromAddress(env.EMAIL_FROM);
+  const from = visitFrom(env);
   const fromDomain = from.split('@')[1]?.replace(/[>\s]/g, '') || 'missing';
-  if (!from) {
-    console.error(JSON.stringify({ event: 'resend.send', status: 0, fromDomain }));
+  if (/resend\.dev$/i.test(fromDomain)) {
+    console.error(JSON.stringify({ event: 'resend.send', status: 0, fromDomain, name: 'sandbox_rejected' }));
     return { ok: false };
   }
   const response = await fetch('https://api.resend.com/emails', {
@@ -25,7 +17,7 @@ async function sendWithResend(env, email, code) {
     headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, 'content-type': 'application/json' },
     body: JSON.stringify({
       from,
-      to: email,
+      to: [email],
       subject: 'Your Hederica code',
       text: `Your Hederica code is ${code}. It expires in 10 minutes. If you did not ask, ignore this message.`
     })
