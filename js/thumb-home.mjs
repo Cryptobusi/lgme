@@ -281,9 +281,13 @@ if (root) {
     if (member?.emailHash && localStorage.getItem('lgme.access') === 'full') form.hidden = true;
   } catch { /* the form still shows */ }
   let fingerReady = null;
+  let fingerCreate = null;
   const armFingerprint = () => {
-    prepareFingerprintPrompt().then((next) => { fingerReady = next; }).catch((error) => {
-      fingerReady = { ok: false, message: error.message || NO_FINGERPRINT };
+    prepareFingerprintPrompt().then((next) => {
+      fingerReady = next;
+      if (next?.ok && next.kind === 'create') fingerCreate = next;
+    }).catch((error) => {
+      fingerReady = { ok: false, code: 'missing', message: error.message || NO_FINGERPRINT };
     });
   };
   armFingerprint();
@@ -296,17 +300,63 @@ if (root) {
     note.hidden = false;
     note.textContent = NO_FINGERPRINT;
   });
-  const showGuide = (button, step, detail = '') => {
+  const showGuide = (button, step, detail = '', extra = {}) => {
     let host = button.parentElement?.querySelector('.fingerprint-guide');
     if (!host) {
       host = document.createElement('div');
       host.className = 'fingerprint-guide';
       button.insertAdjacentElement('afterend', host);
     }
-    host.innerHTML = fingerprintGuideHtml(step, detail);
+    const setup = extra.setup || /no passkey/i.test(detail || '');
+    host.innerHTML = fingerprintGuideHtml(step, detail, { setup });
     const again = host.querySelector('.fingerprint-again');
     if (again) again.addEventListener('click', () => button.click());
+    const create = host.querySelector('.fingerprint-setup');
+    if (create) create.addEventListener('click', () => {
+      const ready = fingerCreate?.ok ? fingerCreate : (fingerReady?.kind === 'create' ? fingerReady : null);
+      showGuide(button, 2);
+      if (!ready?.ok) {
+        button.classList.remove('is-scanning');
+        showGuide(button, 'fail', ready?.message || fingerReady?.message || 'No passkey on this phone yet.', { setup: true });
+        armFingerprint();
+        return;
+      }
+      let pending;
+      try { pending = startFingerprintPrompt({ ...ready, kind: 'create' }); }
+      catch (error) {
+        button.classList.remove('is-scanning');
+        showGuide(button, 'fail', fingerprintErrorLine(error), { setup: error.code === 'missing' });
+        armFingerprint();
+        return;
+      }
+      showGuide(button, 3);
+      followFingerprint(button, pending);
+    });
     return host;
+  };
+  const followFingerprint = (button, pending) => {
+    pending.then(async (started) => {
+      const saved = await finishFingerprintPrompt(started, memberId);
+      if (started.kind === 'create') {
+        const next = await prepareFingerprintPrompt();
+        if (next?.ok && next.kind === 'get') {
+          showGuide(button, 2);
+          const verified = await startFingerprintPrompt(next);
+          const check = await finishFingerprintPrompt(verified, memberId);
+          if (check?.verified === true) { unlockMember(button); return; }
+        }
+        fingerCreate = null;
+        showGuide(button, 'fail', 'Fingerprint saved. Tap Try again to unlock.');
+        mark(button, 'ok', 'Fingerprint saved. Tap again to sign in, or use the authenticator code.');
+        return;
+      }
+      if (saved?.verified === true) unlockMember(button);
+      else showGuide(button, 'fail', 'The fingerprint was not accepted. Use the authenticator code.');
+    }).catch((error) => {
+      button.classList.remove('is-scanning');
+      const line = fingerprintErrorLine(error);
+      showGuide(button, 'fail', line, { setup: error?.kind === 'get' || error?.code === 'missing' || /no passkey/i.test(line) });
+    });
   };
   const unlockMember = (button) => {
     codeOk = true;
@@ -327,7 +377,7 @@ if (root) {
       const ready = fingerReady;
       if (!ready?.ok) {
         button.classList.remove('is-scanning');
-        showGuide(button, 'fail', ready?.message || 'Tap again to show the fingerprint prompt. Or use the authenticator code.');
+        showGuide(button, 'fail', ready?.message || 'No passkey on this phone yet.', { setup: ready?.code === 'missing' || ready?.kind !== 'get' });
         armFingerprint();
         return;
       }
@@ -335,33 +385,14 @@ if (root) {
       try { pending = startFingerprintPrompt(ready); }
       catch (error) {
         button.classList.remove('is-scanning');
-        showGuide(button, 'fail', fingerprintErrorLine(error));
+        showGuide(button, 'fail', fingerprintErrorLine(error), { setup: error.code === 'missing' || ready.kind === 'get' });
         armFingerprint();
         return;
       }
       showGuide(button, 3);
       fingerReady = null;
       armFingerprint();
-      pending.then(async (started) => {
-        const saved = await finishFingerprintPrompt(started, memberId);
-        if (started.kind === 'create') {
-          const next = await prepareFingerprintPrompt();
-          if (next?.ok && next.kind === 'get') {
-            showGuide(button, 2);
-            const verified = await startFingerprintPrompt(next);
-            const check = await finishFingerprintPrompt(verified, memberId);
-            if (check?.verified === true) { unlockMember(button); return; }
-          }
-          showGuide(button, 'fail', 'Fingerprint saved. Tap Try again to unlock.');
-          mark(button, 'ok', 'Fingerprint saved. Tap again to sign in, or use the authenticator code.');
-          return;
-        }
-        if (saved?.verified === true) unlockMember(button);
-        else showGuide(button, 'fail', 'The fingerprint was not accepted. Use the authenticator code.');
-      }).catch((error) => {
-        button.classList.remove('is-scanning');
-        showGuide(button, 'fail', fingerprintErrorLine(error));
-      });
+      followFingerprint(button, pending);
     });
   };
   tapFingerprint(board.querySelector('#access-fingerprint'));
@@ -508,7 +539,7 @@ if (root) {
       const ready = gateReady;
       if (!ready?.ok) {
         button.classList.remove('is-scanning');
-        statusLine.innerHTML = fingerprintGuideHtml('fail', ready?.message || 'Tap again to show the fingerprint prompt. Or use the authenticator code.');
+        statusLine.innerHTML = fingerprintGuideHtml('fail', ready?.message || 'No passkey on this phone yet.', { setup: true });
         armGate();
         return;
       }
@@ -516,7 +547,7 @@ if (root) {
       try { pending = startFingerprintPrompt(ready); }
       catch (error) {
         button.classList.remove('is-scanning');
-        statusLine.innerHTML = fingerprintGuideHtml('fail', fingerprintErrorLine(error));
+        statusLine.innerHTML = fingerprintGuideHtml('fail', fingerprintErrorLine(error), { setup: error.code === 'missing' || ready.kind === 'get' });
         armGate();
         return;
       }
@@ -543,9 +574,31 @@ if (root) {
         statusLine.innerHTML = fingerprintGuideHtml(saved?.verified === true ? 'ok' : 'fail', 'The fingerprint was not accepted. Use the authenticator code.');
         finish(gateDecision({ human: true, method: 'passkey', verified: saved?.verified === true }));
       }).catch((error) => {
-        statusLine.innerHTML = fingerprintGuideHtml('fail', fingerprintErrorLine(error));
+        statusLine.innerHTML = fingerprintGuideHtml('fail', fingerprintErrorLine(error), { setup: error?.kind === 'get' || error?.code === 'missing' });
       });
     };
+    if (statusLine.dataset.guide !== '1') statusLine.dataset.guide = '1';
+    else return;
+    statusLine.addEventListener('click', (event) => {
+      if (event.target.closest('.fingerprint-again')) button.click();
+      if (!event.target.closest('.fingerprint-setup')) return;
+      const ready = fingerCreate?.ok ? fingerCreate : (gateReady?.kind === 'create' ? gateReady : null);
+      statusLine.innerHTML = fingerprintGuideHtml(2);
+      if (!ready?.ok) {
+        statusLine.innerHTML = fingerprintGuideHtml('fail', ready?.message || 'No passkey on this phone yet.', { setup: true });
+        return;
+      }
+      let pending;
+      try { pending = startFingerprintPrompt({ ...ready, kind: 'create' }); }
+      catch (error) {
+        statusLine.innerHTML = fingerprintGuideHtml('fail', fingerprintErrorLine(error), { setup: error.code === 'missing' });
+        return;
+      }
+      statusLine.innerHTML = fingerprintGuideHtml(3);
+      pending.catch((error) => {
+        statusLine.innerHTML = fingerprintGuideHtml('fail', fingerprintErrorLine(error), { setup: true });
+      });
+    });
     dialog.querySelector('#gate-totp-go').onclick = async () => {
       let address = '';
       try { address = sessionStorage.getItem('lgme.access.email') || ''; } catch { /* ask for the email code */ }

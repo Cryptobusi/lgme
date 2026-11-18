@@ -121,7 +121,7 @@ const fingerBox = await page.locator('#access-fingerprint').boundingBox();
 const dockBox = await page.locator('#ai-dock').boundingBox();
 if (!fingerBox || fingerBox.height < 48 || await page.locator('#access-fingerprint').isDisabled()) failures.push('fingerprint button hidden');
 await page.locator('#access-fingerprint').click();
-await page.waitForFunction(() => /Touch the sensor on your phone|Try again|Unlocked/.test(document.querySelector('.fingerprint-steps')?.innerHTML || ''));
+await page.waitForFunction(() => /Touch the sensor when your phone asks|Try again|Signed in/.test(document.querySelector('.fingerprint-steps')?.innerHTML || ''));
 if (fingerBox && dockBox && fingerBox.y < dockBox.y + dockBox.height && fingerBox.y + fingerBox.height > dockBox.y) failures.push('fingerprint button covered');
 await page.route('**/api/email/send', (route) => route.fulfill({ status: 400, contentType: 'application/json', body: '{"ok":false,"error":"Nothing was sent."}' }));
 await page.locator('#access-email').fill('ada@example.com');

@@ -446,7 +446,12 @@ html.is-one-tab nav[aria-label="Gym"] #one-menu button { min-width: 44px; min-he
 #gym-ididit-confirm, #open-dispute, #demo-confirm { align-self: flex-end; min-width: 44px; }
 .fingerprint-steps { list-style: none; margin: 0.35rem 0; padding: 0; }
 .fingerprint-steps li { display: flex; align-items: center; gap: 0.4rem; min-height: 28px; margin: 0; }
+.fingerprint-steps span { font-size: 13px; line-height: 1.3; }
+.fingerprint-steps .is-current span { font-weight: 700; color: #c6a15b; }
+.fingerprint-steps .is-done span { color: #86efac; }
+.fingerprint-steps .is-failed span { color: #fca5a5; }
 .fingerprint-steps i { width: 0.7rem; height: 0.7rem; border-radius: 50%; background: #6b7280; flex: 0 0 auto; }
+.fingerprint-setup, .fingerprint-again { min-height: 44px; min-width: 44px; margin: 0.25rem 0.35rem 0 0; }
 .fingerprint-steps .is-current i { background: #c6a15b; animation: lgme-status-blink 1.5s ease-in-out infinite; }
 .fingerprint-steps .is-done i { background: #22c55e; animation: none; opacity: 1; }
 .fingerprint-steps .is-failed i { background: #b00020; animation: none; opacity: 1; }

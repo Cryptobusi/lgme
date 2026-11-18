@@ -7,7 +7,7 @@ const root = new URL('..', import.meta.url);
 
 function options(kind) {
   if (kind === 'get') {
-    return { challenge: 'AAAA', rpId: 'lgme.app', allowCredentials: [], userVerification: 'required' };
+    return { challenge: 'AAAA', rpId: 'lgme.app', allowCredentials: [{ type: 'public-key', id: 'AQID', transports: ['internal'] }], userVerification: 'required' };
   }
   return {
     challenge: 'AAAA',
@@ -34,7 +34,7 @@ test('a fingerprint tap opens the prompt before any await', async () => {
   assert.equal(seen[0][0], 'create');
   assert.equal(seen[0][1].publicKey.rp.id, 'lgme.app');
   assert.equal(seen[0][1].publicKey.authenticatorSelection.authenticatorAttachment, 'platform');
-  assert.equal(seen[0][1].publicKey.authenticatorSelection.userVerification, 'required');
+  assert.equal(seen[0][1].publicKey.authenticatorSelection.userVerification, 'preferred');
   await pending.catch(() => {});
   storage.setItem = (key, value) => memory.set(key, value);
   memory.set('lgme.passkey.userId', 'phone:device');
@@ -43,17 +43,23 @@ test('a fingerprint tap opens the prompt before any await', async () => {
   const again = startFingerprintPrompt({ ok: true, kind: 'get', userId: 'phone:device', options: options('get') });
   assert.equal(seen.at(-1)[0], 'get');
   assert.equal(seen.at(-1)[1].publicKey.rpId, 'lgme.app');
-  assert.equal(seen.at(-1)[1].publicKey.userVerification, 'required');
+  assert.equal(seen.at(-1)[1].publicKey.userVerification, 'preferred');
+  assert.equal(seen.at(-1)[1].publicKey.allowCredentials[0].type, 'public-key');
   await again.catch(() => {});
+  const before = seen.length;
+  assert.throws(() => startFingerprintPrompt({ ok: true, kind: 'get', userId: 'phone', options: { challenge: 'AAAA', rpId: 'lgme.app', allowCredentials: [], userVerification: 'required' } }), /No passkey on this phone yet/);
+  assert.equal(seen.length, before);
+  assert.throws(() => startFingerprintPrompt({ ok: true, kind: 'get', userId: 'phone', options: { challenge: 'AAAA', rpId: 'example.com', allowCredentials: [{ type: 'public-key', id: 'AQID' }] } }), /Wrong domain/);
   assert.throws(() => startFingerprintPrompt({ ok: false, unavailable: true, message: 'This phone has no fingerprint or screen lock. Use the authenticator code.' }), /authenticator code/);
   const party = readFileSync(new URL('js/webauthn-passkey.mjs', root), 'utf8');
   assert.match(party, /export const RP_ID = 'lgme.app'/);
   assert.match(party, /authenticatorAttachment: 'platform'/);
-  assert.match(party, /userVerification: 'required'/);
+  assert.match(party, /userVerification: 'preferred'/);
   const home = readFileSync(new URL('js/thumb-home.mjs', root), 'utf8');
   const tap = home.slice(home.indexOf('const tapFingerprint'), home.indexOf('tapFingerprint(board'));
   assert.equal(tap.includes("addEventListener('click', async"), false);
-  assert.equal(tap.indexOf('startFingerprintPrompt(ready)') < tap.indexOf('await '), true);
+  assert.equal(tap.includes('startFingerprintPrompt(ready)'), true);
+  assert.equal(tap.indexOf('await '), -1);
   const gate = home.slice(home.indexOf("gate-passkey').onclick"), home.indexOf("gate-totp-go').onclick"));
   assert.match(gate, /onclick = \(\) =>/);
   assert.equal(gate.indexOf('startFingerprintPrompt(ready)') < gate.indexOf('await '), true);
@@ -69,19 +75,28 @@ test('a fingerprint tap opens the prompt before any await', async () => {
   assert.equal(manifest.display, 'standalone');
   const sensor = fingerprintGuideHtml(2);
   assert.match(sensor, /class="is-current"/);
-  assert.match(sensor, /aria-label="2 Touch the sensor on your phone"/);
+  assert.match(sensor, />1 Tap the button</);
+  assert.match(sensor, />2 Touch the sensor when your phone asks</);
   const holding = fingerprintGuideHtml(3);
-  assert.match(holding, /aria-label="3 Hold until it buzzes"/);
+  assert.match(holding, />3 Checking</);
   assert.match(holding, /class="is-current"/);
   const opened = fingerprintGuideHtml('ok');
-  assert.match(opened, /aria-label="4 Unlocked"/);
+  assert.match(opened, />4 Signed in</);
   assert.match(opened, /class="is-done"/);
-  const blocked = fingerprintGuideHtml('fail', fingerprintErrorLine({ name: 'NotAllowedError' }));
+  const blocked = fingerprintGuideHtml('fail', fingerprintErrorLine({ name: 'NotAllowedError' }), { setup: false });
   assert.match(blocked, /class="is-failed"/);
   assert.match(blocked, /Try again/);
-  assert.match(blocked, /cancelled or blocked/);
+  assert.match(blocked, />4 Cancelled\.</);
+  const missing = fingerprintGuideHtml('fail', fingerprintErrorLine({ code: 'missing', kind: 'get' }), { setup: true });
+  assert.match(missing, /No passkey on this phone yet/);
+  assert.match(missing, /Set up fingerprint/);
+  assert.match(fingerprintErrorLine({ name: 'TimeoutError' }), /timed out/);
+  assert.match(fingerprintErrorLine({ name: 'NotSupportedError' }), /not supported/);
   assert.match(fingerprintErrorLine({ name: 'InvalidStateError' }), /already saved/);
-  assert.match(fingerprintErrorLine({ name: 'SecurityError' }), /lgme\.app/);
+  assert.match(fingerprintErrorLine({ name: 'SecurityError' }), /Wrong domain/);
+  const homeSetup = home.slice(home.indexOf("querySelector('.fingerprint-setup')"), home.indexOf('const followFingerprint'));
+  assert.equal(homeSetup.includes('startFingerprintPrompt'), true);
+  assert.equal(homeSetup.indexOf('await '), -1);
   const page = readFileSync(new URL('index.html', root), 'utf8');
   assert.match(page, /publickey-credentials-get=\(self\)/);
   assert.match(page, /publickey-credentials-create=\(self\)/);

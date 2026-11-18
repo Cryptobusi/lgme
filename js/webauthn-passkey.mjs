@@ -71,7 +71,7 @@ export async function passkeyRequest({ store, action, body = {}, host, verifyAut
       userName: userId,
       userID: new TextEncoder().encode(userId),
       attestationType: 'none',
-      authenticatorSelection: { authenticatorAttachment: 'platform', residentKey: 'preferred', userVerification: 'required' }
+      authenticatorSelection: { authenticatorAttachment: 'platform', residentKey: 'preferred', userVerification: 'preferred' }
     });
     await challenge(store, userId, options.challenge);
     return { status: 200, body: { ok: true, options } };
@@ -104,7 +104,7 @@ export async function passkeyRequest({ store, action, body = {}, host, verifyAut
     const options = await generateAuthenticationOptions({
       rpID: party.rpID,
       allowCredentials: [{ id: credentialId, transports: ['internal'] }],
-      userVerification: 'required'
+      userVerification: 'preferred'
     });
     await challenge(store, userId, options.challenge);
     return { status: 200, body: { ok: true, options } };

@@ -19,20 +19,28 @@ export async function fingerprintSupported(scope = globalThis) {
   try { return await Cred.isUserVerifyingPlatformAuthenticatorAvailable(); } catch { return await platformAuthenticatorIsAvailable(); }
 }
 
-export function fingerprintErrorLine(error) {
-  const name = error?.name || error?.cause?.name || '';
-  if (name === 'NotAllowedError') return 'The fingerprint was cancelled or blocked. Allow it for lgme.app, then try again.';
-  if (name === 'InvalidStateError') return 'A fingerprint is already saved on this phone. Try again to unlock.';
-  if (name === 'SecurityError') return 'This page cannot use the fingerprint. Open https://lgme.app and try again.';
-  return error?.message || 'The fingerprint prompt did not open. Use the authenticator code.';
+function escapeGuide(value) {
+  return String(value || '').replace(/[&<>"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[char]));
 }
 
-export function fingerprintGuideHtml(step, detail = '') {
+export function fingerprintErrorLine(error) {
+  const name = error?.name || error?.cause?.name || '';
+  const message = String(error?.message || error?.cause?.message || '');
+  if (error?.code === 'missing' || /no passkey|no fingerprint is saved/i.test(message)) return 'No passkey on this phone yet.';
+  if (name === 'NotSupportedError' || /not supported/i.test(message)) return 'Fingerprint is not supported on this phone.';
+  if (name === 'SecurityError' || /rp id|invalid for this domain|wrong domain/i.test(message)) return 'Wrong domain. Open https://lgme.app and try again.';
+  if (name === 'TimeoutError' || name === 'AbortError' || /^timeout/i.test(message)) return 'The fingerprint check timed out.';
+  if (name === 'NotAllowedError') return error?.kind === 'get' ? 'No passkey on this phone yet.' : 'Cancelled.';
+  if (name === 'InvalidStateError') return 'A fingerprint is already saved on this phone. Try again to unlock.';
+  return message || 'The fingerprint prompt did not open.';
+}
+
+export function fingerprintGuideHtml(step, detail = '', extra = {}) {
   const labels = [
-    'Tap Use fingerprint',
-    'Touch the sensor on your phone',
-    'Hold until it buzzes',
-    step === 'fail' ? (detail || 'The fingerprint prompt did not open.') : 'Unlocked'
+    'Tap the button',
+    'Touch the sensor when your phone asks',
+    'Checking',
+    step === 'fail' ? (detail || 'The fingerprint prompt did not open.') : 'Signed in'
   ];
   const current = step === 'ok' || step === 'fail' ? 4 : Number(step) || 1;
   const items = labels.map((label, index) => {
@@ -41,10 +49,12 @@ export function fingerprintGuideHtml(step, detail = '') {
     if (n === current && step === 'fail') cls = 'is-failed';
     else if ((n === current && step === 'ok') || (n < current && step !== 'fail')) cls = 'is-done';
     else if (n === current) cls = 'is-current';
-    return `<li class="${cls}" aria-label="${n} ${label}"><i></i></li>`;
+    const text = `${n} ${label}`;
+    return `<li class="${cls}"><i></i><span>${escapeGuide(text)}</span></li>`;
   }).join('');
   const again = step === 'fail' ? '<button type="button" class="fingerprint-again">Try again</button>' : '';
-  return `<ol class="fingerprint-steps">${items}</ol>${again}`;
+  const setup = extra.setup ? '<button type="button" class="fingerprint-setup">Set up fingerprint</button>' : '';
+  return `<ol class="fingerprint-steps">${items}</ol>${setup}${again}`;
 }
 
 export function passkeyUserId(emailHash, x) {
@@ -94,16 +104,56 @@ export async function prepareFingerprintPrompt(storage = localStorage) {
   }
 }
 
+function preferredOptions(options, kind) {
+  const next = { ...options };
+  if (kind === 'get') {
+    next.userVerification = 'preferred';
+    next.rpId = next.rpId || 'lgme.app';
+    return next;
+  }
+  next.rp = { ...(options.rp || {}), id: options.rp?.id || 'lgme.app', name: options.rp?.name || 'lgme' };
+  next.authenticatorSelection = {
+    ...(options.authenticatorSelection || {}),
+    authenticatorAttachment: 'platform',
+    residentKey: options.authenticatorSelection?.residentKey || 'preferred',
+    userVerification: 'preferred'
+  };
+  return next;
+}
+
+function domainError(id) {
+  if (!id || id === 'lgme.app' || id === 'localhost') return null;
+  const error = new Error('Wrong domain. Open https://lgme.app and try again.');
+  error.name = 'SecurityError';
+  return error;
+}
+
 export function startFingerprintPrompt(prepared) {
   if (!prepared?.ok || !prepared.options?.challenge) {
     const error = new Error(prepared?.message || TAP_AGAIN);
-    error.code = prepared?.unavailable ? 'unavailable' : 'wait';
+    error.code = prepared?.code || (prepared?.unavailable ? 'unavailable' : 'wait');
     throw error;
   }
-  const run = prepared.kind === 'get'
-    ? startAuthentication({ optionsJSON: prepared.options })
-    : startRegistration({ optionsJSON: prepared.options });
-  return run.then((response) => ({ kind: prepared.kind === 'get' ? 'get' : 'create', response, userId: prepared.userId, options: prepared.options }));
+  const kind = prepared.kind === 'get' ? 'get' : 'create';
+  const options = preferredOptions(prepared.options, kind);
+  const rpId = kind === 'get' ? options.rpId : options.rp?.id;
+  const wrong = domainError(rpId);
+  if (wrong) throw wrong;
+  if (kind === 'get' && !(options.allowCredentials || []).length) {
+    const error = new Error('No passkey on this phone yet.');
+    error.code = 'missing';
+    error.kind = 'get';
+    throw error;
+  }
+  const run = kind === 'get'
+    ? startAuthentication({ optionsJSON: options })
+    : startRegistration({ optionsJSON: options });
+  return run.then((response) => ({ kind, response, userId: prepared.userId, options })).catch((error) => {
+    const failed = error instanceof Error ? error : new Error('The fingerprint prompt did not open.');
+    failed.kind = kind;
+    if (!failed.name && error?.name) failed.name = error.name;
+    throw failed;
+  });
 }
 
 export async function finishFingerprintPrompt(started, emailHash = '') {
