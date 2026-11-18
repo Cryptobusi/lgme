@@ -47,6 +47,10 @@
   overflow-x: auto;
   overflow-y: hidden;
 }
+html.is-one-tab.is-more-open #category-chips::after {
+  content: '';
+  flex: 0 0 10rem;
+}
 #category-chips button {
   flex: 0 0 auto;
   min-height: 48px;

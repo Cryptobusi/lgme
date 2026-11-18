@@ -92,6 +92,11 @@ async function open(browser, width, height) {
 async function tap(page, selector) {
   const target = page.locator(selector);
   await target.evaluate((node) => {
+    const scroller = node.closest('#category-chips');
+    if (scroller) {
+      const delta = node.getBoundingClientRect().left - scroller.getBoundingClientRect().left;
+      scroller.scrollLeft += delta - 8;
+    }
     const y = node.getBoundingClientRect().top + window.scrollY - 100;
     window.scrollTo(0, Math.max(0, y));
   });

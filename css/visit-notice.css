@@ -1,0 +1,38 @@
+#visit-notice {
+  position: fixed;
+  left: 0.6rem;
+  right: 0.6rem;
+  top: calc(var(--notice-h, 0px) + 3.4rem);
+  z-index: 45;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem 0.7rem;
+  box-sizing: border-box;
+  max-width: 28rem;
+  margin: 0 auto;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid #c6a15b;
+  border-radius: 12px;
+  background: #151a15;
+  color: #f4f1e8;
+  font-family: Figtree, sans-serif;
+  font-size: 0.92rem;
+  line-height: 1.35;
+  pointer-events: none;
+}
+#visit-notice p { margin: 0; min-width: 0; }
+#visit-notice a { color: #f4f1e8; pointer-events: auto; }
+#visit-notice button {
+  pointer-events: auto;
+  min-height: 44px;
+  min-width: 44px;
+  border: 0;
+  border-radius: 8px;
+  background: #f4f1e8;
+  color: #1c1b19;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.2rem 0.75rem;
+}
