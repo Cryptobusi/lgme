@@ -25,7 +25,7 @@ export function pickDensity(probe = {}) {
   const fitH = usableH / os;
   const orientation = probe.orientation || (height >= width ? 'portrait' : 'landscape');
   let density = 'regular';
-  if (fitW < 360 || fitH < 520 || (orientation === 'landscape' && fitH < 420)) density = 'compact';
+  if (fitW < 720 || fitH < 520 || (orientation === 'landscape' && fitH < 420)) density = 'compact';
   else if (fitW >= 840 && fitH >= 700) density = 'roomy';
   return { density, osScale: os, orientation, reducedMotion: probe.reducedMotion === true, fitW, fitH };
 }

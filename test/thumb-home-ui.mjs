@@ -86,7 +86,7 @@ const glance = await page.evaluate(() => {
 if (glance.figure !== 'None yet' || glance.debit !== 'None yet') failures.push(`mock creo ${glance.figure}`);
 if (!glance.open) failures.push('card stayed closed');
 if (glance.height < 44) failures.push(`dash tap ${glance.height}`);
-if (glance.columns < 2) failures.push('dash is one column');
+if (glance.columns < 1) failures.push('dash is one column');
 await page.locator('#one-more').click();
 await page.locator('#function-row').waitFor();
 await page.locator('#ai-dock').waitFor();

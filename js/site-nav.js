@@ -1,6 +1,6 @@
 (function () {
   var EPOCH = '2';
-  var CURRENT = { 'lgme-v240': 1, 'lgme-gym-v81': 1 };
+  var CURRENT = { 'lgme-v241': 1, 'lgme-gym-v81': 1 };
   function keep(name) {
     if (!name) return true;
     if (name === 'lgme.reset.epoch' || name === 'lgme.reset.note' || name === 'lgme.device.key' || name === 'lgme.display.step' || name === 'lgme.display.easy' || name === 'lgme-gym.seat' || name === 'lgme.health.book' || name === 'lgme.health.email' || name === 'lgme.health.plan' || name === 'lgme.health.contact' || name === 'lgme.health.contactGrants' || name === 'lgme.health.consent' || name === 'lgme.demo.member') return true;
@@ -267,6 +267,11 @@
       });
       menu.appendChild(easyMenu);
     }
+    var closeMenu = function () {
+      document.documentElement.classList.remove('is-more-open');
+      button.setAttribute('aria-expanded', 'false');
+      menu.hidden = true;
+    };
     var last = 0;
     var toggle = function () {
       var now = Date.now();
@@ -284,6 +289,27 @@
     });
     button.addEventListener('pointerup', toggle);
     button.addEventListener('click', toggle);
+    menu.addEventListener('click', function (event) {
+      var item = event.target.closest && event.target.closest('a, button');
+      if (!item || !menu.contains(item)) return;
+      if (item.id === 'hedera-open' || (item.closest && item.closest('#hedera-choices'))) return;
+      var route = item.getAttribute('data-route');
+      if (route) {
+        if (document.getElementById('gym-panel')) location.hash = route;
+        else location.assign('/gym#' + route);
+      }
+      closeMenu();
+    });
+    document.addEventListener('click', function (event) {
+      if (menu.hidden) return;
+      if (event.target.closest && event.target.closest('#one-menu, #one-more')) return;
+      closeMenu();
+    });
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') closeMenu();
+    });
+    var back = document.getElementById('site-back');
+    if (back) back.addEventListener('click', closeMenu);
   };
   if (document.body) armOneTab();
   else document.addEventListener('DOMContentLoaded', armOneTab);

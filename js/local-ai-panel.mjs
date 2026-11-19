@@ -79,8 +79,15 @@ function paint(dock) {
     state.setAttribute('aria-label', sent ? 'Sent.' : 'Not sent. Held on this phone.');
   }
   if (typeof dock.paintControls === 'function') dock.paintControls();
-  if (dock.classList.contains('has-field')) return;
-  if (!enabled) return;
+  if (!enabled) {
+    accept.disabled = true;
+    return;
+  }
+  if (dock.classList.contains('has-field')) {
+    accept.disabled = false;
+    accept.textContent = 'Hint';
+    return;
+  }
   accept.disabled = !ready;
   accept.textContent = 'Hint';
 }
@@ -523,6 +530,7 @@ function mount() {
     const log = dock.querySelector('#ai-log');
     log.textContent = words;
     paintChips(labels, field, last);
+    paint(dock);
     speakGuide(words);
     const token = ++fieldToken;
     if (!localAiReady()) return;
@@ -1249,6 +1257,11 @@ function mount() {
     else showField(document.activeElement);
   });
   dock.querySelector('#ai-accept').addEventListener('click', () => {
+    if (dock.classList.contains('has-field')) {
+      const words = dock.querySelector('#ai-log')?.textContent || '';
+      if (words) speakGuide(words);
+      return;
+    }
     if (!localAiReady()) return;
     const top = chips.querySelector('.ai-chip');
     if (!top) return;

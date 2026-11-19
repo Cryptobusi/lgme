@@ -54,8 +54,13 @@ await page.waitForFunction(() => document.getElementById('one-more')?.getAttribu
 await page.waitForTimeout(500);
 await page.locator('#one-more').click();
 if ((await page.locator('#one-more').getAttribute('aria-expanded')) !== 'true') failures.push('click did not open');
+await page.locator('#tape-sound').click();
+await page.waitForFunction(() => document.getElementById('one-menu')?.hidden === true);
+await page.waitForTimeout(500);
+await page.locator('#one-more').click();
 await page.locator('#one-menu [data-intro]').click();
 await page.waitForURL(/\/introduction/);
+await page.waitForFunction(() => document.documentElement.dataset.density === 'compact' && !!document.querySelector('script[src="/js/display-fit.mjs"]'));
 if (!/Debit = you owe/.test(await page.locator('#creo-glossary').innerText())) failures.push('glossary missing');
 await page.locator('#intro-list a').first().waitFor();
 await page.locator('#intro-q').fill('glossary');
@@ -63,6 +68,21 @@ await page.locator('#intro-find').evaluate((form) => form.requestSubmit());
 await page.waitForFunction(() => /glossary/i.test(document.getElementById('intro-hits')?.innerText || ''));
 const hit = await page.locator('#intro-hits a').first().getAttribute('href');
 if (hit !== '/glossary') failures.push(`search ${hit}`);
+const gym = await context.newPage();
+await gym.goto(`${base}/gym`, { waitUntil: 'domcontentloaded' });
+await gym.locator('#one-more').waitFor();
+await gym.waitForFunction(() => !!document.querySelector('script[src="/js/display-fit.mjs"]'));
+for (const label of ['Club', 'Train', 'People', 'Groups', 'IdidIt', 'Settings']) {
+  await gym.locator('#one-more').click();
+  await gym.locator('#one-menu button[data-route]', { hasText: label }).click();
+  await gym.waitForFunction(() => document.getElementById('one-menu')?.hidden === true);
+  await gym.waitForTimeout(500);
+}
+if (!String(await gym.evaluate(() => location.hash)).includes('/more')) failures.push('settings route');
+await gym.locator('#one-more').click();
+await gym.locator('#inventory-open').click();
+await gym.waitForURL(/\/inventory/);
+if (!(await gym.evaluate(() => document.documentElement.dataset.density))) failures.push('inventory density');
 await browser.close();
 server.close();
 if (failures.length) { console.log(failures.join('\n')); process.exit(1); }

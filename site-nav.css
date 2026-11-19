@@ -440,6 +440,15 @@ html.is-one-tab #one-menu {
   padding: 0;
 }
 html.is-one-tab #one-menu[hidden] { display: none; }
+html.is-one-tab.is-more-open footer.gym-foot {
+  position: fixed;
+  left: 0.45rem;
+  right: 12.5rem;
+  bottom: calc(40vh + 0.45rem);
+  z-index: 49;
+  margin: 0;
+  background: #0c100c;
+}
 html.is-one-tab #one-menu a,
 html.is-one-tab #one-menu button {
   min-width: 44px;
@@ -479,7 +488,7 @@ html.is-one-tab nav[aria-label="Gym"] #one-more { position: static; }
 html { font-size: calc(100% * var(--lgme-font)); }
 html[data-density="compact"] { --lgme-space: 0.45rem; --lgme-type: clamp(0.9rem, 0.84rem + 0.3vw, 1rem); }
 html[data-density="roomy"] { --lgme-space: 1.05rem; --lgme-type: clamp(1.02rem, 0.95rem + 0.4vw, 1.22rem); }
-html[data-density] body { font-size: var(--lgme-type); }
+html[data-density] body { font-size: var(--lgme-type) !important; }
 html[data-density] :is(.card, .dash-card, article) { margin-block: var(--lgme-space); }
 html[data-density] #home-board { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 100%; }
 html[data-density="compact"] #home-board,

@@ -19,7 +19,7 @@ function memory() {
 
 test('density follows the phone and a large system font makes the same screen compact', () => {
   const phone = pickDensity({ width: 390, height: 844, remPx: 16, orientation: 'portrait', safeArea: { top: 0, right: 0, bottom: 0, left: 0 } });
-  assert.equal(phone.density, 'regular');
+  assert.equal(phone.density, 'compact');
   const narrow = pickDensity({ width: 320, height: 640, remPx: 16, orientation: 'portrait' });
   assert.equal(narrow.density, 'compact');
   const wide = pickDensity({ width: 1280, height: 900, remPx: 16, orientation: 'landscape', reducedMotion: true });
@@ -60,8 +60,8 @@ test('five font steps stay on the device and Easy read toggles back', () => {
     style: { vars: {}, setProperty(key, value) { this.vars[key] = value; } }
   };
   const applied = applyDisplay(rootEl, { step: 2, easy: true }, { width: 390, height: 844, remPx: 16, orientation: 'portrait' });
-  assert.equal(applied.density, 'regular');
-  assert.equal(rootEl.dataset.density, 'regular');
+  assert.equal(applied.density, 'compact');
+  assert.equal(rootEl.dataset.density, 'compact');
   assert.equal(rootEl.dataset.easy, '1');
   assert.equal(rootEl.classList['is-easy'], true);
   assert.equal(rootEl.style.vars['--lgme-font'], '1.15');
