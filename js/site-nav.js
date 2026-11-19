@@ -1,6 +1,6 @@
 (function () {
   var EPOCH = '2';
-  var CURRENT = { 'lgme-v241': 1, 'lgme-gym-v81': 1 };
+  var CURRENT = { 'lgme-v242': 1, 'lgme-gym-v81': 1 };
   function keep(name) {
     if (!name) return true;
     if (name === 'lgme.reset.epoch' || name === 'lgme.reset.note' || name === 'lgme.device.key' || name === 'lgme.display.step' || name === 'lgme.display.easy' || name === 'lgme-gym.seat' || name === 'lgme.health.book' || name === 'lgme.health.email' || name === 'lgme.health.plan' || name === 'lgme.health.contact' || name === 'lgme.health.contactGrants' || name === 'lgme.health.consent' || name === 'lgme.demo.member') return true;
@@ -302,9 +302,10 @@
     });
     document.addEventListener('click', function (event) {
       if (menu.hidden) return;
-      if (event.target.closest && event.target.closest('#one-menu, #one-more')) return;
+      var node = event.target;
+      if (node && node.closest && node.closest('#one-menu, #one-more, #category-board, #ai-dock, #field-hint')) return;
       closeMenu();
-    });
+    }, true);
     document.addEventListener('keydown', function (event) {
       if (event.key === 'Escape') closeMenu();
     });

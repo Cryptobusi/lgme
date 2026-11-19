@@ -486,14 +486,24 @@ html.is-one-tab nav[aria-label="Gym"] #one-more { position: static; }
   --lgme-type: clamp(0.95rem, 0.9rem + 0.35vw, 1.08rem);
 }
 html { font-size: calc(100% * var(--lgme-font)); }
+@media (max-width: 719px), (max-height: 519px) {
+  :root { --lgme-space: 0.45rem; --lgme-type: clamp(0.9rem, 0.84rem + 0.3vw, 1rem); }
+}
+@media (min-width: 840px) and (min-height: 700px) {
+  :root { --lgme-space: 1.05rem; --lgme-type: clamp(1.02rem, 0.95rem + 0.4vw, 1.22rem); }
+}
 html[data-density="compact"] { --lgme-space: 0.45rem; --lgme-type: clamp(0.9rem, 0.84rem + 0.3vw, 1rem); }
 html[data-density="roomy"] { --lgme-space: 1.05rem; --lgme-type: clamp(1.02rem, 0.95rem + 0.4vw, 1.22rem); }
-html[data-density] body { font-size: var(--lgme-type) !important; }
-html[data-density] :is(.card, .dash-card, article) { margin-block: var(--lgme-space); }
-html[data-density] #home-board { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 100%; }
+body { font-size: var(--lgme-type) !important; }
+:is(.card, .dash-card, article) { margin-block: var(--lgme-space); }
+#home-board { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 100%; }
+@media (max-width: 719px), (max-height: 519px) {
+  #home-board, .entry-grid { grid-template-columns: minmax(0, 1fr); }
+  table, thead, tbody, tr, th, td { display: block; width: 100%; max-width: 100%; box-sizing: border-box; }
+  thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+}
 html[data-density="compact"] #home-board,
 html[data-density="compact"] .entry-grid { grid-template-columns: minmax(0, 1fr); }
-html[data-density="compact"] article.card:not(.is-open) > :not(h2):not(h3):not(summary) { display: none; }
 html[data-density="compact"] table,
 html[data-density="compact"] thead,
 html[data-density="compact"] tbody,
@@ -511,7 +521,7 @@ html[data-density="compact"] thead { position: absolute; width: 1px; height: 1px
 }
 #one-menu #font-steps { display: flex; gap: 0.25rem; }
 html.is-easy { --fg: #14110c; --muted: #2c261e; --bg: #fffdf8; --card: #fff; --line: #5c4a22; }
-html.is-easy body { font-size: max(18px, 1.125rem); color: #14110c; }
+html.is-easy body { font-size: max(18px, 1.125rem) !important; color: #14110c; }
 html.is-easy.tape body { color: #14110c; }
 html.is-easy :is(button, a, input, textarea, select, summary, label) {
   min-height: 48px;

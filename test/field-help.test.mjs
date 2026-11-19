@@ -10,6 +10,7 @@ test('field help reads data attributes and skips the dock', () => {
   assert.equal(fieldMeta(field).help, 'This names the session.');
   assert.deepEqual(fieldMeta(field).options, ['Walk', 'Stretch']);
   assert.equal(fieldMeta({ getAttribute() { return ''; }, closest() { return {}; } }), null);
+  assert.equal(fieldMeta({ tagName: 'BODY', type: '', getAttribute() { return ''; }, closest() { return null; } }), null);
   assert.match(fieldLines('This names the session.'), /Tap an option to fill this/);
   assert.doesNotMatch(fieldLines('This names the session.'), /diagnos|treatment|cure/i);
   assert.equal(safeHelpLine('This is a diagnosis and a cure.', 'Keep the note on this phone.'), 'Keep the note on this phone.');

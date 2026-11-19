@@ -218,7 +218,7 @@ async function fieldDock(browser) {
   });
   await context.addInitScript(() => {
     localStorage.setItem('lgme.reset.epoch', '2');
-    localStorage.setItem('lgme.ai.enabled', '0');
+    localStorage.setItem('lgme.ai.enabled', '1');
     const original = window.matchMedia.bind(window);
     window.matchMedia = (query) => String(query).includes('display-mode') && String(query).includes('standalone')
       ? { matches: true, media: query, onchange: null, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {}, dispatchEvent() { return false; } }

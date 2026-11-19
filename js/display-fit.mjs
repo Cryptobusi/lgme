@@ -48,7 +48,8 @@ export function readDisplay(storage) {
   let step = 1;
   let easy = false;
   try {
-    const saved = Number(storage?.getItem(DENSITY_KEY));
+    const raw = storage?.getItem(DENSITY_KEY);
+    const saved = raw == null || raw === '' ? NaN : Number(raw);
     if (Number.isInteger(saved) && saved >= 0 && saved < FONT_STEPS.length) step = saved;
     easy = storage?.getItem(EASY_KEY) === '1';
   } catch { /* the default size still applies */ }

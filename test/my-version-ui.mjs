@@ -82,7 +82,7 @@ async function open(browser, width, height) {
   });
   await context.addInitScript(() => {
     localStorage.setItem('lgme.reset.epoch', '2');
-    localStorage.setItem('lgme.ai.enabled', '0');
+    localStorage.setItem('lgme.ai.enabled', '1');
     if (!localStorage.getItem('lgme.member')) localStorage.setItem('lgme.member', 'test-a');
     const original = window.matchMedia.bind(window);
     window.matchMedia = (query) => String(query).includes('display-mode') && String(query).includes('standalone')

@@ -93,6 +93,7 @@ export function fieldSpec(field) {
   if (!field || typeof field.getAttribute !== 'function') return null;
   if (field.closest && field.closest('#ai-dock, #field-hint')) return null;
   const tag = String(field.tagName || '').toUpperCase();
+  if (tag && tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT') return null;
   const type = field.type || lineOf(field, 'type') || (tag === 'TEXTAREA' ? 'textarea' : tag === 'SELECT' ? 'select' : 'text');
   if (type === 'hidden' || type === 'submit' || type === 'button' || type === 'file') return null;
   const id = field.id || lineOf(field, 'id');
@@ -118,7 +119,7 @@ export function fieldMeta(field) {
   return {
     ...guide,
     help: spec.help || guide.what,
-    text: guide.help,
+    text: [spec.help, guide.help].filter((line, index, all) => line && all.indexOf(line) === index).join(' '),
     options: spec.options.length ? spec.options : guide.options
   };
 }

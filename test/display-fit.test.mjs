@@ -46,6 +46,7 @@ test('five font steps stay on the device and Easy read toggles back', () => {
   assert.equal(fontScale(1, 16, true), 1.125);
   assert.equal(fontScale(4, 16, true), 1.5);
   const store = memory();
+  assert.deepEqual(readDisplay(store), { step: 1, easy: false });
   writeDisplay(store, { step: 3, easy: false });
   assert.deepEqual(readDisplay(store), { step: 3, easy: false });
   writeDisplay(store, { step: readDisplay(store).step, easy: true });
