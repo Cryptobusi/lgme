@@ -3,6 +3,8 @@ const NAMED = {
   'credits-total': 'Your Creo on this phone. Creo is value you create, not cash. Looking does not spend it.',
   'messages-open': 'Messages on this phone. You can read them and write one. Nothing is sent until you tap OK.',
   'message-ok': 'Keeps this message on this phone. Nothing is posted until you confirm.',
+  'guide-mode': 'Guided suggests the next step. Manual keeps explainers on Hint. The choice stays on this phone.',
+  'guide-mode-settings': 'Guided suggests the next step. Manual keeps explainers on Hint. The choice stays on this phone.',
   'incognito-menu': 'Incognito keeps everything on this phone until you approve. Tap to turn it on or off. Nothing is sent.',
   'incognito-chip': 'Incognito keeps everything on this phone until you approve.',
   'testnet-chip': 'Testnet means practice records, not a live payment. Nothing moves until you tap OK.',

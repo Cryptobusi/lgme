@@ -1,5 +1,6 @@
 import { applyFieldOption, fieldMeta, lastFieldValue, nextHelpField, rememberFieldValue, safeHelpLine } from './field-help.mjs';
 import { controlText, pageOverview } from './control-help.mjs';
+import { actionIdFrom, dismissOffer, explainOnTap, fieldGuideWithoutModel, guideCards, incognitoBlocksUses, nextStep, noteUse, pinShortcuts, promotion, readMode, setMode, shortcutOffer, SHORTCUTS } from './guide-mode.mjs';
 import { classifyPrompt, routeLine } from './prompt-route.mjs';
 import { activeScreen, applyMode, screenModePrompt, undoMode } from './screen-modes.mjs';
 import { localFunctionFromPrompt, saveLocalFunction } from './local-functions.mjs';
@@ -351,7 +352,7 @@ function mount() {
   const dock = document.createElement('section');
   dock.id = 'ai-dock';
   dock.setAttribute('aria-label', 'On-device AI');
-  dock.innerHTML = '<p class="ai-top"><button type="button" id="ai-controls" aria-expanded="false" aria-label="Show or hide controls">Controls</button><span id="ai-status">AI off · Voice · Speak+show</span><button type="button" id="ai-switch" class="ai-pill" role="switch" aria-checked="true" aria-live="polite" aria-label="AI on or off">AI off</button><button type="button" id="ai-voice" class="ai-detail is-off" aria-pressed="false" aria-label="Voice off">Voice</button><button type="button" id="ai-voice-reply" class="ai-detail" aria-label="Voice reply, Speak and show">Reply</button><span id="ai-voice-mode" class="ai-detail">Speak+show</span><button type="button" id="ai-listen" class="ai-detail" aria-pressed="false" aria-label="Listen again after speaking">Listen</button><span id="ai-mic" hidden>Listening</span><span id="ai-speaking" hidden>Speaking</span><button type="button" id="ai-stop" hidden>Stop</button><button type="button" id="ai-smaller" class="ai-detail" aria-label="Smaller text">A-</button><button type="button" id="ai-larger" class="ai-detail" aria-label="Bigger text">A+</button><a class="ai-setup-link ai-detail" href="/ai-setup">Help</a><button type="button" id="ai-incognito" class="ai-detail" aria-pressed="false">Incognito</button><button type="button" id="ai-incognito-count" class="ai-detail">Pending 0</button><button type="button" id="ai-expand" aria-expanded="true">Close</button></p><p id="ai-incognito-notice" hidden>Incognito — stays on this phone</p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><div id="ai-chip-row"><div id="ai-chips" class="ai-chips"></div><span id="ai-chip-hint" aria-hidden="true">›</span></div><div id="ai-scroll"><div id="ai-incognito-review" hidden></div><p id="ai-overview"></p><ol id="ai-overview-steps"></ol><div id="ai-log-frame"><pre id="ai-log"></pre><ol id="ai-explain-steps"></ol><div id="ai-suggestions"></div></div><p id="ai-more" hidden>More</p></div><div class="ai-compose"><div id="ai-input-frame"><textarea id="ai-ask" rows="1" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><p id="ai-send-state" class="is-held" role="status" aria-label="Not sent. Held on this phone."><i></i></p><p class="ai-actions"><span id="speak-ask" class="is-wait" role="group" aria-label="Speak reply?"><span>Speak reply?</span><button type="button" id="speak-yes" aria-label="Yes, speak replies">Yes</button><button type="button" id="speak-no" aria-label="No, do not speak replies">No</button></span><button type="button" id="ai-mic-btn" class="is-off" data-state="off" aria-pressed="false" aria-label="Microphone off"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg></button><button type="button" id="ai-send" aria-label="Send">Send</button><button type="button" id="ai-accept" aria-label="Hint">Hint</button><button type="button" id="ai-confirm" aria-label="Confirm">OK</button></p></div></div>';
+  dock.innerHTML = '<p class="ai-top"><button type="button" id="ai-controls" aria-expanded="false" aria-label="Show or hide controls">Controls</button><span id="ai-status">AI off · Voice · Speak+show</span><button type="button" id="ai-switch" class="ai-pill" role="switch" aria-checked="true" aria-live="polite" aria-label="AI on or off">AI off</button><button type="button" id="guide-mode" class="ai-pill" aria-pressed="true">Guided</button><button type="button" id="ai-voice" class="ai-detail is-off" aria-pressed="false" aria-label="Voice off">Voice</button><button type="button" id="ai-voice-reply" class="ai-detail" aria-label="Voice reply, Speak and show">Reply</button><span id="ai-voice-mode" class="ai-detail">Speak+show</span><button type="button" id="ai-listen" class="ai-detail" aria-pressed="false" aria-label="Listen again after speaking">Listen</button><span id="ai-mic" hidden>Listening</span><span id="ai-speaking" hidden>Speaking</span><button type="button" id="ai-stop" hidden>Stop</button><button type="button" id="ai-smaller" class="ai-detail" aria-label="Smaller text">A-</button><button type="button" id="ai-larger" class="ai-detail" aria-label="Bigger text">A+</button><a class="ai-setup-link ai-detail" href="/ai-setup">Help</a><button type="button" id="ai-incognito" class="ai-detail" aria-pressed="false">Incognito</button><button type="button" id="ai-incognito-count" class="ai-detail">Pending 0</button><button type="button" id="ai-expand" aria-expanded="true">Close</button></p><p id="ai-incognito-notice" hidden>Incognito — stays on this phone</p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><div id="ai-chip-row"><div id="ai-chips" class="ai-chips"></div><span id="ai-chip-hint" aria-hidden="true">›</span></div><div id="ai-scroll"><div id="ai-incognito-review" hidden></div><p id="ai-overview"></p><ol id="ai-overview-steps"></ol><section id="ai-next"><p class="ai-kicker">Next step</p><button type="button" id="ai-next-primary"></button><div id="ai-next-alts"></div></section><section id="ai-promote"><p id="ai-promote-line"></p></section><section id="ai-shortcut-offer" hidden></section><div id="ai-log-frame"><pre id="ai-log"></pre><ol id="ai-explain-steps"></ol><div id="ai-suggestions"></div></div><p id="ai-more" hidden>More</p></div><div class="ai-compose"><div id="ai-input-frame"><textarea id="ai-ask" rows="1" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><p id="ai-send-state" class="is-held" role="status" aria-label="Not sent. Held on this phone."><i></i></p><p class="ai-actions"><span id="speak-ask" class="is-wait" role="group" aria-label="Speak reply?"><span>Speak reply?</span><button type="button" id="speak-yes" aria-label="Yes, speak replies">Yes</button><button type="button" id="speak-no" aria-label="No, do not speak replies">No</button></span><button type="button" id="ai-mic-btn" class="is-off" data-state="off" aria-pressed="false" aria-label="Microphone off"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg></button><button type="button" id="ai-send" aria-label="Send">Send</button><button type="button" id="ai-accept" aria-label="Hint">Hint</button><button type="button" id="ai-confirm" aria-label="Confirm">OK</button></p></div></div>';
   dock.classList.add('is-open', 'is-normal');
   try { document.documentElement.dataset.screen = activeScreen(localStorage); } catch { /* everyday height stays */ }
   try {
@@ -385,6 +386,64 @@ function mount() {
       });
     }
   };
+  const fillDraft = (label) => {
+    if (ask && !ask.value) ask.value = label;
+  };
+  const paintGuide = () => {
+    const mode = readMode(localStorage);
+    document.documentElement.dataset.guide = mode;
+    dock.classList.toggle('is-manual', mode === 'manual');
+    const page = pageOverview(location.pathname, location.hash, document.title);
+    const step = nextStep(location.pathname, location.hash);
+    showOverview(page.line, guideCards(mode) ? page.steps : []);
+    const primary = dock.querySelector('#ai-next-primary');
+    const alts = dock.querySelector('#ai-next-alts');
+    const promote = dock.querySelector('#ai-promote-line');
+    if (primary) {
+      primary.textContent = step.primary;
+      primary.onclick = () => fillDraft(step.primary);
+    }
+    if (alts) {
+      alts.replaceChildren();
+      step.alternates.forEach((label) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'ai-next-alt';
+        button.textContent = label;
+        button.addEventListener('click', () => fillDraft(label));
+        alts.append(button);
+      });
+    }
+    if (promote) promote.textContent = promotion(location.pathname, location.hash);
+    const chip = dock.querySelector('#guide-mode');
+    if (chip) {
+      chip.textContent = mode === 'manual' ? 'Manual' : 'Guided';
+      chip.setAttribute('aria-pressed', mode === 'guided' ? 'true' : 'false');
+    }
+    const offer = dock.querySelector('#ai-shortcut-offer');
+    if (offer) {
+      const ids = shortcutOffer(localStorage);
+      offer.hidden = !ids;
+      offer.replaceChildren();
+      if (ids) {
+        const line = document.createElement('p');
+        line.textContent = `Pin ${ids.map((id) => SHORTCUTS[id].label).join(', ')} to My shortcuts? This stays on this phone.`;
+        const yes = document.createElement('button');
+        yes.type = 'button';
+        yes.textContent = 'Pin';
+        yes.addEventListener('click', () => {
+          pinShortcuts(localStorage, ids);
+          document.dispatchEvent(new CustomEvent('lgme-shortcuts'));
+          paintGuide();
+        });
+        const no = document.createElement('button');
+        no.type = 'button';
+        no.textContent = 'Not now';
+        no.addEventListener('click', () => { dismissOffer(localStorage); paintGuide(); });
+        offer.append(line, yes, no);
+      }
+    }
+  };
   const openPanel = () => {
     if (ask && ask.value) return;
     dock.classList.add('is-open');
@@ -394,26 +453,27 @@ function mount() {
       expand.textContent = 'Close';
     }
   };
-  const showPage = () => {
-    const page = pageOverview(location.pathname, location.hash, document.title);
-    showOverview(page.line, page.steps);
-  };
+  const showPage = () => paintGuide();
   let explained = '';
-  const explainControl = (node) => {
+  const explainControl = (node, demand = false) => {
     const el = node && node.closest ? node.closest('button, summary, [role="switch"], a[href], .dash-head') : null;
-    if (!el || (el.closest && el.closest('#ai-overview, #ai-overview-steps'))) return;
+    if (!el || (el.closest && el.closest('#ai-overview, #ai-overview-steps, #ai-next, #ai-promote, #shortcut-offer'))) return;
+    const manual = !explainOnTap(readMode(localStorage));
+    if (manual && !demand && el.id !== 'ai-accept') return;
     const text = controlText(el);
     if (!text || text === explained) return;
     explained = text;
-    showOverview(text, []);
-    if (el.id !== 'ai-expand') openPanel();
+    if (!manual || demand) showOverview(text, []);
+    if (el.id !== 'ai-expand' && !manual) openPanel();
+    const action = actionIdFrom(el);
+    if (action) noteUse(localStorage, action, incognitoBlocksUses(localStorage));
   };
   let holdTimer = 0;
   document.addEventListener('pointerdown', (event) => {
     clearTimeout(holdTimer);
     const el = event.target && event.target.closest ? event.target.closest('button, summary, [role="switch"]') : null;
     if (!el) return;
-    holdTimer = setTimeout(() => explainControl(el), 500);
+    holdTimer = setTimeout(() => explainControl(el, true), 500);
   }, true);
   document.addEventListener('pointerup', () => clearTimeout(holdTimer), true);
   document.addEventListener('pointercancel', () => clearTimeout(holdTimer), true);
@@ -421,6 +481,13 @@ function mount() {
   document.addEventListener('focusin', (event) => explainControl(event.target));
   window.addEventListener('hashchange', () => { showPage(); openPanel(); });
   window.addEventListener('popstate', () => { showPage(); openPanel(); });
+  window.addEventListener('lgme-guide-mode', paintGuide);
+  const modeChip = dock.querySelector('#guide-mode');
+  if (modeChip) modeChip.addEventListener('click', () => {
+    setMode(localStorage, readMode(localStorage) === 'manual' ? 'guided' : 'manual');
+    paintGuide();
+    document.dispatchEvent(new CustomEvent('lgme-guide-mode'));
+  });
   showPage();
   const dismissed = new Set();
   let fieldToken = 0;
@@ -568,7 +635,8 @@ function mount() {
   };
   const showField = (field) => {
     const meta = fieldMeta(field);
-    if (!meta || !aiOn()) { hideHint(); return; }
+    const guided = fieldGuideWithoutModel(readMode(localStorage));
+    if (!meta || (!aiOn() && !guided)) { hideHint(); return; }
     const last = field.id ? lastFieldValue(localStorage, field.id, incognitoOn(localStorage)) : '';
     const labels = last ? [...meta.options, 'Use my last value'] : meta.options;
     const words = meta.text || meta.help;
@@ -582,9 +650,9 @@ function mount() {
     log.textContent = words;
     paintChips(labels, field, last);
     paint(dock);
-    speakGuide(words);
+    if (aiOn()) speakGuide(words);
     const token = ++fieldToken;
-    if (!localAiReady()) return;
+    if (!aiOn() || !localAiReady()) return;
     draftWithHelper(pickHelperSync(), {
       template: words,
       prompt: `One short sentence. No medical advice. Explain why this field is needed: ${words}`,

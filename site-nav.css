@@ -109,6 +109,9 @@ html[data-screen="full"] #ai-dock.is-open { height: 30vh; max-height: 30vh; }
 #ai-dock:not(.is-open):not(.has-field) #ai-ask,
 #ai-dock:not(.is-open):not(.has-field) #ai-overview,
 #ai-dock:not(.is-open):not(.has-field) #ai-overview-steps,
+#ai-dock:not(.is-open):not(.has-field) #ai-next,
+#ai-dock:not(.is-open):not(.has-field) #ai-promote,
+#ai-dock:not(.is-open):not(.has-field) #ai-shortcut-offer,
 #ai-dock:not(.is-open):not(.has-field) #ai-log,
 #ai-dock:not(.is-open):not(.has-field) #ai-log-frame,
 #ai-dock:not(.is-open):not(.has-field) #ai-suggestions,
@@ -151,9 +154,6 @@ html.is-one-tab body:has(nav[aria-label="Gym"]) #ai-dock { bottom: 0; }
 #ai-dock.has-field .ai-top { order: 1; }
 #ai-dock.has-field #ai-log { order: 2; }
 #ai-dock.has-field #ai-chips { order: 3; }
-#ai-dock.has-field #ai-ask,
-#ai-dock.has-field .ai-compose,
-#ai-dock.has-field .ai-actions { display: none; }
 #ai-chip-row { position: relative; }
 #ai-chips { display: flex; flex-wrap: nowrap; gap: 0.5rem; min-height: 32px; max-height: 32px; margin: 0 0 0.25rem; padding-right: 1.2rem; overflow-x: auto; }
 #ai-dock.has-field #ai-chips { flex-wrap: nowrap; max-height: 32px; overflow-x: auto; }
@@ -273,9 +273,17 @@ html.is-easy .dash-card :is(h1, h2, h3, h4, strong, p) {
   color: #14110c;
   background: #fffdf8;
 }
-#ai-overview, #ai-overview-steps { margin: 0.2rem 0; color: #f4f1e8; font-size: 14px; line-height: 1.35; }
-#ai-overview-steps { padding-left: 1.2rem; }
-html.is-easy #ai-overview, html.is-easy #ai-overview-steps { font-size: 22px; color: #f4f1e8; }
+#ai-overview, #ai-overview-steps, #ai-next, #ai-promote, #ai-shortcut-offer { margin: 0.2rem 0; color: #f4f1e8; font-size: 14px; line-height: 1.35; }
+#ai-next, #ai-promote, #ai-shortcut-offer { border: 1px solid #c6a15b; border-radius: 10px; padding: 0.35rem 0.5rem; }
+#ai-next-primary, #ai-next-alts button, #ai-shortcut-offer button, #shortcut-offer button { min-height: 44px; margin: 0.15rem 0.25rem 0 0; }
+html[data-guide="manual"] #ai-next,
+html[data-guide="manual"] #ai-promote,
+#ai-dock.is-manual #ai-next,
+#ai-dock.is-manual #ai-promote { display: none; }
+#my-shortcuts { display: flex; gap: 0.4rem; overflow-x: auto; margin: 0.25rem 0; }
+#my-shortcuts[hidden], #shortcut-offer[hidden] { display: none; }
+#my-shortcuts a, #my-shortcuts button, #shortcut-offer button { min-height: 44px; }
+html.is-easy #ai-overview, html.is-easy #ai-overview-steps, html.is-easy #ai-next, html.is-easy #ai-promote { font-size: 22px; color: #f4f1e8; }
 html[data-theme="paper"] #profile-board,
 html[data-theme="paper"] #function-row,
 html[data-theme="paper"] #ai-dock.is-open,

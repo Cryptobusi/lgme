@@ -26,6 +26,7 @@ import { CLARIFICATIONS, COVENANT_TITLE, FIELD_LABELS, covenantHash, covenantSec
 import { LEGACY_TOPIC, TESTNET_TOPIC, creditReport, mirrorMatch, sponsorshipReady } from './sponsor-report.mjs';
 import { suggestThird } from './high-value.mjs';
 import { AGE_LABEL, COLLECT_LABEL, SHARE_LABEL, healthConsent, mayCollect, mayShare, readHealthConsent, revokeShare, writeHealthConsent } from './health-safeguards.mjs';
+import { readMode, setMode } from './guide-mode.mjs';
 import { askDevice } from './device-ask.mjs';
 import { paintHealthAnchor } from './health-anchor.mjs';
 import { addReview, approveLimitRaise, breakSplit, intakeParts, intakeStatusText, publicIntake, requestLimitRaise, reviewHash } from './intake.mjs';
@@ -1060,6 +1061,35 @@ function soundSettings() {
   ]);
 }
 
+function guideSettings() {
+  const label = el('p', { id: 'guide-mode-label' }, []);
+  const toggle = el('button', {
+    type: 'button',
+    id: 'guide-mode-settings',
+    'data-explain': 'Guided suggests the next step. Manual keeps explainers on Hint. The choice stays on this phone. Nothing is saved until you tap OK.'
+  }, ['Guided']);
+  const sync = () => {
+    const mode = readMode(localStorage);
+    label.textContent = mode === 'manual'
+      ? 'Manual. Explainers stay on Hint. Next step is hidden.'
+      : 'Guided. The helper suggests the next step. You still tap OK.';
+    toggle.textContent = mode === 'manual' ? 'Manual' : 'Guided';
+    toggle.setAttribute('aria-pressed', mode === 'guided' ? 'true' : 'false');
+  };
+  toggle.addEventListener('click', () => {
+    setMode(localStorage, readMode(localStorage) === 'manual' ? 'guided' : 'manual');
+    sync();
+    window.dispatchEvent(new CustomEvent('lgme-guide-mode'));
+  });
+  window.addEventListener('lgme-guide-mode', sync);
+  sync();
+  return el('section', { class: 'card', id: 'guide-settings' }, [
+    el('h3', {}, ['Guide']),
+    label,
+    toggle
+  ]);
+}
+
 function incognitoSettings() {
   const notice = el('p', { id: 'incognito-notice' }, [incognitoOn(localStorage) ? NOTICE : 'Incognito is off.']);
   const count = el('p', { id: 'incognito-count' }, [`Pending ${listPending(localStorage).length}`]);
@@ -1121,6 +1151,7 @@ async function renderMore() {
   queueMicrotask(() => mountEmailCheck(email));
   return el('div', {}, [
     el('h2', {}, ['Settings']),
+    guideSettings(),
     incognitoSettings(),
     soundSettings(),
     voiceReplySettings(),

@@ -10,6 +10,7 @@ import { gateDecision, nextAccess, signinAllowed } from './confirm-gate.mjs';
 import { ensureDeviceKey, signDevice } from './device-sign.mjs';
 import { NO_FINGERPRINT, fingerprintErrorLine, fingerprintGuideHtml, finishFingerprintPrompt, fingerprintSupported, prepareFingerprintPrompt, startFingerprintPrompt } from './passkey-signin.mjs';
 import { askDevice } from './device-ask.mjs';
+import { dismissOffer, pinShortcuts, readShortcuts, resetShortcuts, shortcutOffer, SHORTCUTS } from './guide-mode.mjs';
 
 function setDot(id, kind, label) {
   const dot = document.getElementById(id);
@@ -722,5 +723,48 @@ if (root) {
   paint();
   paintBadges();
   wireDash();
+  paintShortcuts();
 paintCredits();
 }
+
+function paintShortcuts() {
+  const row = document.getElementById('my-shortcuts');
+  const offer = document.getElementById('shortcut-offer');
+  if (!row && !offer) return;
+  const saved = readShortcuts(localStorage);
+  if (row) {
+    row.replaceChildren();
+    row.hidden = saved.length === 0;
+    saved.forEach((id) => {
+      const link = document.createElement('a');
+      link.href = SHORTCUTS[id].href;
+      link.textContent = SHORTCUTS[id].label;
+      row.append(link);
+    });
+    if (saved.length) {
+      const reset = document.createElement('button');
+      reset.type = 'button';
+      reset.id = 'shortcut-reset';
+      reset.textContent = 'Reset shortcuts';
+      reset.addEventListener('click', () => { resetShortcuts(localStorage); paintShortcuts(); });
+      row.append(reset);
+    }
+  }
+  if (!offer) return;
+  const ids = shortcutOffer(localStorage);
+  offer.hidden = !ids;
+  offer.replaceChildren();
+  if (!ids) return;
+  const line = document.createElement('span');
+  line.textContent = `Pin ${ids.map((id) => SHORTCUTS[id].label).join(', ')} on this phone?`;
+  const yes = document.createElement('button');
+  yes.type = 'button';
+  yes.textContent = 'Pin';
+  yes.addEventListener('click', () => { pinShortcuts(localStorage, ids); paintShortcuts(); });
+  const no = document.createElement('button');
+  no.type = 'button';
+  no.textContent = 'Not now';
+  no.addEventListener('click', () => { dismissOffer(localStorage); paintShortcuts(); });
+  offer.append(line, yes, no);
+}
+window.addEventListener('lgme-shortcuts', paintShortcuts);

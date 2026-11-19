@@ -29,6 +29,7 @@ export function defaultVariant() {
       ihavit: ['I can lead a walk', 'I can spot a set', 'I can bring a mat']
     },
     dockChips: ['Log a workout', 'Make an IdidIt receipt', 'What can I do here?'],
+    shortcuts: [],
     fieldHelp: {
       'evolve-name': 'A short name for this category. It is checked against names already here.',
       'evolve-line': 'One line on what this is for. No medical claims. It stays a proposal until 3 members attest.',
@@ -71,13 +72,17 @@ export function validateVariant(input) {
   }
   const dockChips = Array.isArray(input.dockChips) ? input.dockChips.map((item) => plain(item, 40)).filter(Boolean) : [];
   if (dockChips.length < 1 || dockChips.length > 6) return { ok: false, error: 'Add a few dock suggestions.' };
+  const shortcutIds = ['health', 'ididit', 'messages', 'exchange', 'inventory', 'attest'];
+  const shortcuts = Array.isArray(input.shortcuts)
+    ? input.shortcuts.map((id) => String(id || '')).filter((id, index, all) => shortcutIds.includes(id) && all.indexOf(id) === index).slice(0, 4)
+    : [];
   const fieldHelp = {};
   for (const key of HELP_KEYS) {
     const line = plain(input.fieldHelp?.[key], 160);
     if (!line) return { ok: false, error: 'Field help stays one plain line.' };
     fieldHelp[key] = line;
   }
-  return { ok: true, variant: { schema: 1, theme, home, order: input.order.map(String), extras, chips, options, dockChips, fieldHelp } };
+  return { ok: true, variant: { schema: 1, theme, home, order: input.order.map(String), extras, chips, options, dockChips, shortcuts, fieldHelp } };
 }
 
 export function diffLines(variant, base = defaultVariant()) {
@@ -91,6 +96,7 @@ export function diffLines(variant, base = defaultVariant()) {
   }
   if (variant.chips.join() !== base.chips.join()) lines.push(`Chips show ${variant.chips.join(', ')}.`);
   if (variant.dockChips.join('|') !== base.dockChips.join('|')) lines.push('Dock suggestions changed.');
+  if ((variant.shortcuts || []).join() !== (base.shortcuts || []).join()) lines.push(`Shortcuts are ${(variant.shortcuts || []).join(', ') || 'cleared'}.`);
   for (const key of HELP_KEYS) {
     if (variant.fieldHelp[key] !== base.fieldHelp[key]) lines.push('A field explanation changed.');
   }
