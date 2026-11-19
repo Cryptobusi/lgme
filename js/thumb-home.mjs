@@ -146,7 +146,7 @@ if (root) {
     board = document.createElement('section');
     board.id = 'profile-board';
     board.setAttribute('aria-label', 'Profile');
-    board.innerHTML = '<p id="profile-name">Not signed in</p><button type="button" id="screen-reopen" class="secondary">Choose your screen</button><button type="button" id="credits-total" hidden>Creo 0.00</button><button type="button" id="messages-open">Messages</button><div id="attest-badges" hidden aria-label="Message dashboard"></div><details id="my-credits"><summary>My Creo</summary><ul id="creo-glossary"><li>Debit = you owe.</li><li>Credit = you lend.</li><li>Creo = value you create (the IdidIt currency).</li></ul><p id="contrib-preview">Contribute $lgme is a simulation. Live payments are off. Example price. Collective Fund and Health Sub-floor split 50/50.</p><p id="my-credits-balance"></p><ul id="my-credits-history"></ul><p id="my-credits-rules"></p></details><p id="profile-activity">No recent activity</p><p id="profile-balance">Balance stays on this phone</p><p id="profile-new">New 0</p><form id="first-open"><p id="step-count">Step 1 of 3: email or authenticator, then fingerprint, then AI test</p><section class="access-card" id="step-email"><h2>Sign in with email</h2><label for="access-email">Email</label><input id="access-email" type="email" autocomplete="email" maxlength="120"><button type="submit" id="access-send" class="primary">Send code</button><label for="access-code">Email code</label><input id="access-code" inputmode="numeric" maxlength="7" autocomplete="one-time-code"><button type="button" id="access-verify" class="primary">Verify</button></section><p id="step-or">or</p><section class="access-card" id="step-totp"><h2>Sign in with Google Authenticator</h2><label for="access-totp">Google Authenticator code</label><input id="access-totp" inputmode="numeric" maxlength="7" autocomplete="one-time-code"><button type="button" id="access-authenticator" class="primary">Sign in</button><button type="button" id="totp-setup-open" class="secondary">Set up authenticator</button><section id="totp-setup" hidden><p>Open Google Authenticator, tap +, scan this QR code or enter the key. The entry will be named lgme.app.</p><p id="totp-key"></p><div id="totp-qr"></div><label for="totp-confirm">Google Authenticator code</label><input id="totp-confirm" inputmode="numeric" maxlength="7" autocomplete="one-time-code"><button type="button" id="totp-finish" class="primary">Finish authenticator setup</button><button type="button" id="totp-reset" class="secondary">Reset authenticator</button></section></section><p id="step-or-fp">or</p><section class="access-card" id="step-fingerprint"><h2>Sign in with fingerprint</h2><p id="fingerprint-note" hidden>This phone has no fingerprint or screen lock. Use the authenticator code.</p><button type="button" id="access-fingerprint" class="primary">Sign in with fingerprint</button></section><section class="access-card" id="step-ai" hidden><h2>Test local AI</h2><p id="access-member"></p><button type="button" id="fingerprint-setup" class="secondary" hidden>Set up fingerprint</button><button type="button" id="ai-test" class="primary">Test local AI</button><p id="ai-test-result" role="status"></p><button type="button" id="access-grant" class="primary" disabled>Open the app</button></section><p id="access-status" role="status"></p></form>';
+    board.innerHTML = '<p id="profile-name">Not signed in</p><button type="button" id="screen-reopen" class="secondary">Choose your screen</button><button type="button" id="credits-total" hidden>Creo 0.00</button><button type="button" id="messages-open">Messages</button><div id="attest-badges" hidden aria-label="Message dashboard"></div><details id="my-credits"><summary>My Creo</summary><ul id="creo-glossary"><li>Debit = you owe.</li><li>Credit = you lend.</li><li>Creo = value you create (the IdidIt currency).</li></ul><p id="contrib-preview">Contribute $lgme is a simulation. Live payments are off. Example price. Collective Fund and Health Sub-floor split 50/50.</p><p id="my-credits-balance"></p><ul id="my-credits-history"></ul><p id="my-credits-rules"></p></details><p id="profile-activity">No recent activity</p><p id="profile-balance">Balance stays on this phone</p><p id="profile-new">New 0</p><form id="first-open"><p id="step-count">Step 1 of 3: email or authenticator, then fingerprint, then AI test</p><section class="access-card" id="step-email"><h2>Sign in on this phone</h2><p id="signup-privacy">The administrator sees new sign-ups in the owner inbox (email, phone, device, time). No email is sent.</p><label for="access-email">Email</label><input id="access-email" type="email" autocomplete="email" maxlength="120"><button type="submit" id="access-send" class="primary">Continue</button></section><p id="step-or">or</p><section class="access-card" id="step-totp"><h2>Sign in with Google Authenticator</h2><label for="access-totp">Google Authenticator code</label><input id="access-totp" inputmode="numeric" maxlength="7" autocomplete="one-time-code"><button type="button" id="access-authenticator" class="primary">Sign in</button><button type="button" id="totp-setup-open" class="secondary">Set up authenticator</button><section id="totp-setup" hidden><p>Open Google Authenticator, tap +, scan this QR code or enter the key. The entry will be named lgme.app.</p><p id="totp-key"></p><div id="totp-qr"></div><label for="totp-confirm">Google Authenticator code</label><input id="totp-confirm" inputmode="numeric" maxlength="7" autocomplete="one-time-code"><button type="button" id="totp-finish" class="primary">Finish authenticator setup</button><button type="button" id="totp-reset" class="secondary">Reset authenticator</button></section></section><p id="step-or-fp">or</p><section class="access-card" id="step-fingerprint"><h2>Sign in with fingerprint</h2><p id="fingerprint-note" hidden>This phone has no fingerprint or screen lock. Use the authenticator code.</p><button type="button" id="access-fingerprint" class="primary">Sign in with fingerprint</button></section><section class="access-card" id="step-ai" hidden><h2>Test local AI</h2><p id="access-member"></p><button type="button" id="fingerprint-setup" class="secondary" hidden>Set up fingerprint</button><button type="button" id="ai-test" class="primary">Test local AI</button><p id="ai-test-result" role="status"></p><button type="button" id="access-grant" class="primary" disabled>Open the app</button></section><p id="access-status" role="status"></p></form>';
     row = document.createElement('div');
     row.id = 'function-row';
     row.setAttribute('aria-label', 'Functions');
@@ -222,7 +222,6 @@ if (root) {
       if (input.value !== next) input.value = next;
     });
   };
-  groupCode(board.querySelector('#access-code'));
   groupCode(board.querySelector('#access-totp'));
   groupCode(board.querySelector('#totp-confirm'));
   const status = board.querySelector('#access-status');
@@ -232,10 +231,6 @@ if (root) {
   let codeOk = false;
   let memberId = '';
   let aiTested = false;
-  const maskEmail = (value) => {
-    const [name, host] = String(value || '').split('@');
-    return host ? `${name.slice(0, 1)}…@${host}` : 'your inbox';
-  };
   const mark = (node, kind, text) => {
     status.className = kind === 'ok' ? 'is-ok' : 'is-error';
     status.textContent = text;
@@ -248,7 +243,7 @@ if (root) {
     const label = node.textContent;
     node.disabled = true;
     node.classList.add('is-busy');
-    node.textContent = 'Sending…';
+    node.textContent = 'Saving…';
     try { navigator.vibrate?.(12); } catch { /* this device does not vibrate */ }
     try {
       return await work();
@@ -422,38 +417,34 @@ if (root) {
     const gate = signinAllowed(stamps);
     if (!gate.ok) { mark(button, 'error', gate.error); return; }
     const address = board.querySelector('#access-email').value.trim();
+    if (!address.includes('@')) { mark(button, 'error', 'Enter an email.'); return; }
     await busy(button, async () => {
-      const response = await fetch('/api/email/send', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: address }) });
-      const body = await response.json().catch(() => ({}));
-      if (!body.ok) { mark(button, 'error', body.error || body.waiting || 'Nothing was sent.'); return; }
       stamps = gate.stamps;
       email = address;
-      mark(button, 'ok', `Code sent to ${maskEmail(address)}`);
-    });
-  });
-  board.querySelector('#access-verify').addEventListener('click', async () => {
-    const button = board.querySelector('#access-verify');
-    await busy(button, async () => {
-    const response = await fetch('/api/email/verify', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, code: compactCode(board.querySelector('#access-code').value) }) });
-    const body = await response.json().catch(() => ({}));
-    if (!body.ok) { mark(button, 'error', body.error || 'Code not accepted.'); return; }
-    codeOk = true;
-    memberId = String(body.emailHash || 'member').slice(0, 12);
-    localStorage.setItem('lgme.member.id', memberId);
-    try { sessionStorage.setItem('lgme.access.email', email); } catch { /* the form still has it */ }
-    board.querySelector('#access-member').textContent = `Member ID ${memberId}`;
-    mark(button, 'ok', 'Verified');
-    armFingerprint();
-    const key = await ensureDeviceKey(localStorage);
-    const enrolled = await fetch('/api/authenticator', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'enroll', email, publicJwk: key.publicJwk }) });
-    const setup = await enrolled.json().catch(() => ({}));
-    if (setup.secret) {
-      const box = board.querySelector('#totp-setup');
-      box.hidden = false;
-      board.querySelector('#totp-key').textContent = setup.secret;
-      board.querySelector('#totp-qr').textContent = setup.uri;
-    }
-    paint();
+      let body = {};
+      try {
+        const response = await fetch('/api/email/verify', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: address }) });
+        body = await response.json().catch(() => ({}));
+      } catch { body = {}; }
+      codeOk = true;
+      memberId = String(body.emailHash || 'device').slice(0, 12);
+      localStorage.setItem('lgme.member.id', memberId);
+      try { sessionStorage.setItem('lgme.access.email', email); } catch { /* the form still has it */ }
+      board.querySelector('#access-member').textContent = `Member ID ${memberId}`;
+      mark(button, 'ok', 'Saved on this phone.');
+      armFingerprint();
+      try {
+        const key = await ensureDeviceKey(localStorage);
+        const enrolled = await fetch('/api/authenticator', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'enroll', email, publicJwk: key.publicJwk }) });
+        const setup = await enrolled.json().catch(() => ({}));
+        if (setup.secret) {
+          const box = board.querySelector('#totp-setup');
+          box.hidden = false;
+          board.querySelector('#totp-key').textContent = setup.secret;
+          board.querySelector('#totp-qr').textContent = setup.uri;
+        }
+      } catch { /* fingerprint and the authenticator still open */ }
+      paint();
     });
   });
   board.querySelector('#totp-finish').addEventListener('click', async () => {
@@ -470,21 +461,19 @@ if (root) {
     const address = board.querySelector('#access-email').value.trim();
     const nonceRes = await fetch('/api/authenticator', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'nonce', email: address }) });
     const nonceBody = await nonceRes.json().catch(() => ({}));
-    if (!nonceBody.ok) { mark(board.querySelector('#access-authenticator'), 'error', nonceBody.error || 'Use the email code.'); return; }
+    if (!nonceBody.ok) { mark(board.querySelector('#access-authenticator'), 'error', nonceBody.error || 'Use fingerprint or the authenticator.'); return; }
     const sig = await signDevice(key.privateJwk, { nonce: nonceBody.nonce, purpose: 'totp-signin' });
     const response = await fetch('/api/authenticator', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'signin', email: address, code: compactCode(board.querySelector('#access-totp').value), publicJwk: key.publicJwk, sig, nonce: nonceBody.nonce }) });
     const body = await response.json().catch(() => ({}));
     if (body.ok) { codeOk = true; if (!memberId) memberId = 'device'; armFingerprint(); }
-    mark(board.querySelector('#access-authenticator'), body.ok ? 'ok' : 'error', body.ok ? 'Verified' : (body.fallback === 'email' ? 'This device does not match. Use the email code.' : (body.error || 'Use the email code.')));
+    mark(board.querySelector('#access-authenticator'), body.ok ? 'ok' : 'error', body.ok ? 'Verified' : (body.error || 'Use fingerprint or the authenticator.'));
     paint();
     if (body.ok && body.sessionId) {
       try { sessionStorage.setItem('lgme.session', body.sessionId); } catch { /* the sign-in still shows */ }
     }
   });
-  board.querySelector('#totp-reset').addEventListener('click', async () => {
-    const response = await fetch('/api/authenticator', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'reset', email, code: compactCode(board.querySelector('#access-code').value) }) });
-    const body = await response.json().catch(() => ({}));
-    mark(null, body.ok ? 'ok' : 'error', body.ok ? 'Verified' : (body.error || 'Reset was not accepted.'));
+  board.querySelector('#totp-reset').addEventListener('click', () => {
+    mark(null, 'ok', 'The authenticator stays on this phone.');
   });
   board.querySelector('#ai-test').addEventListener('click', () => {
     aiTested = true;
@@ -494,7 +483,7 @@ if (root) {
     paint();
   });
   board.querySelector('#access-grant').addEventListener('click', () => {
-    if (!aiTested || !memberId) { mark(null, 'error', 'Verify the code and test the helper first.'); return; }
+    if (!aiTested || !memberId) { mark(null, 'error', 'Continue and test the helper first.'); return; }
     localStorage.setItem('lgme.access', 'full');
     mark(null, 'ok', 'Verified');
     paint();
@@ -618,7 +607,7 @@ if (root) {
     };
     dialog.querySelector('#gate-totp-go').onclick = async () => {
       let address = '';
-      try { address = sessionStorage.getItem('lgme.access.email') || ''; } catch { /* ask for the email code */ }
+      try { address = sessionStorage.getItem('lgme.access.email') || ''; } catch { /* the authenticator still asks */ }
       const key = await ensureDeviceKey(localStorage);
       const nonceRes = await fetch('/api/authenticator', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'nonce', email: address }) });
       const nonceBody = await nonceRes.json().catch(() => ({}));

@@ -7,7 +7,7 @@ Not a public page. `docs-internal/` is excluded from the deploy.
 | Route | Methods | Auth | Where data goes |
 |---|---|---|---|
 | /api/email/status | GET | none | nowhere |
-| /api/email/send | POST | none | Resend sends the code; KV stores only the code hash |
+| /api/email/send | POST | none | Email is disabled. Nothing is sent. |
 | /api/email/verify | POST | the code | KV hash compare; response has an email hash |
 | /api/gym/chat | GET, POST, DELETE | device signature | KV |
 | /api/gym/covenant | GET, POST | device signature | KV |

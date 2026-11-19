@@ -135,17 +135,14 @@ test('a day over $1,000 stays pending until three attestations and an administra
   assert.equal(card.label, 'Urgent');
   const memory = new Map();
   const store = { async get(key) { return memory.get(key); }, async set(key, value) { memory.set(key, value); } };
-  const mailed = [];
   const escalated = await escalateHold(store, { ...record, status: 'pending' }, soon, {
-    env: { RESEND_API_KEY: 'secret-key', EMAIL_FROM: 'desk@lgme.app', OWNER_NOTIFY_EMAIL: 'owner@example.test' },
-    fetchImpl: async () => { mailed.push('sent'); return { ok: false, status: 403 }; },
+    env: { OWNER_NOTIFY_EMAIL: 'owner@example.test' },
     attesters: ['mina']
   });
   assert.equal(escalated.due, true);
   assert.equal(escalated.email, false);
   assert.equal(escalated.inbox, true);
   assert.equal(escalated.autoApproved, false);
-  assert.equal(mailed.length, 1);
   const notices = await store.get('owner:signups');
   assert.equal(notices[0].title, 'Help resolve');
   assert.match(notices[0].link, /#help-resolve/);

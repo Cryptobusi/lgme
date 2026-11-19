@@ -1,12 +1,6 @@
-import { emailReadiness } from '../../js/email-check-core.mjs';
-import { json, readEnv } from '../lib/http.mjs';
+import { json } from '../lib/http.mjs';
 
 export default function handler(req, res) {
-  if (req.method !== 'GET') return json(res, 405, { ok: false, error: 'Use GET.' });
-  const ready = emailReadiness(readEnv());
-  return json(res, ready.enabled ? 200 : 503, {
-    ok: ready.enabled,
-    enabled: ready.enabled,
-    waiting: ready.enabled ? '' : 'Email sign-in is coming. Nothing is sent until that step is connected.'
-  });
+  if (req.method !== 'GET') return json(res, 405, { ok: false, enabled: false, error: 'Use GET.' });
+  return json(res, 200, { ok: true, enabled: false, error: 'Email is disabled.' });
 }

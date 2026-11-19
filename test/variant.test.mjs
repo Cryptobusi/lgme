@@ -35,8 +35,9 @@ test('three attestations wait for the administrator, then the window commits', a
     method: 'POST', body: { action: 'propose', name: 'Night gold', purpose: 'A darker gold theme for night walks.', memberId: 'test-a', variant, summary: ['Theme is gold.'] }, store, env, fetchImpl, now: 1_000
   });
   assert.equal(made.body.proposal.label, '0 of 3');
-  assert.equal(mail[0].text.includes('owner@example.test'), false);
-  assert.match(mail[0].text, /"theme":"night"/);
+  const notices = await store.get('versions:notices');
+  assert.equal(JSON.stringify(notices).includes('owner@example.test'), false);
+  assert.equal(notices[0].variant.theme, 'night');
   const self = await versionRequest({ method: 'POST', body: { action: 'attest', id: made.body.proposal.id, memberId: 'test-a' }, store, env, fetchImpl, now: 2_000 });
   assert.equal(self.status, 403);
   for (const memberId of ['test-b', 'test-c']) {

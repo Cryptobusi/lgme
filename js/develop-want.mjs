@@ -62,24 +62,8 @@ export function noticeOf(item) {
   };
 }
 
-export async function notifyOwner(env, notice, { fetchImpl = globalThis.fetch, push } = {}) {
+export async function notifyOwner(_env, notice, { push } = {}) {
   const result = { email: false, push: false };
-  const to = String(env.OWNER_NOTIFY_EMAIL || '').trim();
-  const key = String(env.RESEND_API_KEY || '').trim();
-  const from = String(env.EMAIL_FROM || '').trim();
-  if (to && key && from) {
-    const response = await fetchImpl('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
-      body: JSON.stringify({
-        from,
-        to,
-        subject: notice.subject || `IwanIT: ${notice.category}`,
-        text: `${notice.title}\n${notice.at}\n${notice.link}${notice.variant ? `\n\n${JSON.stringify(notice.variant)}` : ''}`
-      })
-    });
-    result.email = response.ok === true;
-  }
   if (typeof push === 'function') {
     const sent = await push(notice);
     result.push = sent?.ok === true;
@@ -107,7 +91,7 @@ export async function acceptHelpWant(store, spec, { now = Date.now(), ip = 'loca
     alert = await notifyOwner(env, notice, { fetchImpl, push });
   }
   await store.set(`develop:ip:${ip}`, [...stamps, now].slice(-HOUR_MAX));
-  return { ok: true, status: 200, item: built.item, notice, duplicate, notified: !duplicate && (alert.email || alert.push || !env.OWNER_NOTIFY_EMAIL) };
+  return { ok: true, status: 200, item: built.item, notice, duplicate, notified: !duplicate };
 }
 
 function stableKey(row) {

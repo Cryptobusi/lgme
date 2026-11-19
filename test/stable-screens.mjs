@@ -187,8 +187,6 @@ await flowPage.goto(`${base}/`, { waitUntil: 'domcontentloaded' });
 await flowPage.getByRole('button', { name: 'IwantIT', exact: true }).click();
 await flowPage.locator('#demo-email').fill('ada@example.com');
 await flowPage.locator('#demo-send').click();
-await flowPage.locator('#demo-code').fill('123456');
-await flowPage.locator('#demo-verify').click();
 await flowPage.locator('#demo-understand').click();
 await flowPage.locator('#demo-confirm').waitFor();
 await flowPage.evaluate(() => {

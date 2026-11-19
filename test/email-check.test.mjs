@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { emailReadiness, hashCode, hashEmail, isCampusEmail, makeCode, normalizeEmail } from '../js/email-check-core.mjs';
 import { confirmCode, requestCode } from '../api/lib/email-flow.mjs';
 
@@ -12,27 +13,20 @@ function memory() {
   };
 }
 
-test('the email check stays off until the provider and store are named', () => {
+test('email stays disabled and the status says so', () => {
   const ready = emailReadiness({});
   assert.equal(ready.enabled, false);
-  for (const name of ['EMAIL_CHECK', 'RESEND_API_KEY', 'EMAIL_FROM', 'EMAIL_CODE_PEPPER', 'KV_REST_API_URL', 'KV_REST_API_TOKEN']) {
-    assert.equal(ready.missing.includes(name), true, name);
-  }
+  assert.equal(ready.missing.join(','), 'disabled');
   assert.equal(emailReadiness({
     EMAIL_CHECK: 'on',
-    RESEND_API_KEY: 'k',
-    EMAIL_FROM: 'desk@lgme.app',
     EMAIL_CODE_PEPPER: 'pepper',
     KV_REST_API_URL: 'https://example.upstash.io',
     KV_REST_API_TOKEN: 't'
-  }).enabled, true);
-  assert.equal(emailReadiness({
-    RESEND_API_KEY: 'k',
-    EMAIL_FROM: 'desk@lgme.app',
-    EMAIL_CODE_PEPPER: 'pepper',
-    KV_REST_API_URL: 'https://example.upstash.io',
-    KV_REST_API_TOKEN: 't'
-  }).missing.join(','), 'EMAIL_CHECK');
+  }).enabled, false);
+  const status = readFileSync(new URL('../api/email/status.mjs', import.meta.url), 'utf8');
+  const send = readFileSync(new URL('../api/email/send.mjs', import.meta.url), 'utf8');
+  assert.match(status, /enabled: false/);
+  assert.equal(send.includes('api.resend.com'), false);
 });
 
 test('a campus address is marked once and the code is stored only as a hash', async () => {

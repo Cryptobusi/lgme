@@ -1,6 +1,6 @@
 export const SESSION_KEY = 'lgme.health.email';
 export const EMAIL_GATEWAY = '/gym#/start';
-export const EMAIL_WAITING = 'Email sign-in is coming. Nothing is sent until that step is connected.';
+export const EMAIL_WAITING = 'Email is disabled. Continue on this phone.';
 
 const GATED = new Set([EMAIL_GATEWAY, 'health-join']);
 

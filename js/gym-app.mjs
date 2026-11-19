@@ -1329,51 +1329,28 @@ async function publishCovenant(peer, text) {
 
 function emailJoinCard() {
   const host = el('section', { class: 'card', id: 'health-email' });
-  host.append(el('h3', {}, ['Email']));
-  host.append(el('p', {}, ['A new member verifies an email once, before the covenant. This device keeps that check. Later visits use the device key and the passkey. No phone number and no ID check.']));
-  const email = el('input', { id: 'join-email', type: 'email', maxlength: '120', placeholder: 'name@email.com', autocomplete: 'email', 'data-help': 'A code can be sent here so this phone can join. The address is not written on chain.', 'data-options': '' });
-  const code = el('input', { id: 'join-code', inputmode: 'numeric', maxlength: '6', placeholder: '6-digit code', autocomplete: 'one-time-code', 'data-help': 'The 6-digit code from the email, if you asked for one. You can also continue on this phone.' });
+  host.append(el('h3', {}, ['This phone']));
+  host.append(el('p', {}, ['A new member continues on this phone. Later visits use the device key and the passkey. No email code is sent. No phone number and no ID check.']));
+  const email = el('input', { id: 'join-email', type: 'email', maxlength: '120', placeholder: 'name@email.com', autocomplete: 'email', 'data-help': 'Optional. The address stays in the owner inbox. Nothing is emailed.', 'data-options': '' });
   const result = el('p', { id: 'join-email-result' });
-  const send = el('button', { type: 'button', id: 'join-send', onClick: async () => {
-    result.textContent = 'Sending…';
-    const response = await fetch('/api/email/send', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: email.value }) });
-    const body = await response.json();
-    result.textContent = body.ok ? 'Code sent. It expires in 10 minutes.' : (body.error || body.waiting || EMAIL_WAITING);
-  } }, ['Send code']);
-  const verify = el('button', { type: 'button', class: 'primary', id: 'join-verify', onClick: async () => {
-    result.textContent = 'Checking…';
-    const key = await ensureDeviceKey(localStorage);
-    const response = await fetch('/api/email/verify', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email: email.value, code: code.value, publicJwk: key.publicJwk })
-    });
-    const body = await response.json();
-    if (!body.ok) { result.textContent = body.error || body.waiting || 'Not verified.'; return; }
-    saveEmailSession(localStorage, { email: email.value, emailHash: body.emailHash, x: key.publicJwk.x, y: key.publicJwk.y, at: new Date().toISOString() });
-    signup.step = 1;
-    result.textContent = 'Email verified on this device.';
-    render();
-  } }, ['Verify and continue']);
   host.append(el('label', {}, ['Email', email]));
-  host.append(el('label', {}, ['Code', code]));
   const phone = el('button', { type: 'button', class: 'primary', id: 'join-phone', onClick: async () => {
     const key = await ensureDeviceKey(localStorage);
-    const emailHash = await sha256Hex(`lgme phone ${key.publicJwk.x}.${key.publicJwk.y}`);
-    saveEmailSession(localStorage, { email: '', emailHash, x: key.publicJwk.x, y: key.publicJwk.y, at: new Date().toISOString() });
+    const typed = email.value.trim();
+    let emailHash = await sha256Hex(`lgme phone ${key.publicJwk.x}.${key.publicJwk.y}`);
+    if (typed.includes('@')) {
+      try {
+        const response = await fetch('/api/email/verify', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: typed, publicJwk: key.publicJwk, category: 'health' }) });
+        const body = await response.json();
+        if (body.emailHash) emailHash = body.emailHash;
+      } catch { /* the phone still continues */ }
+    }
+    saveEmailSession(localStorage, { email: typed, emailHash, x: key.publicJwk.x, y: key.publicJwk.y, at: new Date().toISOString() });
     signup.step = 1;
     render();
   } }, ['Continue on this phone']);
-  host.append(send, verify, phone, result);
-  queueMicrotask(async () => {
-    let status = { enabled: false };
-    try { status = await (await fetch('/api/email/status')).json(); } catch { status = { enabled: false }; }
-    if (!status.enabled) {
-      result.textContent = EMAIL_WAITING;
-      send.disabled = true;
-      verify.disabled = true;
-    }
-  });
+  host.append(phone, result);
+  result.textContent = EMAIL_WAITING;
   return host;
 }
 

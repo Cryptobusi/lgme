@@ -122,7 +122,7 @@ async function memberOf(store, email, pepper) {
   if (!normal) return { ok: false, status: 400, error: 'Enter a valid email.' };
   const emailHash = await hashEmail(normal, pepper);
   const member = await store.get(memberKey(emailHash));
-  if (!member) return { ok: false, status: 400, error: 'Verify the email code first.' };
+  if (!member) return { ok: false, status: 400, error: 'Continue on this phone first.' };
   return { ok: true, email: normal, emailHash, member };
 }
 
@@ -171,7 +171,7 @@ export async function finishEnrollment(store, spec) {
 export async function issueNonce(store, spec) {
   const found = await memberOf(store, spec.email, spec.pepper);
   if (!found.ok) return found;
-  if (!found.member.totp) return { ok: false, status: 400, fallback: 'email', error: 'Set up the authenticator app first. Use the email code.' };
+  if (!found.member.totp) return { ok: false, status: 400, fallback: 'device', error: 'Set up the authenticator app first. Use fingerprint.' };
   const nonce = spec.nonce || base32Encode(crypto.getRandomValues(new Uint8Array(16)));
   const now = spec.now || Date.now();
   await store.set(`totp:nonce:${found.emailHash}`, { nonce, exp: now + 2 * 60 * 1000 }, 120);
@@ -185,13 +185,13 @@ async function checkDeviceAndCode(store, spec, purpose) {
   const ip = spec.ip || 'local';
   const limit = await charge(store, found.emailHash, ip, now);
   if (!limit.ok) return limit;
-  if (!found.member.totp) return { ok: false, status: 400, fallback: 'email', error: 'Use the email code.' };
+  if (!found.member.totp) return { ok: false, status: 400, fallback: 'device', error: 'Use fingerprint or the authenticator.' };
   const thumb = spec.publicJwk?.x ? await deviceThumb(spec.publicJwk) : '';
   const nonceRow = await store.get(`totp:nonce:${found.emailHash}`);
   const payload = { nonce: spec.nonce, purpose };
   const signed = nonceRow && nonceRow.nonce === spec.nonce && now <= nonceRow.exp && await verifyDevice(spec.publicJwk, payload, spec.sig);
   if (!signed || thumb !== found.member.deviceThumb) {
-    return { ok: false, status: 400, fallback: 'email', error: 'This device does not match. Use the email code.' };
+    return { ok: false, status: 400, fallback: 'device', error: 'This device does not match. Use fingerprint or the authenticator.' };
   }
   const secret = await openSecret(found.member.totp, spec.pepper);
   const matched = await matchTotp(secret, spec.code, now, found.member.totpUsed || []);
@@ -270,7 +270,7 @@ export async function resetAuthenticator(store, spec, confirmCode) {
   if (!confirmed.ok) return confirmed;
   const key = memberKey(confirmed.emailHash);
   const member = await store.get(key);
-  if (!member) return { ok: false, status: 400, error: 'Verify the email code first.' };
+  if (!member) return { ok: false, status: 400, error: 'Continue on this phone first.' };
   const next = { ...member };
   delete next.totp;
   delete next.totpPending;

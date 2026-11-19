@@ -34,9 +34,10 @@ test('a unique proposal needs three other members and tells the owner', async ()
   assert.equal(medical.status, 400);
   const made = await categoryRequest({ method: 'POST', body: { action: 'propose', kind: 'category', name: 'Tool library', description: 'A place to trade tools.', memberId: 'test-a' }, store, env, fetchImpl });
   assert.equal(made.body.proposal.label, '0 of 3');
-  assert.equal(mail.length, 1);
-  assert.match(mail[0].subject, /Tool library/);
-  assert.equal(mail[0].text.includes('owner@example.test'), false);
+  assert.equal(mail.length, 0);
+  const saved = await store.get('categories:notices');
+  assert.match(JSON.stringify(saved), /Tool library/);
+  assert.equal(JSON.stringify(saved).includes('owner@example.test'), false);
   const self = await categoryRequest({ method: 'POST', body: { action: 'attest', id: made.body.proposal.id, memberId: 'test-a' }, store, env, fetchImpl });
   assert.equal(self.status, 403);
   for (const memberId of ['test-b', 'test-c']) {
@@ -48,7 +49,7 @@ test('a unique proposal needs three other members and tells the owner', async ()
   const done = await categoryRequest({ method: 'POST', body: { action: 'attest', id: made.body.proposal.id, memberId: 'test-d' }, store, env, fetchImpl });
   assert.equal(done.body.promoted, true);
   assert.equal(done.body.proposal.label, 'Early / In development');
-  assert.equal(mail.length, 2);
+  assert.equal(mail.length, 0);
   const notices = await categoryRequest({ method: 'GET', search: '?notices=1', store, env, admin: true });
   assert.equal(notices.body.notices.length, 2);
   const hidden = await categoryRequest({ method: 'GET', search: '?notices=1', store, env, admin: false });

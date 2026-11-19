@@ -355,22 +355,27 @@ function paintCode() {
 }
 
 function paintEmail() {
-  const email = el('input', { id: 'demo-email', type: 'email', maxlength: '120', autocomplete: 'email', 'data-help': 'A 6-digit code can be sent here. You can also continue on this phone. The address is not written on chain.' });
+  const email = el('input', { id: 'demo-email', type: 'email', maxlength: '120', autocomplete: 'email', 'data-help': 'Optional. Nothing is emailed. You can also continue on this phone. The address is not written on chain.' });
   const status = el('p', { id: 'demo-status', role: 'status' });
-  const button = el('button', { type: 'button', class: 'primary', id: 'demo-send' }, ['Send code']);
+  const button = el('button', { type: 'button', class: 'primary', id: 'demo-send' }, ['Continue']);
   button.addEventListener('click', async () => {
-    status.textContent = 'Sending…';
-    const response = await fetch('/api/email/send', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email: email.value })
-    });
-    const body = await response.json().catch(() => ({}));
-    if (!body.ok) { status.textContent = body.error || body.waiting || 'Email sign-in is not connected yet.'; return; }
+    status.textContent = 'Saving…';
+    const key = await ensureDeviceKey(localStorage);
+    let body = {};
+    try {
+      const response = await fetch('/api/email/verify', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email: email.value, publicJwk: key.publicJwk })
+      });
+      body = await response.json().catch(() => ({}));
+    } catch { body = {}; }
     state.email = email.value.trim();
-    state.step = 'code';
-    writePending({ step: 'code', email: state.email, choice: state.choice, returnTo: readPending()?.returnTo || '' });
-    paintCode();
+    saveDemo(localStorage, { emailHash: body.emailHash || 'demo', disclaimer: false, at: new Date().toISOString() });
+    localStorage.setItem('lgme-gym.seat', 'demo');
+    writePending({ step: 'disclaimer', choice: state.choice, returnTo: readPending()?.returnTo || '' });
+    state.step = 'disclaimer';
+    paintDisclaimer();
   });
   const phone = el('button', { type: 'button', class: 'primary', id: 'demo-phone' }, ['Continue on this phone']);
   const unlock = el('button', { type: 'button', id: 'passkey-unlock-signin', hidden: 'hidden' }, ['Unlock with fingerprint']);
@@ -450,7 +455,7 @@ const ask = new URLSearchParams(location.search).get('demo') === '1';
 if (pending?.step === 'code' && pending.email) {
   state.email = pending.email;
   state.choice = pending.choice || '';
-  paintCode();
+  paintDisclaimer();
 } else if (pending?.step === 'health' && pending.choice === 'Health') {
   state.choice = 'Health';
   paintHealthConsent();

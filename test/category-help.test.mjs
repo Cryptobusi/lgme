@@ -42,11 +42,10 @@ test('every category is open and a help IwanIT notifies without an address in th
   });
   assert.equal(first.ok, true, first.error);
   assert.equal(first.duplicate, false);
-  assert.equal(sent.length, 1);
-  assert.equal(sent[0].body.to, 'owner@example.test');
-  assert.equal(sent[0].body.subject, 'IwanIT: Campus');
-  assert.match(sent[0].body.text, /I want to help develop Campus/);
-  assert.equal(JSON.stringify(sent[0].body.text).includes('@'), false);
+  assert.equal(sent.length, 0);
+  const saved = await store.get('develop:wants');
+  assert.match(saved[0].title, /I want to help develop Campus/);
+  assert.equal(JSON.stringify(saved).includes('@'), false);
   assert.equal(JSON.stringify(first).includes('owner@example.test'), false);
   assert.equal(pushes[0].link.includes('/develop?category=Campus'), true);
   const again = await acceptHelpWant(store, draft, {
@@ -56,11 +55,11 @@ test('every category is open and a help IwanIT notifies without an address in th
     fetchImpl: async () => { sent.push({ extra: true }); return { ok: true }; }
   });
   assert.equal(again.duplicate, true);
-  assert.equal(sent.length, 1);
+  assert.equal(sent.length, 0);
   const home = text('index.html');
   assert.equal(home.includes('cryptovanities@gmail.com'), false);
   assert.equal(home.includes('mailto:'), false);
   assert.equal(text('js/category-help.mjs').includes('mailto:'), false);
-  assert.equal(text('js/develop-want.mjs').includes('OWNER_NOTIFY_EMAIL'), true);
+  assert.equal(text('js/develop-want.mjs').includes('api.resend.com'), false);
   assert.equal(text('js/develop-want.mjs').includes('cryptovanities'), false);
 });

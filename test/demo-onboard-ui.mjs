@@ -69,9 +69,6 @@ for (const [width, height] of [[390, 844], [768, 1024], [1280, 800]]) {
     await page.locator('#demo-email').waitFor();
     await page.locator('#demo-email').fill('ada@example.com');
     await click('#demo-send');
-    await page.locator('#demo-code').waitFor();
-    await page.locator('#demo-code').fill('123456');
-    await click('#demo-verify');
     await page.locator('#demo-understand').waitFor();
     await click('#demo-understand');
     await page.locator('#demo-title').waitFor();

@@ -129,13 +129,13 @@ export async function passkeyRequest({ store, action, body = {}, host, verifyAut
       await store.set(`webauthn:challenge:${record.userId}`, null);
       const tries = await notePasskeyFailure(store, body.emailHash);
       if (tries >= 5) return { status: 429, body: { ok: false, error: 'Too many fingerprint tries. Wait and try again.' } };
-      return { status: 400, body: { ok: false, error: 'The fingerprint was not accepted. Use the email code.' } };
+      return { status: 400, body: { ok: false, error: 'The fingerprint was not accepted. Use fingerprint or the authenticator.' } };
     }
     await store.set(`webauthn:challenge:${record.userId}`, null);
     if (!verified.verified || verified.authenticationInfo.userVerified !== true) {
       const tries = await notePasskeyFailure(store, body.emailHash);
       if (tries >= 5) return { status: 429, body: { ok: false, error: 'Too many fingerprint tries. Wait and try again.' } };
-      return { status: 400, body: { ok: false, error: 'The fingerprint was not accepted. Use the email code.' } };
+      return { status: 400, body: { ok: false, error: 'The fingerprint was not accepted. Use fingerprint or the authenticator.' } };
     }
     const emailHash = String(record.userId || '').split(':')[0];
     const member = emailHash ? await store.get(`email:member:${emailHash}`) : null;
@@ -144,7 +144,7 @@ export async function passkeyRequest({ store, action, body = {}, host, verifyAut
     if (!deviceOk) {
       const tries = await notePasskeyFailure(store, body.emailHash || emailHash);
       if (tries >= 5) return { status: 429, body: { ok: false, verified: false, error: 'Too many fingerprint tries. Wait and try again.' } };
-      return { status: 400, body: { ok: false, verified: false, fallback: 'email', error: 'This device does not match. Use the email code.' } };
+      return { status: 400, body: { ok: false, verified: false, fallback: 'email', error: 'This device does not match. Use fingerprint or the authenticator.' } };
     }
     record.counter = verified.authenticationInfo.newCounter;
     await store.set(`webauthn:cred:${record.id}`, record);

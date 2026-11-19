@@ -17,4 +17,4 @@ The written file `/workspace/audit/lgme-audit-2026-11-10.md` was not in this wor
 
 ## Secrets
 
-A scan of the worktree and history for private-key blocks, live Stripe keys, Slack tokens, and Resend-style keys found none. Strings matching an AWS access-key shape appear inside `js/vendor/web-llm.mjs` and are fragments of vendored model bytes, not credentials. No secret values were printed.
+A scan of the worktree and history for private-key blocks, live Stripe keys, and Slack tokens found none. Strings matching an AWS access-key shape appear inside `js/vendor/web-llm.mjs` and are fragments of vendored model bytes, not credentials. No secret values were printed.

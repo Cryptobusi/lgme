@@ -36,29 +36,11 @@ test('the device line names a phone and a browser', () => {
   assert.equal(deviceLine('Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/120.0.0.0 Mobile Safari/537.36'), 'Android · Chrome');
 });
 
-test('only a production HTML navigation sends, and a preview needs the test flag', () => {
-  const env = { RESEND_API_KEY: 'present', VERCEL_ENV: 'production' };
+test('a page view does not send mail', () => {
+  const env = { VERCEL_ENV: 'production' };
   const sent = planVisit(html('/workflow?from=desk'), env, new Date('2026-11-18T15:00:00Z'));
-  assert.equal(sent.send, true);
-  assert.equal(sent.cookie, SEEN_COOKIE);
-  assert.equal(sent.revealId, false);
-  assert.equal(sent.payload.path, '/workflow');
-  assert.match(sent.payload.text, /Site: lgme\.app/);
-  assert.match(sent.payload.text, /Time \(New York\):/);
-  assert.match(sent.payload.text, /Time \(UTC\):/);
-  assert.match(sent.payload.text, /Path: \/workflow\?from=desk/);
-  assert.match(sent.payload.text, /Referrer: https:\/\/example\.test\/from/);
-  assert.match(sent.payload.text, /Place: New York, NY, US/);
-  assert.match(sent.payload.text, /IP \(masked\): 203\.0\.113\.0/);
-  assert.match(sent.payload.text, /Device: Mac · Chrome/);
-  assert.match(sent.payload.text, /Language: en-US/);
-  assert.equal(sent.payload.text.includes('present'), false);
-  assert.equal(planVisit(html('/workflow'), { ...env, RESEND_API_KEY: '' }).send, false);
-  assert.equal(planVisit(html('/workflow'), { RESEND_API_KEY: 'present', VERCEL_ENV: 'preview' }).send, false);
-  const preview = planVisit(html('/privacy?va_test=1'), { RESEND_API_KEY: 'present', VERCEL_ENV: 'preview' });
-  assert.equal(preview.send, true);
-  assert.equal(preview.revealId, true);
-  assert.equal(preview.payload.path, '/privacy');
+  assert.equal(sent.send, false);
+  assert.equal(planVisit(html('/privacy?va_test=1'), { VERCEL_ENV: 'preview' }).send, false);
 });
 
 test('bots, assets, APIs, prefetch, HEAD, and a seen cookie do not send', () => {
@@ -75,34 +57,13 @@ test('bots, assets, APIs, prefetch, HEAD, and a seen cookie do not send', () => 
   assert.equal(planVisit(html('/workflow', { cookie: 'va_seen=1' }), env).send, false);
 });
 
-test('the mail call returns an id and swallows a timeout without writing the key', async () => {
-  const env = { RESEND_API_KEY: 'secret-key-value' };
-  let seen = null;
-  const ok = await sendVisit({ path: '/privacy', text: 'Site: lgme.app' }, env, async (url, init) => {
-    seen = { url, init };
-    return { ok: true, json: async () => ({ id: 're_test_123' }) };
-  });
-  assert.equal(ok.id, 're_test_123');
-  assert.equal(seen.url, 'https://api.resend.com/emails');
-  assert.equal(seen.init.headers.Authorization, 'Bearer secret-key-value');
-  assert.equal(seen.init.body.includes('secret-key-value'), false);
-  assert.match(seen.init.body, /Site Visits <onboarding@resend.dev>/);
-  assert.match(seen.init.body, /egonomist@mail\.grokbot\.com/);
-  assert.match(seen.init.body, /\[lgme\.app\] Visit: \/privacy/);
-  const verified = await sendVisit({ path: '/', text: 'Site: lgme.app' }, { ...env, EMAIL_FROM: 'desk@lgme.app' }, async (_url, init) => {
-    seen = { init };
-    return { ok: true, json: async () => ({ id: 're_verified' }) };
-  });
-  assert.equal(verified.id, 're_verified');
-  assert.match(seen.init.body, /Site Visits <desk@lgme.app>/);
-  assert.equal(seen.init.body.includes('onboarding@resend.dev'), false);
-  const skipped = await sendVisit({ path: '/', text: 'Site: lgme.app' }, {}, async () => { throw new Error('called'); });
+test('a visit note is not mailed', async () => {
+  let called = false;
+  const skipped = await sendVisit({ path: '/privacy', text: 'Site: lgme.app' }, {}, async () => { called = true; return { ok: true }; });
+  assert.equal(called, false);
   assert.equal(skipped.skipped, true);
-  const timed = await sendVisit({ path: '/', text: 'Site: lgme.app' }, env, (_url, init) => new Promise((_resolve, reject) => {
-    init.signal.addEventListener('abort', () => reject(new Error('aborted')));
-  }));
-  assert.equal(timed.ok, false);
-  assert.equal(timed.id, '');
+  assert.equal(skipped.id, '');
+  assert.equal(text('js/visit-alert.mjs').includes('api.resend.com'), false);
 });
 
 test('the privacy page, footer, sitemap, and notice leave the exchange alone', () => {

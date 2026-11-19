@@ -177,7 +177,9 @@ for (const [width, height] of [[390, 844], [1280, 800]]) {
     }
     const finalLabel = await page.locator('#evolve-count').innerText();
     check(finalLabel === 'Early / In development', `${width} promoted ${finalLabel}`);
-    check(mail.length >= 2, 'owner mail missing');
+    check(mail.length === 0, 'email was sent');
+    const notes = await store.get('categories:notices');
+    check((notes || []).length >= 2, 'owner inbox missing');
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
     check(overflow === false, `${width} page overflow`);
   } catch (error) {

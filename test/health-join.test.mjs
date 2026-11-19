@@ -45,7 +45,7 @@ test('email is only the new Health join gateway', () => {
   assert.equal(join.includes('id: \'health-email\''), true);
   assert.equal(join.includes('joinEmailDone'), true);
   assert.equal(text('index.html').includes('id="start-health"'), true);
-  assert.equal(text('help.html').includes('No other page asks for an email code.'), true);
+  assert.equal(text('help.html').includes('No email code is sent.'), true);
 });
 
 test('a new member code is stored as a peppered hash and bound to the device', async () => {
@@ -92,7 +92,7 @@ test('the three Health drafts stay on the phone and do not rank anyone', () => {
     assert.equal(plan.prompt.includes('No streaks, no leaderboard, and no ranking.'), true, id);
     assert.equal(draftPlan(id).lines.some((line) => /your rank|day streak is/i.test(line)), false, id);
   }
-  assert.equal(EMAIL_WAITING.startsWith('Email sign-in is coming.'), true);
+  assert.equal(EMAIL_WAITING.startsWith('Email is disabled.'), true);
   for (const id of PLAN_ORDER) assert.equal(existsSync(join(root, `images/health-plan-${id}.png`)), true, id);
   assert.equal(text('js/health-page.mjs').includes('use-${id}'), true);
 });

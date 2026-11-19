@@ -1,5 +1,5 @@
 export const OWNER_COPY_DEFAULT = 'egonomist@mail.grokbot.com';
-export const SIGNUP_NOTICE = 'The administrator is notified of new sign-ups (email, phone, device, time).';
+export const SIGNUP_NOTICE = 'The administrator sees new sign-ups in the owner inbox (email, phone, device, time). No email is sent.';
 
 export function parseDevice(ua) {
   const text = String(ua || '');
@@ -33,27 +33,7 @@ export function signupText(spec, now = Date.now()) {
   ].join('\n');
 }
 
-async function sendAlert(env, text, fetchImpl, subject = 'New lgme member') {
-  const key = String(env.RESEND_API_KEY || '').trim();
-  const from = String(env.EMAIL_FROM || '').trim();
-  const to = String(env.OWNER_NOTIFY_EMAIL || '').trim();
-  const copy = String(env.OWNER_COPY_EMAIL || OWNER_COPY_DEFAULT).trim();
-  if (!key || !from || (!to && !copy)) return false;
-  const response = await fetchImpl('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
-    body: JSON.stringify({
-      from,
-      to: to || copy,
-      ...(to && copy && copy !== to ? { cc: copy } : {}),
-      subject,
-      text
-    })
-  });
-  return response?.ok === true;
-}
-
-export async function notifyNewMember(store, spec, { env = {}, fetchImpl = globalThis.fetch, now = Date.now() } = {}) {
+export async function notifyNewMember(store, spec, { now = Date.now() } = {}) {
   try {
     const id = String(spec.memberId || '').replace(/[^a-z0-9]/gi, '').slice(0, 16);
     if (!id) return { ok: true, skipped: true };
@@ -67,9 +47,7 @@ export async function notifyNewMember(store, spec, { env = {}, fetchImpl = globa
     await store.set('owner:signups', [...prior, notice].slice(-40));
     await store.set(`owner:new:${id}`, { at: notice.at });
     await store.set(`owner:signup:ip:${ip}`, [...stamps, now]);
-    let sent = false;
-    try { sent = await sendAlert(env, detail, fetchImpl); } catch { sent = false; }
-    return { ok: true, sent, duplicate: false };
+    return { ok: true, sent: false, inbox: true, duplicate: false };
   } catch {
     return { ok: true, sent: false };
   }
@@ -90,9 +68,7 @@ export async function notifyOwnerInbox(store, spec, { env = {}, fetchImpl = glob
   } catch {
     return { ok: true, inbox: false, email: false };
   }
-  let email = false;
-  try { email = await sendAlert(env, notice.detail, fetchImpl, notice.title); } catch { email = false; }
-  return { ok: true, inbox: true, email };
+  return { ok: true, inbox: true, email: false };
 }
 
 export async function listSignupNotices(store) {

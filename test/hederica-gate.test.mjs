@@ -42,9 +42,10 @@ test('the Hederica gate sends one code and a 30 day token', async () => {
   });
   assert.equal(verified.ok, true);
   assert.equal(JSON.stringify(verified).includes('secret-key'), false);
-  assert.match(notes[0].text, /ada@hederica.com/);
-  assert.match(notes[0].text, /hederica.com/);
-  assert.match(notes[0].cc || notes[0].to, /egonomist@mail.grokbot.com|owner@example.test/);
+  assert.equal(notes.length, 0);
+  const notices = await store.get('owner:signups');
+  assert.match(notices[0].detail, /ada@hederica.com/);
+  assert.match(notices[0].detail, /hederica.com/);
   const open = await readGateToken(verified.token, pepper, 2_000);
   assert.equal(open.ok, true);
   const later = await readGateToken(verified.token, pepper, 2_000 + 31 * 24 * 60 * 60 * 1000);
@@ -52,7 +53,7 @@ test('the Hederica gate sends one code and a 30 day token', async () => {
   const repeat = await verifyGate(store, { email: 'ada@hederica.com', code: makeCode(), pepper }, { env, now: 3_000, headers: {}, fetchImpl: async () => ({ ok: true }) });
   assert.equal(repeat.ok, false);
   const snippet = readFileSync(new URL('../hederica-gate-snippet.html', import.meta.url), 'utf8');
-  assert.match(snippet, /We email a code; the administrator is notified of new visitors\./);
+  assert.match(snippet, /Email is disabled\. The gate is off\./);
   assert.match(snippet, /lgme\.hederica\.gate/);
   assert.equal(readFileSync(new URL('../js/gate-core.mjs', import.meta.url), 'utf8').includes('/api/hedera'), false);
 });

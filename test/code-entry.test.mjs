@@ -36,9 +36,9 @@ test('the authenticator entry is named lgme.app and spaced codes match', async (
   const emailDash = await confirmCode(store, { email, code: dashed, pepper, now });
   assert.equal(emailDash.ok, true, emailDash.error);
   const home = readFileSync(new URL('../js/thumb-home.mjs', import.meta.url), 'utf8');
-  assert.equal(home.includes('>Email code</label>'), true);
+  assert.equal(home.includes('>Email code</label>'), false);
   assert.equal(home.includes('Google Authenticator code'), true);
-  assert.equal(home.includes('id="access-code"'), true);
+  assert.equal(home.includes('id="access-send"'), true);
   assert.equal(home.includes('id="access-totp"'), true);
   assert.equal(home.includes("code: compactCode(board.querySelector('#access-totp').value)"), true);
   assert.equal(home.includes('The entry will be named lgme.app.'), true);
