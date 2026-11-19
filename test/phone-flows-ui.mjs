@@ -169,8 +169,9 @@ async function dock(page, shot) {
   await ask.click();
   const focused = await page.evaluate(() => document.activeElement && document.activeElement.id === 'ai-ask');
   if (!focused) failures.push('dock input did not focus');
+  await page.locator('#ai-path-skip').click();
   await page.getByRole('button', { name: 'Log a workout', exact: true }).click();
-  if (await ask.inputValue() !== 'Log a workout') failures.push('chip did not fill the input');
+  await page.waitForFunction(() => document.getElementById('ai-ask')?.value === 'Log a workout');
   if (shot) {
     await ask.scrollIntoViewIfNeeded();
     await page.screenshot({ path: '/opt/cursor/artifacts/ai-dock-focus-390.png', timeout: 8000, animations: 'disabled' });
