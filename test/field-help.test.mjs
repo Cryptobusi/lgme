@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { applyFieldOption, fieldLines, fieldMeta, nextHelpField, safeHelpLine } from '../js/field-help.mjs';
+import { applyFieldOption, fieldLines, fieldMeta, lastFieldValue, nextHelpField, rememberFieldValue, safeHelpLine } from '../js/field-help.mjs';
 
 test('field help reads data attributes and skips the dock', () => {
   const field = {
@@ -25,4 +25,55 @@ test('an option fills the field and the next help field is the following one', (
   assert.deepEqual(events, ['input', 'change']);
   const root = { querySelectorAll() { return [hidden, first, second]; } };
   assert.equal(nextHelpField(first, root), second);
+  let submitted = false;
+  first.form = { submit() { submitted = true; } };
+  applyFieldOption(first, 'Walk');
+  assert.equal(submitted, false);
+});
+
+function fakeField(spec) {
+  return {
+    id: spec.id,
+    type: spec.type || 'text',
+    value: '',
+    labels: [{ textContent: spec.label || '' }],
+    getAttribute(name) {
+      if (name === 'id') return spec.id || '';
+      if (name === 'type') return spec.type || '';
+      if (name === 'placeholder') return spec.placeholder || '';
+      if (name === 'autocomplete') return spec.autocomplete || '';
+      if (name === 'data-help') return spec.help || '';
+      if (name === 'data-options') return spec.options || '';
+      return '';
+    },
+    closest() { return null; },
+    dispatchEvent() {}
+  };
+}
+
+test('every field gets a guide, and an example fills only after a tap', () => {
+  const amount = fieldMeta(fakeField({ id: 'donate-amount', label: 'Amount' }));
+  assert.match(amount.text, /50\/50/);
+  assert.match(amount.text, /US\$|Creo/);
+  assert.equal(amount.options.length >= 2 && amount.options.length <= 3, true);
+  const gift = fieldMeta(fakeField({ id: 'contrib-usd', label: '$lgme US$' }));
+  assert.match(gift.text, /50\/50/);
+  assert.match(gift.text, /Testnet only/);
+  const deed = fieldMeta(fakeField({ id: 'ididit-input', type: 'textarea', label: 'IdidIt' }));
+  assert.match(deed.text, /Creo/);
+  const thing = fieldMeta(fakeField({ id: 'ihavit-name', label: 'Name' }));
+  assert.match(thing.text, /tap OK/);
+  const note = fieldMeta(fakeField({ id: 'note', label: 'Note' }));
+  assert.match(note.help, /Note/);
+  const email = fakeField({ id: 'access-email', type: 'email', label: 'Email', autocomplete: 'email' });
+  const guide = fieldMeta(email);
+  assert.equal(guide.personal, true);
+  assert.equal(email.value, '');
+  applyFieldOption(email, guide.options[0]);
+  assert.equal(email.value, guide.options[0]);
+  const memory = { bag: {}, getItem(key) { return this.bag[key] || null; }, setItem(key, value) { this.bag[key] = value; } };
+  rememberFieldValue(memory, 'donate-amount', '5', false);
+  rememberFieldValue(memory, 'donate-amount', '9', true);
+  assert.equal(lastFieldValue(memory, 'donate-amount', false), '5');
+  assert.equal(lastFieldValue(memory, 'donate-amount', true), '9');
 });

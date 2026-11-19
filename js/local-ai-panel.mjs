@@ -1,4 +1,4 @@
-import { applyFieldOption, fieldMeta, nextHelpField, safeHelpLine } from './field-help.mjs';
+import { applyFieldOption, fieldMeta, lastFieldValue, nextHelpField, rememberFieldValue, safeHelpLine } from './field-help.mjs';
 import { classifyPrompt, routeLine } from './prompt-route.mjs';
 import { activeScreen, applyMode, screenModePrompt, undoMode } from './screen-modes.mjs';
 import { localFunctionFromPrompt, saveLocalFunction } from './local-functions.mjs';
@@ -445,7 +445,7 @@ function mount() {
       host.append(row);
     });
   };
-  const paintChips = (labels, field) => {
+  const paintChips = (labels, field, last = '') => {
     chips.replaceChildren();
     for (const label of labels) {
       if (dismissed.has(label)) continue;
@@ -456,7 +456,7 @@ function mount() {
       if (field) {
         chip.addEventListener('pointerdown', (event) => { event.preventDefault(); });
         chip.addEventListener('click', () => {
-          applyFieldOption(field, label);
+          applyFieldOption(field, label === 'Use my last value' ? last : label);
           const next = nextHelpField(field);
           if (next) next.focus();
           else field.focus();
@@ -471,28 +471,75 @@ function mount() {
     }
     paintSuggestions(labels, field);
   };
+  const hideHint = () => {
+    const hint = document.getElementById('field-hint');
+    if (hint) hint.hidden = true;
+  };
+  const speakGuide = (words) => {
+    const SpeechOut = window.speechSynthesis;
+    if (!speakApproved(localStorage) || !SpeechOut || !words) return;
+    try { SpeechOut.cancel(); } catch { /* a quiet browser still shows the words */ }
+    const utter = new SpeechSynthesisUtterance(words);
+    utter.lang = 'en-US';
+    SpeechOut.speak(utter);
+  };
+  let hinted = null;
+  const placeHint = (field, meta) => {
+    let hint = document.getElementById('field-hint');
+    if (!hint) {
+      hint = document.createElement('button');
+      hint.type = 'button';
+      hint.id = 'field-hint';
+      document.body.append(hint);
+      hint.addEventListener('click', () => {
+        dock.classList.add('is-open');
+        const expand = dock.querySelector('#ai-expand');
+        if (expand) {
+          expand.setAttribute('aria-expanded', 'true');
+          expand.textContent = 'Close';
+        }
+        if (hinted) showField(hinted);
+      });
+    }
+    hinted = field;
+    hint.hidden = false;
+    hint.textContent = meta.what || meta.help;
+    const box = field.getBoundingClientRect();
+    hint.style.top = `${Math.min(box.bottom + 4, window.innerHeight - 48)}px`;
+    hint.style.left = `${Math.max(8, box.left)}px`;
+  };
   const showField = (field) => {
     const meta = fieldMeta(field);
-    if (!meta) return;
+    if (!meta || !aiOn()) { hideHint(); return; }
+    const last = field.id ? lastFieldValue(localStorage, field.id, incognitoOn(localStorage)) : '';
+    const labels = last ? [...meta.options, 'Use my last value'] : meta.options;
+    const words = meta.text || meta.help;
+    if (!dock.classList.contains('is-open')) {
+      placeHint(field, meta);
+      return;
+    }
+    hideHint();
     dock.classList.add('has-field');
     const log = dock.querySelector('#ai-log');
-    log.textContent = meta.help;
-    paintChips(meta.options, field);
+    log.textContent = words;
+    paintChips(labels, field, last);
+    speakGuide(words);
     const token = ++fieldToken;
-    if (!(aiOn() && localAiReady())) return;
+    if (!localAiReady()) return;
     draftWithHelper(pickHelperSync(), {
-      template: meta.help,
-      prompt: `One short sentence. No medical advice. Explain why this field is needed: ${meta.help}`,
+      template: words,
+      prompt: `One short sentence. No medical advice. Explain why this field is needed: ${words}`,
       scope: window
     }).then((result) => {
       if (token !== fieldToken || document.activeElement !== field) return;
-      log.textContent = safeHelpLine(result?.text, meta.help);
+      log.textContent = safeHelpLine(result?.text, words);
     }).catch(() => {});
   };
   const clearField = () => {
     const active = document.activeElement;
-    if (active && active.closest && active.closest('#ai-dock')) return;
+    if (active && active.closest && active.closest('#ai-dock, #field-hint')) return;
     if (fieldMeta(active)) return;
+    hideHint();
     fieldToken += 1;
     dock.classList.remove('has-field');
     paintChips(rankedPrompts(dockChipsOf() || AI_CHIPS, readUses()).slice(0, 5), null);
@@ -783,6 +830,11 @@ function mount() {
   paintChips(rankedPrompts(dockChipsOf() || AI_CHIPS, readUses()).slice(0, 5), null);
   document.addEventListener('focusin', (event) => { showField(event.target); });
   document.addEventListener('focusout', () => { setTimeout(clearField, 0); });
+  document.addEventListener('change', (event) => {
+    const field = event.target;
+    if (!field || !field.id || !fieldMeta(field)) return;
+    rememberFieldValue(localStorage, field.id, field.value, incognitoOn(localStorage));
+  });
   ask.addEventListener('pointerup', () => { ask.focus(); });
   let shiftHeld = false;
   let keySent = 0;
@@ -1180,6 +1232,8 @@ function mount() {
     const open = dock.classList.toggle('is-open');
     dock.querySelector('#ai-expand').setAttribute('aria-expanded', open ? 'true' : 'false');
     dock.querySelector('#ai-expand').textContent = open ? 'Close' : 'Open';
+    if (open) showField(document.activeElement);
+    else if (document.activeElement) showField(document.activeElement);
   });
   dock.querySelector('#ai-switch').addEventListener('click', () => {
     try {
@@ -1191,6 +1245,8 @@ function mount() {
       }
     } catch { /* the switch still moves */ }
     paint(dock);
+    if (!aiOn()) hideHint();
+    else showField(document.activeElement);
   });
   dock.querySelector('#ai-accept').addEventListener('click', () => {
     if (!localAiReady()) return;

@@ -515,7 +515,10 @@ html.is-easy .entry-grid { grid-template-columns: minmax(0, 1fr); }
 html.is-easy #ai-log,
 html.is-easy #ai-steps,
 html.is-easy .ai-suggest-line { font-size: 22px; line-height: 1.45; }
-html.is-easy #ai-chips .ai-chip:nth-child(n+4) { display: none; }
+html.is-easy #ai-dock:not(.has-field) #ai-chips .ai-chip:nth-child(n+4) { display: none; }
+#field-hint { position: fixed; z-index: 46; max-width: 16rem; min-height: 32px; padding: 0.2rem 0.55rem; border-radius: 999px; border: 1px solid #c6a15b; background: #151a15; color: #f4f1e8; font: inherit; }
+#field-hint[hidden] { display: none; }
+html.is-easy #field-hint, html.is-easy #ai-dock.has-field #ai-log { font-size: max(18px, 1rem); }
 html.is-easy #site-nav { background: #14110c; color: #f4f1e8; }
 html.is-easy #site-back,
 html.is-easy #site-home,
