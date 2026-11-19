@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="/site-nav.css" />
+  <script src="/js/stable-screen.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0c100c" />
+  <title>Barrier checks · lgme</title>
+  <meta name="description" content="The published attestation rule. Up to $100 is bilateral. Over $100 needs three attestations. Over $1,000 in a day also needs administrator approval." />
+  <link rel="canonical" href="https://lgme.app/barrier-checks" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600&family=Newsreader:opsz,wght@6..72,500&display=swap" />
+  <link rel="stylesheet" href="/menu.css" />
+  <style>
+    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; --card:#151a15; }
+    body { margin:0 auto; max-width:40rem; background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; font-size:1.05rem; line-height:1.5; padding:1rem max(1rem, env(safe-area-inset-right)) 3rem max(1rem, env(safe-area-inset-left)); }
+    h1,h2 { font-family:Newsreader,serif; font-weight:500; }
+    a { color:var(--fg); }
+    .kicker { margin:0; letter-spacing:0.14em; text-transform:uppercase; color:var(--gold); font-size:0.75rem; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:0.9rem 1rem; margin:0.8rem 0; }
+    .muted { color:var(--muted); }
+    nav a { min-height:44px; display:inline-flex; align-items:center; margin-right:0.8rem; }
+  </style>
+</head>
+<body>
+<nav class="deskmenu" aria-label="Desk">
+  <a href="/">Desk</a>
+  <a href="/exchange">Exchange</a>
+  <a href="/help">Help</a>
+  <a href="/barrier-checks" aria-current="page">Barrier checks</a>
+</nav>
+<p class="kicker">lgme · Barrier checks</p>
+<h1>Attestation thresholds</h1>
+<p id="barrier-rule">Up to $100 bilateral; over $100 three independent attestations; over $1,000/day three plus admin approval until DAO path published; any refusal stays on record, no penalty; An unpublished change is not a change; Floor stays senior. Same rules bind state, firm, and person.</p>
+<section class="card">
+  <h2>What stays pending</h2>
+  <p>A receipt over $100 stays pending until three independent third-member device signatures. A pair's rolling 24-hour total over $1,000 stays pending until those three signatures and an administrator device signature. The approval label is “until a member DAO publishes its approval path.”</p>
+  <p>A refusal, including a Third Seat refusal, stays on the record. It carries no penalty and is not hidden. Nothing in this rule approves itself.</p>
+  <p>The hold deadline is 24 hours from opening. Three hours before that deadline, if the signatures or the approval are still short, both parties, the suggested attesters, and the administrator are told. The administrator may attest, approve, extend once, or mark the hold unresolved.</p>
+</section>
+<p class="muted"><a href="/exchange">Exchange</a> · <a href="/help">Help</a></p>
+<script src="/js/site-nav.js"></script>
+</body>
+</html>

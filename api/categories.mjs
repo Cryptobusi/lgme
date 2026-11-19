@@ -1,7 +1,7 @@
-import { categoryRequest } from '../../js/category-evolve.mjs';
-import { guardRequest, json, readBody, readEnv } from '../lib/http.mjs';
-import { redisRest } from '../../js/redis-env.mjs';
-import { upstashStore } from '../lib/upstash.mjs';
+import { categoryRequest } from '../js/category-evolve.mjs';
+import { guardRequest, json, readBody, readEnv } from './lib/http.mjs';
+import { redisRest } from '../js/redis-env.mjs';
+import { upstashStore } from './lib/upstash.mjs';
 
 const memory = {
   bag: new Map(),

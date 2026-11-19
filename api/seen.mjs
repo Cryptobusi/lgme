@@ -1,6 +1,6 @@
-import { guardRequest, json, readBody, readEnv } from '../lib/http.mjs';
-import { redisRest } from '../../js/redis-env.mjs';
-import { upstashStore } from '../lib/upstash.mjs';
+import { guardRequest, json, readBody, readEnv } from './lib/http.mjs';
+import { redisRest } from '../js/redis-env.mjs';
+import { upstashStore } from './lib/upstash.mjs';
 
 const memory = { bag: new Map(), async get(key) { return this.bag.has(key) ? this.bag.get(key) : null; }, async set(key, value) { this.bag.set(key, value); } };
 
