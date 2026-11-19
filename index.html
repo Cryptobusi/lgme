@@ -355,7 +355,10 @@
     .dash-dot.is-go { background: #22c55e; animation: none; }
     .dash-dot.is-stop { background: #b00020; animation: none; }
     .dash-label { grid-column: 2; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: #c6a15b; line-height: 1.2; }
-    .dash-figure { grid-column: 2; font-size: 17px; line-height: 1.2; font-weight: 700; }
+    .dash-figure, .dash-card strong { grid-column: 2; font-size: 17px; line-height: 1.2; font-weight: 700; color: #f4f1e8; }
+    .status-chip { display: inline-flex; align-items: center; gap: 0.35rem; min-height: 32px; margin: 0.15rem 0.35rem 0.15rem 0; padding: 0.1rem 0.55rem; border-radius: 999px; border: 1px solid #c6a15b; background: #0c100c; color: #f4f1e8; font: inherit; font-size: 13px; font-weight: 700; }
+    .status-chip .dash-dot { position: static; }
+    .status-chip strong { color: #f4f1e8; font-size: 13px; }
     .dash-chevron { grid-row: 1 / span 2; grid-column: 3; font-size: 16px; }
     .dash-body { padding: 0 0.5rem 0.45rem; border-top: 1px solid #c6a15b; }
     .dash-body[hidden] { display: none; }
@@ -450,13 +453,15 @@
     <div class="entry-grid" id="category-grid">
       <section id="profile-board" aria-label="Profile">
         <p id="profile-name">Not signed in</p>
+        <p id="status-chips">
+          <button type="button" class="status-chip" id="incognito-chip" aria-pressed="false"><i class="dash-dot is-go" id="dash-incognito-dot"></i><span>Incognito</span><strong id="dash-incognito-figure">None</strong></button>
+          <button type="button" class="status-chip" id="testnet-chip"><i class="dash-dot is-go" id="dash-notice-dot"></i><span>Testnet</span><strong id="dash-notice-figure">Notice</strong></button>
+        </p>
         <section id="home-board" aria-label="At a glance">
           <article class="dash-card" id="dash-creo"><button type="button" class="dash-head" aria-expanded="false" aria-controls="dash-creo-body"><i class="dash-dot is-wait" id="dash-creo-dot"></i><span class="dash-label">Creo</span><strong class="dash-figure" id="dash-creo-figure">None yet</strong><span class="dash-chevron" aria-hidden="true">+</span></button><div class="dash-body" id="dash-creo-body" hidden><p class="dash-label">Debit</p><p id="dash-debit">None yet</p><p class="dash-label">Credit</p><p id="dash-credit">None yet</p><p>Debit = you owe. Credit = you lend. Creo = value you create.</p></div></article>
           <article class="dash-card" id="dash-today"><button type="button" class="dash-head" aria-expanded="false" aria-controls="dash-today-body"><i class="dash-dot is-wait" id="dash-today-dot"></i><span class="dash-label">Today</span><strong class="dash-figure" id="dash-today-figure">None yet</strong><span class="dash-chevron" aria-hidden="true">+</span></button><div class="dash-body" id="dash-today-body" hidden><ul id="dash-today-list"></ul></div></article>
           <article class="dash-card" id="dash-receipt"><button type="button" class="dash-head" aria-expanded="false" aria-controls="dash-receipt-body"><i class="dash-dot is-wait" id="dash-receipt-dot"></i><span class="dash-label">Last receipt</span><strong class="dash-figure" id="dash-receipt-figure">None yet</strong><span class="dash-chevron" aria-hidden="true">+</span></button><div class="dash-body" id="dash-receipt-body" hidden><p id="dash-receipt-detail">No receipt yet.</p></div></article>
           <article class="dash-card" id="dash-consent"><button type="button" class="dash-head" aria-expanded="false" aria-controls="dash-consent-body"><i class="dash-dot is-wait" id="dash-consent-dot"></i><span class="dash-label">Health consent</span><strong class="dash-figure" id="dash-consent-figure">None yet</strong><span class="dash-chevron" aria-hidden="true">+</span></button><div class="dash-body" id="dash-consent-body" hidden><p id="dash-consent-detail">Not answered.</p><a href="/gym#/more">Open Health settings</a></div></article>
-          <article class="dash-card" id="dash-incognito"><button type="button" class="dash-head" aria-expanded="false" aria-controls="dash-incognito-body"><i class="dash-dot is-go" id="dash-incognito-dot"></i><span class="dash-label">Incognito</span><strong class="dash-figure" id="dash-incognito-figure">None</strong><span class="dash-chevron" aria-hidden="true">+</span></button><div class="dash-body" id="dash-incognito-body" hidden><p id="dash-incognito-detail">Nothing is waiting.</p></div></article>
-          <article class="dash-card" id="dash-notice"><button type="button" class="dash-head" aria-expanded="false" aria-controls="dash-notice-body"><i class="dash-dot is-go" id="dash-notice-dot"></i><span class="dash-label">Testnet</span><strong class="dash-figure" id="dash-notice-figure">Notice</strong><span class="dash-chevron" aria-hidden="true">+</span></button><div class="dash-body" id="dash-notice-body" hidden><p id="dash-notice-detail"></p></div></article>
         </section>
         <button type="button" id="screen-reopen" class="secondary">Choose your screen</button>
         <button type="button" id="credits-total" hidden>Creo 0.00</button>

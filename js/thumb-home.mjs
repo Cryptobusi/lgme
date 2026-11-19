@@ -88,6 +88,10 @@ function paintDash(book, member) {
     if (heldDetail) heldDetail.textContent = 'Nothing is waiting.';
     setDot('dash-incognito-dot', 'go', 'No Incognito items waiting');
   }
+  const chip = document.getElementById('incognito-chip');
+  let hidden = false;
+  try { hidden = localStorage.getItem('lgme.incognito') === '1'; } catch { hidden = false; }
+  if (chip) chip.setAttribute('aria-pressed', hidden ? 'true' : 'false');
   const notice = document.getElementById('notice-text')?.textContent?.trim() || '';
   const noticeFigure = document.getElementById('dash-notice-figure');
   const noticeDetail = document.getElementById('dash-notice-detail');

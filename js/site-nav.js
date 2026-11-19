@@ -1,6 +1,6 @@
 (function () {
   var EPOCH = '2';
-  var CURRENT = { 'lgme-v242': 1, 'lgme-gym-v81': 1 };
+  var CURRENT = { 'lgme-v243': 1, 'lgme-gym-v81': 1 };
   function keep(name) {
     if (!name) return true;
     if (name === 'lgme.reset.epoch' || name === 'lgme.reset.note' || name === 'lgme.device.key' || name === 'lgme.display.step' || name === 'lgme.display.easy' || name === 'lgme-gym.seat' || name === 'lgme.health.book' || name === 'lgme.health.email' || name === 'lgme.health.plan' || name === 'lgme.health.contact' || name === 'lgme.health.contactGrants' || name === 'lgme.health.consent' || name === 'lgme.demo.member') return true;
@@ -228,6 +228,28 @@
       tape.setAttribute('aria-pressed', on ? 'true' : 'false');
       tape.textContent = on ? 'Tape sound on' : 'Tape sound off';
     };
+    if (!menu.querySelector('#incognito-menu')) {
+      var incog = document.createElement('button');
+      incog.type = 'button';
+      incog.id = 'incognito-menu';
+      incog.setAttribute('aria-pressed', 'false');
+      var paintIncog = function () {
+        var on = false;
+        try { on = localStorage.getItem('lgme.incognito') === '1'; } catch (error) { on = false; }
+        incog.setAttribute('aria-pressed', on ? 'true' : 'false');
+        incog.textContent = on ? 'Incognito on' : 'Incognito off';
+      };
+      incog.addEventListener('click', function () {
+        var on = false;
+        try { on = localStorage.getItem('lgme.incognito') === '1'; } catch (error) { on = false; }
+        try { localStorage.setItem('lgme.incognito', on ? '0' : '1'); } catch (error) { /* the label still changes */ }
+        paintIncog();
+        document.dispatchEvent(new CustomEvent('lgme-incognito'));
+      });
+      document.addEventListener('lgme-incognito', paintIncog);
+      tape.insertAdjacentElement('afterend', incog);
+      paintIncog();
+    }
     if (tape.dataset.bound !== '1') {
       tape.dataset.bound = '1';
       tape.addEventListener('click', function () {

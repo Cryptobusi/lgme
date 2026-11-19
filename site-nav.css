@@ -107,6 +107,8 @@ html[data-screen="simple"] #ai-dock.is-open { height: 45vh; max-height: 45vh; }
 html[data-screen="full"] #ai-dock.is-open { height: 30vh; max-height: 30vh; }
 #ai-dock:not(.is-open):not(.has-field) #ai-chips,
 #ai-dock:not(.is-open):not(.has-field) #ai-ask,
+#ai-dock:not(.is-open):not(.has-field) #ai-overview,
+#ai-dock:not(.is-open):not(.has-field) #ai-overview-steps,
 #ai-dock:not(.is-open):not(.has-field) #ai-log,
 #ai-dock:not(.is-open):not(.has-field) #ai-log-frame,
 #ai-dock:not(.is-open):not(.has-field) #ai-suggestions,
@@ -249,7 +251,31 @@ html.is-one-tab body:has(nav[aria-label="Gym"]) #ai-dock { bottom: 0; }
   border: 2px solid #c6a15b;
   border-radius: 14px;
   background: #151a15;
+  color: #f4f1e8;
 }
+html.tape #profile-board,
+html.tape #message-panel,
+html.is-easy #profile-board,
+html.is-easy #message-panel,
+html.tape .dash-card,
+html.is-easy .dash-card {
+  color: #f4f1e8;
+}
+html.tape #profile-board :is(h1, h2, h3, h4, p, label, summary),
+html.tape #message-panel :is(h1, h2, h3, h4, p, label),
+html.is-easy #profile-board :is(h1, h2, h3, h4, p, label, summary, button),
+html.is-easy #message-panel :is(h1, h2, h3, h4, p, label, button),
+html.tape .dash-card :is(h1, h2, h3, h4, strong, p),
+html.is-easy .dash-card :is(h1, h2, h3, h4, strong, p) {
+  color: #f4f1e8;
+}
+#profile-board input, #profile-board textarea, #message-panel textarea {
+  color: #14110c;
+  background: #fffdf8;
+}
+#ai-overview, #ai-overview-steps { margin: 0.2rem 0; color: #f4f1e8; font-size: 14px; line-height: 1.35; }
+#ai-overview-steps { padding-left: 1.2rem; }
+html.is-easy #ai-overview, html.is-easy #ai-overview-steps { font-size: 22px; color: #f4f1e8; }
 html[data-theme="paper"] #profile-board,
 html[data-theme="paper"] #function-row,
 html[data-theme="paper"] #ai-dock.is-open,

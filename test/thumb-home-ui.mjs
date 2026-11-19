@@ -87,6 +87,27 @@ if (glance.figure !== 'None yet' || glance.debit !== 'None yet') failures.push(`
 if (!glance.open) failures.push('card stayed closed');
 if (glance.height < 44) failures.push(`dash tap ${glance.height}`);
 if (glance.columns < 1) failures.push('dash is one column');
+if (await page.locator('#dash-incognito').count()) failures.push('incognito card remains');
+if (await page.locator('#dash-notice').count()) failures.push('testnet card remains');
+const ink = await page.evaluate(() => {
+  const lum = (color) => {
+    const m = color.match(/\d+/g).map(Number);
+    const f = (c) => { const x = c / 255; return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; };
+    return 0.2126 * f(m[0]) + 0.7152 * f(m[1]) + 0.0722 * f(m[2]);
+  };
+  const ratio = (fg, bg) => { const a = lum(fg); const b = lum(bg); return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05); };
+  const read = (sel, bgSel) => {
+    const el = document.querySelector(sel);
+    const bg = document.querySelector(bgSel);
+    return ratio(getComputedStyle(el).color, getComputedStyle(bg).backgroundColor);
+  };
+  const plain = read('#dash-creo-figure', '#dash-creo');
+  document.documentElement.classList.add('is-easy');
+  const easy = read('#dash-creo-figure', '#dash-creo');
+  document.documentElement.classList.remove('is-easy');
+  return { plain, easy };
+});
+if (ink.plain < 4.5 || ink.easy < 4.5) failures.push(`card contrast ${ink.plain.toFixed(2)} ${ink.easy.toFixed(2)}`);
 await page.locator('#one-more').click();
 await page.locator('#function-row').waitFor();
 await page.locator('#ai-dock').waitFor();
@@ -136,6 +157,7 @@ const ai = await page.locator('#ai-test-result').innerText();
 if (!/AI on|AI off/.test(ai) || !/Typing still works/.test(ai)) failures.push(`ai test ${ai}`);
 await page.locator('#access-grant').click();
 if ((await page.evaluate(() => localStorage.getItem('lgme.access'))) !== 'full') failures.push('access not granted');
+if (!(await page.locator('#function-row a[data-sensitive]').isVisible())) await page.locator('#one-more').click();
 await page.locator('#function-row a[data-sensitive]').click();
 await page.locator('#gate-passkey').click();
 await page.waitForFunction(() => /fingerprint/i.test(document.getElementById('gate-status')?.innerHTML || ''));
