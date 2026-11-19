@@ -11,7 +11,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
-      - run: node --test --test-timeout=120000 test/data-integrity.test.mjs test/nested-schema.test.mjs test/testnet-review.test.mjs test/health-examples.test.mjs test/health-dashboard.test.mjs test/exchange-overview.test.mjs test/hedera-network.test.mjs test/mainnet-prep.test.mjs test/join-explain.test.mjs test/category-help.test.mjs test/one-tap.test.mjs test/demo-onboard.test.mjs test/health-scope.test.mjs test/model-warmup.test.mjs test/mainnet-setup.test.mjs test/field-help.test.mjs test/evolve.test.mjs test/variant.test.mjs test/voice-mode.test.mjs test/fingerprint-prompt.test.mjs test/incognito.test.mjs test/press-feedback.test.mjs test/visit-alert.test.mjs
+      - run: node --test --test-timeout=120000 test/data-integrity.test.mjs test/nested-schema.test.mjs test/testnet-review.test.mjs test/health-examples.test.mjs test/health-dashboard.test.mjs test/exchange-overview.test.mjs test/hedera-network.test.mjs test/mainnet-prep.test.mjs test/join-explain.test.mjs test/category-help.test.mjs test/one-tap.test.mjs test/demo-onboard.test.mjs test/health-scope.test.mjs test/model-warmup.test.mjs test/mainnet-setup.test.mjs test/field-help.test.mjs test/evolve.test.mjs test/variant.test.mjs test/voice-mode.test.mjs test/fingerprint-prompt.test.mjs test/incognito.test.mjs test/press-feedback.test.mjs test/visit-alert.test.mjs test/ask-tabs.test.mjs test/local-qa.test.mjs
         timeout-minutes: 10
       - run: npm install --no-save playwright@1.49.1
         timeout-minutes: 10
@@ -60,4 +60,6 @@ jobs:
       - run: node test/category-actions-ui.mjs
         timeout-minutes: 10
       - run: node test/my-version-ui.mjs
+        timeout-minutes: 10
+      - run: node test/ask-intent-ui.mjs
         timeout-minutes: 10

@@ -72,8 +72,8 @@ const INTENTS = [
 export function localAnswer(question) {
   const q = String(question || '').trim().toLowerCase();
   const hit = q ? INTENTS.find((item) => item.test.test(q)) : null;
-  if (hit) return { ...hit.answer, source: 'local' };
-  return { text: FALLBACK, actions: [ACTIONS.health, ACTIONS.help], source: 'local' };
+  if (hit) return { ...hit.answer, source: 'local', matched: true };
+  return { text: FALLBACK, actions: [ACTIONS.health, ACTIONS.help], source: 'local', matched: false };
 }
 
 export function answerOrFallback({ question, modelText = '', aiOn = false } = {}) {

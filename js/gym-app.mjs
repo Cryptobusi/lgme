@@ -2186,12 +2186,13 @@ async function renderIdidIt() {
   const title = el('input', {
     id: 'gym-ididit-other',
     maxlength: '80',
+    required: 'required',
     value: IDIDIT_CHIPS[0],
     'data-help': 'This names what you finished, on this phone.',
     'data-options': IDIDIT_CHIPS.join('|')
   });
-  const activity = el('input', { id: 'gym-ididit-activity', maxlength: '40', 'aria-label': 'Activity' });
-  const minutes = el('input', { id: 'gym-ididit-minutes', inputmode: 'numeric', maxlength: '4', 'aria-label': 'Minutes' });
+  const activity = el('input', { id: 'gym-ididit-activity', maxlength: '40', required: 'required', 'aria-label': 'Activity' });
+  const minutes = el('input', { id: 'gym-ididit-minutes', inputmode: 'numeric', maxlength: '4', required: 'required', 'aria-label': 'Minutes' });
   const distance = el('input', { id: 'gym-ididit-distance', maxlength: '40', 'aria-label': 'Distance' });
   const speed = el('input', { id: 'gym-ididit-speed', maxlength: '40', 'aria-label': 'Speed' });
   const computed = el('p', { id: 'gym-ididit-computed' });
@@ -2254,6 +2255,12 @@ async function renderIdidIt() {
         await typeField(title, line);
         markNext(confirm);
         explain();
+        const empty = [activity, minutes, title].find((field) => field.required && !String(field.value || '').trim());
+        if (empty) {
+          empty.scrollIntoView({ block: 'center' });
+          empty.focus();
+          empty.classList.add('is-ask-focus');
+        }
       };
       queueMicrotask(() => { run(); });
     }
@@ -2321,8 +2328,13 @@ async function render() {
   }
   panel.replaceChildren(view);
   if (path === '/ididit' && view?.id === 'ididit-done') {
-    const focus = view.querySelector('#draft-suggestion:not([hidden])') || view;
-    focus.scrollIntoView({ block: 'start' });
+    const empty = [...view.querySelectorAll('input[required], textarea[required]')].find((field) => !String(field.value || '').trim());
+    const shown = view.querySelector('#draft-suggestion:not([hidden])');
+    (empty || shown || view).scrollIntoView({ block: empty ? 'center' : 'start' });
+    if (empty) {
+      empty.focus();
+      empty.classList.add('is-ask-focus');
+    }
   }
   const people = await books();
   if (people.length) panel.prepend(actingAs(people));

@@ -158,12 +158,8 @@ await page.locator('#ai-ask').fill('log 10min treadmill');
 await page.locator('#ai-ask').evaluate((node) => {
   node.dispatchEvent(new InputEvent('beforeinput', { inputType: 'insertLineBreak', bubbles: true, cancelable: true }));
 });
-if (!/Ready to log on IdidIt: Treadmill, 10 min/.test(await page.locator('#ai-log').innerText())) failures.push('first enter did not stage');
-if (!/is-current/.test(await page.locator('#ai-steps li').first().getAttribute('class'))) failures.push('step 1 not current');
-if (await page.locator('#gym-ididit-confirm').count()) failures.push('first enter recorded or opened');
-await page.waitForTimeout(50);
-await page.locator('#ai-ask').press('Enter');
 await page.locator('#gym-ididit-other').waitFor();
+if (/Recorded on testnet/.test(await page.locator('#ididit-status').innerText())) failures.push('first enter recorded');
 await page.waitForFunction(() => document.getElementById('gym-ididit-other')?.value === 'Treadmill, 10 min' && document.getElementById('gym-ididit-activity')?.value === 'Treadmill' && document.getElementById('gym-ididit-minutes')?.value === '10');
 if (!/Suggestion: Treadmill, 10 min/.test(await page.locator('#draft-suggestion').innerText())) failures.push('suggestion not repeated');
 if (!(await page.locator('#gym-ididit-confirm').evaluate((node) => node.classList.contains('is-next')))) failures.push('confirm not marked');
@@ -188,7 +184,6 @@ await page.waitForFunction(() => /Draft filled: Treadmill, 5 miles, 3 mph, about
 if (!(await page.locator('#ididit-done').isVisible())) failures.push('pace draft hidden');
 await page.locator('#ai-ask').fill('I want a ride');
 await page.locator('#ai-send').click();
-await page.locator('#ai-confirm').click();
 await page.locator('#prompt-draft').waitFor();
 if (!/a ride/.test(await page.locator('#prompt-draft').innerText())) failures.push('send did not open IwantIT');
 await page.evaluate(() => {

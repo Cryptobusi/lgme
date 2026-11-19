@@ -65,6 +65,7 @@ html.has-site-nav body { padding-bottom: calc(40vh + env(safe-area-inset-bottom)
 html[data-screen="simple"] body { padding-bottom: calc(45vh + env(safe-area-inset-bottom)); }
 html[data-screen="full"] body { padding-bottom: calc(30vh + env(safe-area-inset-bottom)); }
 html.has-site-nav :is(button, a, input, textarea, select, label) { scroll-margin-top: 5rem; scroll-margin-bottom: 42vh; }
+#ai-dock :is(button, a, input, textarea, select, label) { scroll-margin: 0; }
 html.has-site-nav body:has(nav[aria-label="Gym"]) { padding-bottom: calc(40vh + 4.5rem + env(safe-area-inset-bottom)); }
 html.is-one-tab.has-site-nav body:has(nav[aria-label="Gym"]),
 html.is-one-tab body:has(nav[aria-label="Gym"]) { padding-bottom: calc(40vh + env(safe-area-inset-bottom)); }
@@ -112,6 +113,7 @@ html[data-screen="full"] #ai-dock.is-open { height: 30vh; max-height: 30vh; }
 #ai-dock:not(.is-open):not(.has-field) #ai-next,
 #ai-dock:not(.is-open):not(.has-field) #ai-promote,
 #ai-dock:not(.is-open):not(.has-field) #ai-shortcut-offer,
+#ai-dock:not(.is-open):not(.has-field) #ai-intents,
 #ai-dock:not(.is-open):not(.has-field) #ai-try,
 #ai-dock:not(.is-open):not(.has-field) #ai-log-frame,
 #ai-dock:not(.is-open):not(.has-field) #ai-suggestions,
@@ -236,8 +238,8 @@ html.is-one-tab body:has(nav[aria-label="Gym"]) #ai-dock { bottom: 0; }
   border-radius: 0;
   background: transparent;
 }
-#ai-scroll { position: relative; flex: 1 1 auto; min-height: 0; max-height: none; overflow: auto; }
-#ai-dock.is-open #ai-scroll { min-height: 0; }
+#ai-scroll { position: relative; flex: 1 1 auto; min-height: 0; overflow: auto; }
+#ai-dock.is-open #ai-scroll { flex: 1 1 0; min-height: 0; max-height: none; overflow: auto; }
 #ai-steps { list-style: none; margin: 0.15rem 0 0; padding: 0; }
 #ai-log p { margin: 0.35rem 0; }
 #ai-log strong { font-weight: 700; }
@@ -275,7 +277,11 @@ html.is-easy .dash-card :is(h1, h2, h3, h4, strong, p) {
 }
 #ai-overview, #ai-overview-steps, #ai-next, #ai-promote, #ai-shortcut-offer { margin: 0.2rem 0; color: #f4f1e8; font-size: 14px; line-height: 1.35; }
 #ai-next, #ai-promote, #ai-shortcut-offer { border: 1px solid #c6a15b; border-radius: 10px; padding: 0.35rem 0.5rem; }
-#ai-overview-more, #ai-try a { min-height: 44px; margin: 0.15rem 0.25rem 0 0; display: inline-flex; align-items: center; }
+#ai-intents { display: flex; flex-wrap: nowrap; gap: 0.25rem; overflow-x: auto; margin: 0; padding: 0.2rem 0.45rem 0.3rem; flex: 0 0 auto; background: #0c100c; -webkit-mask-image: linear-gradient(to right, transparent, #000 10px, #000 calc(100% - 18px), transparent); mask-image: linear-gradient(to right, transparent, #000 10px, #000 calc(100% - 18px), transparent); }
+#ai-dock.is-open .ai-compose { flex: 0 0 auto; background: #0c100c; }
+#ai-intents button { flex: 0 0 auto; min-height: 44px; min-width: 44px; padding: 0 0.7rem; border-radius: 999px; border: 1px solid #c6a15b; background: transparent; color: #f4f1e8; font: inherit; font-weight: 700; }
+#ai-intents button[aria-selected="true"] { background: #c6a15b; color: #1a1408; }
+.is-ask-focus { outline: 3px solid #F97316; outline-offset: 2px; }
 html[data-guide="manual"] #ai-next,
 html[data-guide="manual"] #ai-promote,
 #ai-dock.is-manual #ai-next,

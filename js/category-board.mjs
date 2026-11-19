@@ -183,6 +183,8 @@ export function mountCategoryBoard(root = document.getElementById('category-boar
       if (!draft || (draft.kind !== 'iwantit' && draft.kind !== 'ihavit')) return;
       state.action = draft.kind;
       state.promptText = draft.text;
+      state.form = 'listing';
+      state.prefill = draft.text;
       sessionStorage.removeItem('lgme.prompt.draft');
       paint();
     } catch { /* the board stays */ }
@@ -231,12 +233,14 @@ function formCard(state, paint) {
   const name = el('input', {
     id: 'evolve-name',
     maxlength: '40',
+    required: 'required',
     'data-help': listing ? 'A name for this new listing type. It is checked against names already in this category.' : 'A short name for this category. It is checked against names already here.',
     'data-options': listing ? LISTING_OPTIONS : NAME_OPTIONS
   });
   const line = el('input', {
     id: 'evolve-line',
     maxlength: '120',
+    required: 'required',
     'data-help': 'One line on what this is for. No medical claims. It stays a proposal until 3 members attest.',
     'data-options': LINE_OPTIONS
   });
@@ -251,6 +255,16 @@ function formCard(state, paint) {
     send
   ]);
   card.addEventListener('submit', (event) => event.preventDefault());
+  if (state.prefill && listing) {
+    name.value = String(state.prefill).slice(0, 40);
+    queueMicrotask(() => {
+      const empty = [name, line].find((field) => field.required && !String(field.value || '').trim());
+      const target = empty || line;
+      target.scrollIntoView({ block: 'center' });
+      target.focus();
+      target.classList.add('is-ask-focus');
+    });
+  }
   for (const match of state.matches) {
     const join = el('button', { type: 'button', class: 'evolve-join' }, [`Join ${match.name}`]);
     join.addEventListener('click', () => {
