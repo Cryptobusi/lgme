@@ -171,9 +171,9 @@ async function dock(page, shot) {
   if (!focused) failures.push('dock input did not focus');
   await page.locator('#ai-path-skip').click();
   await page.getByRole('button', { name: 'Log a workout', exact: true }).click();
-  await page.waitForFunction(() => document.getElementById('ai-ask')?.value === 'Log a workout');
+  await page.locator('#ididit-done').waitFor();
+  await page.waitForFunction(() => /session|workout/i.test(document.getElementById('gym-ididit-other')?.value || ''));
   if (shot) {
-    await ask.scrollIntoViewIfNeeded();
     await page.screenshot({ path: '/opt/cursor/artifacts/ai-dock-focus-390.png', timeout: 8000, animations: 'disabled' });
   }
 }
