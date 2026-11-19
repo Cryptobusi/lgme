@@ -119,9 +119,9 @@ async function offer(page, name, purpose, useDock) {
   await tap(page, '#customize-offer');
   if (useDock) {
     await page.locator('#version-name').click();
-    await page.locator('#ai-chips').getByRole('button', { name, exact: true }).click();
+    await page.getByRole('button', { name: `Yes, ${name}`, exact: true }).click();
     await page.locator('#version-purpose').click();
-    await page.locator('#ai-chips').getByRole('button', { name: purpose, exact: true }).click();
+    await page.getByRole('button', { name: `Yes, ${purpose}`, exact: true }).click();
   } else {
     await page.locator('#version-name').fill(name);
     await page.locator('#version-purpose').fill(purpose);

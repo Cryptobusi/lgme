@@ -31,7 +31,8 @@ test('density follows the phone and a large system font makes the same screen co
   assert.equal(source.includes('XMLHttpRequest'), false);
   assert.equal(css.includes('clamp('), true);
   assert.equal(css.includes('html.tape { background: #cfc4b0; }'), true);
-  assert.equal(css.includes('height: 40vh'), true);
+  assert.equal(css.includes('height: 50vh'), true);
+  assert.equal(css.includes('height: 50dvh'), true);
 });
 
 test('five font steps stay on the device and Easy read toggles back', () => {

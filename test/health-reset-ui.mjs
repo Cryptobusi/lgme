@@ -101,7 +101,7 @@ await homePage.screenshot({ path: '/opt/cursor/artifacts/ai-toggle-off-390.png',
 await homePage.locator('#ai-switch').click();
 if (!/AI on/i.test(await homePage.locator('#ai-switch').innerText())) failures.push('pill did not turn on');
 const box = await homePage.locator('#ai-dock').evaluate((node) => node.getBoundingClientRect().height);
-if (box < 844 * 0.38 || box > 844 * 0.42) failures.push(`everyday dock ${box}`);
+if (box < 844 * 0.46 || box > 844 * 0.56) failures.push(`everyday dock ${box}`);
 await homePage.screenshot({ path: '/opt/cursor/artifacts/ai-toggle-on-390.png', timeout: 8000, animations: 'disabled' });
 await homePage.goto(`${base}/ai-setup`, { waitUntil: 'domcontentloaded' });
 await homePage.locator('#ai-setup-steps li').first().waitFor();

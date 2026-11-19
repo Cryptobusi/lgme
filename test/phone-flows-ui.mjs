@@ -170,7 +170,7 @@ async function dock(page, shot) {
   const focused = await page.evaluate(() => document.activeElement && document.activeElement.id === 'ai-ask');
   if (!focused) failures.push('dock input did not focus');
   await page.locator('#ai-path-skip').click();
-  await page.getByRole('button', { name: 'Log a workout', exact: true }).click();
+  await page.getByRole('button', { name: 'Yes, Log a workout', exact: true }).click();
   await page.locator('#ididit-done').waitFor();
   await page.waitForFunction(() => /session|workout/i.test(document.getElementById('gym-ididit-other')?.value || ''));
   if (shot) {
@@ -236,17 +236,17 @@ async function fieldDock(browser) {
   if (/diagnos|treatment|cure/i.test(log)) failures.push('field help makes a medical claim');
   const still = await page.evaluate(() => document.activeElement && document.activeElement.id);
   if (still !== before) failures.push('showing help stole focus');
-  const options = await page.locator('#ai-chips .ai-chip').allTextContents();
+  const options = await page.locator('.ai-suggest-line').allTextContents();
   if (!options.includes('I finished a walk') || !options.includes('I did the session')) failures.push(`field options missing ${options.join('|')}`);
   await page.screenshot({ path: '/opt/cursor/artifacts/field-dock-390.png', timeout: 8000, animations: 'disabled' });
-  await page.locator('#ai-chips').getByRole('button', { name: 'I finished a walk', exact: true }).click();
+  await page.getByRole('button', { name: 'Yes, I finished a walk', exact: true }).click();
   if (await field.inputValue() !== 'I finished a walk') failures.push('option did not fill the field');
   const focused = await page.evaluate(() => document.activeElement && document.activeElement.id === 'gym-ididit-other');
   if (!focused) failures.push('keyboard field was not focused after the only option set');
   await page.goto(`${base}/develop?category=Health`, { waitUntil: 'domcontentloaded' });
   const title = page.locator('#want-title');
   await title.click();
-  await page.locator('#ai-chips').getByRole('button', { name: 'I can help test', exact: true }).click();
+  await page.getByRole('button', { name: 'Yes, I can help test', exact: true }).click();
   if (await title.inputValue() !== 'I can help test') failures.push('IwanIT option did not fill the title');
   const next = await page.evaluate(() => document.activeElement && document.activeElement.id);
   if (next !== 'want-body') failures.push(`focus did not move to the next field (${next})`);

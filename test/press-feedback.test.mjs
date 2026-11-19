@@ -18,7 +18,8 @@ test('press ticks stay on the device and default on', () => {
   assert.match(panel, /aria-label="Hint">Hint</);
   assert.match(panel, /aria-label="Confirm">OK</);
   const css = readFileSync(new URL('../site-nav.css', import.meta.url), 'utf8');
-  assert.match(css, /#ai-dock\.is-open\s*\{[^}]*height:\s*40vh/);
+  assert.match(css, /#ai-dock\.is-open\s*\{[^}]*height:\s*50vh/);
+  assert.match(css, /#ai-dock\.is-open\s*\{[^}]*height:\s*50dvh/);
   assert.match(css, /#ai-send \{ background: #c6a15b/);
   assert.match(css, /prefers-reduced-motion: reduce/);
   const settings = readFileSync(new URL('../js/gym-app.mjs', import.meta.url), 'utf8');

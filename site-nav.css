@@ -61,21 +61,21 @@ body.has-site-nav { padding-top: 34px; scroll-padding-top: 40px; }
 html.has-site-nav body:has(#exchange-overview),
 body.has-site-nav:has(#exchange-overview) { padding-top: 0; }
 html.has-site-nav body:has(#exchange-overview) .launch-bar { margin-top: 42px; }
-html.has-site-nav body { padding-bottom: calc(40vh + env(safe-area-inset-bottom)); }
-html[data-screen="simple"] body { padding-bottom: calc(45vh + env(safe-area-inset-bottom)); }
-html[data-screen="full"] body { padding-bottom: calc(30vh + env(safe-area-inset-bottom)); }
-html.has-site-nav :is(button, a, input, textarea, select, label) { scroll-margin-top: 5rem; scroll-margin-bottom: 42vh; }
+html.has-site-nav body { padding-bottom: calc(50vh + env(safe-area-inset-bottom)); }
+html[data-screen="simple"] body { padding-bottom: calc(50vh + env(safe-area-inset-bottom)); }
+html[data-screen="full"] body { padding-bottom: calc(50vh + env(safe-area-inset-bottom)); }
+html.has-site-nav :is(button, a, input, textarea, select, label) { scroll-margin-top: 5rem; scroll-margin-bottom: 52vh; }
 #ai-dock :is(button, a, input, textarea, select, label) { scroll-margin: 0; }
-html.has-site-nav body:has(nav[aria-label="Gym"]) { padding-bottom: calc(40vh + 4.5rem + env(safe-area-inset-bottom)); }
+html.has-site-nav body:has(nav[aria-label="Gym"]) { padding-bottom: calc(50vh + 4.5rem + env(safe-area-inset-bottom)); }
 html.is-one-tab.has-site-nav body:has(nav[aria-label="Gym"]),
-html.is-one-tab body:has(nav[aria-label="Gym"]) { padding-bottom: calc(40vh + env(safe-area-inset-bottom)); }
-html[data-screen="simple"] body:has(nav[aria-label="Gym"]) { padding-bottom: calc(45vh + 4.5rem + env(safe-area-inset-bottom)); }
-html[data-screen="full"] body:has(nav[aria-label="Gym"]) { padding-bottom: calc(30vh + 4.5rem + env(safe-area-inset-bottom)); }
-#first-open { padding-bottom: 42vh; }
+html.is-one-tab body:has(nav[aria-label="Gym"]) { padding-bottom: calc(50vh + env(safe-area-inset-bottom)); }
+html[data-screen="simple"] body:has(nav[aria-label="Gym"]) { padding-bottom: calc(50vh + 4.5rem + env(safe-area-inset-bottom)); }
+html[data-screen="full"] body:has(nav[aria-label="Gym"]) { padding-bottom: calc(50vh + 4.5rem + env(safe-area-inset-bottom)); }
+#first-open { padding-bottom: 52vh; }
 #access-fingerprint, #fingerprint-setup, #gate-passkey { position: relative; z-index: 2; pointer-events: auto; }
-#confirm-gate { z-index: 60; bottom: calc(40vh + 0.6rem); }
-html[data-screen="simple"] #confirm-gate { bottom: calc(45vh + 0.6rem); }
-html[data-screen="full"] #confirm-gate { bottom: calc(30vh + 0.6rem); }
+#confirm-gate { z-index: 60; bottom: calc(50vh + 0.6rem); }
+html[data-screen="simple"] #confirm-gate { bottom: calc(50vh + 0.6rem); }
+html[data-screen="full"] #confirm-gate { bottom: calc(50vh + 0.6rem); }
 #ai-dock {
   position: fixed;
   inset: auto 0 0 0;
@@ -99,13 +99,15 @@ html[data-screen="full"] #confirm-gate { bottom: calc(30vh + 0.6rem); }
 #ai-dock.is-open {
   display: flex;
   flex-direction: column;
-  height: 40vh;
-  max-height: 40vh;
+  height: 50vh;
+  height: 50dvh;
+  max-height: 50vh;
+  max-height: 50dvh;
   border: 2px solid #c6a15b;
   border-radius: 14px;
 }
-html[data-screen="simple"] #ai-dock.is-open { height: 45vh; max-height: 45vh; }
-html[data-screen="full"] #ai-dock.is-open { height: 30vh; max-height: 30vh; }
+html[data-screen="simple"] #ai-dock.is-open,
+html[data-screen="full"] #ai-dock.is-open { height: 50vh; height: 50dvh; max-height: 50vh; max-height: 50dvh; }
 #ai-dock:not(.is-open):not(.has-field) #ai-chips,
 #ai-dock:not(.is-open):not(.has-field) #ai-ask,
 #ai-dock:not(.is-open):not(.has-field) #ai-overview,
@@ -156,7 +158,7 @@ html.is-one-tab body:has(nav[aria-label="Gym"]) #ai-dock { bottom: 0; }
 #ai-dock.has-field .ai-top { order: 1; }
 #ai-dock.has-field #ai-log { order: 2; }
 #ai-dock.has-field #ai-chips { order: 3; }
-#ai-chip-row { position: relative; }
+#ai-chip-row { display: none; }
 #ai-chips { display: flex; flex-wrap: nowrap; gap: 0.5rem; min-height: 32px; max-height: 32px; margin: 0 0 0.25rem; padding-right: 1.2rem; overflow-x: auto; }
 #ai-dock.has-field #ai-chips { flex-wrap: nowrap; max-height: 32px; overflow-x: auto; }
 #ai-dock .ai-chip { flex: 0 0 auto; white-space: nowrap; min-height: 32px; min-width: 24px; height: 32px; padding: 0 0.5rem; border-radius: 999px; border: 1px solid #c6a15b; background: #f4f1e8; color: #1a1408; font: inherit; font-size: 14px; font-weight: 700; }
@@ -238,15 +240,15 @@ html.is-one-tab body:has(nav[aria-label="Gym"]) #ai-dock { bottom: 0; }
   border-radius: 0;
   background: transparent;
 }
-#ai-scroll { position: relative; flex: 1 1 auto; min-height: 0; overflow: auto; }
-#ai-dock.is-open #ai-scroll { flex: 1 1 0; min-height: 0; max-height: none; overflow: auto; }
+#ai-scroll { position: relative; flex: 1; min-height: 0; overflow-y: auto; }
+#ai-dock.is-open #ai-scroll { flex: 1; min-height: 0; max-height: none; overflow-y: auto; }
 #ai-steps { list-style: none; margin: 0.15rem 0 0; padding: 0; }
 #ai-log p { margin: 0.35rem 0; }
 #ai-log strong { font-weight: 700; }
 #ai-steps li { margin: 0.28rem 0; padding: 0.15rem 0.35rem; border-radius: 8px; white-space: normal; line-height: 1.4; font-size: 14px; }
 #ai-steps li.is-current { outline: 2px solid #F97316; background: #241c10; }
 #ai-steps li.is-done { opacity: 0.75; }
-#function-row, #my-functions, #profile-board { scroll-margin-bottom: 42vh; }
+#function-row, #my-functions, #profile-board { scroll-margin-bottom: 52vh; }
 #profile-board,
 #function-row {
   box-sizing: border-box;
@@ -277,10 +279,11 @@ html.is-easy .dash-card :is(h1, h2, h3, h4, strong, p) {
 }
 #ai-overview, #ai-overview-steps, #ai-next, #ai-promote, #ai-shortcut-offer { margin: 0.2rem 0; color: #f4f1e8; font-size: 14px; line-height: 1.35; }
 #ai-next, #ai-promote, #ai-shortcut-offer { border: 1px solid #c6a15b; border-radius: 10px; padding: 0.35rem 0.5rem; }
-#ai-path { display: flex; align-items: center; gap: 0.35rem; margin: 0 0 0.15rem; min-height: 44px; overflow-x: auto; color: #f4f1e8; }
+#ai-path { display: flex; flex: 0 0 auto; align-items: center; gap: 0.25rem; margin: 0 0 0.1rem; height: 22px; min-height: 22px; overflow-x: auto; color: #f4f1e8; }
 #ai-path[hidden], html[data-guide="manual"] #ai-path, #ai-dock.is-manual #ai-path { display: none; }
-#ai-path-line { flex: 1 1 auto; min-width: 0; font-size: 13px; font-weight: 700; white-space: nowrap; }
-#ai-path button { flex: 0 0 auto; min-height: 44px; min-width: 44px; padding: 0 0.55rem; border-radius: 999px; border: 1px solid #c6a15b; background: transparent; color: #f4f1e8; font: inherit; font-weight: 700; }
+#ai-dock #ai-path-line,
+#ai-dock #ai-path button { flex: 0 0 auto; height: 22px; min-height: 22px; min-width: max-content; padding: 0 0.4rem; font-size: 12px; line-height: 22px; white-space: nowrap; }
+#ai-path-line { flex: 1 1 auto; min-width: 0; font-weight: 700; }
 #ai-dock.is-open .ai-compose { flex: 0 0 auto; background: #0c100c; }
 .is-ask-focus { outline: 3px solid #F97316; outline-offset: 2px; }
 html[data-guide="manual"] #ai-next,
@@ -411,7 +414,7 @@ html[data-theme="paper"] #ai-dock #ai-confirm, html[data-screen="simple"] #ai-do
   0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.75); }
   50% { box-shadow: 0 0 0 7px rgba(34, 197, 94, 0); }
 }
-#ididit-done, #draft-suggestion { scroll-margin-bottom: 42vh; }
+#ididit-done, #draft-suggestion { scroll-margin-bottom: 52vh; }
 #draft-suggestion { margin: 0.2rem 0; font-weight: 700; color: #8fd6a8; }
 @media (prefers-reduced-motion: reduce) {
   .is-next, #ai-mic-btn.is-listening, #ai-voice.is-listening,
@@ -450,7 +453,7 @@ html.is-one-tab:not(.is-more-open) #category-board:has(#prompt-draft) { display:
 html.is-one-tab #one-more {
   position: fixed;
   right: 0.45rem;
-  bottom: calc(40vh + 0.45rem);
+  bottom: calc(50vh + 0.45rem);
   z-index: 48;
   touch-action: manipulation;
   min-width: 44px;
@@ -468,7 +471,7 @@ html.is-one-tab #one-more:active { transform: none; filter: none; }
 html.is-one-tab #one-menu {
   position: fixed;
   right: 0.45rem;
-  bottom: calc(40vh + 3.5rem);
+  bottom: calc(50vh + 3.5rem);
   z-index: 48;
   display: flex;
   flex-direction: column;
@@ -484,7 +487,7 @@ html.is-one-tab.is-more-open footer.gym-foot {
   position: fixed;
   left: 0.45rem;
   right: 12.5rem;
-  bottom: calc(40vh + 0.45rem);
+  bottom: calc(50vh + 0.45rem);
   z-index: 49;
   margin: 0;
   background: #0c100c;
@@ -508,7 +511,7 @@ html.is-one-tab nav[aria-label="Gym"] {
   left: auto;
   right: 0.45rem;
   width: auto;
-  bottom: calc(40vh + 0.45rem);
+  bottom: calc(50vh + 0.45rem);
   z-index: 48;
   display: flex;
   flex-direction: column-reverse;

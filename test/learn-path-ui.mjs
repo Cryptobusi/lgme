@@ -41,8 +41,9 @@ if (await page.locator('#ai-intents').count()) failures.push('intent tabs remain
 if ((await page.evaluate(() => localStorage.getItem('lgme.ask.tab'))) !== null) failures.push('tab pref remains');
 const line = await page.locator('#ai-path-line').innerText();
 if (line !== 'Step 1 of 5 · Getting started') failures.push(`path ${line}`);
-const chips = await page.locator('#ai-chips .ai-chip').allTextContents();
+const chips = await page.locator('.ai-suggest-line').allTextContents();
 if (chips.join('|') !== 'What is lgme') failures.push(`chips ${chips.join('|')}`);
+if (await page.locator('#ai-chip-row').isVisible()) failures.push('chip row still shown');
 if ((await page.locator('#ai-ask').inputValue()) !== 'What is this app for') failures.push('prompt was not prefilled');
 const row = await page.locator('.ai-actions').evaluate((node) => [...node.children].map((child) => child.id).join('|'));
 if (row !== 'ai-controls|speak-ask|ai-mic-btn|ai-send|ai-accept|ai-confirm') failures.push(`controls ${row}`);
@@ -50,7 +51,7 @@ if ((await page.locator('#speak-ask').getAttribute('role')) !== 'switch') failur
 if (await page.locator('#speak-yes').count()) failures.push('speak yes remains');
 await page.locator('#ai-path-skip').click();
 if ((await page.locator('#ai-path-line').innerText()) !== 'Step 2 of 5 · First receipt') failures.push('skip did not advance');
-await page.locator('#ai-chips .ai-chip').click();
+await page.locator('.ai-yes').first().click();
 await page.locator('#ididit-done').waitFor();
 await page.waitForFunction(() => /session|workout/i.test(document.getElementById('gym-ididit-other')?.value || ''));
 await page.waitForFunction(() => {

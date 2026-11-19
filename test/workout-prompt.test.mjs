@@ -40,9 +40,9 @@ test('workout phrases become a 10 minute treadmill receipt', () => {
   assert.equal(again.action, 'reexplain');
   assert.equal(again.categories.length >= 2 && again.categories.length <= 3, true);
   const css = readFileSync(new URL('../site-nav.css', import.meta.url), 'utf8');
-  assert.match(css, /#ai-dock\.is-open\s*\{[^}]*height:\s*40vh/);
+  assert.match(css, /#ai-dock\.is-open\s*\{[^}]*height:\s*50vh/);
+  assert.match(css, /#ai-dock\.is-open\s*\{[^}]*height:\s*50dvh/);
   assert.match(css, /is-controls-shut \.ai-detail/);
   assert.match(readFileSync(new URL('../js/local-ai-panel.mjs', import.meta.url), 'utf8'), /lgme\.dock\.controls/);
-  assert.match(css, /data-screen="simple"\] #ai-dock\.is-open \{ height: 45vh/);
-  assert.match(css, /data-screen="full"\] #ai-dock\.is-open \{ height: 30vh/);
+  assert.match(css, /data-screen="simple"\] #ai-dock\.is-open,\s*html\[data-screen="full"\] #ai-dock\.is-open \{ height: 50vh; height: 50dvh/);
 });

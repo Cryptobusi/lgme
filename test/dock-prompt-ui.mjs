@@ -43,7 +43,7 @@ await page.goto(`${base}/gym`, { waitUntil: 'domcontentloaded' });
 await page.locator('#ai-ask').waitFor();
 const mic = await page.locator('#ai-mic-btn').boundingBox();
 if (!mic || mic.width < 40 || mic.height < 40) failures.push(`mic hidden ${JSON.stringify(mic)}`);
-const chipsNow = await page.locator('#ai-chips .ai-chip').allTextContents();
+const chipsNow = await page.locator('.ai-suggest-line').allTextContents();
 if (!chipsNow.includes('What is lgme')) failures.push(`path chip ${chipsNow.join('|')}`);
 if (await page.locator('#ai-intents').count()) failures.push('intent tabs remain');
 const frame = await page.locator('#ai-log-frame').evaluate((node) => getComputedStyle(node).borderTopWidth);
@@ -118,12 +118,21 @@ await page.waitForTimeout(200);
 const micError = await page.evaluate(() => document.getElementById('ai-log')?.textContent || '');
 if (!/Mic blocked: allow microphone in site settings/.test(micError)) failures.push(`mic error ${micError}`);
 const panel = await page.locator('#ai-dock').evaluate((node) => node.getBoundingClientRect().height / window.innerHeight);
-if (panel < 0.38 || panel > 0.42) failures.push(`panel ${panel}`);
-const chip = await page.locator('.ai-chip').first().evaluate((node) => {
-  const box = node.getBoundingClientRect();
-  return { h: box.height, size: parseFloat(getComputedStyle(node).fontSize) };
+if (panel < 0.46 || panel > 0.56) failures.push(`panel ${panel}`);
+const pathRow = await page.evaluate(() => {
+  const step = document.getElementById('ai-path-skip');
+  const pill = document.getElementById('ai-switch');
+  const row = document.getElementById('ai-chip-row').getBoundingClientRect();
+  return {
+    step: step.getBoundingClientRect().height,
+    pill: pill.getBoundingClientRect().height,
+    stepSize: parseFloat(getComputedStyle(step).fontSize),
+    pillSize: parseFloat(getComputedStyle(pill).fontSize),
+    chips: row.height
+  };
 });
-if (chip.h < 24 || chip.h > 32 || chip.size < 13 || chip.size > 14) failures.push(`chip ${chip.h}/${chip.size}`);
+if (Math.abs(pathRow.step - pathRow.pill) > 1 || Math.abs(pathRow.stepSize - pathRow.pillSize) > 0.5) failures.push(`path row ${JSON.stringify(pathRow)}`);
+if (pathRow.chips > 0) failures.push('chip row still shown');
 const frames = await page.evaluate(() => {
   const log = getComputedStyle(document.getElementById('ai-log-frame'));
   const input = getComputedStyle(document.getElementById('ai-input-frame'));
@@ -156,7 +165,7 @@ await page.locator('.ai-suggest').first().waitFor();
 const linesBefore = await page.locator('.ai-suggest').count();
 await page.locator('.ai-no').last().click();
 if (!((await page.locator('.ai-suggest').count()) < linesBefore)) failures.push('no did not dismiss');
-if (!(await page.locator('#ai-chip-hint').isVisible())) failures.push('chip hint missing');
+if (await page.locator('#ai-chip-row').isVisible()) failures.push('chip row returned');
 await page.locator('#ai-ask').fill('log 10min treadmill');
 await page.locator('#ai-ask').evaluate((node) => {
   node.dispatchEvent(new InputEvent('beforeinput', { inputType: 'insertLineBreak', bubbles: true, cancelable: true }));
