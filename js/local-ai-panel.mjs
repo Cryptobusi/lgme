@@ -1,6 +1,7 @@
 import { applyFieldOption, fieldMeta, lastFieldValue, nextHelpField, rememberFieldValue, safeHelpLine } from './field-help.mjs';
 import { controlText, pageOverview } from './control-help.mjs';
 import { actionIdFrom, dismissOffer, explainOnTap, fieldGuideWithoutModel, guideCards, incognitoBlocksUses, nextStep, noteUse, pinShortcuts, promotion, readMode, setMode, shortcutOffer, SHORTCUTS } from './guide-mode.mjs';
+import { answerOrFallback, localAnswer } from './local-qa.mjs';
 import { classifyPrompt, routeLine } from './prompt-route.mjs';
 import { activeScreen, applyMode, screenModePrompt, undoMode } from './screen-modes.mjs';
 import { localFunctionFromPrompt, saveLocalFunction } from './local-functions.mjs';
@@ -376,7 +377,22 @@ function mount() {
   const showOverview = (line, steps = []) => {
     const box = dock.querySelector('#ai-overview');
     const list = dock.querySelector('#ai-overview-steps');
-    if (box) box.textContent = line || '';
+    if (box) {
+      const full = String(line || '').trim();
+      const parts = full.split(/(?<=[.?!])\s+/).filter(Boolean);
+      box.replaceChildren();
+      const preview = document.createElement('span');
+      preview.textContent = parts.length > 1 ? parts[0] : full;
+      box.append(preview);
+      if (parts.length > 1) {
+        const more = document.createElement('button');
+        more.type = 'button';
+        more.id = 'ai-overview-more';
+        more.textContent = 'More';
+        more.addEventListener('click', () => { preview.textContent = full; more.remove(); });
+        box.append(more);
+      }
+    }
     if (list) {
       list.replaceChildren();
       steps.slice(0, 3).forEach((label, index) => {
@@ -385,6 +401,47 @@ function mount() {
         list.append(item);
       });
     }
+  };
+  const paintTry = (actions = []) => {
+    let host = dock.querySelector('#ai-try');
+    if (!host) {
+      host = document.createElement('div');
+      host.id = 'ai-try';
+      dock.querySelector('#ai-log')?.after(host);
+    }
+    host.replaceChildren();
+    actions.slice(0, 3).forEach((action) => {
+      const link = document.createElement('a');
+      link.href = action.href;
+      link.textContent = `Try it: ${action.label}`;
+      host.append(link);
+    });
+  };
+  const presentAnswer = async (text) => {
+    const local = localAnswer(text);
+    let reply = local.text;
+    if (aiOn() && localAiReady()) {
+      const page = pageOverview(location.pathname, location.hash, document.title);
+      try {
+        const result = await draftWithHelper(pickHelperSync(), {
+          template: local.text,
+          prompt: `Answer in 3 to 6 plain sentences. No medical advice. No rankings. Question: ${text}. This page: ${page.line}`,
+          scope: window,
+          timeout: 4000
+        });
+        const model = String(result?.text || '').replace(/\s+/g, ' ').trim();
+        const chosen = answerOrFallback({ question: text, modelText: model === local.text ? '' : model, aiOn: true });
+        reply = chosen.text || local.text;
+      } catch { reply = local.text; }
+    }
+    if (!String(reply || '').trim()) reply = local.text;
+    const log = dock.querySelector('#ai-log');
+    showReply(log, reply);
+    showOverview(reply, []);
+    paintTry(local.actions);
+    dock.dataset.sent = 'no';
+    paint(dock);
+    markOverflow();
   };
   const fillDraft = (label) => {
     if (ask && !ask.value) ask.value = label;
@@ -928,6 +985,11 @@ function mount() {
     const text = ask.value.trim();
     const picked = stepPick(text);
     if (picked && stageByNumber(picked)) return;
+    const matched = matchPrompt(text);
+    if (text && matched.kind === 'help') {
+      presentAnswer(text);
+      return;
+    }
     const plan = planSend({ staged, stagedText, text });
     if (plan.action === 'open') {
       executeStaged();

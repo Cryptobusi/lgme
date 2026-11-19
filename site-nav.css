@@ -112,7 +112,7 @@ html[data-screen="full"] #ai-dock.is-open { height: 30vh; max-height: 30vh; }
 #ai-dock:not(.is-open):not(.has-field) #ai-next,
 #ai-dock:not(.is-open):not(.has-field) #ai-promote,
 #ai-dock:not(.is-open):not(.has-field) #ai-shortcut-offer,
-#ai-dock:not(.is-open):not(.has-field) #ai-log,
+#ai-dock:not(.is-open):not(.has-field) #ai-try,
 #ai-dock:not(.is-open):not(.has-field) #ai-log-frame,
 #ai-dock:not(.is-open):not(.has-field) #ai-suggestions,
 #ai-dock:not(.is-open):not(.has-field) .ai-compose,
@@ -275,7 +275,7 @@ html.is-easy .dash-card :is(h1, h2, h3, h4, strong, p) {
 }
 #ai-overview, #ai-overview-steps, #ai-next, #ai-promote, #ai-shortcut-offer { margin: 0.2rem 0; color: #f4f1e8; font-size: 14px; line-height: 1.35; }
 #ai-next, #ai-promote, #ai-shortcut-offer { border: 1px solid #c6a15b; border-radius: 10px; padding: 0.35rem 0.5rem; }
-#ai-next-primary, #ai-next-alts button, #ai-shortcut-offer button, #shortcut-offer button { min-height: 44px; margin: 0.15rem 0.25rem 0 0; }
+#ai-overview-more, #ai-try a { min-height: 44px; margin: 0.15rem 0.25rem 0 0; display: inline-flex; align-items: center; }
 html[data-guide="manual"] #ai-next,
 html[data-guide="manual"] #ai-promote,
 #ai-dock.is-manual #ai-next,

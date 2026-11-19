@@ -89,7 +89,7 @@ async function askBrowser(scope, prompt) {
   return '';
 }
 
-export async function draftWithHelper(helper, { template, prompt, scope = globalThis } = {}) {
+export async function draftWithHelper(helper, { template, prompt, scope = globalThis, timeout = 400 } = {}) {
   const safeTemplate = String(template || '').slice(0, 280);
   const manual = { text: safeTemplate, blocked: false, notice: 'You can confirm this by hand. Nothing was sent.', helper, sent: false };
   if (!helper?.ready || helper.id !== 'browser') return manual;
@@ -99,7 +99,7 @@ export async function draftWithHelper(helper, { template, prompt, scope = global
   try {
     const text = await Promise.race([
       askBrowser(scope, prompt),
-      new Promise((resolve) => { setTimeout(() => resolve(''), 400); })
+      new Promise((resolve) => { setTimeout(() => resolve(''), timeout); })
     ]);
     const clean = String(text || '').replace(/\s+/g, ' ').trim().slice(0, 280);
     if (!clean || PRIVATE.test(clean)) return { text: safeTemplate, helper, sent: false };

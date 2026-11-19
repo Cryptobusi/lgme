@@ -62,25 +62,35 @@ function clean(value) {
   return String(value || '').replace(/\s+/g, ' ').trim();
 }
 
+function sentences(text) {
+  return String(text || '').split(/(?<=[.?!])\s+/).map((line) => line.trim()).filter(Boolean);
+}
+
+function withDetail(text) {
+  const parts = sentences(text);
+  if (parts.length >= 2) return parts.slice(0, 4).join(' ');
+  return `${parts[0] || text} This stays on this phone. Nothing is saved until you tap OK. You can tap More in this panel to read the rest.`;
+}
+
 export function controlText(el) {
   if (!el || typeof el.getAttribute !== 'function') return '';
   if (el.closest && el.closest('#ai-ask, #ai-overview, #ai-overview-steps')) return '';
   const custom = clean(el.getAttribute('data-explain'));
   if (custom) return custom;
-  if (NAMED[el.id]) return NAMED[el.id];
+  if (NAMED[el.id]) return withDetail(NAMED[el.id]);
   const label = clean(el.getAttribute('aria-label') || el.textContent);
   if (!label || label.length > 80) return '';
-  return `${label}. Nothing happens until you tap OK.`;
+  return withDetail(`${label}. Nothing happens until you tap OK.`);
 }
 
 export function pageOverview(pathname = '/', hash = '', title = '') {
   const path = String(pathname || '/').replace(/\.html$/, '') || '/';
   const mark = String(hash || '');
   const found = PAGES.find((page) => page.path === path && (!page.hash || mark.includes(page.hash)));
-  if (found) return { line: found.line, steps: found.steps.slice(0, 3) };
+  if (found) return { line: withDetail(found.line), steps: found.steps.slice(0, 3) };
   const name = clean(title).replace(/\s*·\s*lgme$/i, '') || 'This page';
   return {
-    line: `${name}. Read it here. Nothing is saved until you tap OK.`,
+    line: withDetail(`${name}. Read it here. Nothing is saved until you tap OK.`),
     steps: ['Read the page', 'Tap a control to see what it does', 'Tap OK only when you mean to keep it']
   };
 }
