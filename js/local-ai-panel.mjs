@@ -1,12 +1,12 @@
 import { applyFieldOption, fieldMeta, lastFieldValue, nextHelpField, rememberFieldValue, safeHelpLine } from './field-help.mjs';
 import { controlText, pageOverview } from './control-help.mjs';
-import { actionIdFrom, dismissOffer, explainOnTap, fieldGuideWithoutModel, guideCards, incognitoBlocksUses, nextStep, noteUse, pinShortcuts, promotion, readMode, setMode, shortcutOffer, SHORTCUTS } from './guide-mode.mjs';
+import { actionIdFrom, dismissOffer, explainOnTap, fieldGuideWithoutModel, guideCards, incognitoBlocksUses, nextStep, noteUse, pinShortcuts, promotion, readMode, readUses as readGuideUses, setMode, shortcutOffer, SHORTCUTS } from './guide-mode.mjs';
 import { answerOrFallback, localAnswer } from './local-qa.mjs';
 import { classifyPrompt, routeLine } from './prompt-route.mjs';
 import { activeScreen, applyMode, screenModePrompt, undoMode } from './screen-modes.mjs';
 import { localFunctionFromPrompt, saveLocalFunction } from './local-functions.mjs';
 import { draftWithHelper, localAiReady, pickHelperSync } from './one-tap.mjs';
-import { readTab, setTab, shapeAnswer } from './ask-tabs.mjs';
+import { currentLevel, eventCompletes, experienced, guideFor, isStartQuestion, LEVELS, markDone, pathChips, pathLine, resetPath, skipAhead } from './learn-path.mjs';
 import { dockChipsOf } from './variant-schema.mjs';
 import { NOTICE, UNPUBLISHED, deletePending, editPending, holdPrivate, incognitoOn, installIncognitoGuard, listPending, setIncognito, shareApproved, sharePreview, voiceInputAllowed } from './incognito.mjs';
 import { installPressFeedback, playTick, soundsOn } from './press-feedback.mjs';
@@ -175,6 +175,7 @@ export function matchPrompt(text) {
   if (want) return { kind: 'iwantit', text: want[1].trim(), line: `Opened IwantIT: ${want[1].trim()}` };
   const have = raw.match(/^i have\s+(.+)/i);
   if (have) return { kind: 'ihavit', text: have[1].trim(), line: `Opened IhavIT: ${have[1].trim()}` };
+  if (/^attest\b/i.test(raw)) return { kind: 'attest', text: 'Attest a receipt', line: 'Opened attest. Nothing was approved.' };
   const activity = workoutActivity(q);
   const measure = workoutMeasure(q);
   const lead = /^(log\b|did\b|i did\b|ididit\b)/.test(q);
@@ -354,7 +355,7 @@ function mount() {
   const dock = document.createElement('section');
   dock.id = 'ai-dock';
   dock.setAttribute('aria-label', 'On-device AI');
-  dock.innerHTML = '<p class="ai-top"><button type="button" id="ai-controls" aria-expanded="false" aria-label="Show or hide controls">Controls</button><span id="ai-status">AI off · Voice · Speak+show</span><button type="button" id="ai-switch" class="ai-pill" role="switch" aria-checked="true" aria-live="polite" aria-label="AI on or off">AI off</button><button type="button" id="guide-mode" class="ai-pill" aria-pressed="true">Guided</button><button type="button" id="ai-voice" class="ai-detail is-off" aria-pressed="false" aria-label="Voice off">Voice</button><button type="button" id="ai-voice-reply" class="ai-detail" aria-label="Voice reply, Speak and show">Reply</button><span id="ai-voice-mode" class="ai-detail">Speak+show</span><button type="button" id="ai-listen" class="ai-detail" aria-pressed="false" aria-label="Listen again after speaking">Listen</button><span id="ai-mic" hidden>Listening</span><span id="ai-speaking" hidden>Speaking</span><button type="button" id="ai-stop" hidden>Stop</button><button type="button" id="ai-smaller" class="ai-detail" aria-label="Smaller text">A-</button><button type="button" id="ai-larger" class="ai-detail" aria-label="Bigger text">A+</button><a class="ai-setup-link ai-detail" href="/ai-setup">Help</a><button type="button" id="ai-incognito" class="ai-detail" aria-pressed="false">Incognito</button><button type="button" id="ai-incognito-count" class="ai-detail">Pending 0</button><button type="button" id="ai-expand" aria-expanded="true">Close</button></p><p id="ai-incognito-notice" hidden>Incognito — stays on this phone</p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><div id="ai-chip-row"><div id="ai-chips" class="ai-chips"></div><span id="ai-chip-hint" aria-hidden="true">›</span></div><div id="ai-scroll"><div id="ai-incognito-review" hidden></div><p id="ai-overview"></p><ol id="ai-overview-steps"></ol><section id="ai-next"><p class="ai-kicker">Next step</p><button type="button" id="ai-next-primary"></button><div id="ai-next-alts"></div></section><section id="ai-promote"><p id="ai-promote-line"></p></section><section id="ai-shortcut-offer" hidden></section><div id="ai-log-frame"><pre id="ai-log"></pre><ol id="ai-explain-steps"></ol><div id="ai-suggestions"></div></div><p id="ai-more" hidden>More</p></div><div id="ai-intents" role="tablist" aria-label="How to answer"><button type="button" role="tab" id="intent-direct" data-intent="direct">Direct</button><button type="button" role="tab" id="intent-excite" data-intent="excite">Excite</button><button type="button" role="tab" id="intent-review" data-intent="review">Review</button><button type="button" role="tab" id="intent-inform" data-intent="inform">Inform</button><button type="button" role="tab" id="intent-use" data-intent="use">Use</button></div><div class="ai-compose"><div id="ai-input-frame"><textarea id="ai-ask" rows="1" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><p id="ai-send-state" class="is-held" role="status" aria-label="Not sent. Held on this phone."><i></i></p><p class="ai-actions"><span id="speak-ask" class="is-wait" role="group" aria-label="Speak reply?"><span>Speak reply?</span><button type="button" id="speak-yes" aria-label="Yes, speak replies">Yes</button><button type="button" id="speak-no" aria-label="No, do not speak replies">No</button></span><button type="button" id="ai-mic-btn" class="is-off" data-state="off" aria-pressed="false" aria-label="Microphone off"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg></button><button type="button" id="ai-send" aria-label="Send">Send</button><button type="button" id="ai-accept" aria-label="Hint">Hint</button><button type="button" id="ai-confirm" aria-label="Confirm">OK</button></p></div></div>';
+  dock.innerHTML = '<p class="ai-top"><span id="ai-status">AI off · Voice · Speak+show</span><button type="button" id="ai-switch" class="ai-pill" role="switch" aria-checked="true" aria-live="polite" aria-label="AI on or off">AI off</button><button type="button" id="guide-mode" class="ai-pill" aria-pressed="true">Guided</button><button type="button" id="ai-voice" class="ai-detail is-off" aria-pressed="false" aria-label="Voice off">Voice</button><button type="button" id="ai-voice-reply" class="ai-detail" aria-label="Voice reply, Speak and show">Reply</button><span id="ai-voice-mode" class="ai-detail">Speak+show</span><button type="button" id="ai-listen" class="ai-detail" aria-pressed="false" aria-label="Listen again after speaking">Listen</button><span id="ai-mic" hidden>Listening</span><span id="ai-speaking" hidden>Speaking</span><button type="button" id="ai-stop" hidden>Stop</button><button type="button" id="ai-smaller" class="ai-detail" aria-label="Smaller text">A-</button><button type="button" id="ai-larger" class="ai-detail" aria-label="Bigger text">A+</button><a class="ai-setup-link ai-detail" href="/ai-setup">Help</a><button type="button" id="ai-incognito" class="ai-detail" aria-pressed="false">Incognito</button><button type="button" id="ai-incognito-count" class="ai-detail">Pending 0</button><button type="button" id="ai-expand" aria-expanded="true">Close</button></p><p id="ai-incognito-notice" hidden>Incognito — stays on this phone</p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><p id="ai-path"><span id="ai-path-line"></span><button type="button" id="ai-path-skip">Skip</button><button type="button" id="ai-path-reset">Reset</button></p><div id="ai-chip-row"><div id="ai-chips" class="ai-chips"></div><span id="ai-chip-hint" aria-hidden="true">›</span></div><div id="ai-scroll"><div id="ai-incognito-review" hidden></div><p id="ai-overview"></p><ol id="ai-overview-steps"></ol><section id="ai-next"><p class="ai-kicker">Next step</p><button type="button" id="ai-next-primary"></button><div id="ai-next-alts"></div></section><section id="ai-promote"><p id="ai-promote-line"></p></section><section id="ai-shortcut-offer" hidden></section><div id="ai-log-frame"><pre id="ai-log"></pre><ol id="ai-explain-steps"></ol><div id="ai-suggestions"></div></div><p id="ai-more" hidden>More</p></div><div class="ai-compose"><div id="ai-input-frame"><textarea id="ai-ask" rows="1" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><p id="ai-send-state" class="is-held" role="status" aria-label="Not sent. Held on this phone."><i></i></p><p class="ai-actions"><button type="button" id="ai-controls" aria-expanded="false" aria-label="Show or hide controls">Controls</button><button type="button" id="speak-ask" role="switch" aria-checked="false" aria-label="Speak reply?">Speak</button><button type="button" id="ai-mic-btn" class="is-off" data-state="off" aria-pressed="false" aria-label="Microphone off"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg></button><button type="button" id="ai-send" aria-label="Send">Send</button><button type="button" id="ai-accept" aria-label="Hint">Hint</button><button type="button" id="ai-confirm" aria-label="Confirm">OK</button></p></div></div>';
   dock.classList.add('is-open', 'is-normal');
   try { document.documentElement.dataset.screen = activeScreen(localStorage); } catch { /* everyday height stays */ }
   try {
@@ -375,19 +376,6 @@ function mount() {
   window.addEventListener('resize', placeDock);
   const ask = dock.querySelector('#ai-ask');
   const chips = dock.querySelector('#ai-chips');
-  const paintTabs = () => {
-    const current = readTab(localStorage);
-    dock.querySelectorAll('#ai-intents [data-intent]').forEach((button) => {
-      button.setAttribute('aria-selected', button.dataset.intent === current ? 'true' : 'false');
-    });
-  };
-  dock.querySelectorAll('#ai-intents [data-intent]').forEach((button) => {
-    button.addEventListener('click', () => {
-      setTab(localStorage, button.dataset.intent);
-      paintTabs();
-    });
-  });
-  paintTabs();
   const showOverview = (line, steps = []) => {
     const box = dock.querySelector('#ai-overview');
     const list = dock.querySelector('#ai-overview-steps');
@@ -439,7 +427,7 @@ function mount() {
       try {
         const result = await draftWithHelper(pickHelperSync(), {
           template: local.text,
-          prompt: `Answer in 3 to 6 plain sentences. No medical advice. No rankings. Intent ${readTab(localStorage)}: Direct is the next step, Excite is calm encouragement with no score, Review is a short status, Inform explains this page, Use is how-to steps. Question: ${text}. This page: ${page.line}`,
+          prompt: `Answer in 3 to 6 plain sentences. No medical advice. No rankings. Question: ${text}. This page: ${page.line}`,
           scope: window,
           timeout: 4000
         });
@@ -449,26 +437,19 @@ function mount() {
       } catch { reply = local.text; }
     }
     if (!String(reply || '').trim()) reply = local.text;
-    const shaped = shapeAnswer(readTab(localStorage), reply, reviewLine());
     const log = dock.querySelector('#ai-log');
-    showReply(log, shaped);
-    showOverview(shaped, []);
+    showReply(log, reply);
+    showOverview(reply, []);
     paintTry(local.actions);
     dock.dataset.sent = 'no';
     paint(dock);
     markOverflow();
+    if (local.matched && isStartQuestion(text)) noteLearn('start');
     const here = document.querySelector('#start-health, a.health-open, #messages-open');
     if (here && typeof here.focus === 'function') {
       here.classList.add('is-ask-focus');
       here.focus();
     }
-  };
-  const reviewLine = () => {
-    try {
-      const pending = JSON.parse(localStorage.getItem('lgme.incognito.pending') || '[]');
-      if (Array.isArray(pending) && pending.length) return `${pending.length} notes are waiting on this phone.`;
-    } catch { /* the status stays general */ }
-    return 'Nothing new is waiting on this phone.';
   };
   const fillDraft = (label) => {
     if (ask && !ask.value) ask.value = label;
@@ -527,9 +508,24 @@ function mount() {
         offer.append(line, yes, no);
       }
     }
+    const path = dock.querySelector('#ai-path');
+    const level = currentLevel(localStorage);
+    const uses = readUses();
+    const guideUses = readGuideUses(localStorage);
+    const exp = experienced(localStorage, uses, guideUses);
+    if (path) path.hidden = mode === 'manual' || !level;
+    const pathText = dock.querySelector('#ai-path-line');
+    if (pathText) pathText.textContent = pathLine(localStorage);
+    if (mode !== 'manual' && level) {
+      const words = guideFor(localStorage, uses, guideUses);
+      if (exp) {
+        const box = dock.querySelector('#ai-overview');
+        if (box) box.textContent = words;
+      } else showOverview(words, []);
+      if (ask && !ask.value.trim()) ask.value = level.prompt;
+    }
   };
   const openPanel = () => {
-    if (ask && ask.value) return;
     dock.classList.add('is-open');
     const expand = dock.querySelector('#ai-expand');
     if (expand) {
@@ -565,7 +561,12 @@ function mount() {
   document.addEventListener('focusin', (event) => explainControl(event.target));
   window.addEventListener('hashchange', () => { showPage(); openPanel(); });
   window.addEventListener('popstate', () => { showPage(); openPanel(); });
-  window.addEventListener('lgme-guide-mode', paintGuide);
+  window.addEventListener('lgme-guide-mode', () => {
+    if (readMode(localStorage) === 'manual') noteLearn('yours');
+    else paintGuide();
+  });
+  window.addEventListener('lgme-shortcuts', () => noteLearn('yours'));
+  window.addEventListener('lgme-learn', (event) => noteLearn(String(event.detail || '')));
   const modeChip = dock.querySelector('#guide-mode');
   if (modeChip) modeChip.addEventListener('click', () => {
     setMode(localStorage, readMode(localStorage) === 'manual' ? 'guided' : 'manual');
@@ -672,6 +673,16 @@ function mount() {
         });
       } else {
         chip.addEventListener('click', () => {
+          const level = currentLevel(localStorage);
+          const onPath = level && label === level.chip && readMode(localStorage) !== 'manual' && !experienced(localStorage, readUses(), readGuideUses(localStorage));
+          if (onPath) {
+            ask.value = level.prompt;
+            lastByVoice = false;
+            dock.classList.remove('is-voice');
+            dock.dataset.sent = 'no';
+            sendOrStage();
+            return;
+          }
           ask.value = label;
           ask.focus();
         });
@@ -753,7 +764,7 @@ function mount() {
     hideHint();
     fieldToken += 1;
     dock.classList.remove('has-field');
-    paintChips(rankedPrompts(dockChipsOf() || AI_CHIPS, readUses()).slice(0, 5), null);
+    showPathChips();
     paint(dock);
   };
   const SIZES = ['compact', 'normal', 'tall'];
@@ -998,6 +1009,10 @@ function mount() {
       location.assign(matched.route.href);
       return;
     }
+    if (matched.kind === 'attest') {
+      location.assign('/exchange#help-resolve');
+      return;
+    }
     if (matched.kind === 'ididit') {
       paintSteps(2);
       if (here && location.hash === '#/ididit') window.dispatchEvent(new HashChangeEvent('hashchange'));
@@ -1035,12 +1050,9 @@ function mount() {
       return;
     }
     stagePrompt();
-    if (['ididit', 'iwantit', 'ihavit', 'inventory', 'sobeit'].includes(matched.kind)) {
+    if (['ididit', 'iwantit', 'ihavit', 'inventory', 'sobeit', 'attest'].includes(matched.kind)) {
     const local = localAnswer(text);
-    if (local.matched) {
-      const shaped = shapeAnswer(readTab(localStorage), local.text, reviewLine());
-      showReply(dock.querySelector('#ai-log'), shaped);
-    }
+    if (local.matched) showReply(dock.querySelector('#ai-log'), local.text);
     executeStaged();
     }
   };
@@ -1051,7 +1063,34 @@ function mount() {
     scroller.classList.toggle('is-over', over);
     more.hidden = !over;
   };
-  paintChips(rankedPrompts(dockChipsOf() || AI_CHIPS, readUses()).slice(0, 5), null);
+  const showPathChips = () => {
+    if (dock.classList.contains('has-field')) return;
+    paintChips(pathChips(localStorage, readUses(), readGuideUses(localStorage), readMode(localStorage)) || rankedPrompts(dockChipsOf() || AI_CHIPS, readUses()).slice(0, 5), null);
+  };
+  const noteLearn = (event) => {
+    let changed = false;
+    for (const level of LEVELS) {
+      if (!eventCompletes(level.id, event)) continue;
+      markDone(localStorage, level.id);
+      changed = true;
+    }
+    if (!changed) return;
+    paintGuide();
+    showPathChips();
+  };
+  dock.querySelector('#ai-path-skip').addEventListener('click', () => {
+    skipAhead(localStorage);
+    ask.value = '';
+    paintGuide();
+    showPathChips();
+  });
+  dock.querySelector('#ai-path-reset').addEventListener('click', () => {
+    resetPath(localStorage);
+    ask.value = '';
+    paintGuide();
+    showPathChips();
+  });
+  showPathChips();
   document.addEventListener('focusin', (event) => { showField(event.target); });
   document.addEventListener('focusout', () => { setTimeout(clearField, 0); });
   document.addEventListener('change', (event) => {
@@ -1128,6 +1167,7 @@ function mount() {
   window.addEventListener('lgme-draft-filled', showFilled);
   window.addEventListener('lgme-ididit-step', (event) => {
     const step = Number(event.detail?.step);
+    if (step === 4) noteLearn('receipt');
     if (step) paintSteps(step);
   });
   setTimeout(showFilled, 0);
@@ -1367,23 +1407,20 @@ function mount() {
     speakAsk.classList.toggle('is-wait', choice === '');
     speakAsk.classList.toggle('is-yes', choice === 'yes');
     speakAsk.classList.toggle('is-no', choice === 'no');
+    speakAsk.setAttribute('aria-checked', choice === 'yes' ? 'true' : 'false');
     speakAsk.setAttribute('aria-label', choice === 'yes' ? 'Speak reply? Yes' : choice === 'no' ? 'Speak reply? No' : 'Speak reply?');
+    speakAsk.textContent = 'Speak';
   };
-  dock.querySelector('#speak-yes').addEventListener('click', () => {
-    try { setSpeakChoice(localStorage, true); } catch { /* the pill still moves */ }
-    paintSpeakAsk();
-    paintVoiceToggles();
-    window.dispatchEvent(new CustomEvent('lgme-voice-reply'));
-  });
-  dock.querySelector('#speak-no').addEventListener('click', () => {
-    try { setSpeakChoice(localStorage, false); } catch { /* the pill still moves */ }
-    stopSpeaking();
-    paintSpeakAsk();
-    paintVoiceToggles();
-    window.dispatchEvent(new CustomEvent('lgme-voice-reply'));
-  });
   paintSpeakAsk();
   window.addEventListener('lgme-voice-reply', paintSpeakAsk);
+  speakAsk.addEventListener('click', () => {
+    const on = !speakApproved(localStorage);
+    try { setSpeakChoice(localStorage, on); } catch { /* the switch still moves */ }
+    if (!on) stopSpeaking();
+    paintSpeakAsk();
+    paintVoiceToggles();
+    window.dispatchEvent(new CustomEvent('lgme-voice-reply'));
+  });
   dock.querySelector('#ai-voice').addEventListener('click', () => startListen());
   dock.querySelector('#ai-mic-btn').addEventListener('click', () => startListen());
   replyButton.addEventListener('click', () => {

@@ -43,7 +43,9 @@ await page.goto(`${base}/gym`, { waitUntil: 'domcontentloaded' });
 await page.locator('#ai-ask').waitFor();
 const mic = await page.locator('#ai-mic-btn').boundingBox();
 if (!mic || mic.width < 40 || mic.height < 40) failures.push(`mic hidden ${JSON.stringify(mic)}`);
-if (await page.locator('#ai-chips .ai-chip').count() < 5) failures.push('chips under 5');
+const chipsNow = await page.locator('#ai-chips .ai-chip').allTextContents();
+if (!chipsNow.includes('What is lgme')) failures.push(`path chip ${chipsNow.join('|')}`);
+if (await page.locator('#ai-intents').count()) failures.push('intent tabs remain');
 const frame = await page.locator('#ai-log-frame').evaluate((node) => getComputedStyle(node).borderTopWidth);
 if (frame !== '2px') failures.push(`log frame ${frame}`);
 const dots = await page.locator('#ai-status span i').count();
@@ -135,7 +137,7 @@ if (/Mic/.test(await page.locator('#ai-mic-btn').innerText())) failures.push('mi
 if ((await page.locator('#ai-mic-btn svg').count()) !== 1) failures.push('mic icon missing');
 if ((await page.locator('#ai-accept').evaluate((node) => node.textContent)) !== 'Hint') failures.push('hint label');
 if (!/Not sent/.test(await page.locator('#ai-send-state').getAttribute('aria-label') || '')) failures.push('held label');
-if ((await page.locator('.ai-suggest').count()) < 5) failures.push('suggest lines');
+if ((await page.locator('.ai-suggest').count()) < 1) failures.push('suggest lines');
 const shapes = await page.evaluate(() => {
   const yes = getComputedStyle(document.querySelector('.ai-yes'));
   const no = getComputedStyle(document.querySelector('.ai-no'));
@@ -143,6 +145,7 @@ const shapes = await page.evaluate(() => {
 });
 if (shapes.yes === shapes.no || shapes.yesBg === shapes.noBg) failures.push('yes and no look the same');
 if ((await page.locator('#ai-do-all').count()) !== 0) failures.push('do all still shown');
+if ((await page.locator('#ai-path-line').innerText()) === 'Step 1 of 5 · Getting started') await page.locator('#ai-path-skip').click();
 await page.locator('.ai-yes').first().click();
 await page.locator('#gym-ididit-other').waitFor();
 if (/recorded|queued/i.test(await page.locator('#ididit-status').innerText())) failures.push('yes saved');

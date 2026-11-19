@@ -327,6 +327,7 @@ async function sendProposal(state, name, description, paint) {
     return;
   }
   state.proposals = [...state.proposals.filter((row) => row.id !== body.proposal.id), body.proposal];
+  if (kind === 'listing') window.dispatchEvent(new CustomEvent('lgme-learn', { detail: 'listing' }));
   state.form = '';
   state.openProposal = body.proposal.id;
   state.message = 'Sent to the owner. Nothing was written on chain.';
@@ -347,6 +348,7 @@ async function sendAttest(state, id, paint) {
   }
   state.proposals = state.proposals.map((row) => row.id === body.proposal.id ? body.proposal : row);
   state.message = body.promoted ? 'Early / In development. The owner was told.' : body.proposal.label;
+  window.dispatchEvent(new CustomEvent('lgme-learn', { detail: 'attest' }));
   paint();
 }
 

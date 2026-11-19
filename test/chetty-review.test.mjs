@@ -34,5 +34,5 @@ test('the Chetty review is a full page, linked, and matched to the live credits'
   assert.equal(home.includes('href="/chetty-review">Read more</a>'), true);
   assert.equal(ego.includes('href="/chetty-review"'), true);
   assert.equal(text('sitemap.xml').includes('https://lgme.app/chetty-review'), true);
-  assert.equal(text('sw.js').includes('lgme-v246'), true);
+  assert.equal(text('sw.js').includes('lgme-v247'), true);
 });
