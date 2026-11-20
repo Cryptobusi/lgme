@@ -7,7 +7,7 @@ const CUSTOM = {
   'donate-kind': ['What you are giving.', 'Item, Creo, or $lgme.', 'Nothing is saved until you tap OK. Testnet only.', ['Item', 'Creo', '$lgme']],
   'donate-name': ['The name of the gift.', 'A short title.', 'This names the gift, not a person. Nothing is saved until you tap OK.', ['A spare lamp', 'Garden tools', 'A book']],
   'donate-amount': ['How much you are giving.', 'A number in US$ or Creo, matching what you chose.', 'The Floor split is 50/50. Nothing is paid until you tap OK. Testnet only.', ['1', '5', '10']],
-  'contrib-usd': ['A $lgme contribution counted in US$.', 'US$.', 'The Floor split is 50/50. Live payments are off. Testnet only. OK is required.', ['1', '5', '10']],
+  'contrib-usd': ['A $lgme contribution counted in US$.', 'US$.', 'The Floor split is 50/50. $lgme is temporary until the DAO. OK is required.', ['1', '5', '10']],
   'item-name': ['The inventory name.', 'A short title.', 'This stays on this phone. Nothing is kept until you tap OK.', ['Lamp', 'Bicycle', 'Toolbox']],
   'item-category': ['The inventory category.', 'A short word.', 'Health is the only open category. Nothing is kept until you tap OK.', ['Home', 'Tools', 'Kitchen']],
   'item-qty': ['How many you have.', 'A whole number.', 'This stays on this phone until you tap OK.', ['1', '2', '4']],
