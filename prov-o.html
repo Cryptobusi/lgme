@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#0c100c" />
+  <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+  <title>PROV-O · lgme</title>
+  <meta name="description" content="Design research note. Summary of the W3C PROV Ontology for possible later use with IdidIt receipts and the public tape. Not live. Not an offer." />
+  <link rel="canonical" href="https://lgme.app/prov-o" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;1,6..72,500&display=swap" />
+  <style>
+    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; }
+    body { background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; font-size:1.05rem; line-height:1.6; max-width:46rem; margin:0 auto; padding:1.5rem 1.25rem 4rem; }
+    .kicker { margin:0; font-size:0.72rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--gold); }
+    h1,h2 { font-family:Newsreader,serif; font-weight:500; letter-spacing:-0.02em; }
+    h1 { font-size:clamp(2.2rem, 6vw, 3.2rem); line-height:1.05; margin:0.6rem 0 0; }
+    h2 { font-size:1.6rem; line-height:1.15; margin:2rem 0 0.6rem; }
+    .muted { color:var(--muted); }
+    a { color:var(--fg); }
+    a:hover { color:var(--gold); }
+    ul { margin:0.6rem 0 1rem; padding-left:1.2rem; }
+    li { margin:0.35rem 0; }
+    li::marker { color:var(--gold); }
+  </style>
+<link rel="stylesheet" href="/menu.css" />
+</head>
+<body>
+<nav class="deskmenu" aria-label="Desk">
+  <a href="/nswo">NSWO</a>
+  <a href="/dominion">Dominion</a>
+  <a href="/story">Story</a>
+  <a href="/study">Study/Prerequisite</a>
+  <a href="/hederica">Hederica</a>
+  <a href="/charter">Charter</a>
+  <a href="/bylaws">Bylaws</a>
+  <a href="/membership">Membership</a>
+  <a href="/#sovereignty">Sovereignty</a>
+  <a href="/#order">The order</a>
+  <a href="/#third-seat">Third seat</a>
+  <a href="/#checks">Checks</a>
+  <a href="/#tape">Tape</a>
+  <a href="/spp">Protocol</a>
+  <a href="/opportunity">Opportunity</a>
+  <a href="/game-theory">Game theory</a>
+  <a href="/technical">Technical</a>
+  <a href="/preparation">Preparation</a>
+  <a href="/">Desk</a>
+</nav>
+
+  <p class="kicker"><a href="/">lgme</a> · PROV-O · design research</p>
+  <h1>PROV-O for the public tape.</h1>
+  <p class="muted">ARCHIVE · NOT AN OFFER. Design research only. Not live on the tape. Not a description of functions this site already runs. For later deploy consideration.</p>
+
+  <p class="muted">Official specification: <a href="https://www.w3.org/TR/prov-o/">PROV-O: The PROV Ontology</a> (W3C Recommendation, 30 April 2013). Namespace: <code>http://www.w3.org/ns/prov#</code>.</p>
+
+  <h2>Summary</h2>
+  <p class="muted">PROV-O is the OWL2 encoding of the PROV Data Model. It gives a standard, interoperable way to say who did what, to what entity, building on what, and with what responsibility. Three core classes:</p>
+  <ul class="muted">
+    <li><strong>Entity</strong> — a physical, digital, conceptual, or other thing with fixed aspects.</li>
+    <li><strong>Activity</strong> — something that occurs over a period of time and acts upon or with entities.</li>
+    <li><strong>Agent</strong> — something that bears responsibility for an activity, an entity, or another agent.</li>
+  </ul>
+  <p class="muted">Key relations include <code>wasGeneratedBy</code>, <code>wasDerivedFrom</code>, <code>wasAttributedTo</code>, <code>used</code>, <code>wasAssociatedWith</code>, and <code>actedOnBehalfOf</code>. Terms are grouped into Starting Point (simple binary), Expanded, and Qualified (for roles, times, plans, and other attributes).</p>
+
+  <h2>Status and updates</h2>
+  <p class="muted">The Recommendation remains stable. There is no successor ontology or major revision. Minor errata exist (see the <a href="https://www.w3.org/2011/prov/errata.html">errata page</a>). Libraries continue to support it (for example the Python <code>prov</code> package). Related work appears in decision-provenance and data-provenance drafts, but they treat PROV-O as a readable target rather than a replacement.</p>
+
+  <h2>Relevance to IdidIt and the tape</h2>
+  <p class="muted">An IdidIt receipt maps cleanly: the civic work is an Activity, the person is an Agent, the recorded outcome or credit claim is an Entity. Named credit is attribution or association. Lineage is derivation or generation. The public tape can hold (or hash) a compact PROV graph. This adds a standard semantic layer without changing the existing local-first receipt flow or requiring a heavier stack. Floor stays senior. If it cannot be shown, it is not policy.</p>
+
+  <p class="muted">Nothing on this page is anchored or written to Hedera. Drafts and mappings stay design research until a later decision.</p>
+
+  <p class="muted"><a href="/">← Back to the desk</a> · <a href="/spp">Protocol</a> · <a href="/technical">Technical</a></p>
+  <p class="muted"><a href="/">Desk</a> · <a href="/disclosures">Disclosures</a> · Not an offer. Not an investment.</p>
+  <script src="/js/site-nav.js"></script>
+</body>
+</html>
