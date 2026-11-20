@@ -67,3 +67,5 @@ jobs:
         timeout-minutes: 10
       - run: node test/ai-answer-ui.mjs
         timeout-minutes: 10
+      - run: node test/more-menu-fit-ui.mjs
+        timeout-minutes: 10

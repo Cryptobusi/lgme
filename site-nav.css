@@ -510,17 +510,25 @@ html.is-one-tab #one-more {
 html.is-one-tab #one-more:active { transform: none; filter: none; }
 html.is-one-tab #one-menu {
   position: fixed;
-  right: 0.45rem;
-  bottom: calc(50vh + 3.5rem);
-  z-index: 48;
+  right: var(--more-right, max(0.45rem, env(safe-area-inset-right)));
+  left: auto;
+  top: var(--more-top, max(0.45rem, env(safe-area-inset-top)));
+  bottom: auto;
+  z-index: 70;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 0.25rem;
-  max-height: 46vh;
-  overflow: auto;
+  width: min(264px, calc(100vw - 5.5rem - env(safe-area-inset-left) - env(safe-area-inset-right)));
+  max-height: var(--more-max, calc(50dvh - 4.2rem));
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
 }
 html.is-one-tab #one-menu[hidden] { display: none; }
 html.is-one-tab.is-more-open footer.gym-foot {

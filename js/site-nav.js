@@ -1,6 +1,6 @@
 (function () {
   var EPOCH = '2';
-  var CURRENT = { 'lgme-v254': 1, 'lgme-gym-v81': 1 };
+  var CURRENT = { 'lgme-v255': 1, 'lgme-gym-v81': 1 };
   function keep(name) {
     if (!name) return true;
     if (name === 'lgme.reset.epoch' || name === 'lgme.reset.note' || name === 'lgme.device.key' || name === 'lgme.display.step' || name === 'lgme.display.easy' || name === 'lgme.ui.mode' || name === 'lgme.ui.uses' || name === 'lgme.ui.offer' || name === 'lgme.ui.shortcuts' || name === 'lgme.learn.path' || name === 'lgme-gym.seat' || name === 'lgme.health.book' || name === 'lgme.health.email' || name === 'lgme.health.plan' || name === 'lgme.health.contact' || name === 'lgme.health.contactGrants' || name === 'lgme.health.consent' || name === 'lgme.demo.member') return true;
@@ -289,6 +289,39 @@
       });
       menu.appendChild(easyMenu);
     }
+    if (menu.parentElement !== document.body) document.body.appendChild(menu);
+    var safePad = function () {
+      var probe = document.createElement('div');
+      probe.style.cssText = 'position:fixed;left:0;top:0;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);';
+      document.body.appendChild(probe);
+      var style = getComputedStyle(probe);
+      var pad = {
+        top: parseFloat(style.paddingTop) || 0,
+        right: parseFloat(style.paddingRight) || 0,
+        bottom: parseFloat(style.paddingBottom) || 0
+      };
+      probe.remove();
+      return pad;
+    };
+    var placeMenu = function () {
+      if (menu.hidden) return;
+      var view = window.visualViewport;
+      var pad = safePad();
+      var viewTop = view ? view.offsetTop : 0;
+      var viewRight = view ? Math.max(0, window.innerWidth - (view.offsetLeft + view.width)) : 0;
+      var nav = document.getElementById('site-nav');
+      var navBottom = nav ? nav.getBoundingClientRect().bottom : viewTop;
+      var edge = Math.max(viewTop + pad.top + 8, navBottom + 4);
+      var moreTop = button.getBoundingClientRect().top;
+      var dock = document.getElementById('ai-dock');
+      var dockTop = dock ? dock.getBoundingClientRect().top : viewTop + (view ? view.height : window.innerHeight);
+      var limit = Math.min(moreTop, dockTop) - 8;
+      if (limit < edge + 48) edge = Math.max(viewTop + pad.top, limit - 48);
+      var room = Math.max(48, limit - edge);
+      menu.style.setProperty('--more-top', edge + 'px');
+      menu.style.setProperty('--more-max', room + 'px');
+      menu.style.setProperty('--more-right', (viewRight + pad.right + 8) + 'px');
+    };
     var closeMenu = function () {
       document.documentElement.classList.remove('is-more-open');
       button.setAttribute('aria-expanded', 'false');
@@ -302,7 +335,16 @@
       var open = document.documentElement.classList.toggle('is-more-open');
       button.setAttribute('aria-expanded', open ? 'true' : 'false');
       menu.hidden = !open;
+      if (open) {
+        menu.scrollTop = 0;
+        placeMenu();
+      }
     };
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', placeMenu);
+      window.visualViewport.addEventListener('scroll', placeMenu);
+    }
+    window.addEventListener('resize', placeMenu);
     button.addEventListener('pointerdown', function (event) {
       if (event.button && event.button !== 0) return;
       if (button.setPointerCapture && event.pointerId != null) {
