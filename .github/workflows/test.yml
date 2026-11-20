@@ -65,3 +65,5 @@ jobs:
         timeout-minutes: 10
       - run: node test/keyboard-prefill-ui.mjs
         timeout-minutes: 10
+      - run: node test/ai-answer-ui.mjs
+        timeout-minutes: 10

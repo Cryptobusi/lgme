@@ -1,7 +1,7 @@
 import { applyFieldOption, fieldMeta, lastFieldValue, nextFormTarget, rememberFieldValue, safeHelpLine } from './field-help.mjs';
-import { controlText, pageOverview } from './control-help.mjs';
+import { controlText, pageOverview, collectSections } from './control-help.mjs';
 import { actionIdFrom, dismissOffer, explainOnTap, fieldGuideWithoutModel, guideCards, incognitoBlocksUses, nextStep, noteUse, pinShortcuts, promotion, readMode, readUses as readGuideUses, setMode, shortcutOffer, SHORTCUTS } from './guide-mode.mjs';
-import { answerOrFallback, localAnswer } from './local-qa.mjs';
+import { answerOrFallback, describeModel, localAnswer } from './local-qa.mjs';
 import { classifyPrompt, routeLine } from './prompt-route.mjs';
 import { activeScreen, applyMode, screenModePrompt, undoMode } from './screen-modes.mjs';
 import { localFunctionFromPrompt, saveLocalFunction } from './local-functions.mjs';
@@ -90,17 +90,18 @@ function aiOn() {
 
 function paint(dock) {
   const enabled = aiOn();
-  const ready = enabled && localAiReady();
+  const model = describeModel(window, localStorage);
+  const ready = enabled && model.ready;
   const online = navigator.onLine !== false;
   const flag = dock.querySelector('#ai-flag');
   const accept = dock.querySelector('#ai-accept');
   const toggle = dock.querySelector('#ai-switch');
   const live = enabled && ready;
   dock.classList.toggle('is-off', !enabled);
-  toggle.classList.toggle('is-on', enabled);
-  toggle.dataset.state = enabled ? 'on' : 'off';
+  toggle.classList.toggle('is-on', ready);
+  toggle.dataset.state = ready ? 'on' : enabled ? 'unavailable' : 'off';
   toggle.setAttribute('aria-checked', enabled ? 'true' : 'false');
-  toggle.textContent = enabled ? 'AI on' : 'AI off';
+  toggle.textContent = model.chip;
   const head = document.getElementById('ai-head');
   if (head) {
     head.textContent = live ? 'AI on' : 'AI off';
@@ -534,14 +535,17 @@ function mount() {
     actions.slice(0, 3).forEach((action) => {
       const link = document.createElement('a');
       link.href = action.href;
+      link.className = 'ai-try-chip';
       link.textContent = `Try it: ${action.label}`;
       host.append(link);
     });
   };
   const presentAnswer = async (text) => {
-    const local = localAnswer(text);
+    const sections = collectSections(document);
+    const local = localAnswer(text, { sections });
+    const model = describeModel(window, localStorage);
     let reply = local.text;
-    if (aiOn() && localAiReady()) {
+    if (aiOn() && model.ready) {
       const page = pageOverview(location.pathname, location.hash, document.title);
       try {
         const result = await draftWithHelper(pickHelperSync(), {
@@ -550,10 +554,14 @@ function mount() {
           scope: window,
           timeout: 4000
         });
-        const model = String(result?.text || '').replace(/\s+/g, ' ').trim();
-        const chosen = answerOrFallback({ question: text, modelText: model === local.text ? '' : model, aiOn: true });
+        const heard = String(result?.text || '').replace(/\s+/g, ' ').trim();
+        const chosen = answerOrFallback({ question: text, modelText: heard === local.text ? '' : heard, aiOn: true, modelReady: true, sections });
         reply = chosen.text || local.text;
-      } catch { reply = local.text; }
+      } catch {
+        reply = answerOrFallback({ question: text, aiOn: true, modelReady: false, sections }).text;
+      }
+    } else if (aiOn() && !model.ready) {
+      reply = answerOrFallback({ question: text, aiOn: true, modelReady: false, sections }).text;
     }
     if (!String(reply || '').trim()) reply = local.text;
     const log = dock.querySelector('#ai-log');
@@ -1617,8 +1625,6 @@ function mount() {
       if (aiOn()) localStorage.setItem('lgme.ai.enabled', '0');
       else {
         localStorage.setItem('lgme.ai.enabled', '1');
-        if (!localAiReady()) localStorage.setItem('lgme.localModel.ready', '1');
-        localStorage.setItem('lgme.ai.helper', localAiReady() ? pickHelperSync().id : 'model');
       }
     } catch { /* the switch still moves */ }
     paint(dock);

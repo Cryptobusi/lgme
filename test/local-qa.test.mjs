@@ -21,4 +21,15 @@ test('what is this app for answers with AI off and falls back when the model is 
   const unknown = localAnswer('zzzz');
   assert.match(unknown.text, /I can't reach AI right now, here's the built-in guide/);
   assert.equal(unknown.text.trim().length > 0, true);
+  const unavailable = answerOrFallback({ question: 'zzzz', aiOn: true, modelReady: false, modelText: '' });
+  assert.match(unavailable.text, /On-device AI isn't available on this phone/);
+  assert.equal(/turn AI on/i.test(unavailable.text), false);
+  const sections = [{ title: 'Messages', text: 'Notes on this phone.' }, { title: 'Health', text: 'The live category.' }];
+  const missing = localAnswer('What is the problem section', { sections });
+  assert.match(missing.text, /no section called problem/i);
+  assert.match(missing.text, /sections on this page/i);
+  assert.match(missing.text, /Messages/);
+  assert.match(missing.text, /Health/);
+  const hit = localAnswer('What is the Messages section', { sections });
+  assert.match(hit.text, /^Messages\./);
 });

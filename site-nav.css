@@ -285,6 +285,8 @@ html.is-easy .dash-card :is(h1, h2, h3, h4, strong, p) {
 #ai-dock #ai-path-line,
 #ai-dock #ai-path button { flex: 0 0 auto; height: 22px; min-height: 22px; min-width: max-content; padding: 0 0.4rem; font-size: 12px; line-height: 22px; white-space: nowrap; }
 #ai-path-line { flex: 1 1 auto; min-width: 0; font-weight: 700; }
+#ai-try { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.35rem 0.2rem; }
+#ai-try .ai-try-chip { display: inline-flex; align-items: center; min-height: 32px; margin: 0; padding: 0 0.65rem; border-radius: 999px; border: 1px solid #c6a15b; background: #f4f1e8; color: #1a1408; font-weight: 700; font-size: 14px; text-decoration: none; white-space: nowrap; }
 #ai-prefill { display: none; }
 #ai-key-done { display: none; }
 #ai-dock.is-open.is-key-page {

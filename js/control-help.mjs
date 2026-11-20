@@ -94,3 +94,23 @@ export function pageOverview(pathname = '/', hash = '', title = '') {
     steps: ['Read the page', 'Tap a control to see what it does', 'Tap OK only when you mean to keep it']
   };
 }
+
+export function collectSections(doc = typeof document !== 'undefined' ? document : null) {
+  const sections = [];
+  const add = (title, text) => {
+    const name = clean(title).replace(/[:.]+$/g, '');
+    if (!name || name.length > 80) return;
+    if (sections.some((item) => item.title.toLowerCase() === name.toLowerCase())) return;
+    sections.push({ title: name, text: clean(text) || name });
+  };
+  if (!doc || !doc.querySelectorAll) return sections;
+  doc.querySelectorAll('h1, h2, h3, summary').forEach((el) => {
+    if (el.closest && (el.closest('#ai-dock') || el.closest('[hidden]'))) return;
+    add(el.textContent, el.getAttribute('data-explain') || el.textContent);
+  });
+  doc.querySelectorAll('#creo-glossary li').forEach((el) => {
+    const text = clean(el.textContent);
+    add(text.split('=')[0], text);
+  });
+  return sections.slice(0, 12);
+}

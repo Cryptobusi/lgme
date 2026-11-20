@@ -1,4 +1,20 @@
 const FALLBACK = "I can't reach AI right now, here's the built-in guide. Turn AI on with the switch in this panel, then ask again. The steps below still work with AI off. Nothing is sent until you tap OK.";
+export const UNAVAILABLE_LINE = "On-device AI isn't available on this phone. This browser has no built-in model. On a computer, Chrome settings can turn the model on. The guide on this phone still answers.";
+
+export function aiChipLabel(enabled, ready) {
+  if (!enabled) return 'AI off';
+  return ready ? 'AI on' : 'AI on - unavailable';
+}
+
+export function describeModel(scope = {}, storage) {
+  let enabled = true;
+  try { enabled = storage?.getItem('lgme.ai.enabled') !== '0'; } catch { enabled = true; }
+  if (!enabled) return { enabled: false, ready: false, chip: 'AI off', line: '' };
+  const api = scope.LanguageModel || scope.ai?.languageModel;
+  const has = Boolean(api) && (typeof api.prompt === 'function' || typeof api.create === 'function' || typeof api.availability === 'function');
+  if (!has) return { enabled: true, ready: false, chip: aiChipLabel(true, false), line: UNAVAILABLE_LINE };
+  return { enabled: true, ready: true, chip: 'AI on', line: '' };
+}
 
 const ACTIONS = {
   health: { label: 'Open Health', href: '/gym' },
@@ -69,16 +85,73 @@ const INTENTS = [
   }
 ];
 
-export function localAnswer(question) {
+export function localAnswer(question, context = {}) {
   const q = String(question || '').trim().toLowerCase();
   const hit = q ? INTENTS.find((item) => item.test.test(q)) : null;
   if (hit) return { ...hit.answer, source: 'local', matched: true };
+  const sections = Array.isArray(context.sections) ? context.sections : [];
+  const asked = askedName(q);
+  const found = matchSection(asked, sections);
+  if (found) {
+    return {
+      text: `${found.title}. ${found.text || 'It is on this page.'} Nothing is saved until you tap OK.`,
+      actions: [ACTIONS.help],
+      source: 'local',
+      matched: true
+    };
+  }
+  if (asksSection(q)) {
+    const names = sections.map((item) => item.title).filter(Boolean).slice(0, 8);
+    const called = asked || 'that';
+    const list = names.length ? names.join(', ') : 'none yet';
+    return {
+      text: `There is no section called ${called}; here are the sections on this page: ${list}.`,
+      actions: [ACTIONS.health, ACTIONS.help],
+      source: 'local',
+      matched: true
+    };
+  }
   return { text: FALLBACK, actions: [ACTIONS.health, ACTIONS.help], source: 'local', matched: false };
 }
 
-export function answerOrFallback({ question, modelText = '', aiOn = false } = {}) {
-  const local = localAnswer(question);
+function askedName(question) {
+  return String(question || '')
+    .toLowerCase()
+    .replace(/what(?:'s| is)?(?: the)?/g, ' ')
+    .replace(/\b(section|part|card|heading|page|about|called|named|where|does|mean)\b/g, ' ')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function asksSection(question) {
+  return /\b(section|heading|card)\b/i.test(question);
+}
+
+function matchSection(name, sections) {
+  const keys = String(name || '').split(' ').filter((word) => word.length > 2);
+  if (!keys.length) return null;
+  let best = null;
+  let score = 0;
+  for (const section of sections) {
+    const title = String(section.title || '').toLowerCase();
+    const hit = keys.filter((word) => title.includes(word)).length;
+    if (hit > score) {
+      score = hit;
+      best = section;
+    }
+  }
+  return score ? best : null;
+}
+
+export function answerOrFallback({ question, modelText = '', aiOn = false, modelReady = true, sections } = {}) {
+  const local = localAnswer(question, { sections });
   const model = String(modelText || '').replace(/\s+/g, ' ').trim();
-  if (aiOn && model && model !== local.text) return { text: model, actions: local.actions, source: 'model' };
+  if (aiOn && modelReady && model && model !== local.text) return { text: model, actions: local.actions, source: 'model' };
+  if (aiOn && !modelReady) {
+    const body = local.matched && !local.text.includes('Turn AI on') ? ` ${local.text}` : '';
+    return { text: `${UNAVAILABLE_LINE}${body}`, actions: local.actions, source: 'local', matched: true };
+  }
+  if (aiOn && local.text.includes('Turn AI on')) return { text: UNAVAILABLE_LINE, actions: local.actions, source: 'local', matched: true };
   return local;
 }
