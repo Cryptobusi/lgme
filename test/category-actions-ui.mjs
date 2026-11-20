@@ -156,9 +156,11 @@ for (const [width, height] of [[390, 844], [1280, 800]]) {
     const nameOption = width === 390 ? 'Tool library' : 'Study hour';
     const lineOption = width === 390 ? 'A place to trade tools' : 'A study hour';
     await page.locator('#evolve-name').click();
-    await page.getByRole('button', { name: `Yes, ${nameOption}`, exact: true }).click();
+    if (await page.locator('#ai-key-done').isVisible()) await page.locator('#evolve-name').fill(nameOption);
+    else await page.getByRole('button', { name: `Yes, ${nameOption}`, exact: true }).click();
     await page.locator('#evolve-line').click();
-    await page.getByRole('button', { name: `Yes, ${lineOption}`, exact: true }).click();
+    if (await page.locator('#ai-key-done').isVisible()) await page.locator('#evolve-line').fill(lineOption);
+    else await page.getByRole('button', { name: `Yes, ${lineOption}`, exact: true }).click();
     await tap(page, '#evolve-send');
     await page.locator('#evolve-count').waitFor();
     const count = await page.locator('#evolve-count').innerText();

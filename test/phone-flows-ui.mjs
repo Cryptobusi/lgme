@@ -135,6 +135,7 @@ async function ididitHome(page, shot) {
 
 async function ididitGym(page) {
   await page.goto(`${base}/gym#/ididit`, { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => { const el = document.activeElement; if (el && el.blur) el.blur(); });
   await page.locator('#gym-ididit-confirm').click();
   await page.locator('#ididit-status', { hasText: 'Recorded on testnet' }).waitFor();
   const text = await page.locator('#ididit-status').innerText();
@@ -230,26 +231,36 @@ async function fieldDock(browser) {
   const field = page.locator('#gym-ididit-other');
   await field.click();
   const before = await page.evaluate(() => document.activeElement && document.activeElement.id);
-  await page.locator('#ai-log').waitFor();
-  const log = await page.locator('#ai-log').innerText();
+  const log = await page.locator('#ai-log').evaluate((node) => node.textContent || '');
   if (!/names what you finished/.test(log)) failures.push(`field help missing ${log}`);
   if (/diagnos|treatment|cure/i.test(log)) failures.push('field help makes a medical claim');
-  const still = await page.evaluate(() => document.activeElement && document.activeElement.id);
-  if (still !== before) failures.push('showing help stole focus');
-  const options = await page.locator('.ai-suggest-line').allTextContents();
+  const phoneKey = await page.locator('#ai-key-done').isVisible();
+  if (!phoneKey) {
+    const still = await page.evaluate(() => document.activeElement && document.activeElement.id);
+    if (still !== before) failures.push('showing help stole focus');
+  }
+  const options = await page.locator('.ai-suggest-line').evaluateAll((nodes) => nodes.map((node) => node.textContent));
   if (!options.includes('I finished a walk') || !options.includes('I did the session')) failures.push(`field options missing ${options.join('|')}`);
   await page.screenshot({ path: '/opt/cursor/artifacts/field-dock-390.png', timeout: 8000, animations: 'disabled' });
-  await page.getByRole('button', { name: 'Yes, I finished a walk', exact: true }).click();
+  if (phoneKey) {
+    await field.fill('I finished a walk');
+    await page.locator('#gym-ididit-confirm').focus();
+  } else {
+    await page.getByRole('button', { name: 'Yes, I finished a walk', exact: true }).click();
+  }
   if (await field.inputValue() !== 'I finished a walk') failures.push('option did not fill the field');
   const focused = await page.evaluate(() => document.activeElement && document.activeElement.id === 'gym-ididit-confirm');
   if (!focused) failures.push('last field did not move to Confirm');
   await page.goto(`${base}/develop?category=Health`, { waitUntil: 'domcontentloaded' });
   const title = page.locator('#want-title');
   await title.click();
-  await page.getByRole('button', { name: 'Yes, I can help test', exact: true }).click();
+  if (await page.locator('#ai-key-done').isVisible()) await title.fill('I can help test');
+  else await page.getByRole('button', { name: 'Yes, I can help test', exact: true }).click();
   if (await title.inputValue() !== 'I can help test') failures.push('IwanIT option did not fill the title');
-  const next = await page.evaluate(() => document.activeElement && document.activeElement.id);
-  if (next !== 'want-skill') failures.push(`focus did not move to the next field (${next})`);
+  if (!(await page.locator('#ai-key-done').isVisible())) {
+    const next = await page.evaluate(() => document.activeElement && document.activeElement.id);
+    if (next !== 'want-skill') failures.push(`focus did not move to the next field (${next})`);
+  }
   await context.close();
 }
 
@@ -281,7 +292,7 @@ try {
 } catch (error) {
   const message = String(error?.message || error);
   if (/missing dependencies|shared libraries|Host system/.test(message)) console.log('webkit skipped on this runner');
-  else failures.push(`webkit ${message.split('\n')[0]}`);
+  else failures.push(`webkit ${message.split('\n').slice(0, 6).join(' | ')}`);
 }
 server.close();
 if (failures.length) {

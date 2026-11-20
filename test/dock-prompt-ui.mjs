@@ -176,15 +176,16 @@ await page.waitForFunction(() => document.getElementById('gym-ididit-other')?.va
 if (!/Suggestion: Treadmill, 10 min/.test(await page.locator('#draft-suggestion').innerText())) failures.push('suggestion not repeated');
 if (!(await page.locator('#gym-ididit-confirm').evaluate((node) => node.classList.contains('is-next')))) failures.push('confirm not marked');
 await page.waitForFunction(() => /Draft filled: Treadmill, 10 min/.test(document.getElementById('ai-log')?.textContent || ''));
-if ((await page.locator('#ai-steps li.is-current').innerText()).indexOf('2)') !== 0) failures.push('step 2 not current');
+if ((await page.locator('#ai-steps li.is-current').evaluate((node) => node.textContent || '')).indexOf('2)') !== 0) failures.push('step 2 not current');
 if (/Opening draft/.test(await page.locator('#ai-action-status').innerText().catch(() => ''))) failures.push('opening draft label');
 if (await page.locator('#category-board').isVisible()) failures.push('listings still cover the draft');
 if (!(await page.locator('#ididit-done').isVisible())) failures.push('draft not visible');
 const wrap = await page.locator('#ai-log').evaluate((node) => getComputedStyle(node).whiteSpace);
 if (wrap === 'nowrap') failures.push('explainer truncated');
 await page.locator('#gym-ididit-minutes').fill('12');
-if (!/Draft filled: Treadmill, 12 min/.test(await page.locator('#ai-log').innerText())) failures.push('edit did not update explainer');
+if (!/Draft filled: Treadmill, 12 min/.test(await page.locator('#ai-log').evaluate((node) => node.textContent || ''))) failures.push('edit did not update explainer');
 if (/Recorded on testnet/.test(await page.locator('#ididit-status').innerText())) failures.push('recorded without confirm');
+await page.locator('#gym-ididit-minutes').evaluate((node) => node.blur());
 await page.locator('#ai-ask').fill('Treadmill 5 miles at 3mph');
 await page.locator('#ai-ask').press('Enter');
 await page.waitForTimeout(50);
@@ -194,10 +195,12 @@ await page.waitForFunction(() => document.getElementById('gym-ididit-distance')?
 await page.waitForFunction(() => /about 100 min/.test(document.getElementById('gym-ididit-computed')?.textContent || ''));
 await page.waitForFunction(() => /Draft filled: Treadmill, 5 miles, 3 mph, about 100 min/.test(document.getElementById('ai-log')?.textContent || ''));
 if (!(await page.locator('#ididit-done').isVisible())) failures.push('pace draft hidden');
+await page.evaluate(() => { const el = document.activeElement; if (el && el.blur) el.blur(); });
 await page.locator('#ai-ask').fill('I want a ride');
 await page.locator('#ai-send').click();
 await page.locator('#prompt-draft').waitFor();
 if (!/a ride/.test(await page.locator('#prompt-draft').innerText())) failures.push('send did not open IwantIT');
+await page.evaluate(() => { const el = document.activeElement; if (el && el.id !== 'ai-ask' && el.blur) el.blur(); });
 await page.evaluate(() => {
   const scroller = document.getElementById('ai-scroll');
   const extra = document.createElement('p');

@@ -37,11 +37,39 @@ export function dockKeyboardOffset(innerHeight, viewport) {
   return Math.max(0, Math.round(Number(innerHeight) - height - offsetTop));
 }
 
-export function keyboardOpen(innerHeight, viewportHeight) {
-  const inner = Number(innerHeight);
-  const view = Number(viewportHeight);
-  if (!Number.isFinite(inner) || inner <= 0 || !Number.isFinite(view)) return false;
-  return view < inner * 0.75;
+export function keyboardDropped(baseline, current, threshold = 120) {
+  const base = Number(baseline);
+  const now = Number(current);
+  if (!Number.isFinite(base) || base <= 0 || !Number.isFinite(now)) return false;
+  return base - now >= threshold;
+}
+
+export function keyboardFolded(baseline, current, slack = 80) {
+  const base = Number(baseline);
+  const now = Number(current);
+  if (!Number.isFinite(base) || base <= 0 || !Number.isFinite(now)) return true;
+  return base - now <= slack;
+}
+
+export function coarseMobile(win) {
+  if (!win) return false;
+  const narrow = Number(win.innerWidth) > 0 && Number(win.innerWidth) <= 900;
+  let coarse = false;
+  try {
+    coarse = Boolean(win.matchMedia?.('(pointer: coarse)')?.matches || win.matchMedia?.('(hover: none)')?.matches);
+  } catch { coarse = false; }
+  const touch = Number(win.navigator?.maxTouchPoints) > 0;
+  return Boolean(narrow && (coarse || touch));
+}
+
+export function keyboardMode({ baseline, current, onPage, onPrompt, coarse, seenDrop = false, allowFocus = true }) {
+  const dropped = keyboardDropped(baseline, current);
+  const folded = keyboardFolded(baseline, current);
+  if (folded && seenDrop) return 'closed';
+  if (onPage && (dropped || (coarse && allowFocus))) return 'page';
+  if (onPrompt && dropped) return 'prompt';
+  if (folded || (!onPage && !onPrompt)) return 'closed';
+  return 'closed';
 }
 
 function signedIn() {
@@ -362,7 +390,7 @@ function mount() {
   const dock = document.createElement('section');
   dock.id = 'ai-dock';
   dock.setAttribute('aria-label', 'On-device AI');
-  dock.innerHTML = '<p class="ai-top"><span id="ai-status">AI off · Voice · Speak+show</span><button type="button" id="ai-switch" class="ai-pill" role="switch" aria-checked="true" aria-live="polite" aria-label="AI on or off">AI off</button><button type="button" id="guide-mode" class="ai-pill" aria-pressed="true">Guided</button><button type="button" id="ai-voice" class="ai-detail is-off" aria-pressed="false" aria-label="Voice off">Voice</button><button type="button" id="ai-voice-reply" class="ai-detail" aria-label="Voice reply, Speak and show">Reply</button><span id="ai-voice-mode" class="ai-detail">Speak+show</span><button type="button" id="ai-listen" class="ai-detail" aria-pressed="false" aria-label="Listen again after speaking">Listen</button><span id="ai-mic" hidden>Listening</span><span id="ai-speaking" hidden>Speaking</span><button type="button" id="ai-stop" hidden>Stop</button><button type="button" id="ai-smaller" class="ai-detail" aria-label="Smaller text">A-</button><button type="button" id="ai-larger" class="ai-detail" aria-label="Bigger text">A+</button><a class="ai-setup-link ai-detail" href="/ai-setup">Help</a><button type="button" id="ai-incognito" class="ai-detail" aria-pressed="false">Incognito</button><button type="button" id="ai-incognito-count" class="ai-detail">Pending 0</button><button type="button" id="ai-expand" aria-expanded="true">Close</button></p><p id="ai-incognito-notice" hidden>Incognito — stays on this phone</p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><p id="ai-path"><span id="ai-path-line"></span><span id="ai-path-actions"><button type="button" id="ai-path-reset">Reset</button><button type="button" id="ai-path-skip">Next step</button></span></p><div id="ai-chip-row"><div id="ai-chips" class="ai-chips"></div><span id="ai-chip-hint" aria-hidden="true">›</span></div><div id="ai-scroll"><div id="ai-incognito-review" hidden></div><p id="ai-overview"></p><ol id="ai-overview-steps"></ol><section id="ai-next"><p class="ai-kicker">Next step</p><button type="button" id="ai-next-primary"></button><div id="ai-next-alts"></div></section><section id="ai-promote"><p id="ai-promote-line"></p></section><section id="ai-shortcut-offer" hidden></section><div id="ai-log-frame"><pre id="ai-log"></pre><ol id="ai-explain-steps"></ol><div id="ai-suggestions"></div></div><p id="ai-more" hidden>More</p></div><div class="ai-compose"><div id="ai-input-frame"><textarea id="ai-ask" rows="1" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><p id="ai-send-state" class="is-held" role="status" aria-label="Not sent. Held on this phone."><i></i></p><p class="ai-actions"><button type="button" id="ai-controls" aria-expanded="false" aria-label="Show or hide controls">Controls</button><button type="button" id="speak-ask" role="switch" aria-checked="false" aria-label="Speak reply?">Speak</button><button type="button" id="ai-mic-btn" class="is-off" data-state="off" aria-pressed="false" aria-label="Microphone off"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg></button><button type="button" id="ai-send" aria-label="Send">Send</button><button type="button" id="ai-accept" aria-label="Hint">Hint</button><button type="button" id="ai-confirm" aria-label="Confirm">OK</button></p></div></div><div id="ai-prefill" hidden><div id="ai-prefill-row"></div><button type="button" id="ai-prefill-open">AI</button></div>';
+  dock.innerHTML = '<p class="ai-top"><span id="ai-status">AI off · Voice · Speak+show</span><button type="button" id="ai-switch" class="ai-pill" role="switch" aria-checked="true" aria-live="polite" aria-label="AI on or off">AI off</button><button type="button" id="guide-mode" class="ai-pill" aria-pressed="true">Guided</button><button type="button" id="ai-voice" class="ai-detail is-off" aria-pressed="false" aria-label="Voice off">Voice</button><button type="button" id="ai-voice-reply" class="ai-detail" aria-label="Voice reply, Speak and show">Reply</button><span id="ai-voice-mode" class="ai-detail">Speak+show</span><button type="button" id="ai-listen" class="ai-detail" aria-pressed="false" aria-label="Listen again after speaking">Listen</button><span id="ai-mic" hidden>Listening</span><span id="ai-speaking" hidden>Speaking</span><button type="button" id="ai-stop" hidden>Stop</button><button type="button" id="ai-smaller" class="ai-detail" aria-label="Smaller text">A-</button><button type="button" id="ai-larger" class="ai-detail" aria-label="Bigger text">A+</button><a class="ai-setup-link ai-detail" href="/ai-setup">Help</a><button type="button" id="ai-incognito" class="ai-detail" aria-pressed="false">Incognito</button><button type="button" id="ai-incognito-count" class="ai-detail">Pending 0</button><button type="button" id="ai-expand" aria-expanded="true">Close</button></p><p id="ai-incognito-notice" hidden>Incognito — stays on this phone</p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><p id="ai-path"><span id="ai-path-line"></span><span id="ai-path-actions"><button type="button" id="ai-path-reset">Reset</button><button type="button" id="ai-path-skip">Next step</button></span></p><div id="ai-chip-row"><div id="ai-chips" class="ai-chips"></div><span id="ai-chip-hint" aria-hidden="true">›</span></div><div id="ai-scroll"><div id="ai-incognito-review" hidden></div><p id="ai-overview"></p><ol id="ai-overview-steps"></ol><section id="ai-next"><p class="ai-kicker">Next step</p><button type="button" id="ai-next-primary"></button><div id="ai-next-alts"></div></section><section id="ai-promote"><p id="ai-promote-line"></p></section><section id="ai-shortcut-offer" hidden></section><div id="ai-log-frame"><pre id="ai-log"></pre><ol id="ai-explain-steps"></ol><div id="ai-suggestions"></div></div><p id="ai-more" hidden>More</p></div><div class="ai-compose"><div id="ai-input-frame"><textarea id="ai-ask" rows="1" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><p id="ai-send-state" class="is-held" role="status" aria-label="Not sent. Held on this phone."><i></i></p><p class="ai-actions"><button type="button" id="ai-controls" aria-expanded="false" aria-label="Show or hide controls">Controls</button><button type="button" id="speak-ask" role="switch" aria-checked="false" aria-label="Speak reply?">Speak</button><button type="button" id="ai-mic-btn" class="is-off" data-state="off" aria-pressed="false" aria-label="Microphone off"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg></button><button type="button" id="ai-send" aria-label="Send">Send</button><button type="button" id="ai-accept" aria-label="Hint">Hint</button><button type="button" id="ai-confirm" aria-label="Confirm">OK</button></p></div></div><button type="button" id="ai-key-done" hidden>Done</button>';
   dock.classList.add('is-open', 'is-normal');
   try { document.documentElement.dataset.screen = activeScreen(localStorage); } catch { /* everyday height stays */ }
   try {
@@ -373,27 +401,28 @@ function mount() {
     }
   } catch { /* the bar still shows */ }
   document.body.append(dock);
-  let keepPanel = false;
-  const pageField = (el) => Boolean(el && fieldMeta(el));
-  const paintPrefill = (field) => {
-    const row = dock.querySelector('#ai-prefill-row');
-    if (!row) return;
-    row.replaceChildren();
-    const meta = fieldMeta(field);
-    const labels = meta ? meta.options : [];
-    for (const label of labels) {
-      const chip = document.createElement('button');
-      chip.type = 'button';
-      chip.className = 'ai-prefill-chip';
-      chip.textContent = label;
-      chip.addEventListener('pointerdown', (event) => event.preventDefault());
-      chip.addEventListener('click', () => {
-        applyFieldOption(field, label);
-        advanceField(field);
-      });
-      row.append(chip);
-    }
+  let baseline = 0;
+  let seenDrop = false;
+  let allowFocus = true;
+  const currentViewport = () => {
+    const view = Number(window.visualViewport?.height);
+    if (Number.isFinite(view) && view > 0) return view;
+    const inner = Number(window.innerHeight);
+    return Number.isFinite(inner) ? inner : 0;
   };
+  const editing = (el) => Boolean((el && fieldMeta(el)) || (el && el.id === 'ai-ask'));
+  const noteBaseline = (force = false) => {
+    const current = currentViewport();
+    if (force) {
+      baseline = current;
+      seenDrop = false;
+      allowFocus = true;
+      return baseline;
+    }
+    if (!editing(document.activeElement)) baseline = Math.max(baseline, current);
+    return baseline;
+  };
+  const pageField = (el) => Boolean(el && fieldMeta(el) && el.type !== 'checkbox' && el.type !== 'radio');
   const advanceField = (field) => {
     const next = nextFormTarget(field);
     if (!next) {
@@ -403,45 +432,66 @@ function mount() {
     next.scrollIntoView({ block: 'center' });
     next.focus();
     if (next.classList) next.classList.add('is-ask-focus');
-    if (fieldMeta(next)) paintPrefill(next);
     return next;
   };
+  const doneButton = dock.querySelector('#ai-key-done');
   const syncKeyboard = () => {
-    const view = window.visualViewport;
-    const open = keyboardOpen(window.innerHeight, view ? view.height : window.innerHeight);
     const active = document.activeElement;
     const onPage = pageField(active);
-    const onPrompt = active && active.id === 'ai-ask';
-    if (!open || (!onPage && !onPrompt)) {
-      if (!open) keepPanel = false;
-      dock.classList.remove('is-key-page', 'is-key-prompt');
-      return;
+    const onPrompt = Boolean(active && active.id === 'ai-ask');
+    if (!onPage && !onPrompt) noteBaseline(false);
+    const current = currentViewport();
+    if (!baseline) baseline = current;
+    const dropped = keyboardDropped(baseline, current);
+    if (dropped) seenDrop = true;
+    const mode = keyboardMode({
+      baseline,
+      current,
+      onPage,
+      onPrompt,
+      coarse: coarseMobile(window),
+      seenDrop,
+      allowFocus
+    });
+    if (mode === 'closed' && seenDrop) allowFocus = false;
+    if (mode === 'closed') seenDrop = false;
+    if (!onPage && !onPrompt) allowFocus = true;
+    if (!dock.classList.contains('is-key-page') && !dock.classList.contains('is-key-prompt')) {
+      dock.dataset.wasOpen = dock.classList.contains('is-open') ? '1' : '0';
     }
-    if (onPage && !keepPanel) {
-      dock.classList.add('is-key-page');
-      dock.classList.remove('is-key-prompt');
-      paintPrefill(active);
-      active.scrollIntoView({ block: 'center' });
-      return;
+    dock.classList.toggle('is-key-page', mode === 'page');
+    dock.classList.toggle('is-key-prompt', mode === 'prompt');
+    if (doneButton) {
+      const next = onPage ? nextFormTarget(active) : null;
+      const confirming = next && /^(ok|confirm|propose)$/i.test(String(next.textContent || '').trim());
+      doneButton.textContent = confirming ? 'OK' : 'Done';
+      doneButton.hidden = mode !== 'page';
     }
-    if (onPrompt) {
-      dock.classList.add('is-key-prompt');
-      dock.classList.remove('is-key-page');
-    }
+    if (mode === 'closed' && dock.dataset.wasOpen === '0') dock.classList.remove('is-open');
+    else if (mode === 'closed') dock.classList.add('is-open');
+    if (mode === 'page' && dropped && active && active.scrollIntoView) active.scrollIntoView({ block: 'center' });
   };
   const placeDock = () => {
     const overlap = dockKeyboardOffset(window.innerHeight, window.visualViewport);
     dock.style.bottom = overlap ? `${overlap}px` : '';
+    if (doneButton) doneButton.style.bottom = overlap ? `${overlap + 8}px` : '';
     syncKeyboard();
   };
+  noteBaseline(true);
   placeDock();
   window.visualViewport?.addEventListener('resize', placeDock);
   window.visualViewport?.addEventListener('scroll', placeDock);
   window.addEventListener('resize', placeDock);
-  dock.querySelector('#ai-prefill-open').addEventListener('click', () => {
-    keepPanel = true;
-    dock.classList.remove('is-key-page');
-    dock.classList.add('is-open');
+  window.addEventListener('orientationchange', () => noteBaseline(true));
+  doneButton.addEventListener('click', () => {
+    const active = document.activeElement;
+    const next = pageField(active) ? nextFormTarget(active) : null;
+    const confirming = next && /^(ok|confirm|propose)$/i.test(String(next.textContent || '').trim());
+    if (confirming) next.focus();
+    else if (active && active.blur) active.blur();
+    dock.classList.remove('is-key-page', 'is-key-prompt');
+    if (dock.dataset.wasOpen === '0') dock.classList.remove('is-open');
+    else dock.classList.add('is-open');
   });
   const ask = dock.querySelector('#ai-ask');
   const chips = dock.querySelector('#ai-chips');
@@ -1090,7 +1140,6 @@ function mount() {
   };
   const sendOrStage = () => {
     dock.classList.remove('is-key-prompt');
-    keepPanel = false;
     const text = ask.value.trim();
     const picked = stepPick(text);
     if (picked && stageByNumber(picked)) return;

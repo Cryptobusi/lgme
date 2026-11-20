@@ -1,14 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { keyboardOpen } from '../js/local-ai-panel.mjs';
+import { keyboardDropped, keyboardFolded, keyboardMode } from '../js/local-ai-panel.mjs';
 
-test('the keyboard is open below 75 percent of the screen', () => {
-  assert.equal(keyboardOpen(844, 400), true);
-  assert.equal(keyboardOpen(844, 600), true);
-  assert.equal(keyboardOpen(844, 633), false);
-  assert.equal(keyboardOpen(844, 800), false);
-  assert.equal(keyboardOpen(0, 100), false);
+test('Android keyboard is a drop from the baseline, even when innerHeight shrinks too', () => {
+  const baseline = 844;
+  const shrunk = 520;
+  assert.equal(keyboardDropped(baseline, shrunk), true);
+  assert.equal(keyboardDropped(shrunk, shrunk), false);
+  assert.equal(keyboardFolded(baseline, 800), true);
+  assert.equal(keyboardFolded(baseline, 700), false);
+  assert.equal(keyboardMode({ baseline, current: shrunk, onPage: true, onPrompt: false, coarse: true, seenDrop: true }), 'page');
+  assert.equal(keyboardMode({ baseline, current: shrunk, onPage: false, onPrompt: true, coarse: true, seenDrop: true }), 'prompt');
+  assert.equal(keyboardMode({ baseline, current: 820, onPage: true, onPrompt: false, coarse: true, seenDrop: true }), 'closed');
+  assert.equal(keyboardMode({ baseline, current: baseline, onPage: true, onPrompt: false, coarse: true, seenDrop: false, allowFocus: true }), 'page');
+  assert.equal(keyboardMode({ baseline, current: baseline, onPage: false, onPrompt: false, coarse: true, seenDrop: false }), 'closed');
 });
 
 test('Row 2 is Reset then Next step, pushed to the right', () => {
@@ -18,4 +24,5 @@ test('Row 2 is Reset then Next step, pushed to the right', () => {
   assert.equal(panel.includes('Skip step'), false);
   assert.match(css, /#ai-path \{[^}]*justify-content:\s*space-between/);
   assert.match(css, /#ai-path-actions \{[^}]*margin-left:\s*auto/);
+  assert.match(panel, /id="ai-key-done"/);
 });

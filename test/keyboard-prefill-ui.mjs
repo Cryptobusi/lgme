@@ -52,24 +52,53 @@ if (!(row.line < row.reset && row.reset < row.next)) failures.push(`placement ${
 if (row.edge - row.nextRight > 12) failures.push(`not at the right edge ${JSON.stringify(row)}`);
 await page.goto(`${base}/gym#/ididit`, { waitUntil: 'domcontentloaded' });
 await page.locator('#gym-ididit-activity').click();
-const stub = await page.evaluate(() => {
-  const view = { height: Math.round(window.innerHeight * 0.5), offsetTop: 0, width: window.innerWidth, addEventListener() {}, removeEventListener() {} };
-  try { Object.defineProperty(window, 'visualViewport', { configurable: true, get: () => view }); }
-  catch (error) { return error.message; }
+if (!(await page.locator('#ai-key-done').isVisible())) failures.push('focus on a phone did not hide the AI screen');
+if (await page.locator('#ai-scroll').isVisible()) failures.push('AI display stayed open over the form');
+if (await page.locator('#ai-top').isVisible()) failures.push('AI header stayed open');
+const shrunk = await page.evaluate(() => {
+  const next = Math.round((window.visualViewport?.height || window.innerHeight) - 240);
+  const view = { height: next, offsetTop: 0, width: window.innerWidth, addEventListener() {}, removeEventListener() {} };
+  try {
+    Object.defineProperty(window, 'visualViewport', { configurable: true, get: () => view });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, get: () => next });
+  } catch (error) { return error.message; }
   window.dispatchEvent(new Event('resize'));
   return 'ok';
 });
-if (stub !== 'ok') failures.push(`viewport ${stub}`);
-await page.locator('#ai-prefill').waitFor();
-if (await page.locator('#ai-scroll').isVisible()) failures.push('AI display stayed open over the form');
-if (!(await page.locator('#ai-prefill').isVisible())) failures.push('prefill bar hidden');
-const chip = page.locator('#ai-prefill-row button').first();
-const label = await chip.innerText();
-await chip.click();
-if ((await page.locator('#gym-ididit-activity').inputValue()) !== label) failures.push(`prefill ${label}`);
-const nextId = await page.evaluate(() => document.activeElement && document.activeElement.id);
+if (shrunk !== 'ok') failures.push(`viewport ${shrunk}`);
+if (!(await page.locator('#ai-key-done').isVisible())) failures.push('Done missing while the keyboard is open');
+if (await page.locator('#ai-scroll').isVisible()) failures.push('AI display visible after both heights shrink');
+const visibleDock = await page.evaluate(() => [...document.querySelectorAll('#ai-dock > *')].filter((node) => getComputedStyle(node).display !== 'none').map((node) => node.id));
+if (visibleDock.join('|') !== 'ai-key-done') failures.push(`dock children ${visibleDock.join('|')}`);
+await page.evaluate(() => {
+  const full = 844;
+  const view = { height: full, offsetTop: 0, width: window.innerWidth, addEventListener() {}, removeEventListener() {} };
+  Object.defineProperty(window, 'visualViewport', { configurable: true, get: () => view });
+  Object.defineProperty(window, 'innerHeight', { configurable: true, get: () => full });
+  document.activeElement?.blur?.();
+  window.dispatchEvent(new Event('resize'));
+});
+if (!(await page.locator('#ai-scroll').isVisible())) failures.push('AI display did not return');
+if (await page.locator('#ai-key-done').isVisible()) failures.push('Done stayed after the keyboard folded');
+const desk = await browser.newContext({ viewport: { width: 1280, height: 800 }, hasTouch: false, isMobile: false });
+await desk.addInitScript(() => {
+  localStorage.setItem('lgme.ai.enabled', '0');
+  localStorage.setItem('lgme.reset.epoch', '2');
+  Object.defineProperty(navigator, 'maxTouchPoints', { configurable: true, get: () => 0 });
+});
+const wide = await desk.newPage();
+await wide.goto(`${base}/gym#/ididit`, { waitUntil: 'domcontentloaded' });
+await wide.locator('#gym-ididit-activity').click();
+const choice = wide.locator('.ai-yes').first();
+await choice.waitFor();
+const picked = await choice.getAttribute('aria-label');
+await choice.click();
+const filled = await wide.locator('#gym-ididit-activity').inputValue();
+if (!picked || !picked.endsWith(filled) || !filled) failures.push(`prefill ${picked} -> ${filled}`);
+const nextId = await wide.evaluate(() => document.activeElement && document.activeElement.id);
 if (nextId === 'gym-ididit-activity') failures.push('focus stayed on the filled field');
-if (/Recorded on testnet/.test(await page.locator('#ididit-status').innerText())) failures.push('prefill saved without OK');
+if (/Recorded on testnet/.test(await wide.locator('#ididit-status').innerText())) failures.push('prefill saved without OK');
+await desk.close();
 await browser.close();
 server.close();
 if (failures.length) { console.log(failures.join('\n')); process.exit(1); }
