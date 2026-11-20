@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mathematical Soundness of Constitutional Mutual Credit · Hederica</title>
+  <meta name="description" content="Formal analysis of Pre-Numeric Floor Seniority (M0), Zero-Sum Provenance Clearing, Projective Cross-Ratio Invariance, and the Two-Generation Sunset under the Sovereign Provenance Protocol." />
+  <link rel="icon" href="/icons/icon-192.png" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500&display=swap" />
+  <style>
+    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; }
+    body { margin: 0 auto; max-width: 46rem; padding: 1.25rem 1.25rem 4rem; background: var(--bg); color: var(--fg); font-family: Figtree, sans-serif; line-height: 1.55; }
+    h1, h2 { font-family: Newsreader, serif; font-weight: 500; letter-spacing: -0.02em; }
+    h1 { font-size: clamp(2.1rem, 6vw, 3.2rem); line-height: 0.98; margin: 0.2rem 0 0.6rem; }
+    h2 { font-size: 1.55rem; line-height: 1.15; margin: 2rem 0 0.5rem; border-top: 1px solid var(--line); padding-top: 1.2rem; }
+    a { color: var(--fg); }
+    a:hover { color: var(--gold); }
+    .kicker { margin: 0; font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); }
+    .muted { color: var(--muted); }
+    .formula { font-family: ui-monospace, monospace; font-size: 0.92rem; border-left: 2px solid var(--gold); padding: 0.2rem 0 0.2rem 0.8rem; overflow-x: auto; margin: 0.8rem 0; }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.92rem; }
+    th, td { text-align: left; padding: 0.55rem 0.35rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--gold); font-weight: 500; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; }
+    nav { margin: 1rem 0 1.5rem; font-size: 0.9rem; }
+    nav a { margin-right: 1rem; color: var(--muted); text-decoration: none; }
+    nav a:hover { color: var(--gold); }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/">Desk</a>
+    <a href="/foundations">Foundations (plain)</a>
+    <a href="/hederica">Hederica</a>
+    <a href="/spp">Protocol</a>
+  </nav>
+  <p class="kicker">Technical whitepaper · lgme.app & egonomicanonymous.live · hederica.com</p>
+  <h1>Architectural Foundations: Mathematical Soundness of Constitutional Mutual Credit</h1>
+  <p class="muted">A formal analysis of Pre-Numeric Floor Seniority (M₀), Zero-Sum Provenance Clearing, Projective Cross-Ratio Invariance, and the Two-Generation Sunset. Design research. Not legal advice. Not a solicitation. Not a token sale.</p>
+
+  <h2>Abstract</h2>
+  <p>Conventional fiat and debt-based monetary architectures suffer from a structural mismatch between linear human production and exponential financial compounding, leading to progressive wealth concentration, unit-of-account distortion, and systemic fragility.</p>
+  <p>This paper establishes the formal mathematical soundness of the accounting engine implemented across lgme.app and egonomicanonymous.live under the Sovereign Provenance Protocol (SPP) and the Third Seat constitutional framework. Specifically: (1) zero-sum mutual credit clearing enforces conservation of attested provenance over a pre-market survival baseline (M₀); (2) federated clearing operates as a projectively invariant cross-ratio across heterogeneous local denominations; and (3) the Two-Generation Sunset acts as a modular inversion operator (S : z ↦ −1/z) that bounds balance divergence and guarantees long-run systemic homeostasis.</p>
+
+  <h2>1. Pre-Numeric Foundations (M₀) and Floor Seniority</h2>
+  <p>Every formal accounting system requires an axiomatic boundary separating what is subject to market liquidation from what is preserved as an inviolable precondition of participation. In foundations of mathematics, a pre-numeric substrate (M₀) precedes discrete enumeration (ℕ₊) and the successor operation (S(n) = n + 1), providing the unpartitioned ground upon which discrete operations are defined without being consumed by them.</p>
+  <p>In constitutional accounting under the Third Seat framework, this boundary is formalized as Floor Seniority. Let the total economic state space Ω decompose into a protected survival manifold F₀ ≅ M₀ (essential nutrition, shelter, and foundational care) and a discrete enterprise clearing space E:</p>
+  <p class="formula">Ω = F₀ ⊕ E, &nbsp; such that ∂E ∩ F₀ = ∅</p>
+  <p><strong>Axiom 1 (Non-Liquidation of the Floor).</strong> For any participant i ∈ V and any sequence of attested market transactions τ₁, …, τₖ ∈ E, the clearing operator C is strictly restricted to E. No negative clearing balance bᵢ < 0 in E may attach a lien against, or trigger liquidation of, entitlements allocated within F₀.</p>
+  <p>By anchoring F₀ prior to market enumeration, the system eliminates existential coercion from price discovery, ensuring that every transaction recorded in E reflects voluntary reciprocal exchange rather than distress liquidation.</p>
+
+  <h2>2. Zero-Sum Conservation and Wave Cancellation in Mutual Credit</h2>
+  <p>Legacy monetary systems conflate two incompatible mathematical operations: additive linear accumulation (human labor and physical delivery, scaling as O(t)) and multiplicative exponential growth (interest-bearing credit, scaling as (1 + r)ᵗ). When both operations act on the same ledger, exponential claims inevitably outpace linear output.</p>
+  <p>The lgme.app architecture resolves this structural friction by removing multiplicative interest from the medium of exchange and defining credit strictly as a zero-sum relational ledger anchored by client-side Ed25519 cryptographic signatures and Hedera Consensus Service (HCS) timestamps.</p>
+  <p><strong>Definition 1 (Attested Provenance Ledger).</strong> Let G = (V, E, w) be a directed multigraph of economic participants V, where each directed edge e = (u → v) ∈ E represents a cryptographically attested delivery of goods or labor of agreed value w(e) > 0. The ledger state vector b(t) ∈ ℝ^|V| at consensus timestamp t is defined by the net incidence operator:</p>
+  <p class="formula">bᵢ(t) = ∑_{e∈δ⁻(i)} w(e) − ∑_{e∈δ⁺(i)} w(e)</p>
+  <p><strong>Theorem 1 (Global Conservation and Closed-Cycle Cancellation).</strong> For all consensus states t ≥ 0, the ledger satisfies strict zero-sum invariance: ∑_{i∈V} bᵢ(t) = 0. Furthermore, any closed directed cycle of attested exchanges C with uniform clearing weight Δw = min_{e∈C} w(e) reduces gross ledger exposure by k · Δw while leaving every participant’s net balance bᵢ(t) invariant.</p>
+  <p>Proof sketch: summing bᵢ(t) across all i counts every directed edge once positive and once negative, yielding zero. On a closed cycle, subtracting Δw from each edge leaves every net balance unchanged. Closed-cycle netting functions as destructive wave interference: transient local imbalances cancel through circular reciprocity rather than hardening into permanent, interest-bearing debt.</p>
+
+  <h2>3. Projective Cross-Ratio Invariance Across Federated Nodes</h2>
+  <p>A frequent failure mode of local currencies and time-banking systems is unit-of-account rigidity—either imposing a single global price ruler that distorts local realities, or allowing local inflation to sever interoperability between communities.</p>
+  <p>In projective geometry, linear and perspective distortions warp absolute lengths and simple two-point ratios, yet leave the four-point cross-ratio completely invariant:</p>
+  <p class="formula">(A, B; C, D) = (x_C − x_A)(x_D − x_B) / ((x_C − x_B)(x_D − x_A))</p>
+  <p>The lgme.app protocol applies this projective principle to federated clearing (interoperating with Komunitin and Credit Commons networks). Rather than treating a credit unit as an absolute commodity, inter-community clearing evaluates ratios of attested provenance across nodes.</p>
+  <p><strong>Theorem 2 (Scale and Denomination Invariance).</strong> Let N₁ and N₂ be two federated clearing nodes operating under independent local units of account, related by any non-degenerate projective rate transformation T(x) = (αx + β)/(γx + δ) (αδ − βγ ≠ 0) across four benchmark attested exchanges. The clearing exchange weight computed via the cross-ratio invariant</p>
+  <p class="formula">I(e₁, e₂; e₃, e₄) = (w₃ − w₁)(w₄ − w₂) / ((w₃ − w₂)(w₄ − w₁))</p>
+  <p>is strictly invariant under T. Consequently, no federated node can extract seigniorage or export monetary debasement onto neighboring communities: cross-node settlement depends exclusively on the relational proportion of verified human output.</p>
+
+  <h2>4. Modular Symmetry and the Two-Generation Sunset</h2>
+  <p>Even on a zero-sum ledger, an unbounded discrete accounting space (ℤ) permits extreme asymptotic polarization (bᵢ → +∞ for entrenched accumulators and bⱼ → −∞ for indebted heirs), eventually freezing social mobility.</p>
+  <p>In the geometry of the modular group PSL(2, ℤ), discrete translational steps are prevented from diverging to infinity by the projective inversion operator (S : z ↦ −1/z), which maps extreme magnitudes outside the unit circle back into the bounded fundamental domain.</p>
+  <p>In lgme.app, the Two-Generation Sunset implements this modular boundary condition directly on enterprise balances in E.</p>
+  <p><strong>Definition 2 (Two-Generation Decay Operator).</strong> Let T_gen denote the generational horizon (nominally 2 × 25 = 50 years). Any unspent net enterprise surplus bᵢ(t₀) > 0 aged beyond an active enterprise window τ₀ undergoes smooth constitutional attenuation Ψ(Δt) toward the civic Floor F₀, with an exact symmetric attenuation applied to non-predatory legacy enterprise deficits, preserving ∑ bᵢ(t) = 0 at every time step.</p>
+  <p class="formula">Ψ(Δt) = 1 for 0 ≤ Δt ≤ τ₀; &nbsp; cos²(π/2 · (Δt − τ₀)/(T_gen − τ₀)) for τ₀ < Δt < T_gen; &nbsp; 0 for Δt ≥ T_gen</p>
+  <p><strong>Theorem 3 (Asymptotic Boundedness and Homeostatic Circulation).</strong> Under bounded per-capita production rate |w(e)| ≤ W_max and the Two-Generation Decay Operator Ψ(Δt), every individual balance bᵢ(t) ∈ E is strictly bounded for all t ∈ [0, ∞): sup |bᵢ(t)| ≤ W_max · d_max · T_gen < ∞. All aged surpluses fold smoothly back into F₀, preventing intergenerational lock-in while preserving full incentive fidelity within the active window.</p>
+
+  <h2>5. Generating Functions, Cycle Zeta Products, and q-Series Dynamics</h2>
+  <p>To analyze discrete consensus streams algebraically, the entire temporal sequence of Hedera Consensus Service (HCS) ledger attestations is embedded into a formal operator space via matrix-valued generating functions and modular q-series.</p>
+  <p><strong>Definition 3 (Matrix Generating Function of Attested Flows).</strong> Let A(n) denote the weighted adjacency matrix of Ed25519-signed exchanges at discrete consensus epoch n. The ledger flow generating function is G(x) = ∑ A(n) xⁿ. Cumulative net account balances follow via incidence projection against the all-ones vector, and because G(x)ᵀ − G(x) is skew-symmetric, global zero-sum conservation holds as an algebraic invariant.</p>
+  <p>Closed circular trade loops are enumerated by the Ihara–Hashimoto graph zeta function ζ_G(x) = det(I − xA)⁻¹ = ∏_{[p]} (1 − x^|p|)⁻¹, where each Euler factor isolates a primitive non-backtracking exchange cycle that can be cleared to zero simultaneously without altering net participant balances.</p>
+  <p><strong>Definition 4 (Sunset q-Polynomial Kernel).</strong> Passing to the complex modular parameter q = e^{−λ + iω}, the constitutional decay schedule defines a compactly supported q-polynomial kernel K_Ψ(q) = ∑ Ψ(n) qⁿ.</p>
+  <p><strong>Theorem 4 (Pole Elimination and Analytic Stability).</strong> Under the Two-Generation Sunset, active enterprise balances evolve via algebraic multiplication by the kernel K_Ψ(q), while aged surpluses fold into the civic Floor according to the complementary residual series. Unlike compound-interest debt dynamics—whose generating series possesses a destabilizing pole inside the unit disk—the kernel K_Ψ(q) is an entire polynomial (R = ∞), eliminating exponential divergence and ensuring analytic stability across all consensus horizons.</p>
+
+  <h2>6. Summary of Formal Guarantees</h2>
+  <table>
+    <thead><tr><th>Mathematical Property</th><th>Protocol Mechanism</th><th>Economic Guarantee</th></tr></thead>
+    <tbody>
+      <tr><td>Pre-Axiomatic Ground (M₀)</td><td>Floor Seniority (F₀)</td><td>Survival essentials cannot be liquidated by market deficits.</td></tr>
+      <tr><td>Zero-Sum Homology (∑ bᵢ = 0)</td><td>Ed25519 + HCS Mutual Credit Clearing</td><td>Zero parasitic interest; closed trade cycles net to zero automatically.</td></tr>
+      <tr><td>Projective Invariance (I)</td><td>Federated Cross-Ratio Clearing</td><td>Communities interoperate fairly regardless of local unit scaling or inflation.</td></tr>
+      <tr><td>Modular Boundedness (PSL(2, ℤ))</td><td>Two-Generation Sunset (Ψ(Δt))</td><td>Eliminates runaway wealth/debt divergence across generations.</td></tr>
+      <tr><td>Entire q-Kernel (R = ∞)</td><td>Graph Zeta Clearing & K_Ψ(q) Convolution</td><td>Strips compound-interest poles and guarantees continuous civic liquidity.</td></tr>
+    </tbody>
+  </table>
+  <p>Together, these five invariants establish that lgme.app and egonomicanonymous.live operate not merely as alternative payment interfaces, but as a constitutionally bounded topological ledger: discrete human enterprise is free to innovate and clear locally, yet remains permanently anchored to human dignity (M₀) and long-run generational equilibrium.</p>
+  <p class="muted"><a href="/foundations">Plain-language foundations</a> · <a href="/">Desk</a> · <a href="/disclosures">Disclosures</a> · Not an offer. Not an investment. Floor stays senior.</p>
+  <script src="/js/site-nav.js"></script>
+</body>
+</html>
