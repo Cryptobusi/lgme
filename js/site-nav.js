@@ -1,6 +1,6 @@
 (function () {
   var EPOCH = '2';
-  var CURRENT = { 'lgme-v255': 1, 'lgme-gym-v81': 1 };
+  var CURRENT = { 'lgme-v256': 1, 'lgme-gym-v81': 1 };
   function keep(name) {
     if (!name) return true;
     if (name === 'lgme.reset.epoch' || name === 'lgme.reset.note' || name === 'lgme.device.key' || name === 'lgme.display.step' || name === 'lgme.display.easy' || name === 'lgme.ui.mode' || name === 'lgme.ui.uses' || name === 'lgme.ui.offer' || name === 'lgme.ui.shortcuts' || name === 'lgme.learn.path' || name === 'lgme-gym.seat' || name === 'lgme.health.book' || name === 'lgme.health.email' || name === 'lgme.health.plan' || name === 'lgme.health.contact' || name === 'lgme.health.contactGrants' || name === 'lgme.health.consent' || name === 'lgme.demo.member') return true;
@@ -318,7 +318,8 @@
       var limit = Math.min(moreTop, dockTop) - 8;
       if (limit < edge + 48) edge = Math.max(viewTop + pad.top, limit - 48);
       var room = Math.max(48, limit - edge);
-      menu.style.setProperty('--more-top', edge + 'px');
+      var layoutH = window.innerHeight;
+      menu.style.setProperty('--more-bottom', Math.max(8, layoutH - limit) + 'px');
       menu.style.setProperty('--more-max', room + 'px');
       menu.style.setProperty('--more-right', (viewRight + pad.right + 8) + 'px');
     };
