@@ -27,6 +27,7 @@ import { LEGACY_TOPIC, TESTNET_TOPIC, creditReport, mirrorMatch, sponsorshipRead
 import { suggestThird } from './high-value.mjs';
 import { AGE_LABEL, COLLECT_LABEL, SHARE_LABEL, healthConsent, mayCollect, mayShare, readHealthConsent, revokeShare, writeHealthConsent } from './health-safeguards.mjs';
 import { readMode, setMode } from './guide-mode.mjs';
+import { FONT_STEPS, readDisplay } from './display-fit.mjs';
 import { askDevice } from './device-ask.mjs';
 import { paintHealthAnchor } from './health-anchor.mjs';
 import { addReview, approveLimitRaise, breakSplit, intakeParts, intakeStatusText, publicIntake, requestLimitRaise, reviewHash } from './intake.mjs';
@@ -1040,6 +1041,29 @@ function healthSettings(peer) {
 
 let voiceReplySync = null;
 
+function textSettings() {
+  const percents = FONT_STEPS.map((step) => `${Math.round(step * 100)}%`);
+  const down = el('button', { type: 'button', id: 'text-down-settings', 'aria-label': 'Make text smaller' }, ['A−']);
+  const mid = el('button', { type: 'button', id: 'text-reset-settings', 'aria-label': 'Reset text size' }, ['100%']);
+  const up = el('button', { type: 'button', id: 'text-up-settings', 'aria-label': 'Make text bigger' }, ['A+']);
+  const paint = () => {
+    const state = readDisplay(localStorage);
+    mid.textContent = percents[state.step] || '100%';
+    down.disabled = state.step <= 0;
+    up.disabled = state.step >= FONT_STEPS.length - 1;
+  };
+  down.addEventListener('click', () => document.dispatchEvent(new CustomEvent('lgme-display', { detail: { step: -1 } })));
+  mid.addEventListener('click', () => document.dispatchEvent(new CustomEvent('lgme-display', { detail: { reset: true } })));
+  up.addEventListener('click', () => document.dispatchEvent(new CustomEvent('lgme-display', { detail: { step: 1 } })));
+  window.addEventListener('lgme-display-state', paint);
+  paint();
+  return el('section', { class: 'card', id: 'text-settings' }, [
+    el('h3', {}, ['Text']),
+    el('p', {}, ['Make text smaller, reset, or bigger. The size is saved on this phone and is used on the page and in the helper.']),
+    el('div', { id: 'text-settings-row', role: 'group', 'aria-label': 'Text' }, [down, mid, up])
+  ]);
+}
+
 function soundSettings() {
   const on = soundsOn(localStorage);
   const label = el('p', { id: 'sounds-label' }, [on ? 'Sounds on' : 'Sounds off']);
@@ -1151,6 +1175,7 @@ async function renderMore() {
   queueMicrotask(() => mountEmailCheck(email));
   return el('div', {}, [
     el('h2', {}, ['Settings']),
+    textSettings(),
     guideSettings(),
     incognitoSettings(),
     soundSettings(),
@@ -2327,6 +2352,7 @@ async function render() {
     view = el('p', { id: 'gym-status', role: 'status' }, ['This step did not open. Tap Join Health and try the prefilled options.']);
   }
   panel.replaceChildren(view);
+  window.dispatchEvent(new CustomEvent('lgme-view'));
   if (path === '/ididit' && view?.id === 'ididit-done') {
     const empty = [...view.querySelectorAll('input[required], textarea[required]')].find((field) => !String(field.value || '').trim());
     const shown = view.querySelector('#draft-suggestion:not([hidden])');

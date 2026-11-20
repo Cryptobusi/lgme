@@ -1,9 +1,9 @@
 (function () {
   var EPOCH = '2';
-  var CURRENT = { 'lgme-v256': 1, 'lgme-gym-v81': 1 };
+  var CURRENT = { 'lgme-v257': 1, 'lgme-gym-v81': 1 };
   function keep(name) {
     if (!name) return true;
-    if (name === 'lgme.reset.epoch' || name === 'lgme.reset.note' || name === 'lgme.device.key' || name === 'lgme.display.step' || name === 'lgme.display.easy' || name === 'lgme.ui.mode' || name === 'lgme.ui.uses' || name === 'lgme.ui.offer' || name === 'lgme.ui.shortcuts' || name === 'lgme.learn.path' || name === 'lgme-gym.seat' || name === 'lgme.health.book' || name === 'lgme.health.email' || name === 'lgme.health.plan' || name === 'lgme.health.contact' || name === 'lgme.health.contactGrants' || name === 'lgme.health.consent' || name === 'lgme.demo.member') return true;
+    if (name === 'lgme.reset.epoch' || name === 'lgme.reset.note' || name === 'lgme.device.key' || name === 'lgme.display.step' || name === 'lgme.display.easy' || name === 'lgme.text.tip' || name === 'lgme.ui.mode' || name === 'lgme.ui.uses' || name === 'lgme.ui.offer' || name === 'lgme.ui.shortcuts' || name === 'lgme.learn.path' || name === 'lgme-gym.seat' || name === 'lgme.health.book' || name === 'lgme.health.email' || name === 'lgme.health.plan' || name === 'lgme.health.contact' || name === 'lgme.health.contactGrants' || name === 'lgme.health.consent' || name === 'lgme.demo.member') return true;
     return name.indexOf('lgme-sim:peer:') === 0 || name.indexOf('lgme.health.page:') === 0;
   }
   function arm() {
@@ -102,15 +102,53 @@
     var chip = document.createElement('span');
     chip.id = 'font-chip';
     chip.setAttribute('role', 'group');
-    chip.setAttribute('aria-label', 'Text size');
-    chip.appendChild(fitButton('font-down', 'A−', 'Smaller text', { step: -1 }));
-    chip.appendChild(fitButton('font-reset', 'A', 'Default text', { reset: true }));
-    chip.appendChild(fitButton('font-up', 'A+', 'Larger text', { step: 1 }));
+    chip.setAttribute('aria-label', 'Text');
+    var name = document.createElement('span');
+    name.className = 'text-name';
+    name.textContent = 'Text';
+    var down = fitButton('font-down', 'A−', 'Make text smaller', { step: -1 });
+    var reset = fitButton('font-reset', '100%', 'Reset text size', { reset: true });
+    var up = fitButton('font-up', 'A+', 'Make text bigger', { step: 1 });
+    var tip = document.createElement('span');
+    tip.id = 'text-tip';
+    tip.setAttribute('role', 'tooltip');
+    tip.textContent = 'Make text smaller / reset / bigger; saved on this phone';
+    var seenTip = false;
+    try { seenTip = localStorage.getItem('lgme.text.tip') === '1'; } catch (error) { seenTip = false; }
+    tip.hidden = seenTip;
+    var percents = ['85%', '100%', '115%', '130%', '150%'];
+    var paintText = function (step) {
+      var index = 1;
+      if (Number.isInteger(step)) index = step;
+      else {
+        try {
+          var saved = Number(localStorage.getItem('lgme.display.step'));
+          if (Number.isInteger(saved)) index = saved;
+        } catch (error) { index = 1; }
+      }
+      if (index < 0 || index > 4) index = 1;
+      reset.textContent = percents[index];
+      down.disabled = index <= 0;
+      up.disabled = index >= 4;
+      down.setAttribute('aria-disabled', down.disabled ? 'true' : 'false');
+      up.setAttribute('aria-disabled', up.disabled ? 'true' : 'false');
+    };
+    var hideTip = function () {
+      tip.hidden = true;
+      try { localStorage.setItem('lgme.text.tip', '1'); } catch (error) { /* the tip still closes */ }
+    };
+    [down, reset, up].forEach(function (button) { button.addEventListener('click', hideTip); });
+    chip.appendChild(name);
+    chip.appendChild(down);
+    chip.appendChild(reset);
+    chip.appendChild(up);
+    chip.appendChild(tip);
     var easy = document.createElement('button');
     easy.type = 'button';
     easy.id = 'easy-read';
     easy.setAttribute('aria-label', 'Easy read');
     easy.setAttribute('aria-pressed', 'false');
+    easy.setAttribute('data-explain', 'Easy read makes type larger and the contrast stronger. Tap again to turn it off.');
     easy.textContent = 'Easy';
     var slot = bar.querySelector('#ai-head');
     if (slot) {
@@ -120,16 +158,20 @@
       bar.appendChild(chip);
       bar.appendChild(easy);
     }
+    paintText();
+    var placeText = function () {
+      var settings = document.getElementById('text-settings');
+      chip.hidden = !!(settings && settings.getClientRects().length);
+    };
     document.addEventListener('lgme-display-state', function (event) {
       var on = !!(event.detail && event.detail.easy);
       easy.setAttribute('aria-pressed', on ? 'true' : 'false');
       easy.textContent = on ? 'Standard' : 'Easy';
-      var menuEasy = document.getElementById('easy-read-menu');
-      if (menuEasy) {
-        menuEasy.setAttribute('aria-pressed', on ? 'true' : 'false');
-        menuEasy.textContent = on ? 'Standard text' : 'Easy read';
-      }
+      paintText(event.detail && event.detail.step);
+      placeText();
     });
+    window.addEventListener('lgme-view', placeText);
+    window.addEventListener('hashchange', placeText);
   }
   document.documentElement.classList.add('has-site-nav');
   document.body.classList.add('has-site-nav');
@@ -260,35 +302,10 @@
       });
     }
     paintTape();
-    if (!menu.querySelector('#font-steps')) {
-      var steps = document.createElement('div');
-      steps.id = 'font-steps';
-      steps.setAttribute('role', 'group');
-      steps.setAttribute('aria-label', 'Text size');
-      [['font-down-menu', 'A−', 'Smaller text', -1], ['font-reset-menu', 'A', 'Default text', 0], ['font-up-menu', 'A+', 'Larger text', 1]].forEach(function (spec) {
-        var control = document.createElement('button');
-        control.type = 'button';
-        control.id = spec[0];
-        control.textContent = spec[1];
-        control.setAttribute('aria-label', spec[2]);
-        control.addEventListener('click', function () {
-          document.dispatchEvent(new CustomEvent('lgme-display', { detail: spec[3] === 0 ? { reset: true } : { step: spec[3] } }));
-        });
-        steps.appendChild(control);
-      });
-      menu.appendChild(steps);
-    }
-    if (!menu.querySelector('#easy-read-menu')) {
-      var easyMenu = document.createElement('button');
-      easyMenu.type = 'button';
-      easyMenu.id = 'easy-read-menu';
-      easyMenu.setAttribute('aria-pressed', 'false');
-      easyMenu.textContent = 'Easy read';
-      easyMenu.addEventListener('click', function () {
-        document.dispatchEvent(new CustomEvent('lgme-display', { detail: { easy: true } }));
-      });
-      menu.appendChild(easyMenu);
-    }
+    var oldSteps = menu.querySelector('#font-steps');
+    if (oldSteps) oldSteps.remove();
+    var oldEasy = menu.querySelector('#easy-read-menu');
+    if (oldEasy) oldEasy.remove();
     if (menu.parentElement !== document.body) document.body.appendChild(menu);
     var safePad = function () {
       var probe = document.createElement('div');

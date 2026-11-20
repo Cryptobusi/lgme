@@ -128,8 +128,6 @@ html[data-screen="full"] #ai-dock.is-open { height: 50vh; height: 50dvh; max-hei
 #ai-dock:not(.is-open):not(.has-field) #ai-mic,
 #ai-dock:not(.is-open):not(.has-field) #ai-speaking,
 #ai-dock:not(.is-open):not(.has-field) #ai-stop,
-#ai-dock:not(.is-open):not(.has-field) #ai-smaller,
-#ai-dock:not(.is-open):not(.has-field) #ai-larger,
 #ai-dock:not(.is-open):not(.has-field) .ai-setup-link,
 #ai-dock:not(.is-open):not(.has-field) #ai-self-test,
 #ai-dock:not(.is-open):not(.has-field) #ai-test-line,
@@ -217,8 +215,8 @@ html.is-one-tab body:has(nav[aria-label="Gym"]) #ai-dock { bottom: 0; }
 #ai-do-all { margin: 0.2rem 0.35rem 0.45rem; }
 #ai-explain-steps { margin: 0.2rem 0.5rem 0.45rem; padding: 0; list-style: none; font-size: 14px; line-height: 1.4; }
 #ai-explain-steps li { margin: 0.28rem 0; }
-#ai-dock.is-compact #ai-explain-steps { font-size: 13px; }
-#ai-dock.is-tall #ai-explain-steps { font-size: 16px; }
+#ai-dock.is-compact #ai-explain-steps { font-size: 0.92em; }
+#ai-dock.is-tall #ai-explain-steps { font-size: 1.08em; }
 .ai-yesno { display: inline-flex; gap: 0.25rem; flex: 0 0 auto; }
 #ai-dock .ai-yes, #ai-dock .ai-no { width: 44px; min-width: 44px; height: 44px; min-height: 44px; padding: 0; font-size: 18px; line-height: 1; }
 #ai-dock .ai-yes { border-radius: 999px; background: #146c43; color: #fff; border-color: #146c43; }
@@ -394,8 +392,8 @@ html[data-screen="simple"] body { font-size: 18px; }
 #ai-incognito-review { margin: 0.25rem 0; }
 #ai-mic, #ai-speaking { font-weight: 700; color: #F97316; }
 #ai-mic[hidden], #ai-speaking[hidden], #ai-stop[hidden] { display: none; }
-#ai-dock.is-compact #ai-log, #ai-dock.is-compact .ai-suggest-line, #ai-dock.is-compact #ai-steps { font-size: 13px; }
-#ai-dock.is-tall #ai-log, #ai-dock.is-tall .ai-suggest-line, #ai-dock.is-tall #ai-steps { font-size: 16px; }
+#ai-dock.is-compact #ai-log, #ai-dock.is-compact .ai-suggest-line, #ai-dock.is-compact #ai-steps { font-size: 0.92em; }
+#ai-dock.is-tall #ai-log, #ai-dock.is-tall .ai-suggest-line, #ai-dock.is-tall #ai-steps { font-size: 1.08em; }
 #ai-dock.is-voice #ai-log, #ai-dock.is-voice #ai-steps { line-height: 1.4; }
 #speak-ask { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; min-height: 44px; min-width: 44px; padding: 0 0.55rem; border-radius: 999px; border: 1px solid #c6a15b; background: #6b7280; color: #f4f1e8; font: inherit; font-size: 13px; line-height: 1; font-weight: 700; }
 #speak-ask.is-wait { animation: lgme-status-blink 1.5s ease-in-out infinite; }
@@ -604,15 +602,23 @@ html[data-density="compact"] tr,
 html[data-density="compact"] th,
 html[data-density="compact"] td { display: block; width: 100%; max-width: 100%; box-sizing: border-box; }
 html[data-density="compact"] thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-#font-chip { display: inline-flex; align-items: center; gap: 0; }
+#font-chip { position: relative; display: inline-flex; align-items: center; gap: 0; }
+#font-chip .text-name { font-size: 11px; font-weight: 700; padding: 0 0.15rem; }
+#font-chip button:disabled { opacity: 0.4; }
+#text-tip { position: absolute; top: calc(100% + 4px); left: 0; z-index: 80; width: max-content; max-width: 16rem; padding: 0.25rem 0.45rem; border: 1px solid #c6a15b; border-radius: 8px; background: #151a15; color: #f4f1e8; font-size: 12px; line-height: 1.3; white-space: normal; }
+#text-tip[hidden] { display: none; }
 #site-nav #font-chip button,
 #site-nav #easy-read {
   width: auto;
-  min-width: 40px;
-  font-size: 14px;
+  min-width: 32px;
+  height: 22px;
+  min-height: 22px;
+  padding: 0 0.25rem;
+  font-size: 12px;
   font-weight: 700;
 }
-#one-menu #font-steps { display: flex; gap: 0.25rem; }
+#text-settings-row { display: flex; gap: 0.35rem; align-items: center; }
+#text-settings-row button { min-width: 44px; min-height: 44px; }
 html.is-easy { --fg: #14110c; --muted: #2c261e; --bg: #fffdf8; --card: #fff; --line: #5c4a22; }
 html.is-easy body { font-size: max(18px, 1.125rem) !important; color: #14110c; }
 html.is-easy.tape body { color: #14110c; }

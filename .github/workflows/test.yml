@@ -57,6 +57,8 @@ jobs:
         timeout-minutes: 10
       - run: node test/notice-slim-ui.mjs
         timeout-minutes: 10
+      - run: node test/text-size-ui.mjs
+        timeout-minutes: 10
       - run: node test/category-actions-ui.mjs
         timeout-minutes: 10
       - run: node test/my-version-ui.mjs

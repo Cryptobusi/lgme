@@ -2,17 +2,6 @@
   var root = document.documentElement;
   var bar = document.getElementById('testnet-notice');
   if (!bar) return;
-  var sizes = ['compact', 'normal', 'tall'];
-  function size() {
-    if (root.classList.contains('top-compact')) return 'compact';
-    if (root.classList.contains('top-tall')) return 'tall';
-    return 'normal';
-  }
-  function setSize(next) {
-    root.classList.remove('top-compact', 'top-normal', 'top-tall');
-    root.classList.add('top-' + next);
-    try { localStorage.setItem('lgme.top.size', next); } catch (error) { /* the height still changes */ }
-  }
   function slim(on) {
     root.classList.toggle('notice-slim', on);
     var close = document.getElementById('notice-x');
@@ -25,14 +14,6 @@
   });
   bar.addEventListener('click', function () {
     if (root.classList.contains('notice-slim')) slim(false);
-  });
-  document.getElementById('notice-smaller').addEventListener('click', function (event) {
-    event.stopPropagation();
-    setSize(sizes[Math.max(0, sizes.indexOf(size()) - 1)]);
-  });
-  document.getElementById('notice-larger').addEventListener('click', function (event) {
-    event.stopPropagation();
-    setSize(sizes[Math.min(2, sizes.indexOf(size()) + 1)]);
   });
   if (root.classList.contains('notice-slim')) return;
   var done = false;

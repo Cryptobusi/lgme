@@ -209,14 +209,13 @@ await page.evaluate(() => {
   scroller.dispatchEvent(new Event('scroll'));
 });
 if (await page.locator('#ai-more').isHidden()) failures.push('more indicator missing');
-const before = await page.locator('#ai-dock').evaluate((node) => node.getBoundingClientRect().height);
-await page.locator('#ai-controls').click();
-await page.locator('#ai-larger').click();
+const before = await page.evaluate(() => getComputedStyle(document.body).fontSize);
+await page.locator('#font-up').click();
 await page.reload({ waitUntil: 'domcontentloaded' });
-const size = await page.evaluate(() => localStorage.getItem('lgme.dock.size'));
-if (size !== 'tall') failures.push(`size not remembered ${size}`);
-const after = await page.locator('#ai-dock').evaluate((node) => node.getBoundingClientRect().height);
-if (!(after > before - 5)) failures.push(`resize ${before} to ${after}`);
+const step = await page.evaluate(() => localStorage.getItem('lgme.display.step'));
+if (step !== '2') failures.push(`size not remembered ${step}`);
+const after = await page.evaluate(() => getComputedStyle(document.body).fontSize);
+if (!(parseFloat(after) > parseFloat(before) - 0.1)) failures.push(`resize ${before} to ${after}`);
 const ai = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36' });
 await ai.addInitScript(() => {
   localStorage.setItem('lgme.reset.epoch', '2');
