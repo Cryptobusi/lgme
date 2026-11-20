@@ -17,8 +17,19 @@ function fileFor(pathname) {
   if (existsSync(full + '.html')) return full + '.html';
   return '';
 }
-const server = createServer((req, res) => {
+const server = createServer(async (req, res) => {
   const url = new URL(req.url, 'http://127.0.0.1');
+  if (url.pathname === '/api/ai/ask') {
+    let raw = '';
+    for await (const chunk of req) raw += chunk;
+    const body = JSON.parse(raw || '{}');
+    const text = /creo/i.test(body.question || '') ? 'Creo is value you create.' : '';
+    res.writeHead(200, { 'content-type': 'application/json' });
+    res.end(JSON.stringify(text
+      ? { ok: true, text, label: 'Gemini 2.5 Flash Lite', model: 'google/gemini-2.5-flash-lite' }
+      : { ok: false, fallback: true, reason: 'skip' }));
+    return;
+  }
   if (url.pathname.startsWith('/api/')) { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ ok: true, proposals: [], offers: [] })); return; }
   const path = fileFor(url.pathname);
   if (!path) { res.writeHead(404); res.end('missing'); return; }
@@ -55,6 +66,13 @@ const chips = await page.locator('#ai-try .ai-try-chip').evaluateAll((nodes) => 
 }));
 if (chips.length < 2) failures.push(`try chips ${chips.length}`);
 if (chips.length >= 2 && chips[1].left < chips[0].right - 1 && Math.abs(chips[1].top - chips[0].top) < 4) failures.push(`chips overlap ${JSON.stringify(chips)}`);
+if (!(await page.locator('#ai-dock').evaluate((node) => node.classList.contains('is-open')))) await page.locator('#ai-expand').click();
+await page.locator('#ai-self-test').click();
+await page.waitForFunction(() => /AI test passed/.test(document.getElementById('ai-test-line')?.textContent || ''));
+const status = await page.locator('#ai-test-line').innerText();
+if (!/Gemini 2.5 Flash Lite/.test(status) || !/ET$/.test(status.trim())) failures.push(`test line ${status}`);
+const named = await page.locator('#ai-switch').innerText();
+if (named !== 'AI on · Gemini 2.5 Flash Lite') failures.push(`source chip ${named}`);
 await browser.close();
 server.close();
 if (failures.length) { console.log(failures.join('\n')); process.exit(1); }

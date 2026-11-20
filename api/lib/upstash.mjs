@@ -23,6 +23,11 @@ export function upstashStore(url, token, fetchImpl = globalThis.fetch) {
     },
     async del(key) {
       await command(['DEL', key]);
+    },
+    async incr(key, ttlSec = 172800) {
+      const count = Number(await command(['INCR', key])) || 0;
+      if (count === 1) await command(['EXPIRE', key, String(ttlSec)]);
+      return count;
     }
   };
 }

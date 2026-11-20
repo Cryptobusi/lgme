@@ -131,6 +131,8 @@ html[data-screen="full"] #ai-dock.is-open { height: 50vh; height: 50dvh; max-hei
 #ai-dock:not(.is-open):not(.has-field) #ai-smaller,
 #ai-dock:not(.is-open):not(.has-field) #ai-larger,
 #ai-dock:not(.is-open):not(.has-field) .ai-setup-link,
+#ai-dock:not(.is-open):not(.has-field) #ai-self-test,
+#ai-dock:not(.is-open):not(.has-field) #ai-test-line,
 #ai-dock:not(.is-open):not(.has-field) #ai-flag,
 #ai-dock:not(.is-open):not(.has-field) #ai-incognito-review { display: none; }
 .new-badge { position: absolute; top: 0.15rem; right: 0.2rem; min-width: 1.35rem; height: 1.35rem; padding: 0 0.2rem; border-radius: 999px; background: #1a1408; color: #fff; font-size: 0.75rem; font-weight: 700; line-height: 1.35rem; text-align: center; visibility: hidden; }
@@ -429,7 +431,8 @@ html[data-theme="paper"] #ai-dock #ai-confirm, html[data-screen="simple"] #ai-do
 #ai-dock .ai-top button,
 #ai-dock .ai-top .ai-setup-link,
 #ai-dock #ai-voice-mode,
-#ai-dock #ai-status {
+#ai-dock #ai-status,
+#ai-dock #ai-test-line {
   flex: 0 0 auto;
   min-height: 22px;
   height: 22px;
@@ -439,6 +442,7 @@ html[data-theme="paper"] #ai-dock #ai-confirm, html[data-screen="simple"] #ai-do
   line-height: 22px;
   white-space: nowrap;
 }
+#ai-dock #ai-test-line { height: auto; white-space: normal; flex-basis: 100%; }
 #ai-status { display: inline-flex; align-items: center; gap: 0.35rem; overflow: visible; font-weight: 700; }
 #ai-status span { display: inline-flex; align-items: center; gap: 0.15rem; flex: 0 0 auto; }
 #ai-status i { width: 0.45rem; height: 0.45rem; border-radius: 50%; background: #dc2626; }
