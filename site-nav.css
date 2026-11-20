@@ -279,11 +279,26 @@ html.is-easy .dash-card :is(h1, h2, h3, h4, strong, p) {
 }
 #ai-overview, #ai-overview-steps, #ai-next, #ai-promote, #ai-shortcut-offer { margin: 0.2rem 0; color: #f4f1e8; font-size: 14px; line-height: 1.35; }
 #ai-next, #ai-promote, #ai-shortcut-offer { border: 1px solid #c6a15b; border-radius: 10px; padding: 0.35rem 0.5rem; }
-#ai-path { display: flex; flex: 0 0 auto; align-items: center; gap: 0.25rem; margin: 0 0 0.1rem; height: 22px; min-height: 22px; overflow-x: auto; color: #f4f1e8; }
+#ai-path { display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; gap: 0.25rem; margin: 0 0 0.1rem; height: 22px; min-height: 22px; overflow-x: auto; color: #f4f1e8; }
 #ai-path[hidden], html[data-guide="manual"] #ai-path, #ai-dock.is-manual #ai-path { display: none; }
+#ai-path-actions { display: inline-flex; align-items: center; gap: 0.25rem; margin-left: auto; flex: 0 0 auto; }
 #ai-dock #ai-path-line,
 #ai-dock #ai-path button { flex: 0 0 auto; height: 22px; min-height: 22px; min-width: max-content; padding: 0 0.4rem; font-size: 12px; line-height: 22px; white-space: nowrap; }
 #ai-path-line { flex: 1 1 auto; min-width: 0; font-weight: 700; }
+#ai-prefill { display: none; align-items: center; gap: 0.25rem; margin: 0; min-height: 32px; }
+#ai-prefill-row { display: flex; flex: 1 1 auto; gap: 0.35rem; min-width: 0; overflow-x: auto; }
+#ai-prefill-row button, #ai-prefill-open { flex: 0 0 auto; height: 32px; min-height: 32px; min-width: 32px; padding: 0 0.55rem; font-size: 13px; line-height: 32px; }
+#ai-dock.is-open.is-key-page,
+#ai-dock.is-open.is-key-prompt { height: auto; max-height: none; }
+#ai-dock.is-key-page > :not(#ai-prefill) { display: none !important; }
+#ai-dock.is-key-page #ai-prefill { display: flex; }
+#ai-dock.is-key-prompt #ai-scroll,
+#ai-dock.is-key-prompt #ai-path,
+#ai-dock.is-key-prompt #ai-chip-row,
+#ai-dock.is-key-prompt #ai-flag,
+#ai-dock.is-key-prompt #ai-incognito-notice,
+#ai-dock.is-key-prompt #app-reset-note,
+#ai-dock.is-key-prompt #ai-prefill { display: none !important; }
 #ai-dock.is-open .ai-compose { flex: 0 0 auto; background: #0c100c; }
 .is-ask-focus { outline: 3px solid #F97316; outline-offset: 2px; }
 html[data-guide="manual"] #ai-next,

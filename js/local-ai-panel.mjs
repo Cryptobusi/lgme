@@ -1,4 +1,4 @@
-import { applyFieldOption, fieldMeta, lastFieldValue, nextHelpField, rememberFieldValue, safeHelpLine } from './field-help.mjs';
+import { applyFieldOption, fieldMeta, lastFieldValue, nextFormTarget, rememberFieldValue, safeHelpLine } from './field-help.mjs';
 import { controlText, pageOverview } from './control-help.mjs';
 import { actionIdFrom, dismissOffer, explainOnTap, fieldGuideWithoutModel, guideCards, incognitoBlocksUses, nextStep, noteUse, pinShortcuts, promotion, readMode, readUses as readGuideUses, setMode, shortcutOffer, SHORTCUTS } from './guide-mode.mjs';
 import { answerOrFallback, localAnswer } from './local-qa.mjs';
@@ -35,6 +35,13 @@ export function dockKeyboardOffset(innerHeight, viewport) {
   const offsetTop = Number(viewport?.offsetTop) || 0;
   if (!Number.isFinite(height)) return 0;
   return Math.max(0, Math.round(Number(innerHeight) - height - offsetTop));
+}
+
+export function keyboardOpen(innerHeight, viewportHeight) {
+  const inner = Number(innerHeight);
+  const view = Number(viewportHeight);
+  if (!Number.isFinite(inner) || inner <= 0 || !Number.isFinite(view)) return false;
+  return view < inner * 0.75;
 }
 
 function signedIn() {
@@ -355,7 +362,7 @@ function mount() {
   const dock = document.createElement('section');
   dock.id = 'ai-dock';
   dock.setAttribute('aria-label', 'On-device AI');
-  dock.innerHTML = '<p class="ai-top"><span id="ai-status">AI off · Voice · Speak+show</span><button type="button" id="ai-switch" class="ai-pill" role="switch" aria-checked="true" aria-live="polite" aria-label="AI on or off">AI off</button><button type="button" id="guide-mode" class="ai-pill" aria-pressed="true">Guided</button><button type="button" id="ai-voice" class="ai-detail is-off" aria-pressed="false" aria-label="Voice off">Voice</button><button type="button" id="ai-voice-reply" class="ai-detail" aria-label="Voice reply, Speak and show">Reply</button><span id="ai-voice-mode" class="ai-detail">Speak+show</span><button type="button" id="ai-listen" class="ai-detail" aria-pressed="false" aria-label="Listen again after speaking">Listen</button><span id="ai-mic" hidden>Listening</span><span id="ai-speaking" hidden>Speaking</span><button type="button" id="ai-stop" hidden>Stop</button><button type="button" id="ai-smaller" class="ai-detail" aria-label="Smaller text">A-</button><button type="button" id="ai-larger" class="ai-detail" aria-label="Bigger text">A+</button><a class="ai-setup-link ai-detail" href="/ai-setup">Help</a><button type="button" id="ai-incognito" class="ai-detail" aria-pressed="false">Incognito</button><button type="button" id="ai-incognito-count" class="ai-detail">Pending 0</button><button type="button" id="ai-expand" aria-expanded="true">Close</button></p><p id="ai-incognito-notice" hidden>Incognito — stays on this phone</p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><p id="ai-path"><span id="ai-path-line"></span><button type="button" id="ai-path-skip">Skip step</button><button type="button" id="ai-path-reset">Reset</button></p><div id="ai-chip-row"><div id="ai-chips" class="ai-chips"></div><span id="ai-chip-hint" aria-hidden="true">›</span></div><div id="ai-scroll"><div id="ai-incognito-review" hidden></div><p id="ai-overview"></p><ol id="ai-overview-steps"></ol><section id="ai-next"><p class="ai-kicker">Next step</p><button type="button" id="ai-next-primary"></button><div id="ai-next-alts"></div></section><section id="ai-promote"><p id="ai-promote-line"></p></section><section id="ai-shortcut-offer" hidden></section><div id="ai-log-frame"><pre id="ai-log"></pre><ol id="ai-explain-steps"></ol><div id="ai-suggestions"></div></div><p id="ai-more" hidden>More</p></div><div class="ai-compose"><div id="ai-input-frame"><textarea id="ai-ask" rows="1" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><p id="ai-send-state" class="is-held" role="status" aria-label="Not sent. Held on this phone."><i></i></p><p class="ai-actions"><button type="button" id="ai-controls" aria-expanded="false" aria-label="Show or hide controls">Controls</button><button type="button" id="speak-ask" role="switch" aria-checked="false" aria-label="Speak reply?">Speak</button><button type="button" id="ai-mic-btn" class="is-off" data-state="off" aria-pressed="false" aria-label="Microphone off"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg></button><button type="button" id="ai-send" aria-label="Send">Send</button><button type="button" id="ai-accept" aria-label="Hint">Hint</button><button type="button" id="ai-confirm" aria-label="Confirm">OK</button></p></div></div>';
+  dock.innerHTML = '<p class="ai-top"><span id="ai-status">AI off · Voice · Speak+show</span><button type="button" id="ai-switch" class="ai-pill" role="switch" aria-checked="true" aria-live="polite" aria-label="AI on or off">AI off</button><button type="button" id="guide-mode" class="ai-pill" aria-pressed="true">Guided</button><button type="button" id="ai-voice" class="ai-detail is-off" aria-pressed="false" aria-label="Voice off">Voice</button><button type="button" id="ai-voice-reply" class="ai-detail" aria-label="Voice reply, Speak and show">Reply</button><span id="ai-voice-mode" class="ai-detail">Speak+show</span><button type="button" id="ai-listen" class="ai-detail" aria-pressed="false" aria-label="Listen again after speaking">Listen</button><span id="ai-mic" hidden>Listening</span><span id="ai-speaking" hidden>Speaking</span><button type="button" id="ai-stop" hidden>Stop</button><button type="button" id="ai-smaller" class="ai-detail" aria-label="Smaller text">A-</button><button type="button" id="ai-larger" class="ai-detail" aria-label="Bigger text">A+</button><a class="ai-setup-link ai-detail" href="/ai-setup">Help</a><button type="button" id="ai-incognito" class="ai-detail" aria-pressed="false">Incognito</button><button type="button" id="ai-incognito-count" class="ai-detail">Pending 0</button><button type="button" id="ai-expand" aria-expanded="true">Close</button></p><p id="ai-incognito-notice" hidden>Incognito — stays on this phone</p><p id="app-reset-note" hidden>App updated and reset</p><p id="ai-flag" hidden></p><p id="ai-path"><span id="ai-path-line"></span><span id="ai-path-actions"><button type="button" id="ai-path-reset">Reset</button><button type="button" id="ai-path-skip">Next step</button></span></p><div id="ai-chip-row"><div id="ai-chips" class="ai-chips"></div><span id="ai-chip-hint" aria-hidden="true">›</span></div><div id="ai-scroll"><div id="ai-incognito-review" hidden></div><p id="ai-overview"></p><ol id="ai-overview-steps"></ol><section id="ai-next"><p class="ai-kicker">Next step</p><button type="button" id="ai-next-primary"></button><div id="ai-next-alts"></div></section><section id="ai-promote"><p id="ai-promote-line"></p></section><section id="ai-shortcut-offer" hidden></section><div id="ai-log-frame"><pre id="ai-log"></pre><ol id="ai-explain-steps"></ol><div id="ai-suggestions"></div></div><p id="ai-more" hidden>More</p></div><div class="ai-compose"><div id="ai-input-frame"><textarea id="ai-ask" rows="1" enterkeyhint="send" autocomplete="off" aria-label="Ask the helper"></textarea><p id="ai-send-state" class="is-held" role="status" aria-label="Not sent. Held on this phone."><i></i></p><p class="ai-actions"><button type="button" id="ai-controls" aria-expanded="false" aria-label="Show or hide controls">Controls</button><button type="button" id="speak-ask" role="switch" aria-checked="false" aria-label="Speak reply?">Speak</button><button type="button" id="ai-mic-btn" class="is-off" data-state="off" aria-pressed="false" aria-label="Microphone off"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg></button><button type="button" id="ai-send" aria-label="Send">Send</button><button type="button" id="ai-accept" aria-label="Hint">Hint</button><button type="button" id="ai-confirm" aria-label="Confirm">OK</button></p></div></div><div id="ai-prefill" hidden><div id="ai-prefill-row"></div><button type="button" id="ai-prefill-open">AI</button></div>';
   dock.classList.add('is-open', 'is-normal');
   try { document.documentElement.dataset.screen = activeScreen(localStorage); } catch { /* everyday height stays */ }
   try {
@@ -366,14 +373,76 @@ function mount() {
     }
   } catch { /* the bar still shows */ }
   document.body.append(dock);
+  let keepPanel = false;
+  const pageField = (el) => Boolean(el && fieldMeta(el));
+  const paintPrefill = (field) => {
+    const row = dock.querySelector('#ai-prefill-row');
+    if (!row) return;
+    row.replaceChildren();
+    const meta = fieldMeta(field);
+    const labels = meta ? meta.options : [];
+    for (const label of labels) {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'ai-prefill-chip';
+      chip.textContent = label;
+      chip.addEventListener('pointerdown', (event) => event.preventDefault());
+      chip.addEventListener('click', () => {
+        applyFieldOption(field, label);
+        advanceField(field);
+      });
+      row.append(chip);
+    }
+  };
+  const advanceField = (field) => {
+    const next = nextFormTarget(field);
+    if (!next) {
+      field.focus();
+      return field;
+    }
+    next.scrollIntoView({ block: 'center' });
+    next.focus();
+    if (next.classList) next.classList.add('is-ask-focus');
+    if (fieldMeta(next)) paintPrefill(next);
+    return next;
+  };
+  const syncKeyboard = () => {
+    const view = window.visualViewport;
+    const open = keyboardOpen(window.innerHeight, view ? view.height : window.innerHeight);
+    const active = document.activeElement;
+    const onPage = pageField(active);
+    const onPrompt = active && active.id === 'ai-ask';
+    if (!open || (!onPage && !onPrompt)) {
+      if (!open) keepPanel = false;
+      dock.classList.remove('is-key-page', 'is-key-prompt');
+      return;
+    }
+    if (onPage && !keepPanel) {
+      dock.classList.add('is-key-page');
+      dock.classList.remove('is-key-prompt');
+      paintPrefill(active);
+      active.scrollIntoView({ block: 'center' });
+      return;
+    }
+    if (onPrompt) {
+      dock.classList.add('is-key-prompt');
+      dock.classList.remove('is-key-page');
+    }
+  };
   const placeDock = () => {
     const overlap = dockKeyboardOffset(window.innerHeight, window.visualViewport);
     dock.style.bottom = overlap ? `${overlap}px` : '';
+    syncKeyboard();
   };
   placeDock();
   window.visualViewport?.addEventListener('resize', placeDock);
   window.visualViewport?.addEventListener('scroll', placeDock);
   window.addEventListener('resize', placeDock);
+  dock.querySelector('#ai-prefill-open').addEventListener('click', () => {
+    keepPanel = true;
+    dock.classList.remove('is-key-page');
+    dock.classList.add('is-open');
+  });
   const ask = dock.querySelector('#ai-ask');
   const chips = dock.querySelector('#ai-chips');
   const showOverview = (line, steps = []) => {
@@ -620,9 +689,7 @@ function mount() {
       yes.addEventListener('click', () => {
         if (field) {
           applyFieldOption(field, label);
-          const next = nextHelpField(field);
-          if (next) next.focus();
-          else field.focus();
+          advanceField(field);
           return;
         }
         ask.value = label;
@@ -667,9 +734,7 @@ function mount() {
         chip.addEventListener('pointerdown', (event) => { event.preventDefault(); });
         chip.addEventListener('click', () => {
           applyFieldOption(field, label === 'Use my last value' ? last : label);
-          const next = nextHelpField(field);
-          if (next) next.focus();
-          else field.focus();
+          advanceField(field);
         });
       } else {
         chip.addEventListener('click', () => {
@@ -1024,6 +1089,8 @@ function mount() {
     markOverflow();
   };
   const sendOrStage = () => {
+    dock.classList.remove('is-key-prompt');
+    keepPanel = false;
     const text = ask.value.trim();
     const picked = stepPick(text);
     if (picked && stageByNumber(picked)) return;
@@ -1091,8 +1158,8 @@ function mount() {
     showPathChips();
   });
   showPathChips();
-  document.addEventListener('focusin', (event) => { showField(event.target); });
-  document.addEventListener('focusout', () => { setTimeout(clearField, 0); });
+  document.addEventListener('focusin', (event) => { showField(event.target); syncKeyboard(); });
+  document.addEventListener('focusout', () => { setTimeout(() => { clearField(); syncKeyboard(); }, 0); });
   document.addEventListener('change', (event) => {
     const field = event.target;
     if (!field || !field.id || !fieldMeta(field)) return;

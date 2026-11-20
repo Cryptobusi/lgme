@@ -169,6 +169,27 @@ export function nextHelpField(field, root = document) {
   return list[index + 1] || null;
 }
 
+export function nextFormTarget(field) {
+  if (!field || typeof field.closest !== 'function') return null;
+  const scope = field.closest('form') || field.closest('section') || (typeof document !== 'undefined' ? document : null);
+  if (!scope || typeof scope.querySelectorAll !== 'function') return null;
+  const fields = [...scope.querySelectorAll('input, textarea, select')].filter((el) => {
+    if (el.disabled || el.type === 'hidden' || el.readOnly) return false;
+    if (el.closest && el.closest('#ai-dock, #field-hint')) return false;
+    return Boolean(fieldSpec(el));
+  });
+  const later = fields.slice(Math.max(0, fields.indexOf(field) + 1));
+  const empty = later.find((el) => el.type !== 'checkbox' && el.type !== 'radio' && !String(el.value || '').trim());
+  if (empty) return empty;
+  if (later[0]) return later[0];
+  const buttons = [...scope.querySelectorAll('button')];
+  return buttons.find((button) => {
+    if (button.disabled || (button.closest && button.closest('#ai-dock, #field-hint'))) return false;
+    const text = String(button.textContent || '').trim().toLowerCase();
+    return text === 'ok' || text === 'confirm' || text === 'propose' || button.type === 'submit';
+  }) || null;
+}
+
 const MEDICAL = /\b(diagnos\w*|prescription|treatment|cure)\b/i;
 
 export function safeHelpLine(text, fallback) {

@@ -241,15 +241,15 @@ async function fieldDock(browser) {
   await page.screenshot({ path: '/opt/cursor/artifacts/field-dock-390.png', timeout: 8000, animations: 'disabled' });
   await page.getByRole('button', { name: 'Yes, I finished a walk', exact: true }).click();
   if (await field.inputValue() !== 'I finished a walk') failures.push('option did not fill the field');
-  const focused = await page.evaluate(() => document.activeElement && document.activeElement.id === 'gym-ididit-other');
-  if (!focused) failures.push('keyboard field was not focused after the only option set');
+  const focused = await page.evaluate(() => document.activeElement && document.activeElement.id === 'gym-ididit-confirm');
+  if (!focused) failures.push('last field did not move to Confirm');
   await page.goto(`${base}/develop?category=Health`, { waitUntil: 'domcontentloaded' });
   const title = page.locator('#want-title');
   await title.click();
   await page.getByRole('button', { name: 'Yes, I can help test', exact: true }).click();
   if (await title.inputValue() !== 'I can help test') failures.push('IwanIT option did not fill the title');
   const next = await page.evaluate(() => document.activeElement && document.activeElement.id);
-  if (next !== 'want-body') failures.push(`focus did not move to the next field (${next})`);
+  if (next !== 'want-skill') failures.push(`focus did not move to the next field (${next})`);
   await context.close();
 }
 
