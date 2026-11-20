@@ -107,7 +107,7 @@ async function run(width, height, tier) {
     await page.goto(`${base}/?picker=1`, { waitUntil: 'domcontentloaded' });
     await page.locator('#help-develop-open').scrollIntoViewIfNeeded();
     await page.count('#help-develop-open');
-    await page.waitForSelector('#want-title');
+    await page.waitForFunction(() => (document.getElementById('want-title')?.value || '').includes('Campus'));
     assert((await page.locator('#want-title').inputValue()).includes('Campus'), 'title');
     assert((await page.locator('#want-skill').inputValue()) === 'writing', 'skill');
     await page.locator('#want-confirm').scrollIntoViewIfNeeded();
