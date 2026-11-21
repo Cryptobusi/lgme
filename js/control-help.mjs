@@ -31,6 +31,11 @@ const NAMED = {
   'hand-home': 'Goes home.',
   'hand-back': 'Goes back to the previous page.',
   'hand-recent': 'Opens a bigger AI screen so the message explainer is easier to read. Tap again to shrink it. Recent pages stay on this phone.',
+  'hand-name': 'The name of this page. Tap it to ask for this page’s prompt.',
+  'frame-power': 'Turns the AI prompt on or off for this page. Nothing is sent.',
+  'frame-menu': 'Opens the features for this page: search, prefill, and the next step.',
+  'frame-display': 'Shows or hides the AI display.',
+  'frame-away': 'Leaves this page. A sub page goes back to its page. Nothing is sent.',
   'tape-sound': 'Turns the tape sound on or off. The choice stays on this phone.',
   'easy-read': 'Easy read makes type larger and the contrast stronger. Tap again to turn it off.',
   'easy-read-menu': 'Easy read makes type larger and the contrast stronger. Tap again to turn it off.',
@@ -89,13 +94,72 @@ export function controlText(el) {
   return withDetail(`${label}. Nothing happens until you tap OK.`);
 }
 
+const PAGE_NAMES = [
+  ['/', '', 'Home'],
+  ['/gym', '/ididit', 'IdidIt'],
+  ['/gym', '/train', 'Train'],
+  ['/gym', '/people', 'People'],
+  ['/gym', '/groups', 'Groups'],
+  ['/gym', '/dispute', 'Dispute'],
+  ['/gym', '/helper', 'Helper'],
+  ['/gym', '/more', 'Settings'],
+  ['/gym', '/page', 'My page'],
+  ['/gym', '/register', 'Register'],
+  ['/gym', '/setup', 'Setup'],
+  ['/gym', '/personalize', 'Personalize'],
+  ['/gym', '/intake', 'Intake'],
+  ['/gym', '', 'Health'],
+  ['/exchange', '', 'Exchange'],
+  ['/help', '', 'Help'],
+  ['/develop', '', 'Help develop'],
+  ['/inventory', '', 'Inventory'],
+  ['/books', '', 'SobeIt'],
+  ['/introduction', '', 'Introduction'],
+  ['/customize', '', 'Version'],
+  ['/disclaimer', '', 'Disclaimer'],
+  ['/barrier-checks', '', 'Barrier checks']
+];
+
+const EXTRA_PAGES = {
+  '/gym#/page': { name: 'My page', line: 'My page is your seat on this phone. Reading it does not send anything.', steps: ['Read your page', 'Change only what you mean', 'Go back when you are done'] },
+  '/gym#/register': { name: 'Register', line: 'Register keeps the seat on this phone. Nothing is posted until you tap OK.', steps: ['Read what is asked', 'Fill only what you mean', 'Tap OK'] },
+  '/gym#/setup': { name: 'Setup', line: 'Setup is the fee choice on this phone. Nothing is paid until you tap OK.', steps: ['Read the choice', 'Pick only what you mean', 'Tap OK'] },
+  '/gym#/personalize': { name: 'Personalize', line: 'Personalize stays on this phone. Nothing is sent until you tap OK.', steps: ['Read the setting', 'Change only what you mean', 'Tap OK'] },
+  '/gym#/intake': { name: 'Intake', line: 'Intake is the health note on this phone. Nothing is sent until you tap OK.', steps: ['Read the note', 'Fill only what you mean', 'Tap OK'] }
+};
+
+function pageName(path, mark, title) {
+  const hit = PAGE_NAMES.find((row) => row[0] === path && row[1] && String(mark || '').includes(row[1]));
+  if (hit) return hit[2];
+  const bare = !mark || mark === '#' || mark === '#/';
+  if (bare) {
+    const plain = PAGE_NAMES.find((row) => row[0] === path && !row[1]);
+    if (plain) return plain[2];
+  }
+  if (path === '/gym') {
+    const tail = String(mark || '').replace(/^#\/?/, '').split('/')[0];
+    if (tail) return tail.charAt(0).toUpperCase() + tail.slice(0, 24);
+  }
+  const fromTitle = clean(title).replace(/\s*·\s*lgme$/i, '').replace(/^lgme\s*/i, '');
+  return fromTitle || 'This page';
+}
+
 export function pageOverview(pathname = '/', hash = '', title = '') {
   const path = String(pathname || '/').replace(/\.html$/, '') || '/';
   const mark = String(hash || '');
-  const found = PAGES.find((page) => page.path === path && (!page.hash || mark.includes(page.hash)));
-  if (found) return { line: withDetail(found.line), steps: found.steps.slice(0, 3) };
-  const name = clean(title).replace(/\s*·\s*lgme$/i, '') || 'This page';
+  const specific = PAGES.find((page) => page.path === path && page.hash && mark.includes(page.hash));
+  const plain = PAGES.find((page) => page.path === path && !page.hash);
+  const bare = !mark || mark === '#' || mark === '#/';
+  const found = specific || (bare ? plain : null);
+  const extra = EXTRA_PAGES[`${path}${mark}`] || null;
+  const name = extra?.name || pageName(path, mark, title);
+  if (found) {
+    const line = found.line.toLowerCase().startsWith(name.toLowerCase()) ? found.line : `${name}. ${found.line}`;
+    return { name, line: withDetail(line), steps: found.steps.slice(0, 3) };
+  }
+  if (extra) return { name, line: withDetail(`${name}. ${extra.line}`), steps: extra.steps.slice(0, 3) };
   return {
+    name,
     line: withDetail(`${name}. Read it here. Nothing is saved until you tap OK.`),
     steps: ['Read the page', 'Tap a control to see what it does', 'Tap OK only when you mean to keep it']
   };

@@ -356,6 +356,97 @@ html.has-hand.is-one-tab body:has(nav[aria-label="Gym"]) #ai-dock {
   max-height: 78vh;
   max-height: 78dvh;
 }
+html.has-hand { background: #050605; }
+html.has-hand::before {
+  content: '';
+  position: fixed;
+  z-index: 44;
+  pointer-events: none;
+  top: 36px;
+  right: 6px;
+  bottom: calc(3rem + 6px + env(safe-area-inset-bottom));
+  left: 6px;
+  border: 1px solid var(--page-line, #c6a15b);
+  border-radius: 18px;
+}
+html[data-sub].has-hand::before { border-color: var(--sub-line, var(--page-line, #c6a15b)); }
+html.has-hand #gym-panel {
+  margin: 6px 10px 0;
+  border: 1px solid transparent;
+  border-radius: 16px;
+}
+html[data-sub] #gym-panel { border-color: var(--sub-line, #c6a15b); }
+#page-chrome {
+  position: sticky;
+  top: 34px;
+  z-index: 48;
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  margin: 6px 10px 0;
+  height: 40px;
+  padding: 0 0.25rem 0 0.7rem;
+  border: 1px solid var(--page-line, #c6a15b);
+  border-radius: 999px;
+  background: #0c100c;
+  color: var(--page-line, #c6a15b);
+}
+#page-chrome #hand-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 36px;
+  border: 0;
+  background: transparent;
+  color: var(--page-line, #c6a15b);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#page-chrome .frame-icon {
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+}
+#page-chrome .frame-icon[aria-pressed="true"] { background: var(--page-line, #c6a15b); color: #0c100c; }
+#page-menu {
+  position: sticky;
+  top: 78px;
+  z-index: 48;
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  margin: 4px 10px 0;
+  padding: 0.35rem;
+  border: 1px solid var(--sub-line, var(--page-line, #c6a15b));
+  border-radius: 14px;
+  background: #0c100c;
+}
+#page-menu[hidden] { display: none; }
+#page-menu button, #page-menu a {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--page-line, #c6a15b);
+  background: #f4f1e8;
+  color: #1a1408;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+}
+html:has(#ai-dock.is-key-page) #page-chrome,
+html:has(#ai-dock.is-key-page) #page-menu { display: none; }
 #hand-bar {
   position: fixed;
   left: 0;

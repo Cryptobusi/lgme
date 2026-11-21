@@ -736,20 +736,9 @@ function mount() {
     }
     const path = dock.querySelector('#ai-path');
     const level = currentLevel(localStorage);
-    const uses = readUses();
-    const guideUses = readGuideUses(localStorage);
-    const exp = experienced(localStorage, uses, guideUses);
     if (path) path.hidden = mode === 'manual' || !level;
     const pathText = dock.querySelector('#ai-path-line');
     if (pathText) pathText.textContent = pathLine(localStorage);
-    if (mode !== 'manual' && level) {
-      const words = guideFor(localStorage, uses, guideUses);
-      if (exp) {
-        const box = dock.querySelector('#ai-overview');
-        if (box) box.textContent = words;
-      } else showOverview(words, []);
-      if (ask && !ask.value.trim()) ask.value = level.prompt;
-    }
   };
   const openPanel = () => {
     dock.classList.add('is-open');
@@ -793,8 +782,15 @@ function mount() {
   document.addEventListener('pointercancel', () => clearTimeout(holdTimer), true);
   document.addEventListener('click', (event) => explainControl(event.target), true);
   document.addEventListener('focusin', (event) => explainControl(event.target));
-  window.addEventListener('hashchange', () => { showPage(); if (readMode(localStorage) !== 'manual') openPanel(); });
-  window.addEventListener('popstate', () => { showPage(); if (readMode(localStorage) !== 'manual') openPanel(); });
+  window.addEventListener('hashchange', () => { showPage(); });
+  window.addEventListener('popstate', () => { showPage(); });
+  window.addEventListener('lgme-page-prompt', () => {
+    const page = pageOverview(location.pathname, location.hash, document.title);
+    paintGuide();
+    openPanel();
+    showOverview(page.line, guideCards(readMode(localStorage)) ? page.steps : []);
+    if (ask && aiOn()) ask.value = `Explain this page: ${page.name || 'this page'}`;
+  });
   window.addEventListener('lgme-guide-mode', () => {
     const manual = readMode(localStorage) === 'manual';
     if (manual) noteLearn('yours');

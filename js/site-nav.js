@@ -1,6 +1,6 @@
 (function () {
   var EPOCH = '2';
-  var CURRENT = { 'lgme-v262': 1, 'lgme-gym-v81': 1 };
+  var CURRENT = { 'lgme-v263': 1, 'lgme-gym-v81': 1 };
   function keep(name) {
     if (!name) return true;
     if (name === 'lgme.reset.epoch' || name === 'lgme.reset.note' || name === 'lgme.device.key' || name === 'lgme.display.step' || name === 'lgme.display.easy' || name === 'lgme.text.tip' || name === 'lgme.ui.mode' || name === 'lgme.ui.uses' || name === 'lgme.ui.offer' || name === 'lgme.ui.shortcuts' || name === 'lgme.learn.path' || name === 'lgme-gym.seat' || name === 'lgme.health.book' || name === 'lgme.health.email' || name === 'lgme.health.plan' || name === 'lgme.health.contact' || name === 'lgme.health.contactGrants' || name === 'lgme.health.consent' || name === 'lgme.demo.member') return true;
@@ -187,10 +187,15 @@
       { href: '/', name: 'Home' },
       { href: '/gym', name: 'Health' },
       { href: '/gym#/ididit', name: 'IdidIt' },
+      { href: '/gym#/train', name: 'Train' },
+      { href: '/gym#/people', name: 'People' },
+      { href: '/gym#/groups', name: 'Groups' },
       { href: '/gym#/more', name: 'Settings' },
       { href: '/exchange', name: 'Exchange' },
       { href: '/help', name: 'Help' },
-      { href: '/inventory', name: 'Inventory' }
+      { href: '/inventory', name: 'Inventory' },
+      { href: '/books', name: 'SobeIt' },
+      { href: '/introduction', name: 'Introduction' }
     ];
     var pathNow = function () {
       var path = String(location.pathname || '/').replace(/\.html$/, '') || '/';
@@ -207,11 +212,31 @@
         if (routes[i].href === path) loose = i;
       }
       if (exact >= 0) return exact;
-      return loose >= 0 ? loose : 0;
+      if (!location.hash || location.hash === '#' || location.hash === '#/') return loose;
+      return -1;
+    };
+    var pageLabel = function () {
+      var full = pathNow() + (location.hash || '');
+      var path = pathNow();
+      for (var i = 0; i < routes.length; i += 1) {
+        if (routes[i].href === full) return routes[i].name;
+      }
+      if (!location.hash || location.hash === '#' || location.hash === '#/') {
+        for (var j = 0; j < routes.length; j += 1) {
+          if (routes[j].href === path) return routes[j].name;
+        }
+      }
+      var heading = document.querySelector('#gym-panel h2, main h1, h1');
+      if (heading && !(heading.closest && heading.closest('#ai-dock, #hand-bar'))) {
+        var text = String(heading.textContent || '').replace(/\s+/g, ' ').trim();
+        if (text && text.length <= 42 && !/printed the money|prove what you did/i.test(text)) return text;
+      }
+      var title = String(document.title || '').replace(/\s*·\s*lgme.*/i, '').replace(/^lgme\s*/i, '').trim();
+      return title || 'This page';
     };
     var remember = function () {
       var href = pathNow() + (location.hash || '');
-      var name = String(document.title || href).replace(/\s*·\s*lgme.*/i, '').slice(0, 42) || href;
+      var name = pageLabel();
       var list = [];
       try { list = JSON.parse(sessionStorage.getItem('lgme.hand.recent') || '[]'); } catch (error) { list = []; }
       if (!Array.isArray(list)) list = [];
@@ -232,6 +257,11 @@
     };
     var go = function (delta) {
       var index = hereIndex();
+      if (index < 0) {
+        if (delta < 0 && history.length > 1) history.back();
+        else location.assign(delta < 0 ? '/' : '/gym');
+        return;
+      }
       var next = Math.max(0, Math.min(routes.length - 1, index + delta));
       if (next === index) return;
       location.assign(routes[next].href);
@@ -249,6 +279,119 @@
     var home = handButton('hand-home', 'O', 'Home');
     var back = handButton('hand-back', 'V', 'Back');
     var next = handButton('hand-next', '›', 'Next page');
+    var nameBtn = handButton('hand-name', 'This page', 'This page. Tap for the prompt.');
+    var power = handButton('frame-power', '○', 'AI on or off');
+    var menuBtn = handButton('frame-menu', '≡', 'Page menu');
+    var displayBtn = handButton('frame-display', '▣', 'Show or hide the AI display');
+    var away = handButton('frame-away', '×', 'Leave this page');
+    power.className = 'frame-icon';
+    menuBtn.className = 'frame-icon';
+    displayBtn.className = 'frame-icon';
+    away.className = 'frame-icon';
+    var chrome = document.createElement('div');
+    chrome.id = 'page-chrome';
+    var menu = document.createElement('div');
+    menu.id = 'page-menu';
+    menu.hidden = true;
+    var colors = {
+      Home: '#c6a15b', Health: '#8fd6a8', IdidIt: '#e2b657', Train: '#f0a36a', People: '#9ec7c1',
+      Groups: '#d7c4a3', Settings: '#c6a15b', Exchange: '#e7d7a8', Help: '#f4f1e8', Inventory: '#8fd6a8',
+      SobeIt: '#d7c4a3', Introduction: '#f4f1e8'
+    };
+    var pageColor = function (name) { return colors[name] || '#c6a15b'; };
+    var pageFeatures = function () {
+      var full = pathNow() + (location.hash || '');
+      var path = pathNow();
+      var items = [];
+      if (path === '/') items.push({ label: 'Health', href: '/gym' }, { label: 'Exchange', href: '/exchange' }, { label: 'Help', href: '/help' });
+      else if (full.indexOf('#/ididit') >= 0) items.push({ label: 'Walk', fill: ['gym-ididit-activity', 'Walk'] }, { label: '20 min', fill: ['gym-ididit-minutes', '20'] }, { label: 'Confirm', click: 'gym-ididit-confirm' });
+      else if (full.indexOf('#/train') >= 0) items.push({ label: 'Start', click: 'gym-train-start' }, { label: 'IdidIt', href: '/gym#/ididit' });
+      else if (full.indexOf('#/people') >= 0) items.push({ label: 'IdidIt', href: '/gym#/ididit' });
+      else if (full.indexOf('#/groups') >= 0) items.push({ label: 'IdidIt', href: '/gym#/ididit' });
+      else if (full.indexOf('#/more') >= 0) items.push({ label: 'Health', href: '/gym' });
+      else if (path === '/gym') items.push({ label: 'IdidIt', href: '/gym#/ididit' }, { label: 'Train', href: '/gym#/train' }, { label: 'People', href: '/gym#/people' }, { label: 'Groups', href: '/gym#/groups' }, { label: 'Settings', href: '/gym#/more' });
+      else if (path === '/exchange') items.push({ label: 'Help', href: '/help' }, { label: 'Inventory', href: '/inventory' });
+      else if (path === '/inventory') items.push({ label: 'Exchange', href: '/exchange' });
+      else if (path === '/help') items.push({ label: 'Health', href: '/gym' });
+      else if (path === '/books') items.push({ label: 'Health', href: '/gym' });
+      items.push({ label: 'AI search', action: 'search' }, { label: 'Prefill', action: 'prefill' }, { label: 'Next', action: 'next' });
+      return items;
+    };
+    var runFeature = function (item) {
+      if (item.href) { location.assign(item.href); return; }
+      if (item.fill) {
+        var field = document.getElementById(item.fill[0]);
+        if (field) {
+          field.value = item.fill[1];
+          field.dispatchEvent(new Event('input', { bubbles: true }));
+          field.focus();
+        }
+        return;
+      }
+      if (item.click) {
+        var button = document.getElementById(item.click);
+        if (button) button.click();
+        return;
+      }
+      if (item.action === 'search') {
+        document.dispatchEvent(new CustomEvent('lgme-page-prompt'));
+        var ask = document.getElementById('ai-ask');
+        if (ask) ask.focus();
+        return;
+      }
+      if (item.action === 'prefill' || item.action === 'next') focusNext(item.action === 'prefill');
+    };
+    var focusNext = function (fromStart) {
+      var fields = Array.prototype.slice.call(document.querySelectorAll('input, textarea, select')).filter(function (field) {
+        if (field.disabled || field.type === 'hidden') return false;
+        if (field.closest && field.closest('#ai-dock, #page-chrome, #page-menu, #hand-bar, #site-nav')) return false;
+        return true;
+      });
+      var current = document.activeElement;
+      var start = fromStart ? -1 : fields.indexOf(current);
+      var nextField = null;
+      for (var i = start + 1; i < fields.length; i += 1) {
+        if (!String(fields[i].value || '').trim()) { nextField = fields[i]; break; }
+      }
+      if (!nextField) nextField = fields[start + 1] || fields[0];
+      if (nextField) nextField.focus();
+      else document.dispatchEvent(new CustomEvent('lgme-page-prompt'));
+    };
+    var paintMenu = function () {
+      menu.replaceChildren();
+      pageFeatures().forEach(function (item) {
+        var node = item.href ? document.createElement('a') : document.createElement('button');
+        if (!item.href) node.type = 'button';
+        node.textContent = item.label;
+        if (item.href) node.href = item.href;
+        else node.addEventListener('click', function () { runFeature(item); menu.hidden = true; menuBtn.setAttribute('aria-expanded', 'false'); });
+        menu.appendChild(node);
+      });
+    };
+    nameBtn.addEventListener('click', function () {
+      document.dispatchEvent(new CustomEvent('lgme-page-prompt', { detail: { name: pageLabel() } }));
+    });
+    power.addEventListener('click', function () {
+      var sw = document.getElementById('ai-switch');
+      if (sw) sw.click();
+      window.setTimeout(paintChrome, 50);
+    });
+    menuBtn.addEventListener('click', function () {
+      menu.hidden = !menu.hidden;
+      menuBtn.setAttribute('aria-expanded', menu.hidden ? 'false' : 'true');
+      if (!menu.hidden) paintMenu();
+    });
+    displayBtn.addEventListener('click', function () {
+      var expand = document.getElementById('ai-expand');
+      if (expand) expand.click();
+      window.setTimeout(paintChrome, 50);
+    });
+    away.addEventListener('click', function () {
+      var hash = location.hash || '';
+      if (hash && hash !== '#' && hash !== '#/') location.hash = '';
+      else if (history.length > 1) history.back();
+      else location.assign('/');
+    });
     prev.addEventListener('click', function () { go(-1); });
     next.addEventListener('click', function () { go(1); });
     home.addEventListener('click', function () { location.assign('/?home=1'); });
@@ -282,16 +425,56 @@
       prev.setAttribute('aria-disabled', prev.disabled ? 'true' : 'false');
       next.setAttribute('aria-disabled', next.disabled ? 'true' : 'false');
     };
+    var paintChrome = function () {
+      var name = pageLabel();
+      var path = pathNow();
+      var hash = location.hash || '';
+      var sub = hash && hash !== '#' && hash !== '#/';
+      var parent = path === '/' ? 'Home' : (path === '/gym' ? 'Health' : name);
+      nameBtn.textContent = name;
+      nameBtn.setAttribute('aria-label', name + '. Tap for this page prompt.');
+      document.documentElement.dataset.page = String(parent).toLowerCase();
+      if (sub) document.documentElement.dataset.sub = String(name).toLowerCase().replace(/\s+/g, '-');
+      else delete document.documentElement.dataset.sub;
+      document.documentElement.style.setProperty('--page-line', pageColor(parent));
+      document.documentElement.style.setProperty('--sub-line', pageColor(sub ? name : parent));
+      var sw = document.getElementById('ai-switch');
+      var on = !!(sw && (sw.getAttribute('aria-checked') === 'true' || sw.classList.contains('is-on')));
+      power.setAttribute('aria-pressed', on ? 'true' : 'false');
+      power.textContent = on ? '⏻' : '○';
+      var dock = document.getElementById('ai-dock');
+      var open = !!(dock && dock.classList.contains('is-open'));
+      displayBtn.setAttribute('aria-pressed', open ? 'true' : 'false');
+      if (!menu.hidden) paintMenu();
+    };
     hand.appendChild(prev);
     hand.appendChild(recent);
     hand.appendChild(home);
     hand.appendChild(back);
     hand.appendChild(next);
+    chrome.appendChild(nameBtn);
+    chrome.appendChild(power);
+    chrome.appendChild(menuBtn);
+    chrome.appendChild(displayBtn);
+    chrome.appendChild(away);
+    var nav = document.getElementById('site-nav');
+    if (nav && nav.parentNode) nav.parentNode.insertBefore(chrome, nav.nextSibling);
+    else document.body.insertBefore(chrome, document.body.firstChild);
+    if (chrome.nextSibling) chrome.parentNode.insertBefore(menu, chrome.nextSibling);
+    else document.body.appendChild(menu);
     document.body.appendChild(recentSheet);
     document.body.appendChild(hand);
     paintEnds();
+    paintChrome();
     remember();
-    window.addEventListener('hashchange', function () { paintEnds(); remember(); });
+    window.addEventListener('hashchange', function () {
+      menu.hidden = true;
+      menuBtn.setAttribute('aria-expanded', 'false');
+      paintEnds();
+      paintChrome();
+      remember();
+      window.setTimeout(paintChrome, 400);
+    });
   }
   if (!document.querySelector('script[src="/js/sw-update.js"]')) {
     var updater = document.createElement('script');
