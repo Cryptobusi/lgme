@@ -30,6 +30,16 @@ export function pickDensity(probe = {}) {
   return { density, osScale: os, orientation, reducedMotion: probe.reducedMotion === true, fitW, fitH };
 }
 
+export function defaultStepForScreen(probe = {}) {
+  const view = probe.visualViewport || {};
+  const width = Number(view.width ?? probe.width) || 0;
+  const height = Number(view.height ?? probe.height) || 0;
+  const dpr = Number(probe.dpr) > 0 ? Number(probe.dpr) : 1;
+  const longest = Math.max(width, height) * dpr;
+  if (width >= 340 && longest >= 700) return 1;
+  return 0;
+}
+
 export function changeStep(step, dir) {
   const current = Math.min(FONT_STEPS.length - 1, Math.max(0, Number(step) || 0));
   if (dir === 0) return 1;
@@ -139,6 +149,14 @@ function paintSimple(doc, easy) {
 export function startDisplay(win = globalThis) {
   const storage = win.localStorage;
   let state = readDisplay(storage);
+  try {
+    if (storage && storage.getItem('lgme.display.defaulted') !== '1') {
+      const fitted = defaultStepForScreen(measure(win));
+      if (state.step < fitted) state = { ...state, step: fitted };
+      writeDisplay(storage, state);
+      storage.setItem('lgme.display.defaulted', '1');
+    }
+  } catch { /* the saved size still applies */ }
   const paint = () => {
     const probe = measure(win);
     const applied = applyDisplay(win.document.documentElement, state, probe);

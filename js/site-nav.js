@@ -291,10 +291,22 @@
       return button;
     };
     var prev = handButton('hand-prev', 'Previous', 'Page before', 'Previous page. Nothing is sent.');
-    var recent = handButton('hand-recent', 'Bigger', 'Larger helper', 'Opens a bigger helper so this page is easier to read. Tap again to shrink it.');
+    var recent = handButton('hand-recent', 'Bigger', 'Full helper', 'Opens the helper to the full screen. The prompt stays above this bar.');
     var home = handButton('hand-home', 'Home', 'Start here', 'Goes home.');
     var back = handButton('hand-back', 'Back', 'Last page', 'Goes back to the previous page.');
     var next = handButton('hand-next', 'Next', 'Page after', 'Next page. Nothing is sent.');
+    var markIcon = function (button, icon) {
+      var glyph = document.createElement('i');
+      glyph.className = 'hand-icon';
+      glyph.setAttribute('aria-hidden', 'true');
+      glyph.textContent = icon;
+      button.insertBefore(glyph, button.firstChild);
+    };
+    markIcon(prev, '‹');
+    markIcon(recent, '⤢');
+    markIcon(home, '⌂');
+    markIcon(back, '↩');
+    markIcon(next, '›');
     var pagePurpose = function () {
       var full = pathNow() + (location.hash || '');
       var path = pathNow();
@@ -447,6 +459,7 @@
     recent.addEventListener('click', function () {
       var dock = document.getElementById('ai-dock');
       var big = false;
+      var compose = dock && dock.querySelector('.ai-compose');
       if (dock) {
         big = !dock.classList.contains('is-big');
         dock.classList.toggle('is-big', big);
@@ -456,12 +469,19 @@
           expand.setAttribute('aria-expanded', 'true');
           expand.textContent = 'Close';
         }
-        var log = dock.querySelector('#ai-log');
-        if (log) log.scrollIntoView({ block: 'nearest' });
+      }
+      if (big && dock && compose) {
+        dock.insertBefore(recentSheet, compose);
+        recentSheet.classList.add('is-in-dock');
+        recentSheet.hidden = false;
+        paintRecent();
+        compose.scrollIntoView({ block: 'nearest' });
+      } else {
+        recentSheet.classList.remove('is-in-dock');
+        recentSheet.hidden = true;
+        document.body.appendChild(recentSheet);
       }
       recent.setAttribute('aria-pressed', big ? 'true' : 'false');
-      recentSheet.hidden = !big;
-      if (big) paintRecent();
     });
     var paintEnds = function () {
       var index = hereIndex();
@@ -536,6 +556,7 @@
         hand.style.bottom = 'auto';
         hand.style.width = '100%';
       }
+      document.documentElement.style.setProperty('--hand-h', hand.offsetHeight + 'px');
     };
     pinHand();
     window.addEventListener('scroll', pinHand, { passive: true });
