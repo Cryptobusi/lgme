@@ -114,7 +114,9 @@
     tip.setAttribute('role', 'tooltip');
     tip.textContent = 'Make text smaller / reset / bigger; saved on this phone';
     var seenTip = false;
-    try { seenTip = localStorage.getItem('lgme.text.tip') === '1'; } catch (error) { seenTip = false; }
+    try {
+      seenTip = localStorage.getItem('lgme.text.tip') === '1' || localStorage.getItem('lgme.display.step') !== null;
+    } catch (error) { seenTip = false; }
     tip.hidden = seenTip;
     var percents = ['85%', '100%', '115%', '130%', '150%'];
     var paintText = function (step) {
@@ -138,6 +140,13 @@
       try { localStorage.setItem('lgme.text.tip', '1'); } catch (error) { /* the tip still closes */ }
     };
     [down, reset, up].forEach(function (button) { button.addEventListener('click', hideTip); });
+    if (!tip.hidden) {
+      window.setTimeout(hideTip, 2200);
+      document.addEventListener('pointerdown', function (event) {
+        if (event.target && chip.contains(event.target)) return;
+        hideTip();
+      });
+    }
     chip.appendChild(name);
     chip.appendChild(down);
     chip.appendChild(reset);
@@ -181,7 +190,7 @@
     hand.id = 'hand-bar';
     hand.setAttribute('aria-label', 'Phone');
     var recentSheet = document.createElement('div');
-    recentSheet.id = 'hand-recent';
+    recentSheet.id = 'hand-recent-sheet';
     recentSheet.hidden = true;
     var routes = [
       { href: '/', name: 'Home' },
@@ -266,20 +275,56 @@
       if (next === index) return;
       location.assign(routes[next].href);
     };
-    var handButton = function (id, text, label) {
+    var handButton = function (id, name, shortExplain, explain) {
       var button = document.createElement('button');
       button.type = 'button';
       button.id = id;
-      button.textContent = text;
-      button.setAttribute('aria-label', label);
+      var full = explain || shortExplain;
+      button.setAttribute('aria-label', full);
+      button.setAttribute('data-explain', full);
+      var title = document.createElement('b');
+      title.textContent = name;
+      var note = document.createElement('small');
+      note.textContent = shortExplain;
+      button.appendChild(title);
+      button.appendChild(note);
       return button;
     };
-    var prev = handButton('hand-prev', '‹', 'Previous page');
-    var recent = handButton('hand-recent', 'III', 'Bigger AI screen');
-    var home = handButton('hand-home', 'O', 'Home');
-    var back = handButton('hand-back', 'V', 'Back');
-    var next = handButton('hand-next', '›', 'Next page');
-    var nameBtn = handButton('hand-name', 'This page', 'This page. Tap for the prompt.');
+    var prev = handButton('hand-prev', 'Previous', 'Page before', 'Previous page. Nothing is sent.');
+    var recent = handButton('hand-recent', 'Bigger', 'Larger helper', 'Opens a bigger helper so this page is easier to read. Tap again to shrink it.');
+    var home = handButton('hand-home', 'Home', 'Start here', 'Goes home.');
+    var back = handButton('hand-back', 'Back', 'Last page', 'Goes back to the previous page.');
+    var next = handButton('hand-next', 'Next', 'Page after', 'Next page. Nothing is sent.');
+    var pagePurpose = function () {
+      var full = pathNow() + (location.hash || '');
+      var path = pathNow();
+      var lines = [
+        ['/', '', 'Home shows Health and the things on this phone.'],
+        ['/gym', '/ididit', 'IdidIt records what you did. It stays here until you tap OK.'],
+        ['/gym', '/train', 'Train is a workout on this phone. Nothing is posted until you confirm.'],
+        ['/gym', '/people', 'People are the members on this phone. You choose who can see a receipt.'],
+        ['/gym', '/groups', 'Groups are the clubs on this phone. A message stays here until you send it.'],
+        ['/gym', '/more', 'Health settings stay on this phone.'],
+        ['/gym', '', 'Health is the open club. A workout stays on this phone until you confirm.'],
+        ['/exchange', '', 'Exchange is for listings and receipts. Nothing is paid until you tap OK.'],
+        ['/help', '', 'Help explains the words. Nothing is sent by reading.'],
+        ['/inventory', '', 'Inventory is the list on this phone. Nothing is published until you tap OK.'],
+        ['/books', '', 'SobeIt is the book list on this phone. Reading does not send anything.'],
+        ['/introduction', '', 'Introduction is the short start. It does not sign you up.']
+      ];
+      for (var i = 0; i < lines.length; i += 1) {
+        if (lines[i][1] && full.indexOf(lines[i][1]) >= 0 && path === lines[i][0]) return lines[i][2];
+      }
+      for (var j = 0; j < lines.length; j += 1) {
+        if (!lines[j][1] && path === lines[j][0] && (!location.hash || location.hash === '#' || location.hash === '#/')) return lines[j][2];
+      }
+      return pageLabel() + '. Nothing is sent until you tap OK.';
+    };
+    var nameBtn = document.createElement('button');
+    nameBtn.type = 'button';
+    nameBtn.id = 'hand-name';
+    nameBtn.textContent = 'This page';
+    nameBtn.setAttribute('aria-label', 'This page');
     var power = handButton('frame-power', '○', 'AI on or off');
     var menuBtn = handButton('frame-menu', '≡', 'Page menu');
     var displayBtn = handButton('frame-display', '▣', 'Show or hide the AI display');
@@ -432,7 +477,9 @@
       var sub = hash && hash !== '#' && hash !== '#/';
       var parent = path === '/' ? 'Home' : (path === '/gym' ? 'Health' : name);
       nameBtn.textContent = name;
-      nameBtn.setAttribute('aria-label', name + '. Tap for this page prompt.');
+      nameBtn.setAttribute('aria-label', name + '. ' + pagePurpose());
+      var purpose = document.getElementById('hand-purpose');
+      if (purpose) purpose.textContent = pagePurpose();
       document.documentElement.dataset.page = String(parent).toLowerCase();
       if (sub) document.documentElement.dataset.sub = String(name).toLowerCase().replace(/\s+/g, '-');
       else delete document.documentElement.dataset.sub;
@@ -447,11 +494,18 @@
       displayBtn.setAttribute('aria-pressed', open ? 'true' : 'false');
       if (!menu.hidden) paintMenu();
     };
-    hand.appendChild(prev);
-    hand.appendChild(recent);
-    hand.appendChild(home);
-    hand.appendChild(back);
-    hand.appendChild(next);
+    var purpose = document.createElement('p');
+    purpose.id = 'hand-purpose';
+    purpose.textContent = pagePurpose();
+    var row = document.createElement('div');
+    row.id = 'hand-row';
+    row.appendChild(prev);
+    row.appendChild(recent);
+    row.appendChild(home);
+    row.appendChild(back);
+    row.appendChild(next);
+    hand.appendChild(purpose);
+    hand.appendChild(row);
     chrome.appendChild(nameBtn);
     chrome.appendChild(power);
     chrome.appendChild(menuBtn);
@@ -464,6 +518,32 @@
     else document.body.appendChild(menu);
     document.body.appendChild(recentSheet);
     document.body.appendChild(hand);
+    var pinHand = function () {
+      hand.style.position = 'fixed';
+      hand.style.left = '0';
+      hand.style.right = '0';
+      hand.style.bottom = '0px';
+      hand.style.top = 'auto';
+      hand.style.zIndex = '80';
+      var view = window.visualViewport;
+      var viewTop = view ? view.offsetTop : 0;
+      var viewH = view ? view.height : window.innerHeight;
+      var want = viewTop + viewH - hand.getBoundingClientRect().height;
+      var box = hand.getBoundingClientRect();
+      if (Math.abs(box.top - want) > 28) {
+        hand.style.position = 'absolute';
+        hand.style.top = (window.scrollY + want) + 'px';
+        hand.style.bottom = 'auto';
+        hand.style.width = '100%';
+      }
+    };
+    pinHand();
+    window.addEventListener('scroll', pinHand, { passive: true });
+    window.addEventListener('resize', pinHand);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', pinHand);
+      window.visualViewport.addEventListener('scroll', pinHand);
+    }
     paintEnds();
     paintChrome();
     remember();
