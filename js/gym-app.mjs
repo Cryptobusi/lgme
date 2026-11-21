@@ -1087,21 +1087,31 @@ function soundSettings() {
 
 function guideSettings() {
   const label = el('p', { id: 'guide-mode-label' }, []);
-  const toggle = el('button', {
+  const ai = el('button', {
     type: 'button',
     id: 'guide-mode-settings',
-    'data-explain': 'Guided suggests the next step. Manual keeps explainers on Hint. The choice stays on this phone. Nothing is saved until you tap OK.'
-  }, ['Guided']);
+    'data-explain': 'AI suggests the next step. Classic hides those suggestions. The choice stays on this phone. Nothing is saved until you tap OK.'
+  }, ['AI']);
+  const classic = el('button', {
+    type: 'button',
+    id: 'guide-classic-settings',
+    'data-explain': 'Classic hides the helper suggestions and leaves the desk. Tap AI to bring the helper back.'
+  }, ['Classic']);
   const sync = () => {
-    const mode = readMode(localStorage);
-    label.textContent = mode === 'manual'
-      ? 'Manual. Explainers stay on Hint. Next step is hidden.'
-      : 'Guided. The helper suggests the next step. You still tap OK.';
-    toggle.textContent = mode === 'manual' ? 'Manual' : 'Guided';
-    toggle.setAttribute('aria-pressed', mode === 'guided' ? 'true' : 'false');
+    const guided = readMode(localStorage) !== 'manual';
+    label.textContent = guided
+      ? 'AI. The helper suggests the next step. You still tap OK.'
+      : 'Classic. The helper suggestions stay hidden.';
+    ai.setAttribute('aria-pressed', guided ? 'true' : 'false');
+    classic.setAttribute('aria-pressed', guided ? 'false' : 'true');
   };
-  toggle.addEventListener('click', () => {
-    setMode(localStorage, readMode(localStorage) === 'manual' ? 'guided' : 'manual');
+  ai.addEventListener('click', () => {
+    setMode(localStorage, 'guided');
+    sync();
+    window.dispatchEvent(new CustomEvent('lgme-guide-mode'));
+  });
+  classic.addEventListener('click', () => {
+    setMode(localStorage, 'manual');
     sync();
     window.dispatchEvent(new CustomEvent('lgme-guide-mode'));
   });
@@ -1110,7 +1120,7 @@ function guideSettings() {
   return el('section', { class: 'card', id: 'guide-settings' }, [
     el('h3', {}, ['Guide']),
     label,
-    toggle
+    el('div', { id: 'guide-settings-row', role: 'group', 'aria-label': 'AI or Classic' }, [ai, classic])
   ]);
 }
 

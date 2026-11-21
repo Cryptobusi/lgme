@@ -73,7 +73,7 @@ const INTENTS = [
   },
   {
     test: /guided|manual mode|guide mode/,
-    answer: pack('Guided is the default. The panel suggests a next step and you still tap OK. Manual hides the next step and the suggestion, and explainers stay on Hint. The choice stays on this phone. Switch it in this panel or in Settings.', ['settings'])
+    answer: pack('AI is the default. The helper suggests a next step and you still tap OK. Classic hides the next step and keeps explainers on Hint. The AI and Classic buttons are on the left of the helper bar, and the same choice is in Settings. The choice stays on this phone.', ['settings'])
   },
   {
     test: /shortcut/,
