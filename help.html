@@ -8,15 +8,16 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" />
   <link rel="stylesheet" href="/menu.css" />
   <style>
-    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; --card:#151a15; }
+    :root { --bg:#f7f4ee; --fg:#14110c; --muted:#3a342c; --gold:#5c4314; --line:#d5ccbc; --card:#fffdf8; }
+    html { background: var(--bg); color: var(--fg); }
     body { background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; font-size:1.05rem; line-height:1.55; max-width:42rem; margin:0 auto; padding:1.25rem max(1rem, env(safe-area-inset-right)) 4rem max(1rem, env(safe-area-inset-left)); }
-    h1,h2 { font-family:Newsreader,serif; font-weight:500; }
+    h1,h2 { font-family:Newsreader,serif; font-weight:500; color:#14110c; }
     h1 { font-size:clamp(1.9rem, 7vw, 2.6rem); line-height:1.05; margin:0.4rem 0; }
     h2 { font-size:1.35rem; margin:1.3rem 0 0.35rem; }
     .kicker { margin:0; font-size:0.72rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--gold); }
     .muted { color:var(--muted); }
-    a { color:var(--fg); }
-    nav a { min-height:44px; display:inline-flex; align-items:center; margin-right:0.8rem; }
+    a { color:#14110c; text-decoration: underline; text-underline-offset: 0.12em; }
+    nav a { min-height:44px; display:inline-flex; align-items:center; margin-right:0.8rem; font-weight:600; }
     .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:0.9rem 1rem; margin:0.7rem 0; }
     .page-hero { width:100%; height:auto; max-height:220px; object-fit:cover; border-radius:14px; display:block; margin:0.6rem 0 0.8rem; }
     .status { display:inline-block; margin:0 0 0.35rem; padding:0.12rem 0.5rem; border-radius:999px; font-size:0.75rem; letter-spacing:0.06em; text-transform:uppercase; font-weight:700; }

@@ -366,8 +366,44 @@ html[data-screen="full"] #ai-dock.is-open.is-big,
   flex: 0 0 auto;
   position: relative;
   z-index: 6;
-  background: #0c100c;
+  background: #f3ead4;
 }
+#ai-dock.is-open.is-big {
+  background: #f3ead4;
+  color: #14110c;
+  border-color: #8a6a2f;
+}
+#ai-dock.is-open.is-big :is(p, li, pre, h2, h3, label, #ai-ask, #ai-log, #ai-overview, #ai-overview-steps, #ai-path, #ai-path-line, #ai-next, #ai-promote, #ai-flag, .ai-suggest-line, .ai-kicker) {
+  color: #14110c;
+}
+#ai-dock.is-open.is-big .ai-mode,
+#ai-dock.is-open.is-big #ai-log-frame,
+#ai-dock.is-open.is-big #ai-input-frame,
+#ai-dock.is-open.is-big #hand-recent-sheet {
+  background: #fffdf8;
+  color: #14110c;
+  border-color: #8a6a2f;
+}
+#ai-dock.is-open.is-big #ai-ask {
+  color: #14110c;
+  background: #fffdf8;
+}
+#ai-dock.is-open.is-big .ai-suggest { background: #efe4cc; color: #14110c; }
+#ai-dock.is-open.is-big #ai-steps li.is-current { background: #e7d7b0; color: #14110c; }
+#ai-dock.is-open.is-big #ai-chip-hint { color: #14110c; background: linear-gradient(to right, transparent, #f3ead4 60%); }
+#ai-dock.is-open.is-big #hand-recent-sheet a { background: #fffdf8; color: #14110c; }
+#ai-dock.is-open.is-big button { color: #14110c; border-color: #8a6a2f; background: #fffdf8; }
+#ai-dock.is-open.is-big .ai-top .ai-mode-btn[aria-pressed="true"] { background: #14110c; color: #f7f1e4; border-color: #14110c; }
+#ai-dock.is-open.is-big #ai-send { background: #c6a15b; color: #14110c; }
+#ai-dock.is-open.is-big #ai-accept { background: #0f766e; color: #fff; }
+#ai-dock.is-open.is-big #ai-confirm { background: #146c43; color: #fff; }
+#ai-dock.is-open.is-big #speak-ask.is-yes { background: #22c55e; color: #14110c; }
+#ai-dock.is-open.is-big #speak-ask.is-no,
+#ai-dock.is-open.is-big #speak-ask:not(.is-yes) { background: #4b5563; color: #fff; }
+#ai-dock.is-open.is-big #ai-mic-btn.is-off,
+#ai-dock.is-open.is-big #ai-voice.is-off { background: #b00020; color: #fff; border-color: #b00020; }
+#ai-dock.is-open.is-big .ai-yes { background: #146c43; color: #fff; }
+#ai-dock.is-open.is-big .ai-no { background: #b00020; color: #fff; }
 html.has-hand { background: #050605; }
 html.has-hand::before {
   content: '';
