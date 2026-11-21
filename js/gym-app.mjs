@@ -915,7 +915,11 @@ function inviteOneTap(peer) {
   const note = el('p', { id: 'invite-one-note' });
   showHelperNote(note, helper);
   const text = el('p', { id: 'invite-one-draft' }, [draft.ok ? `${draft.note} Fee ${draft.fee}. ${draft.url}` : draft.error]);
-  const button = el('button', { type: 'button', id: 'invite-one-confirm' }, ['Confirm invite']);
+  const button = el('button', {
+    type: 'button',
+    id: 'invite-one-confirm',
+    'data-explain': 'Confirm invite keeps this invite on your phone and shows Email, Text, Share, and Copy link. Nothing is sent until you use one of those. The fee stays with them.'
+  }, ['Confirm invite']);
   const actions = el('div', { id: 'invite-one-actions' });
   button.addEventListener('click', () => {
     if (!draft.ok) { status(draft.error || 'Nothing was sent.'); return; }

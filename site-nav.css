@@ -146,7 +146,8 @@ body:has(nav[aria-label="Gym"]) #ai-dock { bottom: calc(4.5rem + env(safe-area-i
 html.is-one-tab body:has(nav[aria-label="Gym"]) #ai-dock { bottom: 0; }
 .ai-top { position: relative; z-index: 3; display: flex; flex: 0 0 auto; flex-wrap: nowrap; align-items: center; gap: 0.25rem; margin: 0 0 0.1rem; overflow-x: auto; }
 .ai-mode { position: sticky; left: 0; z-index: 4; display: inline-flex; flex: 0 0 auto; align-items: center; gap: 0.25rem; background: #0c100c; padding-right: 0.35rem; }
-#ai-dock .ai-top .ai-mode-btn { min-height: 40px; height: 40px; min-width: 4.6rem; padding: 0 0.7rem; font-size: 15px; line-height: 40px; border-radius: 999px; }
+#ai-dock .ai-top .ai-mode-btn { min-height: 40px; height: 40px; min-width: 0; padding: 0 0.65rem; font-size: 15px; line-height: 40px; border-radius: 999px; }
+#ai-dock .ai-top #ai-switch.ai-mode-btn { max-width: 6.2rem; overflow: hidden; text-overflow: ellipsis; }
 #ai-dock .ai-top .ai-mode-btn[aria-pressed="true"] { background: #f4f1e8; color: #0c100c; border-color: #f4f1e8; }
 #ai-dock:not(.is-open) { min-height: 3.25rem; }
 #ai-dock:not(.is-open):not(.has-field) .ai-top > :not(.ai-mode):not(#ai-expand) { display: none; }
