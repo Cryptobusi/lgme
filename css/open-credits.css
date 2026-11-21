@@ -1,0 +1,28 @@
+#open-credits {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  background: #050605;
+  color: #f4f1e8;
+}
+#open-credits.is-gone { opacity: 0; transition: opacity 0.12s linear; }
+.credit-pin { flex: 0 0 auto; display: flex; justify-content: center; padding: 0.35rem 0; }
+.credit-pin img { width: 28px; height: 28px; }
+.credit-stage { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 0.25rem; }
+.credit-stage img { width: min(46vw, 220px); height: auto; border-radius: 50%; }
+.credit-stage p { margin: 0; color: #c6a15b; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; }
+.credit-roll {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  text-align: center;
+  padding: 1.2rem 1.3rem 2.6rem;
+  font-size: 1.08rem;
+  line-height: 1.6;
+}
+.credit-roll h2 { margin: 1.6rem 0 0.6rem; color: #c6a15b; font-size: 0.95rem; letter-spacing: 0.12em; text-transform: uppercase; }
+.credit-roll p, .credit-roll li { margin: 0.85rem auto; max-width: 36rem; }
+.credit-roll ul { margin: 0; padding: 0; list-style: none; }
+.credit-roll strong { color: #f4f1e8; }
+.credit-hint { margin: 0; padding: 0.2rem 0 0.45rem; text-align: center; color: #c6a15b; font-size: 0.75rem; }
