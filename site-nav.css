@@ -306,18 +306,46 @@ html.is-easy .dash-card :is(h1, h2, h3, h4, strong, p) {
 }
 #ai-dock.is-key-page > :not(#ai-key-done) { display: none !important; }
 #ai-dock.is-key-page #ai-key-done {
-  display: inline-flex;
+  display: flex;
   position: fixed;
-  right: 0.45rem;
-  bottom: calc(0.45rem + env(safe-area-inset-bottom));
+  left: 0.35rem;
+  right: 0.35rem;
+  bottom: calc(0.35rem + env(safe-area-inset-bottom));
   z-index: 80;
-  height: 32px;
-  min-height: 32px;
-  min-width: 44px;
-  padding: 0 0.7rem;
-  font-size: 13px;
-  line-height: 32px;
+  height: auto;
+  min-height: 44px;
+  width: auto;
+  max-width: none;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  overflow-x: auto;
+  background: #0c100c;
+  border: 1px solid #c6a15b;
+  border-radius: 12px;
+  line-height: 1;
 }
+#ai-dock.is-key-page #ai-field-chips { display: flex; flex: 1 1 auto; gap: 0.25rem; min-width: 0; overflow-x: auto; }
+#ai-dock.is-key-page #ai-field-chips[hidden],
+#ai-dock.is-key-page #ai-field-voice[hidden],
+#ai-dock.is-key-page #ai-field-type[hidden],
+#ai-dock.is-key-page #ai-field-close[hidden] { display: none; }
+#ai-dock.is-key-page #ai-field-voice,
+#ai-dock.is-key-page #ai-field-type,
+#ai-dock.is-key-page #ai-field-close,
+#ai-dock.is-key-page #ai-field-done,
+#ai-dock.is-key-page #ai-field-chips button {
+  flex: 0 0 auto;
+  height: 36px;
+  min-height: 36px;
+  min-width: 36px;
+  padding: 0 0.65rem;
+  border-radius: 999px;
+  font-size: 14px;
+  line-height: 36px;
+}
+#ai-dock.is-key-page #ai-field-chips button { background: #f4f1e8; color: #1a1408; border-color: #c6a15b; }
+#ai-dock.is-key-page #ai-field-close { background: #b00020; color: #fff; border-color: #b00020; }
 #ai-dock.is-open.is-key-prompt { height: auto; max-height: none; }
 #ai-dock.is-key-prompt #ai-scroll,
 #ai-dock.is-key-prompt #ai-path,

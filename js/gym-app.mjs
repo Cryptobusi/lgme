@@ -2230,10 +2230,10 @@ async function renderIdidIt() {
     'data-help': 'This names what you finished, on this phone.',
     'data-options': IDIDIT_CHIPS.join('|')
   });
-  const activity = el('input', { id: 'gym-ididit-activity', maxlength: '40', required: 'required', 'aria-label': 'Activity' });
-  const minutes = el('input', { id: 'gym-ididit-minutes', inputmode: 'numeric', maxlength: '4', required: 'required', 'aria-label': 'Minutes' });
-  const distance = el('input', { id: 'gym-ididit-distance', maxlength: '40', 'aria-label': 'Distance' });
-  const speed = el('input', { id: 'gym-ididit-speed', maxlength: '40', 'aria-label': 'Speed' });
+  const activity = el('input', { id: 'gym-ididit-activity', maxlength: '40', required: 'required', 'aria-label': 'Activity', 'data-options': 'Walk|Jog|Stretch|Lift' });
+  const minutes = el('input', { id: 'gym-ididit-minutes', inputmode: 'numeric', maxlength: '4', required: 'required', 'aria-label': 'Minutes', 'data-options': '10|20|30|45' });
+  const distance = el('input', { id: 'gym-ididit-distance', maxlength: '40', 'aria-label': 'Distance', 'data-options': '1 mile|2 miles|5 km' });
+  const speed = el('input', { id: 'gym-ididit-speed', maxlength: '40', 'aria-label': 'Speed', 'data-options': 'Easy|Steady|Fast' });
   const computed = el('p', { id: 'gym-ididit-computed' });
   const suggestion = el('p', { id: 'draft-suggestion', hidden: 'hidden' });
   const explain = () => {
