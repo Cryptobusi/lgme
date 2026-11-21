@@ -1,6 +1,6 @@
 (function () {
   var EPOCH = '2';
-  var CURRENT = { 'lgme-v261': 1, 'lgme-gym-v81': 1 };
+  var CURRENT = { 'lgme-v262': 1, 'lgme-gym-v81': 1 };
   function keep(name) {
     if (!name) return true;
     if (name === 'lgme.reset.epoch' || name === 'lgme.reset.note' || name === 'lgme.device.key' || name === 'lgme.display.step' || name === 'lgme.display.easy' || name === 'lgme.text.tip' || name === 'lgme.ui.mode' || name === 'lgme.ui.uses' || name === 'lgme.ui.offer' || name === 'lgme.ui.shortcuts' || name === 'lgme.learn.path' || name === 'lgme-gym.seat' || name === 'lgme.health.book' || name === 'lgme.health.email' || name === 'lgme.health.plan' || name === 'lgme.health.contact' || name === 'lgme.health.contactGrants' || name === 'lgme.health.consent' || name === 'lgme.demo.member') return true;
@@ -175,6 +175,124 @@
   }
   document.documentElement.classList.add('has-site-nav');
   document.body.classList.add('has-site-nav');
+  if (!document.getElementById('hand-bar')) {
+    document.documentElement.classList.add('has-hand');
+    var hand = document.createElement('nav');
+    hand.id = 'hand-bar';
+    hand.setAttribute('aria-label', 'Phone');
+    var recentSheet = document.createElement('div');
+    recentSheet.id = 'hand-recent';
+    recentSheet.hidden = true;
+    var routes = [
+      { href: '/', name: 'Home' },
+      { href: '/gym', name: 'Health' },
+      { href: '/gym#/ididit', name: 'IdidIt' },
+      { href: '/gym#/more', name: 'Settings' },
+      { href: '/exchange', name: 'Exchange' },
+      { href: '/help', name: 'Help' },
+      { href: '/inventory', name: 'Inventory' }
+    ];
+    var pathNow = function () {
+      var path = String(location.pathname || '/').replace(/\.html$/, '') || '/';
+      if (path.length > 1 && path.charAt(path.length - 1) === '/') path = path.slice(0, -1);
+      return path;
+    };
+    var hereIndex = function () {
+      var full = pathNow() + (location.hash || '');
+      var path = pathNow();
+      var exact = -1;
+      var loose = -1;
+      for (var i = 0; i < routes.length; i += 1) {
+        if (routes[i].href === full) exact = i;
+        if (routes[i].href === path) loose = i;
+      }
+      if (exact >= 0) return exact;
+      return loose >= 0 ? loose : 0;
+    };
+    var remember = function () {
+      var href = pathNow() + (location.hash || '');
+      var name = String(document.title || href).replace(/\s*·\s*lgme.*/i, '').slice(0, 42) || href;
+      var list = [];
+      try { list = JSON.parse(sessionStorage.getItem('lgme.hand.recent') || '[]'); } catch (error) { list = []; }
+      if (!Array.isArray(list)) list = [];
+      list = list.filter(function (item) { return item && item.href !== href; });
+      list.unshift({ href: href, name: name });
+      try { sessionStorage.setItem('lgme.hand.recent', JSON.stringify(list.slice(0, 6))); } catch (error) { /* the row still shows this page */ }
+      return list.slice(0, 6);
+    };
+    var paintRecent = function () {
+      var list = remember();
+      recentSheet.replaceChildren();
+      list.forEach(function (item) {
+        var link = document.createElement('a');
+        link.href = item.href;
+        link.textContent = item.name;
+        recentSheet.appendChild(link);
+      });
+    };
+    var go = function (delta) {
+      var index = hereIndex();
+      var next = Math.max(0, Math.min(routes.length - 1, index + delta));
+      if (next === index) return;
+      location.assign(routes[next].href);
+    };
+    var handButton = function (id, text, label) {
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.id = id;
+      button.textContent = text;
+      button.setAttribute('aria-label', label);
+      return button;
+    };
+    var prev = handButton('hand-prev', '‹', 'Previous page');
+    var recent = handButton('hand-recent', 'III', 'Bigger AI screen');
+    var home = handButton('hand-home', 'O', 'Home');
+    var back = handButton('hand-back', 'V', 'Back');
+    var next = handButton('hand-next', '›', 'Next page');
+    prev.addEventListener('click', function () { go(-1); });
+    next.addEventListener('click', function () { go(1); });
+    home.addEventListener('click', function () { location.assign('/?home=1'); });
+    back.addEventListener('click', function () {
+      if (history.length > 1) history.back();
+      else location.assign('/?home=1');
+    });
+    recent.addEventListener('click', function () {
+      var dock = document.getElementById('ai-dock');
+      var big = false;
+      if (dock) {
+        big = !dock.classList.contains('is-big');
+        dock.classList.toggle('is-big', big);
+        dock.classList.add('is-open');
+        var expand = dock.querySelector('#ai-expand');
+        if (expand) {
+          expand.setAttribute('aria-expanded', 'true');
+          expand.textContent = 'Close';
+        }
+        var log = dock.querySelector('#ai-log');
+        if (log) log.scrollIntoView({ block: 'nearest' });
+      }
+      recent.setAttribute('aria-pressed', big ? 'true' : 'false');
+      recentSheet.hidden = !big;
+      if (big) paintRecent();
+    });
+    var paintEnds = function () {
+      var index = hereIndex();
+      prev.disabled = index <= 0;
+      next.disabled = index >= routes.length - 1;
+      prev.setAttribute('aria-disabled', prev.disabled ? 'true' : 'false');
+      next.setAttribute('aria-disabled', next.disabled ? 'true' : 'false');
+    };
+    hand.appendChild(prev);
+    hand.appendChild(recent);
+    hand.appendChild(home);
+    hand.appendChild(back);
+    hand.appendChild(next);
+    document.body.appendChild(recentSheet);
+    document.body.appendChild(hand);
+    paintEnds();
+    remember();
+    window.addEventListener('hashchange', function () { paintEnds(); remember(); });
+  }
   if (!document.querySelector('script[src="/js/sw-update.js"]')) {
     var updater = document.createElement('script');
     updater.src = '/js/sw-update.js';
