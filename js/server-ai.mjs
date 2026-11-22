@@ -32,15 +32,8 @@ export async function askServer(question, page, { fetchImpl, storage } = {}) {
   }
 }
 
-export function testLine(result, now = new Date()) {
-  if (result?.ok && result.label) {
-    const when = new Intl.DateTimeFormat('en-US', {
-      timeZone: 'America/New_York',
-      hour: 'numeric',
-      minute: '2-digit'
-    }).format(now);
-    return `AI test passed · ${result.label} · ${when} ET`;
-  }
+export function testLine(result) {
+  if (result?.ok && result.label) return `AI test passed · ${result.label}`;
   return `AI test failed · using built-in guide · ${result?.reason || 'no reply'}`;
 }
 

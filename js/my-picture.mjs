@@ -621,7 +621,7 @@ function heroMarkup(state) {
 function statusMarkup(state) {
   const on = Boolean(state.serendipity);
   return `<div class="status">
-      <time id="clock" datetime="">--:--</time>
+      <time id="clock" hidden aria-hidden="true" datetime="">--:--</time>
       <span class="enclave"><span class="enclave-dot" aria-hidden="true"></span> SLM Enclave: Idle</span>
       <span class="signal" aria-hidden="true">▮▮▮ ▭</span>
     </div>

@@ -1,4 +1,5 @@
 html.tape { background: #cfc4b0; }
+#clock, .lgme-clock { display: none !important; }
 html.tape body {
   max-width: 26rem;
   color: #1a1612;

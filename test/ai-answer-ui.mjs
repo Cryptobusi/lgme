@@ -70,7 +70,7 @@ if (!(await page.locator('#ai-dock').evaluate((node) => node.classList.contains(
 await page.locator('#ai-self-test').click();
 await page.waitForFunction(() => /AI test passed/.test(document.getElementById('ai-test-line')?.textContent || ''));
 const status = await page.locator('#ai-test-line').innerText();
-if (!/Gemini 2.5 Flash Lite/.test(status) || !/ET$/.test(status.trim())) failures.push(`test line ${status}`);
+if (!/Gemini 2.5 Flash Lite/.test(status) || /ET$/.test(status.trim())) failures.push(`test line ${status}`);
 const named = await page.locator('#ai-switch').innerText();
 if (named !== 'AI on · Gemini 2.5 Flash Lite') failures.push(`source chip ${named}`);
 await browser.close();

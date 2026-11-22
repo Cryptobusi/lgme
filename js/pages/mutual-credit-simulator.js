@@ -113,7 +113,7 @@ import { clearingWindow, merkleProofFor, merkleRootOf, verifyMerkleProof } from 
       if (status === 'cyan') badgeColor = 'text-cyan-400 bg-cyan-950/60 border-cyan-800/50';
       if (status === 'purple') badgeColor = 'text-purple-400 bg-purple-950/60 border-purple-800/50';
       div.innerHTML = `
-        <span class="text-slate-500 text-[10px]">${esc(timestamp)}</span>
+        <span class="lgme-clock" hidden>${esc(timestamp)}</span>
         <span class="px-1.5 py-0.2 rounded border text-[10px] ${badgeColor}">${esc(step)}</span>
         <span class="flex-1 text-slate-300 text-xs">${esc(detail)}</span>
       `;
@@ -313,10 +313,9 @@ import { clearingWindow, merkleProofFor, merkleRootOf, verifyMerkleProof } from 
         renderTape();
         addLog('3. KOMUNITIN', `Double-entry net cleared : ${proposal.debtor} (-${proposal.amount}) | ${proposal.creditor} (+${proposal.amount})`, 'cyan');
         const hcsSequence = 100000 + state.tape.filter((entry) => entry.type === 'settlement').length;
-        const consensusTs = new Date().getTime() / 1000;
         addLog('4. HEDERA HCS', `Not written to Hedera. Seq #${hcsSequence} `, 'success');
         document.getElementById('lastTxHash').textContent = settlement.hash;
-        document.getElementById('consensusTimestamp').textContent = `${consensusTs} UTC (Seq #${hcsSequence}) `;
+        document.getElementById('consensusTimestamp').textContent = `Not written to Hedera. Seq #${hcsSequence}`;
         showToast(`Exchange settled. Not written to Hedera.`);
       } finally {
         busy = false;
@@ -552,11 +551,8 @@ import { clearingWindow, merkleProofFor, merkleRootOf, verifyMerkleProof } from 
     }
     function paintWindow() {
       const window = clearingWindow(new Date().toISOString(), { windowDays: 7 });
-      const ms = window.remainingMs;
-      const days = Math.floor(ms / 86400000);
-      const hours = Math.floor((ms % 86400000) / 3600000);
       const line = document.getElementById('windowLine');
-      if (line) line.textContent = `Clearing window ${window.windowId} · ${days}d ${hours}h left.`;
+      if (line) line.textContent = `Clearing window ${window.windowId}.`;
     }
     async function paintRoot() {
       const day = new Date().toISOString().slice(0, 10);

@@ -7,7 +7,7 @@ test('the client names the guide that answered', () => {
   assert.equal(sourceChip('online', 'Gemini 2.5 Flash Lite'), 'AI on · Gemini 2.5 Flash Lite');
   assert.equal(sourceChip('guide'), 'AI on · built-in guide');
   const line = testLine({ ok: true, label: 'Gemini 2.5 Flash Lite' }, new Date('2026-11-20T20:41:00Z'));
-  assert.match(line, /^AI test passed · Gemini 2.5 Flash Lite · .+ ET$/);
+  assert.equal(line, 'AI test passed · Gemini 2.5 Flash Lite');
   assert.match(testLine({ ok: false, reason: 'cap' }), /AI test failed · using built-in guide · cap/);
   assert.equal(shouldSelfTest({ getItem: () => null }, 'lgme.app'), true);
   assert.equal(shouldSelfTest({ getItem: () => '1' }, 'lgme.app'), false);

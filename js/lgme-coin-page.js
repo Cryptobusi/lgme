@@ -64,9 +64,8 @@
       }
       if (eq) eq.textContent = quote.plain + ' ' + quote.lgmeAmount + ' $lgme for US$' + usd + '.';
       if (clock) {
-        clock.textContent = mod.lockOpen(lock, now)
-          ? 'Locked until ' + new Date(lock.expiresAt).toISOString() + '.'
-          : (quote.source || '') + ' · ' + (quote.timestamp || '');
+        clock.hidden = true;
+        clock.textContent = '';
       }
       paintGift(payUrl(String(quote.lgmeAmount), reference));
     }

@@ -72,8 +72,7 @@ export async function renderSetupFee({ storage, go, mine, invite } = {}) {
     const amount = latest.lgmeAmount;
     const price = latest.price;
     amountLine.textContent = `${amount} $lgme for US$1.`;
-    const when = lockOpen(lock, now) ? `Locked until ${new Date(lock.expiresAt).toISOString()}.` : 'Updating.';
-    priceLine.textContent = `${latest.plain || 'Up to $20 uses the 3-second average.'} ${latest.source || ''} · ${latest.timestamp || ''} · ${when}`.trim();
+    priceLine.textContent = `${latest.plain || 'Up to $20 uses the 3-second average.'} ${latest.source || ''}`.trim();
     const link = payNowQuote(price, reference);
     if (link.ok) wallet.setAttribute('href', link.url);
   }
@@ -125,7 +124,7 @@ export async function renderSetupFee({ storage, go, mine, invite } = {}) {
       el('p', { class: 'muted' }, ['The quote is locked for 60 seconds. Your wallet signs the payment. Nothing is taken from this app.'])
     );
     queueMicrotask(() => { if (globalThis.QRCode) new globalThis.QRCode(qr, { text: link.url, width: 180, height: 180 }); });
-    status.textContent = `Locked ${held.lgmeAmount} $lgme until ${new Date(held.expiresAt).toISOString()}.`;
+    status.textContent = `Locked ${held.lgmeAmount} $lgme.`;
   }
 
   const preset = feePreset(invite, {});

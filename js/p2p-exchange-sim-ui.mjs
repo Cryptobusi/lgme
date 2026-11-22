@@ -194,7 +194,7 @@ function showSolanaPay(spec) {
     option('devnet', 'Devnet test mode', solanaCluster() === 'devnet')
   ]);
   const preview = h('p', { class: 'legend', id: 'solana-request' }, ['Fetching the US$ price.']);
-  const countdown = h('p', { id: 'quote-countdown' }, ['Price lock 15s']);
+  const countdown = h('p', { id: 'quote-countdown', hidden: true }, ['']);
   const clampNote = h('p', { id: 'clamp-note' }, ['']);
   const link = h('a', { id: 'solana-link', href: '#', target: '_blank', rel: 'noopener noreferrer' }, ['Open in your wallet']);
   link.hidden = true;
@@ -223,7 +223,9 @@ function showSolanaPay(spec) {
     const end = new Date(lock.expiresAt).getTime();
     const tick = async () => {
       const left = Math.max(0, end - Date.now());
-      countdown.textContent = left > 0 ? `Price lock ${Math.ceil(left / 1000)}s` : 'The 15 second lock expired. Quoting again.';
+      countdown.hidden = left > 0;
+      countdown.hidden = left > 0;
+      countdown.textContent = left > 0 ? '' : 'Quoting again.';
       if (left > 0) return;
       stopClock();
       link.hidden = true;
@@ -276,6 +278,7 @@ function showSolanaPay(spec) {
     link.hidden = true;
     lock = null;
     preview.textContent = message || sim.NO_COIN;
+    countdown.hidden = false;
     countdown.textContent = sim.NO_COIN;
     if (altHost.childElementCount) return;
     const months = h('select', {}, [3, 4, 5, 6].map((n) => option(String(n), `${n} month terms`, n === 3)));
@@ -316,21 +319,24 @@ function showSolanaPay(spec) {
         } catch { preview.textContent = 'The wallet was not connected.'; }
       } }, ['Use this wallet']),
       h('button', { type: 'button', id: 'see-amount', onClick: async () => {
-        if (!lock) { countdown.textContent = 'Wait for the price.'; return; }
+        if (!lock) { countdown.hidden = false; countdown.textContent = 'Wait for the price.'; return; }
         const seen = await sim.acknowledgeQuote(store, spec.seat, { lockId: lock.lockId, navigator });
         if (!seen.ok) {
           if (seen.requote) { await pull(lock.price); return; }
+          countdown.hidden = false;
           countdown.textContent = seen.error;
           return;
         }
+        countdown.hidden = false;
         countdown.textContent = 'You see this amount. The other party sees it on their seat before the wallet request.';
       } }, ['I see this amount']),
       h('button', { type: 'button', class: 'primary', id: 'solana-confirm', onClick: async () => {
-        if (!lock) { countdown.textContent = 'Wait for the price.'; return; }
+        if (!lock) { countdown.hidden = false; countdown.textContent = 'Wait for the price.'; return; }
         localStorage.setItem(CLUSTER_KEY, cluster.value);
         const issued = await sim.issueSolanaRequest(store, spec.seat, { lockId: lock.lockId, navigator });
         if (!issued.ok) {
           if (issued.requote) {
+            countdown.hidden = false;
             countdown.textContent = issued.error;
             const previous = lock.price;
             lock = null;
@@ -338,6 +344,7 @@ function showSolanaPay(spec) {
             await pull(previous);
             return;
           }
+          countdown.hidden = false;
           countdown.textContent = issued.error;
           return;
         }
@@ -811,11 +818,7 @@ function windowBanner() {
   const host = h('p', { class: 'legend', id: 'clearing-window' }, ['']);
   const tick = () => {
     const window = sim.clearingWindow(new Date().toISOString(), clearingRulesNow());
-    const ms = window.remainingMs;
-    const days = Math.floor(ms / 86400000);
-    const hours = Math.floor((ms % 86400000) / 3600000);
-    const mins = Math.floor((ms % 3600000) / 60000);
-    host.textContent = `Clearing window ${window.windowId} · closes ${window.closesAt.slice(0, 16).replace('T', ' ')} UTC · ${days}d ${hours}h ${mins}m left.`;
+    host.textContent = `Clearing window ${window.windowId}.`;
   };
   tick();
   windowTimer = setInterval(tick, 30000);
@@ -1990,8 +1993,7 @@ async function renderWallet(peers, seat) {
   async function paintCode() {
     if (!secret) return;
     const code = await liveCode(secret);
-    const left = 30 - (Math.floor(Date.now() / 1000) % 30);
-    codeLine.textContent = `Authenticator code on this page: ${code}. It changes in ${left}s. An authenticator app that scanned the code shows the same number.`;
+    codeLine.textContent = `Authenticator code on this page: ${code}. An authenticator app that scanned the code shows the same number.`;
   }
   if (secret) {
     await paintCode();
@@ -2773,7 +2775,7 @@ function showCapture(seat, link = {}) {
       shutter.textContent = 'Stop';
       const tick = setInterval(() => {
         const left = Math.max(0, 30 - Math.floor((Date.now() - started) / 1000));
-        clock.textContent = `${left}s left. Nothing is uploaded.`;
+        clock.textContent = 'Nothing is uploaded.';
         if (left <= 0 && recorder && recorder.state === 'recording') recorder.stop();
         if (!recorder || recorder.state !== 'recording') clearInterval(tick);
       }, 250);
