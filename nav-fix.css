@@ -1,4 +1,4 @@
-/* Force one short row of icons only at bottom */
+/* Preview only: short one-row icon bottom bar */
 #hand-bar {
   position: fixed !important;
   left: 0 !important;
@@ -8,54 +8,32 @@
   display: flex !important;
   flex-direction: row !important;
   align-items: center !important;
+  justify-content: space-around !important;
   height: 3rem !important;
   min-height: 3rem !important;
-  max-height: 3.2rem !important;
-  padding: 0.1rem 0.15rem calc(0.1rem + env(safe-area-inset-bottom)) !important;
+  padding: 0.1rem 0.2rem calc(0.1rem + env(safe-area-inset-bottom)) !important;
   background: #0c100c !important;
   border-top: 1px solid #c6a15b !important;
-  gap: 0.25rem !important;
-  overflow: hidden !important;
+  gap: 0.3rem !important;
 }
 #hand-bar button {
-  flex: 1 1 0 !important;
-  min-width: 0 !important;
+  flex: 1 !important;
   height: 2.6rem !important;
   min-height: 2.6rem !important;
-  max-height: 2.6rem !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   border: 0 !important;
   border-radius: 8px !important;
+  font-size: 0 !important;
   padding: 0 !important;
-  margin: 0 !important;
-  font-size: 0 !important;
-  line-height: 0 !important;
   color: #1a1408 !important;
 }
-#hand-bar button b,
-#hand-bar button small {
-  display: none !important;
-  font-size: 0 !important;
-  width: 0 !important;
-  height: 0 !important;
-  overflow: hidden !important;
-}
-#hand-bar .hand-icon {
-  display: block !important;
-  font-size: 20px !important;
-  line-height: 1 !important;
-  font-weight: 700 !important;
-  color: #1a1408 !important;
-}
-#hand-recent,
-#hand-back {
-  display: none !important;
-}
+#hand-bar button b, #hand-bar button small { display: none !important; }
+#hand-bar .hand-icon { font-size: 20px !important; color: #1a1408 !important; }
+#hand-recent, #hand-back, #hand-purpose { display: none !important; }
 #hand-home { background: #c6a15b !important; }
 #hand-prev { background: #8fd6a8 !important; }
 #hand-next { background: #e2b657 !important; }
-#hand-purpose { display: none !important; }
 html.has-hand #ai-dock { bottom: 3.2rem !important; }
-body, html.has-site-nav body { padding-bottom: calc(3.4rem + env(safe-area-inset-bottom)) !important; }
+body { padding-bottom: calc(3.4rem + env(safe-area-inset-bottom)) !important; }
