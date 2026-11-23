@@ -555,9 +555,9 @@
     ai.addEventListener('click', function () {
       var dock = document.getElementById('ai-dock');
       if (!dock) return;
-      var on = !dock.classList.contains('is-open');
-      dock.classList.toggle('is-open', on);
+      var on = !document.documentElement.classList.contains('hand-ai-on');
       document.documentElement.classList.toggle('hand-ai-on', on);
+      dock.classList.toggle('is-open', on);
       ai.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
     var fieldList = document.createElement('ul');
