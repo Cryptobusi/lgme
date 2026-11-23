@@ -874,11 +874,6 @@ async function showAgent(agent) {
 }
 
 function startAgentLoop() {
-  const tick = async () => {
-    for (const agent of dueAgents(listAgents(localStorage))) await showAgent(agent);
-  };
-  tick();
-  setInterval(tick, 5000);
 }
 
 function inviteActions(draft) {
@@ -2285,6 +2280,7 @@ async function renderIdidIt() {
       suggestion.textContent = `Suggestion: ${line}. Suggestion: ${line}`;
       sessionStorage.removeItem('lgme.prompt.draft');
       const run = async () => {
+        return;
         suggestion.scrollIntoView({ block: 'start' });
         await typeField(activity, draft.activity || '');
         await typeField(distance, draft.distance || '');
