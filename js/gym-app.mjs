@@ -2301,8 +2301,48 @@ async function renderIdidIt() {
   } catch { /* the default title stays */ }
   for (const field of [activity, distance, speed, minutes, title]) field.addEventListener('input', explain);
   const statusLine = el('p', { id: 'ididit-status', role: 'status' });
+  const fields = [activity, distance, speed, minutes, title];
+  const optionsOf = (field) => String(field.getAttribute('data-options') || '').split('|').filter(Boolean);
+  const currentField = () => fields.find((field) => field.classList.contains('is-next')) || fields.find((field) => !String(field.value || '').trim()) || fields[0];
+  const writeOption = (field, index) => {
+    const options = optionsOf(field);
+    if (!options.length) return;
+    const next = (index + options.length) % options.length;
+    field.value = options[next];
+    field.classList.add('is-filled');
+    markNext(field);
+    explain();
+  };
+  const up = el('button', { type: 'button', id: 'recommend-up', 'aria-label': 'Previous recommendation' }, ['↑']);
+  const down = el('button', { type: 'button', id: 'recommend-down', 'aria-label': 'Next recommendation' }, ['↓']);
+  up.addEventListener('click', () => {
+    const field = currentField();
+    const options = optionsOf(field);
+    const now = Math.max(0, options.indexOf(field.value));
+    writeOption(field, now - 1);
+  });
+  down.addEventListener('click', () => {
+    const field = currentField();
+    const options = optionsOf(field);
+    const now = Math.max(0, options.indexOf(field.value));
+    writeOption(field, now + 1);
+  });
   const confirm = el('button', { type: 'button', class: 'primary', id: 'gym-ididit-confirm' }, ['Confirm']);
+  const stack = el('div', { id: 'confirm-stack' }, [up, down, confirm]);
   confirm.addEventListener('click', async () => {
+    const field = currentField();
+    const options = optionsOf(field);
+    if (!String(field.value || '').trim() && options[0]) field.value = options[0];
+    const next = fields[fields.indexOf(field) + 1];
+    if (next) {
+      const nextOptions = optionsOf(next);
+      if (!String(next.value || '').trim() && nextOptions[0]) next.value = nextOptions[0];
+      markNext(next);
+      next.scrollIntoView({ block: 'center' });
+      explain();
+      statusLine.textContent = 'Filled. Check it, or use the arrows.';
+      return;
+    }
     confirm.disabled = true;
     window.dispatchEvent(new CustomEvent('lgme-ididit-step', { detail: { step: 3 } }));
     const result = await submitIdidIt(title.value);
@@ -2314,6 +2354,7 @@ async function renderIdidIt() {
     statusLine.textContent = receiptStatus(result);
     confirm.disabled = false;
   });
+  if (!fields.some((field) => field.classList.contains('is-next'))) markNext(activity);
   const view = el('section', { id: 'ididit-done' }, [
     el('h2', {}, [IDIDIT_NAME]),
     suggestion,
@@ -2323,7 +2364,7 @@ async function renderIdidIt() {
     el('label', {}, ['Speed', speed]),
     el('label', {}, ['Minutes', minutes, computed]),
     el('label', {}, ['Other', title]),
-    confirm,
+    stack,
     statusLine
   ]);
   return view;
