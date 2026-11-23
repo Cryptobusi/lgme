@@ -889,3 +889,34 @@
     schedule();
   }
 })();
+
+(function () {
+  var labels = ['85', '100', '115', '130', '150'];
+  function paint(step) {
+    var button = document.getElementById('sz-cycle');
+    if (!button) return;
+    var index = Number(step);
+    if (!Number.isInteger(index) || index < 0 || index > 4) index = 1;
+    button.textContent = 'sz ' + labels[index];
+    button.setAttribute('aria-label', 'Screen size ' + labels[index] + ' percent. Tap for the next size, from smallest to largest.');
+  }
+  function mount() {
+    if (document.getElementById('sz-cycle')) return;
+    var button = document.createElement('button');
+    button.type = 'button';
+    button.id = 'sz-cycle';
+    button.textContent = 'sz';
+    button.addEventListener('click', function () {
+      document.dispatchEvent(new CustomEvent('lgme-display', { detail: { cycle: true } }));
+    });
+    document.body.appendChild(button);
+    var saved = 1;
+    try { saved = Number(localStorage.getItem('lgme.display.step')); } catch (error) { saved = 1; }
+    paint(saved);
+  }
+  document.addEventListener('lgme-display-state', function (event) {
+    paint(event.detail && event.detail.step);
+  });
+  if (document.body) mount();
+  else document.addEventListener('DOMContentLoaded', mount);
+})();
