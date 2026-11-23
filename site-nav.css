@@ -1234,3 +1234,31 @@ html.hand-ai-on #ai-dock.is-open #ai-scroll {
   max-height: none !important;
   overflow: visible !important;
 }
+
+html.hand-ai-on #ai-dock.is-open,
+html.hand-ai-on.has-hand #ai-dock.is-open,
+html.hand-ai-on.has-hand.is-one-tab body:has(nav[aria-label="Gym"]) #ai-dock.is-open {
+  min-height: 3.4rem !important;
+}
+html.hand-ai-on #ai-dock.is-open #ai-scroll,
+html.hand-ai-on #ai-dock.is-open #ai-suggestions,
+html.hand-ai-on.has-hand #ai-dock.is-open #ai-scroll,
+html.hand-ai-on.has-hand #ai-dock.is-open #ai-suggestions {
+  display: block !important;
+  height: auto !important;
+  min-height: 2.8rem !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+html.hand-ai-on #ai-dock.is-open .ai-suggest {
+  display: flex !important;
+  align-items: center !important;
+  height: auto !important;
+  min-height: 44px !important;
+}
+html.hand-ai-on #ai-dock.is-open .ai-suggest-line {
+  display: block !important;
+  height: auto !important;
+  min-height: 1.4rem !important;
+  line-height: 1.4 !important;
+}
