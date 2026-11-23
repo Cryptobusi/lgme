@@ -1329,3 +1329,29 @@ html.is-more-open #one-menu {
   text-align: center;
   text-decoration: none;
 }
+
+/* Up and down sit above Confirm, clear of the icon row. */
+#confirm-stack {
+  position: fixed;
+  z-index: 86;
+  right: 0.55rem;
+  bottom: calc(4.3rem + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+}
+#recommend-up,
+#recommend-down,
+#confirm-stack #gym-ididit-confirm {
+  min-width: 76px;
+  min-height: 38px;
+  margin: 0;
+  border: 0;
+  border-radius: 12px;
+  font-weight: 700;
+}
+#recommend-up,
+#recommend-down {
+  background: #f4f1e8;
+  color: #1a1408;
+}
