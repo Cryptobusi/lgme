@@ -519,6 +519,78 @@
     purpose.textContent = pagePurpose();
     var row = document.createElement('div');
     row.id = 'hand-row';
+    var mail = handButton('hand-mail', 'Mail', 'Messages', 'Messages waiting. Tap to open them.');
+    var ai = handButton('hand-ai', 'AI', 'Prompt', 'Opens the prompt lines. Green means they are showing.');
+    var fields = handButton('hand-fields', 'Fields', 'Left to fill', 'Hold to see what is still empty.');
+    markIcon(mail, '\u2709');
+    markIcon(ai, '\u2726');
+    markIcon(fields, '\u2630');
+    var mailCount = document.createElement('span');
+    mailCount.className = 'hand-count';
+    mailCount.id = 'hand-mail-count';
+    mail.appendChild(mailCount);
+    var fieldCount = document.createElement('span');
+    fieldCount.className = 'hand-count';
+    fieldCount.id = 'hand-field-count';
+    fields.appendChild(fieldCount);
+    var paintCounts = function () {
+      var list = document.getElementById('message-list');
+      var waiting = list ? list.querySelectorAll('li').length : 0;
+      mailCount.textContent = waiting ? String(waiting) : '';
+      mailCount.hidden = !waiting;
+      var blanks = [];
+      document.querySelectorAll('#home-board .dash-card, #home-board button').forEach(function (card) {
+        if (/None yet/i.test(card.textContent || '')) blanks.push((card.textContent || '').replace(/None yet/i, '').trim().slice(0, 24));
+      });
+      fieldCount.textContent = blanks.length ? String(blanks.length) : '';
+      fieldCount.hidden = !blanks.length;
+      fields.dataset.blanks = blanks.join('|');
+    };
+    mail.addEventListener('click', function () {
+      var open = document.getElementById('messages-open');
+      if (open) { open.click(); return; }
+      var panel = document.getElementById('message-panel');
+      if (panel) panel.scrollIntoView({ block: 'start' });
+    });
+    ai.addEventListener('click', function () {
+      var dock = document.getElementById('ai-dock');
+      if (!dock) return;
+      var on = !dock.classList.contains('is-open');
+      dock.classList.toggle('is-open', on);
+      document.documentElement.classList.toggle('hand-ai-on', on);
+      ai.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    var fieldList = document.createElement('ul');
+    fieldList.id = 'hand-field-list';
+    fieldList.hidden = true;
+    var showFields = function (on) {
+      fieldList.hidden = !on;
+      if (!on) return;
+      paintCounts();
+      fieldList.replaceChildren();
+      var names = (fields.dataset.blanks || '').split('|').filter(Boolean);
+      if (!names.length) {
+        var empty = document.createElement('li');
+        empty.textContent = 'None left';
+        fieldList.appendChild(empty);
+        return;
+      }
+      names.forEach(function (name) {
+        var item = document.createElement('li');
+        item.textContent = name;
+        fieldList.appendChild(item);
+      });
+    };
+    fields.addEventListener('pointerdown', function () { showFields(true); });
+    fields.addEventListener('pointerup', function () { showFields(false); });
+    fields.addEventListener('pointercancel', function () { showFields(false); });
+    fields.addEventListener('pointerleave', function () { showFields(false); });
+    document.body.appendChild(fieldList);
+    paintCounts();
+    window.setTimeout(paintCounts, 600);
+    row.appendChild(mail);
+    row.appendChild(ai);
+    row.appendChild(fields);
     row.appendChild(prev);
     row.appendChild(recent);
     row.appendChild(home);
