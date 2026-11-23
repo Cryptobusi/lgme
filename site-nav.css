@@ -1080,3 +1080,32 @@ html.is-one-tab #one-menu {
   max-height: min(70dvh, calc(100dvh - 9rem)) !important;
   z-index: 80 !important;
 }
+
+#sz-cycle {
+  position: fixed;
+  z-index: 96;
+  top: 0.4rem;
+  right: 3.3rem;
+  min-height: 32px;
+  height: 32px;
+  margin: 0;
+  padding: 0 0.6rem;
+  border: 0;
+  border-radius: 999px;
+  background: #f4f1e8;
+  color: #1a1408;
+  font: 700 13px/1 Figtree, sans-serif;
+}
+html[data-sz="0"] #home-board,
+html[data-sz="1"] #home-board {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 6px !important;
+}
+html[data-sz="0"] .dash-head,
+html[data-sz="1"] .dash-head {
+  min-height: 36px !important;
+  padding: 0.15rem 0.3rem !important;
+}
+html[data-sz="0"] #status-chips,
+html[data-sz="1"] #status-chips { gap: 0.25rem !important; }
+html[data-sz="4"] #home-board { grid-template-columns: minmax(0, 1fr) !important; }
