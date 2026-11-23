@@ -82,6 +82,7 @@ export function applyDisplay(root, state, probe) {
   const picked = pickDensity(probe);
   const scale = fontScale(state.step, probe.remPx, state.easy);
   root.dataset.density = picked.density;
+  root.dataset.sz = String(Math.min(FONT_STEPS.length - 1, Math.max(0, Number(state.step) || 0)));
   root.dataset.orient = picked.orientation;
   root.dataset.motion = picked.reducedMotion ? 'reduce' : 'ok';
   if (state.easy) root.dataset.easy = '1';
@@ -166,8 +167,9 @@ export function startDisplay(win = globalThis) {
   };
   win.document.addEventListener('lgme-display', (event) => {
     const detail = event.detail || {};
-    if (detail.easy) state = { ...state, easy: !state.easy };
-    if (detail.reset) state = { ...state, step: 1 };
+    if (detail.cycle) state = { ...state, step: (Number(state.step) + 1) % FONT_STEPS.length };
+    else if (detail.easy) state = { ...state, easy: !state.easy };
+    else if (detail.reset) state = { ...state, step: 1 };
     else if (typeof detail.step === 'number') state = { ...state, step: changeStep(state.step, detail.step) };
     writeDisplay(storage, state);
     paint();
