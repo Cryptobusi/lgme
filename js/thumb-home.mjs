@@ -708,7 +708,7 @@ if (root) {
   const more = document.createElement('a');
   more.id = 'screen-more';
   more.href = '/customize';
-  more.textContent = 'Customize more';
+  more.textContent = 'Customize';
   screen.append(undo, more);
   board.append(screen);
   let reopen = document.getElementById('screen-reopen');
