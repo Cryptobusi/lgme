@@ -1194,3 +1194,43 @@ html.hand-ai-on #ai-dock.is-open {
   border-top: 1px solid #c6a15b !important;
   z-index: 85 !important;
 }
+
+/* The AI mark opens the prompt line above the icon row. */
+html.hand-ai-on #ai-dock.is-open,
+html.hand-ai-on.has-hand #ai-dock.is-open,
+html.hand-ai-on.has-hand.is-one-tab body:has(nav[aria-label="Gym"]) #ai-dock.is-open {
+  display: flex !important;
+  flex-direction: column !important;
+  position: fixed !important;
+  left: 0 !important;
+  right: 0 !important;
+  top: auto !important;
+  bottom: calc(3.6rem + env(safe-area-inset-bottom)) !important;
+  height: auto !important;
+  max-height: 8.5rem !important;
+  overflow: auto !important;
+  pointer-events: auto !important;
+  z-index: 88 !important;
+  margin: 0 !important;
+  padding: 0.35rem 0.6rem !important;
+  background: #151a15 !important;
+  color: #f4f1e8 !important;
+  border: 0 !important;
+  border-top: 1px solid #c6a15b !important;
+  border-radius: 0 !important;
+}
+html.hand-ai-on #ai-dock.is-open > :not(#ai-scroll),
+html.hand-ai-on.has-hand #ai-dock.is-open > :not(#ai-scroll) {
+  display: none !important;
+}
+html.hand-ai-on #ai-dock.is-open #ai-scroll > :not(#ai-suggestions),
+html.hand-ai-on.has-hand #ai-dock.is-open #ai-scroll > :not(#ai-suggestions) {
+  display: none !important;
+}
+html.hand-ai-on #ai-dock.is-open #ai-suggestions,
+html.hand-ai-on #ai-dock.is-open #ai-scroll {
+  display: block !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
