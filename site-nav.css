@@ -1128,3 +1128,16 @@ header.gym-head {
   min-height: 0 !important;
 }
 #gym-panel { min-height: 0 !important; padding-bottom: 8.5rem !important; }
+
+/* The notice stops before sz. The last row clears More and the icon bar. */
+#testnet-notice {
+  justify-content: flex-start !important;
+  padding-right: 8rem !important;
+  text-align: left !important;
+}
+html.has-site-nav body,
+body.has-site-nav,
+html.has-site-nav body:has(nav[aria-label="Gym"]),
+html.is-one-tab body:has(nav[aria-label="Gym"]) {
+  padding-bottom: calc(8.6rem + env(safe-area-inset-bottom)) !important;
+}
