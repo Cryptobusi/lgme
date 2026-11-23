@@ -275,7 +275,11 @@ if (root) {
       ? 'Step 3 of 3: test the helper'
       : 'Step 1 of 3: email or authenticator, then fingerprint, then AI test';
     const name = board.querySelector('#profile-name');
-    if (stage === 'full') name.textContent = `Member ${localStorage.getItem('lgme.member.id') || 'on this phone'}`;
+    if (stage === 'full') {
+      const id = localStorage.getItem('lgme.member.id') || '';
+      const names = { '0c1d13e7c698': 'Egon' };
+      name.textContent = names[id] || 'Member';
+    }
   };
   try {
     const member = JSON.parse(localStorage.getItem('lgme.demo.member') || 'null');
