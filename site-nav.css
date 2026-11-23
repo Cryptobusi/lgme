@@ -1045,3 +1045,28 @@ html[data-screen="full"] #ai-dock.is-open.is-big {
 #hand-home { order: 1 !important; background: #c6a15b !important; color: #14110c !important; }
 #hand-prev { order: 2 !important; background: #1f6b45 !important; color: #f4f1e8 !important; }
 #hand-next { order: 3 !important; background: #e07a2f !important; color: #14110c !important; }
+
+/* Gym: the helper is closed, so More sits on the icon row.
+   The title and the place wrap instead of covering each other. */
+html.is-one-tab nav[aria-label="Gym"],
+html.is-one-tab #one-more {
+  bottom: calc(3.6rem + env(safe-area-inset-bottom)) !important;
+}
+.gym-line {
+  flex-wrap: wrap !important;
+  height: auto !important;
+  row-gap: 0.2rem !important;
+}
+.gym-line .kicker {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+.gym-where {
+  flex: 1 1 100% !important;
+  order: 3 !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
