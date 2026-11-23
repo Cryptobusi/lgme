@@ -1269,3 +1269,63 @@ html.hand-ai-on #ai-dock.is-open .ai-suggest-line {
   min-height: 1.4rem !important;
   line-height: 1.4 !important;
 }
+
+/* More is gone. Settings sits at the top right of every page.
+   AI opens only the voice icon and settings. */
+#one-more { display: none !important; }
+#page-gear {
+  position: fixed;
+  z-index: 97;
+  top: 0.4rem;
+  right: 0.4rem;
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: #f4f1e8;
+  color: #1a1408;
+  font: 700 18px/36px Figtree, sans-serif;
+}
+#ai-voice-bar {
+  position: fixed;
+  z-index: 88;
+  left: 0;
+  right: 0;
+  bottom: calc(3.6rem + env(safe-area-inset-bottom));
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0.35rem 0.5rem;
+  background: #151a15;
+  border-top: 1px solid #c6a15b;
+}
+#ai-voice-bar[hidden] { display: none !important; }
+#ai-voice-bar button {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: #f4f1e8;
+  color: #1a1408;
+}
+html.is-more-open #one-menu {
+  display: block !important;
+  position: fixed !important;
+  top: 3.2rem !important;
+  right: 0.45rem !important;
+  bottom: auto !important;
+  left: auto !important;
+  width: min(16rem, calc(100vw - 1rem)) !important;
+  max-height: min(70dvh, calc(100dvh - 8rem)) !important;
+  z-index: 98 !important;
+  overflow: auto !important;
+}
+#screen-custom.primary, a#screen-custom {
+  display: block;
+  margin-top: 0.4rem;
+  text-align: center;
+  text-decoration: none;
+}
