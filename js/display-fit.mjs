@@ -150,14 +150,6 @@ function paintSimple(doc, easy) {
 export function startDisplay(win = globalThis) {
   const storage = win.localStorage;
   let state = readDisplay(storage);
-  try {
-    if (storage && storage.getItem('lgme.display.defaulted') !== '1') {
-      const fitted = defaultStepForScreen(measure(win));
-      if (state.step < fitted) state = { ...state, step: fitted };
-      writeDisplay(storage, state);
-      storage.setItem('lgme.display.defaulted', '1');
-    }
-  } catch { /* the saved size still applies */ }
   const paint = () => {
     const probe = measure(win);
     const applied = applyDisplay(win.document.documentElement, state, probe);
@@ -181,9 +173,6 @@ export function startDisplay(win = globalThis) {
     card.classList.toggle('is-open');
   });
   paint();
-  win.addEventListener('resize', paint);
-  win.addEventListener('orientationchange', paint);
-  if (win.visualViewport) win.visualViewport.addEventListener('resize', paint);
   return { paint };
 }
 
