@@ -683,11 +683,8 @@ if (root) {
   screen.id = 'step-screen';
   screen.className = 'access-card';
   screen.hidden = true;
-  const rec = recommendMode({
-    largeText: localStorage.getItem('lgme.dock.size') === 'tall',
-    voiceUsed: localStorage.getItem('lgme.voice.used') === '1'
-  });
-  screen.innerHTML = `<h2>Choose your screen</h2><p id="screen-reason">${rec.reason}</p><p>The screen can be tailored. Pick a mode.</p>`;
+  const rec = { mode: '', reason: '' };
+  screen.innerHTML = `<h2>Choose your screen</h2><p>Pick a mode. Nothing is chosen for you.</p>`;
   for (const [id, label] of [['simple', 'Simple'], ['everyday', 'Everyday'], ['full', 'Full']]) {
     const card = document.createElement('button');
     card.type = 'button';
