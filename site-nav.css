@@ -1109,3 +1109,22 @@ html[data-sz="1"] .dash-head {
 html[data-sz="0"] #status-chips,
 html[data-sz="1"] #status-chips { gap: 0.25rem !important; }
 html[data-sz="4"] #home-board { grid-template-columns: minmax(0, 1fr) !important; }
+
+/* Opening stays above the page. sz stays off the title.
+   The Gym hole was header padding; the last button clears More. */
+#open-credits { z-index: 120 !important; }
+body:has(.gym-line) #sz-cycle {
+  left: 0.45rem !important;
+  right: auto !important;
+  top: 0.4rem !important;
+}
+header.gym-head {
+  padding-top: 2.7rem !important;
+  padding-bottom: 0.35rem !important;
+}
+#device-can-host,
+#category-board,
+#health-floor:empty {
+  min-height: 0 !important;
+}
+#gym-panel { min-height: 0 !important; padding-bottom: 8.5rem !important; }
