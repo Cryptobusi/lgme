@@ -269,7 +269,7 @@ if (root) {
     board.querySelector('#step-fingerprint').hidden = signed;
     board.querySelector('#step-ai').hidden = !signed || stage === 'full';
     const screenStep = board.querySelector('#step-screen');
-    if (screenStep) screenStep.hidden = !(aiTested && !screenChosen(localStorage));
+    if (screenStep && screenStep.dataset.user !== '1') screenStep.hidden = !(aiTested && !screenChosen(localStorage));
     board.querySelector('#fingerprint-setup').hidden = !codeOk || stage === 'full';
     board.querySelector('#step-count').textContent = stage === 'full' || signed
       ? 'Step 3 of 3: test the helper'
@@ -699,17 +699,18 @@ if (root) {
     });
     screen.append(card);
   }
+  const custom = document.createElement('a');
+  custom.id = 'screen-custom';
+  custom.className = 'primary';
+  custom.href = '/customize';
+  custom.textContent = 'Custom';
   const undo = document.createElement('button');
   undo.type = 'button';
   undo.id = 'screen-undo';
   undo.className = 'secondary';
   undo.textContent = 'Undo';
   undo.addEventListener('click', () => { undoMode(localStorage); status.textContent = 'Undone.'; paint(); });
-  const more = document.createElement('a');
-  more.id = 'screen-more';
-  more.href = '/customize';
-  more.textContent = 'Customize';
-  screen.append(undo, more);
+  screen.append(custom, undo);
   board.append(screen);
   let reopen = document.getElementById('screen-reopen');
   if (!reopen) {
@@ -720,7 +721,10 @@ if (root) {
     reopen.textContent = 'Choose your screen';
     board.querySelector('#profile-name').after(reopen);
   }
-  reopen.addEventListener('click', () => { screen.hidden = false; });
+  reopen.addEventListener('click', () => {
+    screen.dataset.user = '1';
+    screen.hidden = !screen.hidden;
+  });
   paint();
   paintBadges();
   wireDash();
