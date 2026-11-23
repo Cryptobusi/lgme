@@ -552,12 +552,45 @@
       var panel = document.getElementById('message-panel');
       if (panel) panel.scrollIntoView({ block: 'start' });
     });
+    var voiceBar = document.createElement('div');
+    voiceBar.id = 'ai-voice-bar';
+    voiceBar.hidden = true;
+    var mic = document.createElement('button');
+    mic.type = 'button';
+    mic.setAttribute('aria-label', 'Voice');
+    mic.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg>';
+    mic.addEventListener('click', function () {
+      var real = document.getElementById('ai-mic-btn');
+      if (real) real.click();
+    });
+    var voiceSet = document.createElement('button');
+    voiceSet.type = 'button';
+    voiceSet.setAttribute('aria-label', 'Settings');
+    voiceSet.textContent = '\u2699';
+    voiceSet.addEventListener('click', function () {
+      var gear = document.getElementById('page-gear');
+      if (gear) gear.click();
+    });
+    voiceBar.appendChild(mic);
+    voiceBar.appendChild(voiceSet);
+    document.body.appendChild(voiceBar);
+    if (!document.getElementById('page-gear')) {
+      var gear = document.createElement('button');
+      gear.type = 'button';
+      gear.id = 'page-gear';
+      gear.setAttribute('aria-label', 'Settings');
+      gear.textContent = '\u2699';
+      gear.addEventListener('click', function (event) {
+        event.stopPropagation();
+        var more = document.getElementById('one-more');
+        if (more) more.click();
+      });
+      document.body.appendChild(gear);
+    }
     ai.addEventListener('click', function () {
-      var dock = document.getElementById('ai-dock');
-      if (!dock) return;
-      var on = !document.documentElement.classList.contains('hand-ai-on');
+      var on = voiceBar.hidden;
+      voiceBar.hidden = !on;
       document.documentElement.classList.toggle('hand-ai-on', on);
-      dock.classList.toggle('is-open', on);
       ai.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
     var fieldList = document.createElement('ul');
@@ -859,7 +892,7 @@
     document.addEventListener('click', function (event) {
       if (menu.hidden) return;
       var node = event.target;
-      if (node && node.closest && node.closest('#one-menu, #one-more, #category-board, #ai-dock, #field-hint')) return;
+      if (node && node.closest && node.closest('#one-menu, #one-more, #page-gear, #ai-voice-bar, #category-board, #ai-dock, #field-hint')) return;
       closeMenu();
     }, true);
     document.addEventListener('keydown', function (event) {
