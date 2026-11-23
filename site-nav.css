@@ -1070,3 +1070,13 @@ html.is-one-tab #one-more {
   overflow: visible !important;
   text-overflow: clip !important;
 }
+
+/* The helper is closed, so the page menu opens above the icon row
+   and can be scrolled to Settings. */
+html.is-one-tab #one-menu {
+  top: auto !important;
+  right: 0.45rem !important;
+  bottom: calc(7.4rem + env(safe-area-inset-bottom)) !important;
+  max-height: min(70dvh, calc(100dvh - 9rem)) !important;
+  z-index: 80 !important;
+}
