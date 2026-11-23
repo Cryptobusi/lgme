@@ -1141,3 +1141,56 @@ html.has-site-nav body:has(nav[aria-label="Gym"]),
 html.is-one-tab body:has(nav[aria-label="Gym"]) {
   padding-bottom: calc(8.6rem + env(safe-area-inset-bottom)) !important;
 }
+
+/* Bottom row: mail, AI, fields, home, previous, next. */
+#hand-mail { order: 1 !important; background: #f4f1e8 !important; color: #14110c !important; }
+#hand-ai { order: 2 !important; background: #f4f1e8 !important; color: #14110c !important; }
+html.hand-ai-on #hand-ai { background: #1f6b45 !important; color: #f4f1e8 !important; }
+#hand-fields { order: 3 !important; background: #c6a15b !important; color: #14110c !important; }
+#hand-home { order: 4 !important; }
+#hand-prev { order: 5 !important; }
+#hand-next { order: 6 !important; }
+#hand-bar .hand-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: #b00020;
+  color: #fff;
+  font-size: 10px;
+  line-height: 16px;
+  font-weight: 700;
+}
+#hand-bar button { position: relative !important; }
+#hand-field-list {
+  position: fixed;
+  z-index: 95;
+  left: 0.4rem;
+  bottom: calc(3.6rem + env(safe-area-inset-bottom));
+  margin: 0;
+  padding: 0.4rem 0.6rem;
+  list-style: none;
+  border-radius: 12px;
+  background: #151a15;
+  color: #f4f1e8;
+  border: 1px solid #c6a15b;
+}
+html.hand-ai-on #ai-dock.is-open {
+  display: block !important;
+  position: fixed !important;
+  left: 0 !important;
+  right: 0 !important;
+  top: auto !important;
+  bottom: calc(3.5rem + env(safe-area-inset-bottom)) !important;
+  height: auto !important;
+  max-height: 7rem !important;
+  overflow: auto !important;
+  pointer-events: auto !important;
+  padding: 0.4rem 0.6rem !important;
+  background: #151a15 !important;
+  border-top: 1px solid #c6a15b !important;
+  z-index: 85 !important;
+}
