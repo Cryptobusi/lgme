@@ -1,7 +1,7 @@
 (function () {
   if (navigator.webdriver) return;
   if (/[?&]home=1(?:&|$)/.test(location.search)) return;
-  try { if (sessionStorage.getItem('lgme.open.credits') === '1') return; } catch (error) { /* still show the opening */ }
+  try { if (sessionStorage.getItem('lgme.open.credits.2') === '1') return; } catch (error) { /* still show the opening */ }
   var coins = [
     ['/icons/coin-tragedy.jpg', 'Tragedy'],
     ['/icons/coin-comedy.jpg', 'Comedy'],
@@ -61,7 +61,7 @@
   }, 40);
   var close = function () {
     window.clearInterval(timer);
-    try { sessionStorage.setItem('lgme.open.credits', '1'); } catch (error) { /* the opening still closes */ }
+    try { sessionStorage.setItem('lgme.open.credits.2', '1'); } catch (error) { /* the opening still closes */ }
     root.classList.add('is-gone');
     window.setTimeout(function () { root.remove(); }, 140);
   };
