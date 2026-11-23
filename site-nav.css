@@ -1223,8 +1223,15 @@ html.hand-ai-on #ai-dock.is-open > :not(#ai-scroll),
 html.hand-ai-on.has-hand #ai-dock.is-open > :not(#ai-scroll) {
   display: none !important;
 }
-html.hand-ai-on #ai-dock.is-open #ai-scroll > :not(#ai-suggestions),
-html.hand-ai-on.has-hand #ai-dock.is-open #ai-scroll > :not(#ai-suggestions) {
+html.hand-ai-on #ai-dock.is-open #ai-scroll > :not(#ai-suggestions):not(#ai-log-frame),
+html.hand-ai-on.has-hand #ai-dock.is-open #ai-scroll > :not(#ai-suggestions):not(#ai-log-frame) {
+  display: none !important;
+}
+html.hand-ai-on #ai-dock.is-open #ai-log-frame {
+  display: block !important;
+  height: auto !important;
+}
+html.hand-ai-on #ai-dock.is-open #ai-log-frame > :not(#ai-suggestions) {
   display: none !important;
 }
 html.hand-ai-on #ai-dock.is-open #ai-suggestions,
