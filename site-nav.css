@@ -1486,3 +1486,120 @@ body:has(#testnet-notice) {
   border-radius: 16px !important;
 }
 #my-functions summary { color: #f4f1e8 !important; font-weight: 700; min-height: 0 !important; }
+
+/* Notice is off. Home leads with a gift, then Health. */
+html.notice-off #testnet-notice,
+#testnet-notice { display: none !important; }
+html.notice-off body,
+html.has-site-nav body:has(#testnet-notice),
+body:has(#testnet-notice) {
+  padding-top: calc(2.5rem + env(safe-area-inset-top)) !important;
+}
+#top-member { flex: 0 1 auto !important; max-width: 7rem; }
+#top-gap { flex: 1; }
+#top-flow { color: #f8fafc !important; }
+#top-screen { color: #f0d48a !important; font-size: 1.15rem !important; }
+#flow-menu, #screen-menu {
+  position: fixed;
+  z-index: 99;
+  top: calc(2.5rem + env(safe-area-inset-top));
+  left: 0.55rem;
+  width: min(16rem, calc(100vw - 1.1rem));
+  max-height: min(70dvh, 28rem);
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.45rem;
+  background: #14110c;
+  color: #f4f1e8;
+  border: 1px solid #c6a15b;
+  border-radius: 14px;
+}
+#screen-menu { left: auto; right: 0.45rem; width: 9rem; }
+#flow-menu[hidden], #screen-menu[hidden] { display: none; }
+#flow-menu p, #flow-menu summary { margin: 0.35rem 0 0; color: #c6a15b; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; }
+#flow-menu a, #flow-menu button, #screen-menu button {
+  display: block;
+  width: 100%;
+  min-height: 36px;
+  margin: 0;
+  padding: 0.35rem 0.45rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #f4f1e8;
+  text-align: left;
+  text-decoration: none;
+  font: 600 0.95rem/1.2 Figtree, sans-serif;
+}
+#screen-reopen { display: none !important; }
+#give-now {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.7rem;
+  margin: 0 0 0.45rem;
+  padding: 0.8rem 0.85rem;
+  background: #f4f1e8;
+  color: #1a1408;
+  border-radius: 16px;
+}
+#give-now p { margin: 0; font-weight: 800; }
+#give-now span { flex: 1 1 12rem; }
+#give-now a { display: inline-flex; min-height: 36px; align-items: center; padding: 0.3rem 0.8rem; border-radius: 10px; background: #8d2f2f; color: #fff; font-weight: 800; text-decoration: none; }
+#health-dash {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.4rem;
+  margin: 0 0 0.6rem;
+  padding: 0.65rem;
+  background: #101610;
+  border: 1px solid #c6a15b;
+  border-radius: 16px;
+}
+.health-mark {
+  position: relative;
+  min-height: 3.2rem;
+  border: 0;
+  border-radius: 12px;
+  background: #1c261c;
+  color: #f4f1e8;
+  font: 700 1rem/1 Figtree, sans-serif;
+}
+.health-mark i { font-style: normal; }
+.health-mark b {
+  position: absolute;
+  top: 0.2rem;
+  right: 0.2rem;
+  min-width: 1rem;
+  padding: 0.05rem 0.25rem;
+  border-radius: 999px;
+  background: #f4f1e8;
+  color: #14110c;
+  font-size: 0.62rem;
+}
+#health-preview {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 0.6rem 0.7rem;
+  border-radius: 12px;
+  background: #f4f1e8;
+  color: #14110c;
+  font-weight: 700;
+}
+#health-preview[hidden] { display: none; }
+#hold-bubble {
+  position: fixed;
+  z-index: 130;
+  max-width: min(24rem, calc(100vw - 1rem));
+  padding: 1rem 1.15rem;
+  border-radius: 18px;
+  font: 650 1.35rem/1.35 Figtree, sans-serif;
+  box-shadow: 0 14px 36px #00000066;
+}
+#hold-bubble[hidden] { display: none; }
+#hold-bubble.is-light { background: #f4f1e8; color: #14110c; }
+#hold-bubble.is-dark { background: #14110c; color: #f4f1e8; }
