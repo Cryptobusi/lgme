@@ -1464,3 +1464,25 @@ html.is-one-tab body:has(nav[aria-label="Gym"]) {
 }
 
 #top-forward, #top-back, #top-net, #top-mask, #top-mic, #top-speaker, #top-tools #page-gear { min-width: 22px !important; min-height: 22px !important; }
+
+/* The icon line stays above the notice. My Agency is a box. */
+#top-tools { top: max(0.15rem, env(safe-area-inset-top)) !important; z-index: 98 !important; }
+#testnet-notice {
+  top: calc(2.35rem + env(safe-area-inset-top)) !important;
+  z-index: 70 !important;
+  padding-right: 0.6rem !important;
+}
+html.has-site-nav body:has(#testnet-notice),
+body:has(#testnet-notice) {
+  padding-top: calc(2.6rem + var(--notice-h, 2.4rem) + env(safe-area-inset-top)) !important;
+}
+#my-functions {
+  display: block !important;
+  margin: 0.7rem 0.8rem !important;
+  padding: 0.75rem 0.9rem !important;
+  background: #141a14 !important;
+  color: #f4f1e8 !important;
+  border: 1px solid #c6a15b !important;
+  border-radius: 16px !important;
+}
+#my-functions summary { color: #f4f1e8 !important; font-weight: 700; min-height: 0 !important; }
