@@ -1015,6 +1015,50 @@
       document.dispatchEvent(new CustomEvent('lgme-display', { detail: { cycle: true } }));
     });
     document.body.appendChild(button);
+    var row = document.createElement('div');
+    row.id = 'top-tools';
+    var mic = document.createElement('button');
+    mic.type = 'button';
+    mic.id = 'top-mic';
+    mic.setAttribute('aria-label', 'Microphone');
+    mic.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg>';
+    var speaker = document.createElement('button');
+    speaker.type = 'button';
+    speaker.id = 'top-speaker';
+    speaker.setAttribute('aria-label', 'Speaker');
+    speaker.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M4 9v6h4l5 4V5L8 9H4zm11.5 3a3.5 3.5 0 0 0-1.5-2.9v5.8a3.5 3.5 0 0 0 1.5-2.9z"/></svg>';
+    var voiceOn = function () {
+      try { return localStorage.getItem('lgme.voice.speak') === 'yes'; } catch (error) { return false; }
+    };
+    var paintVoice = function () {
+      var on = voiceOn();
+      speaker.classList.toggle('is-on', on);
+      speaker.setAttribute('aria-pressed', on ? 'true' : 'false');
+      speaker.setAttribute('aria-label', on ? 'Speaker on' : 'Speaker off. Tap to approve voice.');
+    };
+    speaker.addEventListener('click', function () {
+      var on = !voiceOn();
+      try {
+        localStorage.setItem('lgme.voice.speak', on ? 'yes' : 'no');
+        localStorage.setItem('lgme.voice.reply', on ? 'speak' : 'show');
+      } catch (error) { /* the mark still changes */ }
+      if (!on) { try { window.speechSynthesis.cancel(); } catch (error) { /* already quiet */ } }
+      paintVoice();
+      window.dispatchEvent(new CustomEvent('lgme-voice-reply'));
+    });
+    mic.addEventListener('click', function () {
+      if (!voiceOn()) {
+        mic.setAttribute('aria-label', 'Approve the speaker before the microphone.');
+        return;
+      }
+      var real = document.getElementById('ai-mic-btn');
+      if (real) real.click();
+    });
+    row.appendChild(button);
+    row.appendChild(speaker);
+    row.appendChild(mic);
+    document.body.appendChild(row);
+    paintVoice();
     var saved = 1;
     try { saved = Number(localStorage.getItem('lgme.display.step')); } catch (error) { saved = 1; }
     paint(saved);
