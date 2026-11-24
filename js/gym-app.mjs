@@ -1180,7 +1180,6 @@ function voiceReplySettings() {
 async function renderMore() {
   const mine = await seat();
   const email = el('div', { id: 'gym-email' });
-  const passkey = el('p', {}, [passkeySupported() ? PASSKEY_COPY : PASSKEY_FALLBACK]);
   queueMicrotask(() => mountEmailCheck(email));
   return el('div', {}, [
     el('h2', {}, ['Settings']),
@@ -1202,12 +1201,14 @@ async function renderMore() {
     el('h3', {}, ['Email check']),
     email,
     el('h3', {}, ['Passkey']),
-    passkey,
-    el('button', { type: 'button', onClick: async () => {
+    el('p', {}, [passkeySupported()
+      ? 'The gold box is available on this phone. Tap it to check this device with fingerprint, face, or the phone PIN. Remove fingerprint clears only this phone.'
+      : 'This phone has no passkey. Neither box is available, so nothing here can sign you in.']),
+    el('button', { type: 'button', id: 'passkey-use', class: passkeySupported() ? 'is-available' : 'is-off', disabled: passkeySupported() ? null : 'disabled', onClick: async () => {
       const result = await unlockWithPasskey();
       status(result.ok ? 'Passkey checked. The passphrase still locks the book.' : result.error);
     } }, ['Use passkey']),
-    el('button', { type: 'button', id: 'passkey-remove', onClick: async () => {
+    el('button', { type: 'button', id: 'passkey-remove', class: passkeySupported() ? 'is-available' : 'is-off', disabled: passkeySupported() ? null : 'disabled', onClick: async () => {
       try { await removeFingerprint(); status('Fingerprint removed from this phone.'); }
       catch (error) { status(error.message || 'The fingerprint stayed.'); }
     } }, ['Remove fingerprint']),
@@ -2244,7 +2245,6 @@ async function renderIdidIt() {
       try { sessionStorage.removeItem('lgme.voice.turn'); } catch { /* the note still shows */ }
     }
     try { sessionStorage.setItem('lgme.prompt.note', note); } catch { /* the log still updates */ }
-    window.dispatchEvent(new CustomEvent('lgme-draft-filled'));
   };
   const markNext = (node) => {
     for (const item of [activity, distance, speed, minutes, title]) item.classList.remove('is-next');
@@ -2299,11 +2299,14 @@ async function renderIdidIt() {
       queueMicrotask(() => { run(); });
     }
   } catch { /* the default title stays */ }
-  for (const field of [activity, distance, speed, minutes, title]) field.addEventListener('input', explain);
+  for (const field of [activity, distance, speed, minutes, title]) field.addEventListener('input', () => { explain(); paintCorrect(); });
   const statusLine = el('p', { id: 'ididit-status', role: 'status' });
   const fields = [activity, distance, speed, minutes, title];
   const optionsOf = (field) => String(field.getAttribute('data-options') || '').split('|').filter(Boolean);
   const currentField = () => fields.find((field) => field.classList.contains('is-next')) || fields.find((field) => !String(field.value || '').trim()) || fields[0];
+  const paintCorrect = () => {
+    for (const field of fields) field.classList.toggle('is-correct', Boolean(String(field.value || '').trim()));
+  };
   const writeOption = (field, index) => {
     const options = optionsOf(field);
     if (!options.length) return;
@@ -2311,6 +2314,7 @@ async function renderIdidIt() {
     field.value = options[next];
     field.classList.add('is-filled');
     markNext(field);
+    paintCorrect();
     explain();
   };
   const up = el('button', { type: 'button', id: 'recommend-up', 'aria-label': 'Previous recommendation' }, ['↑']);
@@ -2333,11 +2337,13 @@ async function renderIdidIt() {
     const field = currentField();
     const options = optionsOf(field);
     if (!String(field.value || '').trim() && options[0]) field.value = options[0];
+    paintCorrect();
     const next = fields[fields.indexOf(field) + 1];
     if (next) {
       const nextOptions = optionsOf(next);
       if (!String(next.value || '').trim() && nextOptions[0]) next.value = nextOptions[0];
       markNext(next);
+      paintCorrect();
       next.scrollIntoView({ block: 'center' });
       explain();
       statusLine.textContent = 'Filled. Check it, or use the arrows.';
@@ -2355,6 +2361,7 @@ async function renderIdidIt() {
     confirm.disabled = false;
   });
   if (!fields.some((field) => field.classList.contains('is-next'))) markNext(activity);
+  paintCorrect();
   const view = el('section', { id: 'ididit-done' }, [
     el('h2', {}, [IDIDIT_NAME]),
     suggestion,
