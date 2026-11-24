@@ -894,7 +894,7 @@
     document.addEventListener('click', function (event) {
       if (menu.hidden) return;
       var node = event.target;
-      if (node && node.closest && node.closest('#one-menu, #one-more, #page-gear, #ai-voice-bar, #category-board, #ai-dock, #field-hint')) return;
+      if (node && node.closest && node.closest('#one-menu, #one-more, #page-gear, #top-tools, #ai-voice-bar, #category-board, #ai-dock, #field-hint')) return;
       closeMenu();
     }, true);
     document.addEventListener('keydown', function (event) {
@@ -903,6 +903,14 @@
     var back = document.getElementById('site-back');
     if (back) back.addEventListener('click', closeMenu);
   };
+  if (!document.getElementById('one-more')) {
+    var more = document.createElement('button');
+    more.type = 'button';
+    more.id = 'one-more';
+    more.hidden = true;
+    more.setAttribute('aria-label', 'Settings');
+    document.body.appendChild(more);
+  }
   if (document.body) armOneTab();
   else document.addEventListener('DOMContentLoaded', armOneTab);
   var backButton = bar.querySelector('#site-back');
@@ -1062,6 +1070,16 @@
       var real = document.getElementById('ai-mic-btn');
       if (real) real.click();
     });
+    var backTop = document.createElement('button');
+    backTop.type = 'button';
+    backTop.id = 'top-back';
+    backTop.setAttribute('aria-label', 'Back');
+    backTop.textContent = '\u2039';
+    backTop.addEventListener('click', function () {
+      if (history.length > 1) history.back();
+      else location.assign('/?home=1');
+    });
+    row.appendChild(backTop);
     row.appendChild(button);
     row.appendChild(speaker);
     row.appendChild(mic);
