@@ -1,9 +1,9 @@
 (function () {
   var EPOCH = '2';
-  var CURRENT = { 'lgme-v266': 1, 'lgme-gym-v81': 1 };
+  var CURRENT = { 'lgme-v267': 1, 'lgme-gym-v81': 1 };
   function keep(name) {
     if (!name) return true;
-    if (name === 'lgme.reset.epoch' || name === 'lgme.reset.note' || name === 'lgme.device.key' || name === 'lgme.display.step' || name === 'lgme.display.easy' || name === 'lgme.text.tip' || name === 'lgme.ui.mode' || name === 'lgme.ui.uses' || name === 'lgme.ui.offer' || name === 'lgme.ui.shortcuts' || name === 'lgme.learn.path' || name === 'lgme-gym.seat' || name === 'lgme.health.book' || name === 'lgme.health.email' || name === 'lgme.health.plan' || name === 'lgme.health.contact' || name === 'lgme.health.contactGrants' || name === 'lgme.health.consent' || name === 'lgme.demo.member') return true;
+    if (name === 'lgme.reset.epoch' || name === 'lgme.reset.note' || name === 'lgme.device.key' || name === 'lgme.display.step' || name === 'lgme.display.easy' || name === 'lgme.text.tip' || name === 'lgme.ui.mode' || name === 'lgme.dock.shown' || name === 'lgme.ui.uses' || name === 'lgme.ui.offer' || name === 'lgme.ui.shortcuts' || name === 'lgme.learn.path' || name === 'lgme-gym.seat' || name === 'lgme.health.book' || name === 'lgme.health.email' || name === 'lgme.health.plan' || name === 'lgme.health.contact' || name === 'lgme.health.contactGrants' || name === 'lgme.health.consent' || name === 'lgme.demo.member') return true;
     return name.indexOf('lgme-sim:peer:') === 0 || name.indexOf('lgme.health.page:') === 0;
   }
   function arm() {
@@ -520,7 +520,7 @@
     var row = document.createElement('div');
     row.id = 'hand-row';
     var mail = handButton('hand-mail', 'Mail', 'Messages', 'Messages waiting. Tap to open them.');
-    var ai = handButton('hand-ai', 'AI', 'Prompt', 'Opens the prompt lines. Green means they are showing.');
+    var ai = handButton('hand-ai', 'AI', 'Helper', 'Opens and closes the AI helper. Green means it is open.');
     var fields = handButton('hand-fields', 'Fields', 'Left to fill', 'Hold to see what is still empty.');
     markIcon(mail, '\u2709');
     markIcon(ai, '\u2726');
@@ -672,12 +672,39 @@
       var tools = document.getElementById('top-tools');
       if (tools) tools.appendChild(gear);
     }
-    ai.addEventListener('click', function () {
-      var on = voiceBar.hidden;
-      voiceBar.hidden = !on;
-      document.documentElement.classList.toggle('hand-ai-on', on);
+    // The AI mark opens and closes the full helper. It starts closed so the page shows.
+    var dockOpen = function () {
+      var dock = document.getElementById('ai-dock');
+      return document.documentElement.classList.contains('dock-on') && !!(dock && dock.classList.contains('is-open'));
+    };
+    var showDock = function (on, keep) {
+      var dock = document.getElementById('ai-dock');
+      document.documentElement.classList.toggle('dock-on', !!on);
       ai.setAttribute('aria-pressed', on ? 'true' : 'false');
+      if (on && dock && !dock.classList.contains('is-open')) {
+        var expand = dock.querySelector('#ai-expand');
+        if (expand) expand.click();
+        else dock.classList.add('is-open');
+      }
+      if (keep) {
+        try { localStorage.setItem('lgme.dock.shown', on ? '1' : '0'); } catch (error) { /* the helper still moves */ }
+      }
+    };
+    var dockSaved = false;
+    try { dockSaved = localStorage.getItem('lgme.dock.shown') === '1'; } catch (error) { dockSaved = false; }
+    showDock(dockSaved, false);
+    ai.addEventListener('click', function () { showDock(!dockOpen(), true); });
+    document.addEventListener('click', function (event) {
+      var target = event.target;
+      if (!target || !target.closest) return;
+      if (target.closest('#ai-expand')) {
+        var dock = document.getElementById('ai-dock');
+        showDock(!!(dock && dock.classList.contains('is-open')), true);
+      } else if (target.closest('#field-hint')) {
+        showDock(true, false);
+      }
     });
+    document.addEventListener('lgme-page-prompt', function () { showDock(true, false); });
     var fieldList = document.createElement('ul');
     fieldList.id = 'hand-field-list';
     fieldList.hidden = true;

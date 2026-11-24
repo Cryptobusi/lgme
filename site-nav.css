@@ -1670,3 +1670,28 @@ html.is-more-open #one-menu [data-tone="orange"] { color: #f0b27a !important; }
 html.is-more-open #one-menu [data-tone="blue"] { color: #9ecbff !important; }
 html.is-more-open #one-menu [data-tone="violet"] { color: #d7b4f3 !important; }
 html.is-more-open #one-menu [data-tone="bone"] { color: #f7f1e4 !important; }
+
+/* The AI mark opens the full helper; Close hides it. Closed by default. */
+html.dock-on #hand-ai { background: #1f6b45 !important; color: #f4f1e8 !important; }
+html.dock-on #ai-dock#ai-dock.is-open {
+  display: flex !important;
+  flex-direction: column !important;
+  position: fixed !important;
+  left: 0 !important;
+  right: 0 !important;
+  top: auto !important;
+  bottom: calc(3.6rem + env(safe-area-inset-bottom)) !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: 50vh !important;
+  overflow: auto !important;
+  pointer-events: auto !important;
+  z-index: 88 !important;
+  margin: 0 !important;
+  padding: 0.35rem 0.6rem !important;
+  background: #151a15 !important;
+  color: #f4f1e8 !important;
+  border: 0 !important;
+  border-top: 1px solid #c6a15b !important;
+  border-radius: 0 !important;
+}
