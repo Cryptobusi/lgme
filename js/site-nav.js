@@ -898,44 +898,62 @@
     if (oldSteps) oldSteps.remove();
     var oldEasy = menu.querySelector('#easy-read-menu');
     if (oldEasy) oldEasy.remove();
-    menu.replaceChildren();
-    var addItem = function (node) { menu.appendChild(node); };
-    [['simple', 'Simple'], ['everyday', 'Everyday'], ['full', 'Full']].forEach(function (pair) {
-      var choice = document.createElement('button');
-      choice.type = 'button';
-      choice.textContent = pair[1];
-      choice.addEventListener('click', function () {
-        try { localStorage.setItem('lgme.ui.mode', pair[0]); } catch (error) { /* the screen still changes */ }
-        document.documentElement.setAttribute('data-screen', pair[0]);
+    var fillSettings = function () {
+      menu.replaceChildren();
+      var link = function (href, text, tone) {
+        var item = document.createElement('a');
+        item.href = href;
+        item.textContent = text;
+        item.dataset.tone = tone;
+        menu.appendChild(item);
+      };
+      var press = function (text, tone, run) {
+        var item = document.createElement('button');
+        item.type = 'button';
+        item.textContent = text;
+        item.dataset.tone = tone;
+        item.addEventListener('click', run);
+        menu.appendChild(item);
+      };
+      var stored = function (key) {
+        try { return localStorage.getItem(key) || ''; } catch (error) { return ''; }
+      };
+      link('/membership', 'Profile', 'gold');
+      link('/join', 'Account', 'bone');
+      link('/credits', 'Accounting', 'green');
+      link('/inventory', 'Inventory', 'orange');
+      press('Messages', 'blue', function () {
+        var sheet = document.getElementById('mail-sheet');
+        if (sheet) {
+          sheet.hidden = false;
+          var list = sheet.querySelector('ul');
+          if (list && !list.children.length) {
+            var empty = document.createElement('li');
+            empty.textContent = 'No messages yet.';
+            list.appendChild(empty);
+          }
+        }
       });
-      addItem(choice);
-    });
-    var voiceItem = document.createElement('button');
-    voiceItem.type = 'button';
-    var paintVoiceItem = function () {
-      var on = false;
-      try { on = localStorage.getItem('lgme.voice.speak') === 'yes'; } catch (error) { on = false; }
-      voiceItem.textContent = on ? 'Voice on' : 'Voice off';
+      link('/helper', 'AI', 'violet');
+      link('/help', 'Help', 'bone');
+      press(stored('lgme.incognito') === '1' ? 'Incognito on' : 'Incognito off', 'orange', function () {
+        var on = false;
+        try { on = localStorage.getItem('lgme.incognito') === '1'; } catch (error) { on = false; }
+        try { localStorage.setItem('lgme.incognito', on ? '0' : '1'); } catch (error) { /* the label still changes */ }
+        document.dispatchEvent(new CustomEvent('lgme-incognito'));
+      });
+      press(stored('lgme.voice.speak') === 'yes' ? 'Voice on' : 'Voice off', 'violet', function () {
+        var on = false;
+        try { on = localStorage.getItem('lgme.voice.speak') === 'yes'; } catch (error) { on = false; }
+        try {
+          localStorage.setItem('lgme.voice.speak', on ? 'no' : 'yes');
+          localStorage.setItem('lgme.voice.reply', on ? 'show' : 'speak');
+        } catch (error) { /* the label still changes */ }
+      });
+      link('/gym#/more', 'Health settings', 'gold');
+      link('/disclaimer', 'Disclaimer', 'bone');
     };
-    voiceItem.addEventListener('click', function () {
-      var on = false;
-      try { on = localStorage.getItem('lgme.voice.speak') === 'yes'; } catch (error) { on = false; }
-      try {
-        localStorage.setItem('lgme.voice.speak', on ? 'no' : 'yes');
-        localStorage.setItem('lgme.voice.reply', on ? 'show' : 'speak');
-      } catch (error) { /* the label still changes */ }
-      paintVoiceItem();
-    });
-    paintVoiceItem();
-    addItem(voiceItem);
-    addItem(tape);
-    addItem(incog);
-    [['/help', 'Help'], ['/gym#/more', 'Health settings'], ['/disclaimer', 'Disclaimer']].forEach(function (pair) {
-      var link = document.createElement('a');
-      link.href = pair[0];
-      link.textContent = pair[1];
-      addItem(link);
-    });
+    fillSettings();
     if (menu.parentElement !== document.body) document.body.appendChild(menu);
     var safePad = function () {
       var probe = document.createElement('div');
@@ -984,6 +1002,7 @@
       button.setAttribute('aria-expanded', open ? 'true' : 'false');
       menu.hidden = !open;
       if (open) {
+        fillSettings();
         menu.scrollTop = 0;
         placeMenu();
       }
