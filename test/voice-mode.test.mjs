@@ -36,7 +36,10 @@ test('voice replies spell minutes, speed, and steps', () => {
   assert.equal(panel.includes('getUserMedia'), false);
   assert.equal(panel.includes('is-listening'), true);
   assert.equal(panel.includes('aria-pressed'), true);
-  assert.equal(panel.includes('if (!aiOn()) return'), false);
+  const listenAt = panel.indexOf('const startListen = () => {');
+  const listen = panel.slice(listenAt, panel.indexOf('\n  };', listenAt));
+  assert.equal(listenAt > 0 && listen.includes('heard.start()'), true);
+  assert.equal(listen.includes('if (!aiOn()) return'), false);
   assert.equal(panel.includes('Listening…'), true);
   assert.equal(/if \(!\('processLocally' in heard\)\) \{\s*showReply/.test(panel), false);
   assert.equal(speechErrorLine('not-allowed'), 'Mic blocked: allow microphone in site settings');
