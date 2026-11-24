@@ -586,6 +586,8 @@
         if (more) more.click();
       });
       document.body.appendChild(gear);
+      var tools = document.getElementById('top-tools');
+      if (tools) tools.appendChild(gear);
     }
     ai.addEventListener('click', function () {
       var on = voiceBar.hidden;
@@ -1002,7 +1004,13 @@
     if (!button) return;
     var index = Number(step);
     if (!Number.isInteger(index) || index < 0 || index > 4) index = 1;
-    button.textContent = 'sz ' + labels[index];
+    button.textContent = '';
+    var mark = document.createElement('span');
+    mark.textContent = 'sz';
+    var num = document.createElement('b');
+    num.textContent = labels[index];
+    button.appendChild(mark);
+    button.appendChild(num);
     button.setAttribute('aria-label', 'Screen size ' + labels[index] + ' percent. Tap for the next size, from smallest to largest.');
   }
   function mount() {
@@ -1057,6 +1065,8 @@
     row.appendChild(button);
     row.appendChild(speaker);
     row.appendChild(mic);
+    var gear = document.getElementById('page-gear');
+    if (gear) row.appendChild(gear);
     document.body.appendChild(row);
     paintVoice();
     var saved = 1;
