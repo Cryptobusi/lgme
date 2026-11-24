@@ -1118,8 +1118,58 @@
     forward.setAttribute('aria-label', 'Forward');
     forward.textContent = '\u203a';
     forward.addEventListener('click', function () { history.forward(); });
+    var flow = document.createElement('button');
+    flow.type = 'button';
+    flow.id = 'top-flow';
+    flow.setAttribute('aria-label', 'Workflows and documentation');
+    flow.setAttribute('aria-expanded', 'false');
+    flow.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>';
+    var flowMenu = document.createElement('nav');
+    flowMenu.id = 'flow-menu';
+    flowMenu.hidden = true;
+    flowMenu.innerHTML = '<p>Workflows</p><a href="/gym#/ididit">IdidIt</a><a href="/gym">Health</a><a href="/lgme-coin#give">soBeIT</a><a href="/gym#/">IwantIT</a><a href="/ihavit">IhavIT</a><a href="/ihelpit">IhelpIT</a><a href="/exchange">Exchange</a><details><summary>Documentation</summary><p>Desk</p><a href="/help">Help</a><a href="/glossary">Glossary</a><a href="/plain-english">Plain English</a><a href="/gym/covenant">Covenant</a><a href="/disclaimer">Disclaimer</a><p>Learn</p><a href="/how-it-works">How it works</a><a href="/the-third-seat">Third seat</a><a href="/whitepaper">Whitepaper</a><a href="/sop">SOP</a><a href="/study">Study</a><a href="/technical">Technical</a></details>';
+    flow.addEventListener('click', function (event) {
+      event.stopPropagation();
+      var open = flowMenu.hidden;
+      flowMenu.hidden = !open;
+      flow.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    var gap = document.createElement('span');
+    gap.id = 'top-gap';
+    var screenBtn = document.createElement('button');
+    screenBtn.type = 'button';
+    screenBtn.id = 'top-screen';
+    screenBtn.textContent = 'V';
+    screenBtn.setAttribute('aria-label', 'Choose your screen');
+    screenBtn.setAttribute('aria-expanded', 'false');
+    var screenMenu = document.createElement('div');
+    screenMenu.id = 'screen-menu';
+    screenMenu.hidden = true;
+    ['Simple', 'Everyday', 'Full', 'Custom'].forEach(function (label) {
+      var choice = document.createElement('button');
+      choice.type = 'button';
+      choice.textContent = label;
+      choice.addEventListener('click', function () {
+        var id = label.toLowerCase();
+        if (id === 'custom') { location.assign('/customize'); return; }
+        try { localStorage.setItem('lgme.ui.mode', id); } catch (error) { /* the mark still changes */ }
+        document.documentElement.setAttribute('data-screen', id);
+        screenMenu.hidden = true;
+        screenBtn.setAttribute('aria-expanded', 'false');
+      });
+      screenMenu.appendChild(choice);
+    });
+    screenBtn.addEventListener('click', function (event) {
+      event.stopPropagation();
+      var open = screenMenu.hidden;
+      screenMenu.hidden = !open;
+      screenBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
     row.appendChild(net);
     row.appendChild(member);
+    row.appendChild(flow);
+    row.appendChild(gap);
+    row.appendChild(screenBtn);
     row.appendChild(mask);
     row.appendChild(forward);
     row.appendChild(backTop);
@@ -1128,6 +1178,8 @@
     var gear = document.getElementById('page-gear');
     if (gear) row.appendChild(gear);
     document.body.appendChild(row);
+    document.body.appendChild(flowMenu);
+    document.body.appendChild(screenMenu);
     paintVoice();
     var saved = 1;
     try { saved = Number(localStorage.getItem('lgme.display.step')); } catch (error) { saved = 1; }
@@ -1138,4 +1190,92 @@
   });
   if (document.body) mount();
   else document.addEventListener('DOMContentLoaded', mount);
+})();
+
+(function () {
+  var notice = document.getElementById('testnet-notice');
+  if (notice) notice.hidden = true;
+  document.documentElement.classList.add('notice-off');
+  var tip = document.createElement('div');
+  tip.id = 'hold-bubble';
+  tip.hidden = true;
+  document.body.appendChild(tip);
+  var wordsFor = function (node) {
+    var el = node && node.closest ? node.closest('[data-explain], input, textarea, select, label') : null;
+    if (!el || el.closest('#top-tools, #flow-menu, #screen-menu, #hand-bar, #hold-bubble')) return '';
+    return el.getAttribute('data-explain') || el.getAttribute('aria-label') || el.getAttribute('placeholder') || (el.htmlFor ? '' : el.textContent || '');
+  };
+  var place = function (el, words) {
+    var bg = getComputedStyle(document.body).backgroundColor || '';
+    var parts = bg.match(/\d+/g) || ['12', '16', '12'];
+    var light = ((Number(parts[0]) + Number(parts[1]) + Number(parts[2])) / 3) > 140;
+    tip.className = light ? 'is-dark' : 'is-light';
+    tip.textContent = String(words).replace(/\s+/g, ' ').trim().slice(0, 280);
+    tip.hidden = false;
+    var box = el.getBoundingClientRect();
+    tip.style.left = Math.max(8, Math.min(box.left, window.innerWidth - 280)) + 'px';
+    tip.style.top = Math.min(box.bottom + 10, window.innerHeight - 140) + 'px';
+  };
+  document.addEventListener('pointerdown', function (event) {
+    var words = wordsFor(event.target);
+    var el = event.target.closest ? event.target.closest('[data-explain], input, textarea, select, label') : null;
+    if (!words || !el) { tip.hidden = true; return; }
+    place(el, words);
+  });
+  var hide = function () { tip.hidden = true; };
+  document.addEventListener('pointerup', hide);
+  document.addEventListener('pointercancel', hide);
+  var homeLead = function () {
+    if (location.pathname !== '/' && location.pathname !== '/index.html') return;
+    var grid = document.getElementById('category-grid');
+    if (!grid || document.getElementById('give-now')) return;
+  var give = document.createElement('section');
+  give.id = 'give-now';
+  give.innerHTML = '<p>Give now</p><span>A short gift keeps the floor. soBeIT. Your wallet signs it. Start small.</span><a href="/lgme-coin#give">Give</a>';
+  var health = document.createElement('section');
+  health.id = 'health-dash';
+  health.setAttribute('aria-label', 'Health');
+  var tiles = [
+    ['consent', 'Health', 'dash-consent-figure', 'Consent stays on this phone.'],
+    ['creo', 'Creo', 'dash-creo-figure', 'Creo is value you create. It is not $lgme.'],
+    ['today', 'Today', 'dash-today-figure', 'What this phone logged today.'],
+    ['receipt', 'Receipt', 'dash-receipt-figure', 'The last taped receipt.']
+  ];
+  var preview = document.createElement('p');
+  preview.id = 'health-preview';
+  preview.hidden = true;
+  tiles.forEach(function (item) {
+    var button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'health-mark';
+    button.dataset.key = item[0];
+    var icon = document.createElement('i');
+    icon.textContent = item[1].slice(0, 1);
+    var count = document.createElement('b');
+    var source = document.getElementById(item[2]);
+    count.textContent = source && source.textContent.trim() ? source.textContent.trim() : '0';
+    button.appendChild(icon);
+    button.appendChild(count);
+    button.addEventListener('click', function () {
+      var open = preview.hidden || preview.dataset.key !== item[0];
+      preview.dataset.key = item[0];
+      preview.textContent = item[1] + ': ' + count.textContent + '. ' + item[3];
+      preview.hidden = !open;
+    });
+    health.appendChild(button);
+  });
+  health.appendChild(preview);
+  grid.insertBefore(health, grid.firstChild);
+  grid.insertBefore(give, grid.firstChild);
+  window.setTimeout(function () {
+    tiles.forEach(function (item) {
+      var source = document.getElementById(item[2]);
+      var button = health.querySelector('[data-key="' + item[0] + '"] b');
+      if (source && button && source.textContent.trim()) button.textContent = source.textContent.trim();
+    });
+  }, 800);
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', homeLead);
+  else document.addEventListener('DOMContentLoaded', homeLead);
+  homeLead();
 })();
