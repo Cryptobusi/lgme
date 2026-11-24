@@ -1355,3 +1355,75 @@ html.is-more-open #one-menu {
   background: #f4f1e8;
   color: #1a1408;
 }
+
+/* sz, speaker, and microphone sit in one row and leave the desk clear. */
+#top-tools {
+  position: fixed;
+  z-index: 97;
+  top: 0.35rem;
+  left: 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+#top-tools #sz-cycle {
+  position: static !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+}
+#top-mic,
+#top-speaker {
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: #f4f1e8;
+  color: #1a1408;
+}
+#top-speaker.is-on,
+#top-mic.is-on { background: #1f6b45; color: #f4f1e8; }
+#gym-panel { padding-top: 3.1rem !important; }
+#ididit-done input.is-correct {
+  border-color: #c6a15b !important;
+  box-shadow: inset 0 0 0 2px #c6a15b;
+}
+#ididit-done input.is-next {
+  border-color: #e07a2f !important;
+  outline: 2px solid #e07a2f;
+}
+html.is-more-open #one-menu,
+html.is-one-tab #one-menu {
+  display: flex !important;
+  flex-direction: column !important;
+  flex-wrap: nowrap !important;
+  align-items: stretch !important;
+  gap: 0.35rem !important;
+  width: min(16rem, calc(100vw - 1.2rem)) !important;
+}
+html.is-more-open #one-menu a,
+html.is-more-open #one-menu button,
+html.is-one-tab #one-menu a,
+html.is-one-tab #one-menu button {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 40px !important;
+  margin: 0 !important;
+  text-align: left !important;
+  white-space: normal !important;
+}
+#passkey-use.is-available,
+#passkey-remove.is-available {
+  background: #c6a15b;
+  color: #1a1408;
+  border: 0;
+}
+#passkey-use.is-off,
+#passkey-remove.is-off {
+  background: #151a15;
+  color: #8a8478;
+  border: 1px solid #2c352b;
+}
