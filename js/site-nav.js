@@ -1030,7 +1030,6 @@
     button.addEventListener('click', function () {
       document.dispatchEvent(new CustomEvent('lgme-display', { detail: { cycle: true } }));
     });
-    document.body.appendChild(button);
     var row = document.createElement('div');
     row.id = 'top-tools';
     var mic = document.createElement('button');
@@ -1042,29 +1041,33 @@
     speaker.type = 'button';
     speaker.id = 'top-speaker';
     speaker.setAttribute('aria-label', 'Speaker');
-    speaker.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M4 9v6h4l5 4V5L8 9H4zm11.5 3a3.5 3.5 0 0 0-1.5-2.9v5.8a3.5 3.5 0 0 0 1.5-2.9z"/></svg>';
-    var voiceOn = function () {
-      try { return localStorage.getItem('lgme.voice.speak') === 'yes'; } catch (error) { return false; }
+    speaker.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M4 9v6h4l5 4V5L8 9H4zm11.5 3a3.5 3.5 0 0 0-1.5-2.9v5.8a3.5 3.5 0 0 0 1.5-2.9z"/></svg><b id="top-volume">0</b>';
+    var volume = function () {
+      var level = 0;
+      try { level = Number(localStorage.getItem('lgme.voice.level')); } catch (error) { level = 0; }
+      return level >= 0 && level <= 3 ? level : 0;
     };
     var paintVoice = function () {
-      var on = voiceOn();
-      speaker.classList.toggle('is-on', on);
-      speaker.setAttribute('aria-pressed', on ? 'true' : 'false');
-      speaker.setAttribute('aria-label', on ? 'Speaker on' : 'Speaker off. Tap to approve voice.');
+      var level = volume();
+      var num = document.getElementById('top-volume');
+      if (num) num.textContent = String(level);
+      speaker.setAttribute('aria-pressed', level > 0 ? 'true' : 'false');
+      speaker.setAttribute('aria-label', 'Speaker volume ' + level);
     };
     speaker.addEventListener('click', function () {
-      var on = !voiceOn();
+      var level = (volume() + 1) % 4;
       try {
-        localStorage.setItem('lgme.voice.speak', on ? 'yes' : 'no');
-        localStorage.setItem('lgme.voice.reply', on ? 'speak' : 'show');
-      } catch (error) { /* the mark still changes */ }
-      if (!on) { try { window.speechSynthesis.cancel(); } catch (error) { /* already quiet */ } }
+        localStorage.setItem('lgme.voice.level', String(level));
+        localStorage.setItem('lgme.voice.speak', level > 0 ? 'yes' : 'no');
+        localStorage.setItem('lgme.voice.reply', level > 0 ? 'speak' : 'show');
+      } catch (error) { /* the number still changes */ }
+      if (!level) { try { window.speechSynthesis.cancel(); } catch (error) { /* already quiet */ } }
       paintVoice();
       window.dispatchEvent(new CustomEvent('lgme-voice-reply'));
     });
     mic.addEventListener('click', function () {
-      if (!voiceOn()) {
-        mic.setAttribute('aria-label', 'Approve the speaker before the microphone.');
+      if (!volume()) {
+        mic.setAttribute('aria-label', 'Turn the speaker above 0 before the microphone.');
         return;
       }
       var real = document.getElementById('ai-mic-btn');
@@ -1079,10 +1082,49 @@
       if (history.length > 1) history.back();
       else location.assign('/?home=1');
     });
+    var net = document.createElement('button');
+    net.type = 'button';
+    net.id = 'top-net';
+    net.textContent = 'H';
+    net.setAttribute('aria-label', 'Network');
+    var member = document.createElement('span');
+    member.id = 'top-member';
+    var memberName = 'Member';
+    try {
+      if ((localStorage.getItem('lgme.member.id') || '') === '0c1d13e7c698') memberName = 'Egon';
+    } catch (error) { memberName = 'Member'; }
+    member.textContent = memberName;
+    var mask = document.createElement('button');
+    mask.type = 'button';
+    mask.id = 'top-mask';
+    mask.setAttribute('aria-label', 'Mask');
+    mask.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M12 3c-4 0-7 2-9 5 2 3 5 5 9 5s7-2 9-5c-2-3-5-5-9-5zm-3 6a1.2 1.2 0 1 1 0 2.4A1.2 1.2 0 0 1 9 9zm6 0a1.2 1.2 0 1 1 0 2.4A1.2 1.2 0 0 1 15 9z"/></svg>';
+    var paintMask = function () {
+      var on = false;
+      try { on = localStorage.getItem('lgme.incognito') === '1'; } catch (error) { on = false; }
+      mask.classList.toggle('is-on', on);
+      mask.setAttribute('aria-pressed', on ? 'true' : 'false');
+    };
+    mask.addEventListener('click', function () {
+      var on = false;
+      try { on = localStorage.getItem('lgme.incognito') === '1'; } catch (error) { on = false; }
+      try { localStorage.setItem('lgme.incognito', on ? '0' : '1'); } catch (error) { /* the color still changes */ }
+      paintMask();
+      document.dispatchEvent(new CustomEvent('lgme-incognito'));
+    });
+    var forward = document.createElement('button');
+    forward.type = 'button';
+    forward.id = 'top-forward';
+    forward.setAttribute('aria-label', 'Forward');
+    forward.textContent = '\u203a';
+    forward.addEventListener('click', function () { history.forward(); });
+    row.appendChild(net);
+    row.appendChild(member);
+    row.appendChild(mask);
+    row.appendChild(forward);
     row.appendChild(backTop);
-    row.appendChild(button);
-    row.appendChild(speaker);
     row.appendChild(mic);
+    row.appendChild(speaker);
     var gear = document.getElementById('page-gear');
     if (gear) row.appendChild(gear);
     document.body.appendChild(row);
