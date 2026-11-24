@@ -57,6 +57,11 @@ function customGuide(id) {
   if (/^item-/.test(id)) return pack('An inventory detail.', 'Plain text, a count, or US$.', 'The CSV stays on this phone. Nothing is kept until you tap OK.', ['Lamp', '1', '10']);
   if (/listing|list-title|list-price|offer-/.test(id)) return pack('A listing detail.', 'A title, a condition, or US$.', 'Send the hash only. The file stays on the phone. OK is required. Testnet only.', ['Bicycle', 'Good', '40']);
   if (/attest/.test(id)) return pack('An attestation of this receipt.', 'A short confirmation.', 'Over $100 needs 3 independent device signatures. Over $1,000 in a day also needs administrator approval. Nothing approves itself.', ['I saw this', 'The amount matches', 'I was there']);
+  if (id === 'gym-ididit-activity') return pack('Activity.', 'Walk, jog, stretch, or lift.', 'This stays on this phone until you confirm.', ['Walk', 'Jog', 'Stretch', 'Lift']);
+  if (id === 'gym-ididit-distance') return pack('Distance.', 'Miles or kilometers.', 'This stays on this phone until you confirm.', ['1 mile', '2 miles', '5 km']);
+  if (id === 'gym-ididit-speed') return pack('Speed.', 'Easy, steady, or fast.', 'This stays on this phone until you confirm.', ['Easy', 'Steady', 'Fast']);
+  if (id === 'gym-ididit-minutes') return pack('Minutes.', 'A whole number.', 'This stays on this phone until you confirm.', ['10', '20', '30', '45']);
+  if (id === 'gym-ididit-other') return pack('Other.', 'A short name for what you finished.', 'This stays on this phone until you confirm.', ['I did the session', 'I finished a walk', 'I stretched']);
   if (/ididit|deed|good-deed/.test(id)) return pack('What you did.', 'A plain sentence. Creo is the value you create.', 'OK is required before anything is saved. Testnet only.', ['Walked 20 minutes', 'Tutored for 30 minutes', 'Fixed a lamp']);
   return null;
 }
