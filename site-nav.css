@@ -1462,3 +1462,5 @@ html.is-one-tab body:has(nav[aria-label="Gym"]) {
   color: #8a8478;
   border: 1px solid #2c352b;
 }
+
+#top-forward, #top-back, #top-net, #top-mask, #top-mic, #top-speaker, #top-tools #page-gear { min-width: 22px !important; min-height: 22px !important; }
