@@ -1603,3 +1603,7 @@ body:has(#testnet-notice) {
 #hold-bubble[hidden] { display: none; }
 #hold-bubble.is-light { background: #f4f1e8; color: #14110c; }
 #hold-bubble.is-dark { background: #14110c; color: #f4f1e8; }
+
+/* The name has to read on the paper page. The old stat grid is the Health row now. */
+html.tape #top-member { color: #1a1408 !important; }
+#home-board { display: none !important; }
