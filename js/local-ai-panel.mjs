@@ -519,9 +519,9 @@ function mount() {
     }
     dock.classList.toggle('is-key-page', mode === 'page');
     dock.classList.toggle('is-key-prompt', mode === 'prompt');
-    if (mode === 'page' && onPage && guidedPhone()) {
-      holdKeys(active);
+    if (mode === 'page' && onPage) {
       if (active.dataset.lgmeType !== '1') prefillField(active);
+      if (guidedPhone()) holdKeys(active);
     }
     if (doneButton) {
       const next = onPage ? nextFormTarget(active) : null;
@@ -931,7 +931,12 @@ function mount() {
   };
   const speakGuide = (words) => {
     const SpeechOut = window.speechSynthesis;
-    if (!speakApproved(localStorage) || !SpeechOut || !words) return;
+    if (!speakApproved(localStorage) || !SpeechOut || !words) {
+      try { SpeechOut?.cancel(); } catch { /* a quiet browser stays quiet */ }
+      return;
+    }
+    if (words === speakGuide.last) return;
+    speakGuide.last = words;
     try { SpeechOut.cancel(); } catch { /* a quiet browser still shows the words */ }
     const utter = new SpeechSynthesisUtterance(words);
     utter.lang = 'en-US';
@@ -1145,7 +1150,7 @@ function mount() {
     const spoken = voiceFriendly(words);
     const guide = voiceTurn || /OK\?/.test(words);
     showReply(dock.querySelector('#ai-log'), guide ? spoken : words);
-    if (lastByVoice || guide) speakAloud(spoken);
+    if ((lastByVoice || guide) && speakApproved(localStorage)) speakAloud(spoken);
     if (flowStep < 3) paintSteps(2);
     try { sessionStorage.removeItem('lgme.prompt.note'); } catch { /* the log still shows */ }
   };
