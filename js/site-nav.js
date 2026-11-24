@@ -533,11 +533,20 @@
     fieldCount.className = 'hand-count';
     fieldCount.id = 'hand-field-count';
     fields.appendChild(fieldCount);
+    var inboxRows = function () {
+      var rows = [];
+      try { rows = JSON.parse(localStorage.getItem('lgme.messages.mine') || '[]'); } catch (error) { rows = []; }
+      if (!Array.isArray(rows)) rows = [];
+      if (!rows.length) {
+        var list = document.getElementById('message-list');
+        if (list) list.querySelectorAll('li').forEach(function (li) { rows.push({ text: li.textContent }); });
+      }
+      return rows;
+    };
     var paintCounts = function () {
-      var list = document.getElementById('message-list');
-      var waiting = list ? list.querySelectorAll('li').length : 0;
-      mailCount.textContent = waiting ? String(waiting) : '';
-      mailCount.hidden = !waiting;
+      var waiting = inboxRows().length;
+      mailCount.textContent = String(waiting);
+      mailCount.hidden = false;
       var blanks = [];
       document.querySelectorAll('#home-board .dash-card, #home-board button').forEach(function (card) {
         if (/None yet/i.test(card.textContent || '')) blanks.push((card.textContent || '').replace(/None yet/i, '').trim().slice(0, 24));
@@ -546,11 +555,85 @@
       fieldCount.hidden = !blanks.length;
       fields.dataset.blanks = blanks.join('|');
     };
-    mail.addEventListener('click', function () {
-      var open = document.getElementById('messages-open');
-      if (open) { open.click(); return; }
-      var panel = document.getElementById('message-panel');
-      if (panel) panel.scrollIntoView({ block: 'start' });
+    var mailHold = document.createElement('div');
+    mailHold.id = 'mail-hold';
+    mailHold.hidden = true;
+    document.body.appendChild(mailHold);
+    var mailSheet = document.createElement('section');
+    mailSheet.id = 'mail-sheet';
+    mailSheet.hidden = true;
+    mailSheet.innerHTML = '<header><b>Messages</b><button type="button" id="mail-sheet-x" aria-label="Close">x</button></header><ul></ul><textarea maxlength="400" placeholder="Write a message"></textarea><button type="button" id="mail-send">Send</button>';
+    document.body.appendChild(mailSheet);
+    var paintSheet = function () {
+      var list = mailSheet.querySelector('ul');
+      list.replaceChildren();
+      var rows = inboxRows();
+      if (!rows.length) {
+        var empty = document.createElement('li');
+        empty.textContent = 'No messages yet.';
+        list.appendChild(empty);
+        return;
+      }
+      rows.forEach(function (row) {
+        var item = document.createElement('li');
+        item.textContent = row.text || '';
+        list.appendChild(item);
+      });
+    };
+    var heldMail = false;
+    var mailTimer = 0;
+    mail.addEventListener('pointerdown', function () {
+      heldMail = false;
+      window.clearTimeout(mailTimer);
+      mailTimer = window.setTimeout(function () {
+        heldMail = true;
+        mailHold.replaceChildren();
+        var rows = inboxRows();
+        if (!rows.length) {
+          var empty = document.createElement('p');
+          empty.textContent = 'No messages.';
+          mailHold.appendChild(empty);
+        } else {
+          rows.slice(0, 6).forEach(function (row) {
+            var line = document.createElement('p');
+            line.textContent = row.text || '';
+            mailHold.appendChild(line);
+          });
+        }
+        mailHold.hidden = false;
+      }, 280);
+    });
+    var releaseMail = function () {
+      window.clearTimeout(mailTimer);
+      mailHold.hidden = true;
+    };
+    mail.addEventListener('pointerup', releaseMail);
+    mail.addEventListener('pointercancel', releaseMail);
+    mail.addEventListener('click', function (event) {
+      if (heldMail) {
+        event.preventDefault();
+        event.stopPropagation();
+        heldMail = false;
+        return;
+      }
+      paintSheet();
+      mailSheet.hidden = false;
+      var link = document.createElement('a');
+      link.href = 'sms:';
+      link.click();
+    });
+    mailSheet.querySelector('#mail-sheet-x').addEventListener('click', function () { mailSheet.hidden = true; });
+    mailSheet.querySelector('#mail-send').addEventListener('click', function () {
+      var box = mailSheet.querySelector('textarea');
+      var text = box.value.trim();
+      if (!text) return;
+      var rows = inboxRows();
+      rows.push({ text: text, sent: false });
+      try { localStorage.setItem('lgme.messages.mine', JSON.stringify(rows)); } catch (error) { /* the sheet still shows it */ }
+      box.value = '';
+      paintSheet();
+      paintCounts();
+      location.href = 'sms:?body=' + encodeURIComponent(text);
     });
     var voiceBar = document.createElement('div');
     voiceBar.id = 'ai-voice-bar';
@@ -815,6 +898,44 @@
     if (oldSteps) oldSteps.remove();
     var oldEasy = menu.querySelector('#easy-read-menu');
     if (oldEasy) oldEasy.remove();
+    menu.replaceChildren();
+    var addItem = function (node) { menu.appendChild(node); };
+    [['simple', 'Simple'], ['everyday', 'Everyday'], ['full', 'Full']].forEach(function (pair) {
+      var choice = document.createElement('button');
+      choice.type = 'button';
+      choice.textContent = pair[1];
+      choice.addEventListener('click', function () {
+        try { localStorage.setItem('lgme.ui.mode', pair[0]); } catch (error) { /* the screen still changes */ }
+        document.documentElement.setAttribute('data-screen', pair[0]);
+      });
+      addItem(choice);
+    });
+    var voiceItem = document.createElement('button');
+    voiceItem.type = 'button';
+    var paintVoiceItem = function () {
+      var on = false;
+      try { on = localStorage.getItem('lgme.voice.speak') === 'yes'; } catch (error) { on = false; }
+      voiceItem.textContent = on ? 'Voice on' : 'Voice off';
+    };
+    voiceItem.addEventListener('click', function () {
+      var on = false;
+      try { on = localStorage.getItem('lgme.voice.speak') === 'yes'; } catch (error) { on = false; }
+      try {
+        localStorage.setItem('lgme.voice.speak', on ? 'no' : 'yes');
+        localStorage.setItem('lgme.voice.reply', on ? 'show' : 'speak');
+      } catch (error) { /* the label still changes */ }
+      paintVoiceItem();
+    });
+    paintVoiceItem();
+    addItem(voiceItem);
+    addItem(tape);
+    addItem(incog);
+    [['/help', 'Help'], ['/gym#/more', 'Health settings'], ['/disclaimer', 'Disclaimer']].forEach(function (pair) {
+      var link = document.createElement('a');
+      link.href = pair[0];
+      link.textContent = pair[1];
+      addItem(link);
+    });
     if (menu.parentElement !== document.body) document.body.appendChild(menu);
     var safePad = function () {
       var probe = document.createElement('div');
