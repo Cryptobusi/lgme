@@ -1402,19 +1402,31 @@ body { padding-top: calc(3.1rem + env(safe-area-inset-top)); }
   border-color: #e07a2f !important;
   outline: 2px solid #e07a2f;
 }
-html.is-more-open #one-menu,
-html.is-one-tab #one-menu {
+html.is-more-open #one-menu:not([hidden]) {
   display: flex !important;
   flex-direction: column !important;
   flex-wrap: nowrap !important;
   align-items: stretch !important;
   gap: 0.35rem !important;
+  position: fixed !important;
+  top: calc(3.15rem + env(safe-area-inset-top)) !important;
+  right: 0.4rem !important;
+  left: auto !important;
+  bottom: auto !important;
   width: min(16rem, calc(100vw - 1.2rem)) !important;
+  max-height: min(70dvh, calc(100dvh - 8rem)) !important;
+  z-index: 98 !important;
+  overflow: auto !important;
+  margin: 0 !important;
+  padding: 0.35rem !important;
+  background: #151a15 !important;
+  color: #f4f1e8 !important;
+  border: 1px solid #c6a15b !important;
+  border-radius: 12px !important;
 }
-html.is-more-open #one-menu a,
-html.is-more-open #one-menu button,
-html.is-one-tab #one-menu a,
-html.is-one-tab #one-menu button {
+#one-menu[hidden] { display: none !important; }
+html.is-more-open #one-menu:not([hidden]) a,
+html.is-more-open #one-menu:not([hidden]) button {
   display: block !important;
   width: 100% !important;
   min-width: 0 !important;
@@ -1422,6 +1434,17 @@ html.is-one-tab #one-menu button {
   margin: 0 !important;
   text-align: left !important;
   white-space: normal !important;
+  background: transparent !important;
+  color: #f4f1e8 !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+}
+html.has-site-nav body,
+body.has-site-nav,
+html.has-site-nav body:has(nav[aria-label="Gym"]),
+html.is-one-tab.has-site-nav body:has(nav[aria-label="Gym"]),
+html.is-one-tab body:has(nav[aria-label="Gym"]) {
+  padding-top: calc(3.1rem + env(safe-area-inset-top)) !important;
 }
 #passkey-use.is-available,
 #passkey-remove.is-available {
