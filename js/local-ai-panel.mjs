@@ -784,7 +784,7 @@ function mount() {
   document.addEventListener('focusin', (event) => explainControl(event.target));
   window.addEventListener('hashchange', () => { showPage(); });
   window.addEventListener('popstate', () => { showPage(); });
-  window.addEventListener('lgme-page-prompt', () => {
+  document.addEventListener('lgme-page-prompt', () => {
     const page = pageOverview(location.pathname, location.hash, document.title);
     paintGuide();
     openPanel();

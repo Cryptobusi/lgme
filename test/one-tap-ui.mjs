@@ -79,8 +79,13 @@ async function run(width, height, tier) {
   try {
     if (tier !== 'browser') {
       await page.goto(`${base}/`, { waitUntil: 'domcontentloaded' });
+      await page.locator('#ai-dock').waitFor({ state: 'attached' });
+      assert(!(await page.locator('#ai-dock').isVisible()), 'the helper starts closed');
+      await page.locator('#hand-ai').click();
       await page.locator('#ai-dock').waitFor();
       assert(/AI off|AI on/i.test(await page.locator('#ai-switch').innerText()), 'enable notice');
+      await page.locator('#ai-expand').click();
+      await page.locator('#ai-dock').waitFor({ state: 'hidden' });
       console.log(`PASS ${width} ${tier} notice`);
       await page.context().close();
       return;
