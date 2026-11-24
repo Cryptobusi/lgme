@@ -1607,3 +1607,47 @@ body:has(#testnet-notice) {
 /* The name has to read on the paper page. The old stat grid is the Health row now. */
 html.tape #top-member { color: #1a1408 !important; }
 #home-board { display: none !important; }
+
+/* Settings mark is black. The crossed-out home cards stay off. */
+#top-tools #page-gear { color: #14110c !important; }
+body:has(#category-grid) #profile-board,
+body:has(#category-grid) #my-shortcuts,
+body:has(#category-grid) #shortcut-offer,
+body:has(#category-grid) #my-functions { display: none !important; }
+#mail-hold {
+  position: fixed;
+  z-index: 96;
+  left: 0.6rem;
+  right: 0.6rem;
+  bottom: calc(4.2rem + env(safe-area-inset-bottom));
+  max-height: 40vh;
+  overflow: auto;
+  padding: 0.7rem 0.8rem;
+  border-radius: 16px;
+  background: #14110c;
+  color: #f4f1e8;
+  font-weight: 650;
+}
+#mail-hold[hidden] { display: none !important; }
+#mail-hold p { margin: 0.25rem 0; }
+#mail-sheet {
+  position: fixed;
+  z-index: 110;
+  left: 0.5rem;
+  right: 0.5rem;
+  bottom: calc(4.2rem + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 60vh;
+  padding: 0.7rem;
+  border-radius: 16px;
+  background: #f4f1e8;
+  color: #14110c;
+}
+#mail-sheet[hidden] { display: none !important; }
+#mail-sheet header { display: flex; align-items: center; justify-content: space-between; }
+#mail-sheet ul { margin: 0; padding: 0; list-style: none; overflow: auto; }
+#mail-sheet li { padding: 0.35rem 0; border-bottom: 1px solid #e4d7bf; }
+#mail-sheet textarea { min-height: 4rem; border: 1px solid #c6a15b; border-radius: 10px; padding: 0.4rem; font: inherit; }
+#mail-sheet #mail-send, #mail-sheet #mail-sheet-x { border: 0; border-radius: 10px; background: #14110c; color: #f4f1e8; min-height: 36px; padding: 0 0.7rem; font-weight: 700; }
