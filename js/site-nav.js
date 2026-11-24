@@ -1253,7 +1253,9 @@
     icon.textContent = item[1].slice(0, 1);
     var count = document.createElement('b');
     var source = document.getElementById(item[2]);
-    count.textContent = source && source.textContent.trim() ? source.textContent.trim() : '0';
+    var figure = source && source.textContent.trim() ? source.textContent.trim() : '0';
+    if (figure === 'None yet' || figure === 'None') figure = '0';
+    count.textContent = figure;
     button.appendChild(icon);
     button.appendChild(count);
     button.addEventListener('click', function () {
@@ -1267,11 +1269,17 @@
   health.appendChild(preview);
   grid.insertBefore(health, grid.firstChild);
   grid.insertBefore(give, grid.firstChild);
+  var dash = document.getElementById('home-board');
+  if (dash) dash.hidden = true;
   window.setTimeout(function () {
     tiles.forEach(function (item) {
       var source = document.getElementById(item[2]);
       var button = health.querySelector('[data-key="' + item[0] + '"] b');
-      if (source && button && source.textContent.trim()) button.textContent = source.textContent.trim();
+      if (source && button) {
+        var figure = source.textContent.trim();
+        if (!figure || figure === 'None yet' || figure === 'None') figure = '0';
+        button.textContent = figure;
+      }
     });
   }, 800);
   };
