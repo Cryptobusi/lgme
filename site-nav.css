@@ -1651,3 +1651,22 @@ body:has(#category-grid) #my-functions { display: none !important; }
 #mail-sheet li { padding: 0.35rem 0; border-bottom: 1px solid #e4d7bf; }
 #mail-sheet textarea { min-height: 4rem; border: 1px solid #c6a15b; border-radius: 10px; padding: 0.4rem; font: inherit; }
 #mail-sheet #mail-send, #mail-sheet #mail-sheet-x { border: 0; border-radius: 10px; background: #14110c; color: #f4f1e8; min-height: 36px; padding: 0 0.7rem; font-weight: 700; }
+
+/* Settings list uses the opposite of the paper page, each row its own color. */
+html.is-more-open #one-menu:not([hidden]) {
+  background: #14110c !important;
+  color: #f4f1e8 !important;
+  border: 2px solid #f4f1e8 !important;
+}
+html.is-more-open #one-menu:not([hidden]) a,
+html.is-more-open #one-menu:not([hidden]) button {
+  background: transparent !important;
+  border-bottom: 1px solid #3a3328 !important;
+  color: #f4f1e8 !important;
+}
+html.is-more-open #one-menu [data-tone="gold"] { color: #e7c98a !important; }
+html.is-more-open #one-menu [data-tone="green"] { color: #8fd6a8 !important; }
+html.is-more-open #one-menu [data-tone="orange"] { color: #f0b27a !important; }
+html.is-more-open #one-menu [data-tone="blue"] { color: #9ecbff !important; }
+html.is-more-open #one-menu [data-tone="violet"] { color: #d7b4f3 !important; }
+html.is-more-open #one-menu [data-tone="bone"] { color: #f7f1e4 !important; }
