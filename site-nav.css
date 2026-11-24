@@ -1356,36 +1356,44 @@ html.is-more-open #one-menu {
   color: #1a1408;
 }
 
-/* sz, speaker, and microphone sit in one row and leave the desk clear. */
+/* sz, speaker, microphone, and settings: one size, fixed at the top right. */
 #top-tools {
   position: fixed;
   z-index: 97;
-  top: 0.35rem;
-  left: 0.4rem;
+  top: max(0.35rem, env(safe-area-inset-top));
+  right: 0.4rem;
+  left: auto;
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.28rem;
 }
-#top-tools #sz-cycle {
+#top-tools > button,
+#top-tools #sz-cycle,
+#top-tools #page-gear {
   position: static !important;
   top: auto !important;
-  left: auto !important;
   right: auto !important;
-}
-#top-mic,
-#top-speaker {
-  width: 36px;
-  height: 36px;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 12px;
+  left: auto !important;
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 40px !important;
+  min-height: 40px !important;
+  max-width: 40px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 12px !important;
   background: #f4f1e8;
   color: #1a1408;
+  font: 700 11px/1 Figtree, sans-serif;
+  display: grid !important;
+  place-items: center !important;
+  box-sizing: border-box !important;
 }
+#top-tools #sz-cycle b { font-size: 12px; line-height: 1; }
 #top-speaker.is-on,
 #top-mic.is-on { background: #1f6b45; color: #f4f1e8; }
-#gym-panel { padding-top: 3.1rem !important; }
+body { padding-top: calc(3.1rem + env(safe-area-inset-top)); }
 #ididit-done input.is-correct {
   border-color: #c6a15b !important;
   box-shadow: inset 0 0 0 2px #c6a15b;
