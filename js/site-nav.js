@@ -36,8 +36,8 @@
       return button;
     };
     sheet.appendChild(title);
-    sheet.appendChild(pick('Version 1 (current)', '1'));
-    sheet.appendChild(pick('Version 2 (new desk)', '2'));
+    sheet.appendChild(pick('Version 1 (Beta)', '1'));
+    sheet.appendChild(pick('Version 2 (Study)', '2'));
     sheet.appendChild(note);
     document.body.appendChild(sheet);
   };
@@ -49,7 +49,7 @@
     else document.addEventListener('DOMContentLoaded', showVersionSheet);
   }
   var EPOCH = '2';
-  var CURRENT = { 'lgme-v268': 1, 'lgme-gym-v81': 1 };
+  var CURRENT = { 'lgme-v269': 1, 'lgme-gym-v81': 1 };
   function keep(name) {
     if (!name) return true;
     if (name === 'lgme.reset.epoch' || name === 'lgme.reset.note' || name === 'lgme.device.key' || name === 'lgme.display.step' || name === 'lgme.display.easy' || name === 'lgme.text.tip' || name === 'lgme.ui.mode' || name === 'lgme.dock.shown' || name === 'lgme.version' || name === 'lgme.ui.uses' || name === 'lgme.ui.offer' || name === 'lgme.ui.shortcuts' || name === 'lgme.learn.path' || name === 'lgme-gym.seat' || name === 'lgme.health.book' || name === 'lgme.health.email' || name === 'lgme.health.plan' || name === 'lgme.health.contact' || name === 'lgme.health.contactGrants' || name === 'lgme.health.consent' || name === 'lgme.demo.member') return true;
