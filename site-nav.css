@@ -1695,3 +1695,32 @@ html.dock-on #ai-dock#ai-dock.is-open {
   border-top: 1px solid #c6a15b !important;
   border-radius: 0 !important;
 }
+
+/* Version choice: a small sheet on first open and from Settings. */
+#version-sheet {
+  position: fixed;
+  z-index: 120;
+  left: 0.6rem;
+  right: 0.6rem;
+  bottom: calc(4rem + env(safe-area-inset-bottom));
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.9rem;
+  border-radius: 16px;
+  border: 1px solid #c6a15b;
+  background: #151a15;
+  color: #f4f1e8;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+}
+#version-sheet .version-title { margin: 0; font-weight: 700; }
+#version-sheet .version-note { margin: 0; font-size: 0.85rem; color: #c5d0c2; }
+#version-sheet button {
+  min-height: 48px;
+  border-radius: 12px;
+  border: 1px solid #c6a15b;
+  background: #c6a15b;
+  color: #1a1408;
+  font: inherit;
+  font-weight: 700;
+}
+#version-sheet button[data-version="1"] { background: #f4f1e8; }

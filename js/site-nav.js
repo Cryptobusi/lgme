@@ -1,9 +1,58 @@
 (function () {
+  // Version choice: Version 1 is this site. Version 2 is the new desk app.
+  var V2_URL = 'https://lgme-v2.vercel.app/';
+  var pickedVersion = '';
+  try {
+    var asked = new URLSearchParams(location.search).get('v');
+    if (asked === '1' || asked === '2') localStorage.setItem('lgme.version', asked);
+    pickedVersion = localStorage.getItem('lgme.version') || '';
+  } catch (error) { pickedVersion = '1'; }
+  if (pickedVersion === '2') {
+    location.replace(V2_URL);
+    return;
+  }
+  var showVersionSheet = function () {
+    if (document.getElementById('version-sheet')) return;
+    var sheet = document.createElement('section');
+    sheet.id = 'version-sheet';
+    sheet.setAttribute('role', 'dialog');
+    sheet.setAttribute('aria-label', 'Choose a version');
+    var title = document.createElement('p');
+    title.className = 'version-title';
+    title.textContent = 'Which version would you like?';
+    var note = document.createElement('p');
+    note.className = 'version-note';
+    note.textContent = 'Your choice stays on this phone. Change it any time in Settings.';
+    var pick = function (label, value) {
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = label;
+      button.dataset.version = value;
+      button.addEventListener('click', function () {
+        try { localStorage.setItem('lgme.version', value); } catch (error) { /* the choice still applies now */ }
+        sheet.remove();
+        if (value === '2') location.assign(V2_URL);
+      });
+      return button;
+    };
+    sheet.appendChild(title);
+    sheet.appendChild(pick('Version 1 (current)', '1'));
+    sheet.appendChild(pick('Version 2 (new desk)', '2'));
+    sheet.appendChild(note);
+    document.body.appendChild(sheet);
+  };
+  window.lgmeVersionSheet = showVersionSheet;
+  var automated = false;
+  try { automated = navigator.webdriver === true; } catch (error) { automated = false; }
+  if (!pickedVersion && !automated) {
+    if (document.body) showVersionSheet();
+    else document.addEventListener('DOMContentLoaded', showVersionSheet);
+  }
   var EPOCH = '2';
-  var CURRENT = { 'lgme-v267': 1, 'lgme-gym-v81': 1 };
+  var CURRENT = { 'lgme-v268': 1, 'lgme-gym-v81': 1 };
   function keep(name) {
     if (!name) return true;
-    if (name === 'lgme.reset.epoch' || name === 'lgme.reset.note' || name === 'lgme.device.key' || name === 'lgme.display.step' || name === 'lgme.display.easy' || name === 'lgme.text.tip' || name === 'lgme.ui.mode' || name === 'lgme.dock.shown' || name === 'lgme.ui.uses' || name === 'lgme.ui.offer' || name === 'lgme.ui.shortcuts' || name === 'lgme.learn.path' || name === 'lgme-gym.seat' || name === 'lgme.health.book' || name === 'lgme.health.email' || name === 'lgme.health.plan' || name === 'lgme.health.contact' || name === 'lgme.health.contactGrants' || name === 'lgme.health.consent' || name === 'lgme.demo.member') return true;
+    if (name === 'lgme.reset.epoch' || name === 'lgme.reset.note' || name === 'lgme.device.key' || name === 'lgme.display.step' || name === 'lgme.display.easy' || name === 'lgme.text.tip' || name === 'lgme.ui.mode' || name === 'lgme.dock.shown' || name === 'lgme.version' || name === 'lgme.ui.uses' || name === 'lgme.ui.offer' || name === 'lgme.ui.shortcuts' || name === 'lgme.learn.path' || name === 'lgme-gym.seat' || name === 'lgme.health.book' || name === 'lgme.health.email' || name === 'lgme.health.plan' || name === 'lgme.health.contact' || name === 'lgme.health.contactGrants' || name === 'lgme.health.consent' || name === 'lgme.demo.member') return true;
     return name.indexOf('lgme-sim:peer:') === 0 || name.indexOf('lgme.health.page:') === 0;
   }
   function arm() {
@@ -949,6 +998,12 @@
       link('/join', 'Account', 'bone');
       link('/credits', 'Accounting', 'green');
       link('/inventory', 'Inventory', 'orange');
+      press('Switch version', 'gold', function () {
+        menu.hidden = true;
+        var open = document.getElementById('version-sheet');
+        if (open) open.remove();
+        showVersionSheet();
+      });
       press('Messages', 'blue', function () {
         var sheet = document.getElementById('mail-sheet');
         if (sheet) {
