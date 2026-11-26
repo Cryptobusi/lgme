@@ -44,7 +44,7 @@ const routes = ['/', '/gym', '/exchange', '/campus', '/develop', '/disclaimer', 
 const member = JSON.stringify({ demo: true, handle: 'demo', disclaimer: true, emailHash: 'demo-hash' });
 
 async function boot(width, height, extra) {
-  const context = await browser.newContext({ viewport: { width, height } });
+  const context = await browser.newContext({ viewport: { width, height }, serviceWorkers: 'block' });
   await context.route('**/*', (route) => {
     const url = route.request().url();
     if (url.includes('fonts.g')) return route.abort();

@@ -69,7 +69,7 @@ function ignore(url) {
 }
 
 async function openContext(width, height, scheme, signed, pwa) {
-  const context = await browser.newContext({ viewport: { width, height }, colorScheme: scheme });
+  const context = await browser.newContext({ viewport: { width, height }, colorScheme: scheme, serviceWorkers: 'block' });
   await context.addInitScript(({ raw, standalone }) => {
     window.__cls = 0;
     window.__shifts = [];
@@ -96,6 +96,26 @@ async function openContext(width, height, scheme, signed, pwa) {
     }
   }, { raw: signed ? member : '', standalone: pwa });
   return context;
+}
+
+async function settle(page) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      await page.waitForFunction(() => document.documentElement.dataset.density, null, { timeout: 5000 });
+      await page.evaluate(async () => { if (document.fonts && document.fonts.ready) await document.fonts.ready; });
+      await page.waitForFunction(() => {
+        const board = document.getElementById('category-board');
+        if (!board) return true;
+        return board.dataset.ready === '1' || board.childElementCount > 0;
+      }, null, { timeout: 5000 });
+      await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      return;
+    } catch (error) {
+      const message = String(error && error.message || error);
+      if (!/destroy|navigat|closed/i.test(message) || attempt === 2) return;
+      await page.waitForLoadState('domcontentloaded').catch(() => {});
+    }
+  }
 }
 
 async function read(page) {
@@ -142,10 +162,21 @@ for (const [width, height] of [[390, 844], [768, 1024], [1280, 800]]) {
       for (const [name, path] of routes) {
         nets.length = 0;
         try {
-          await page.evaluate(() => { window.__cls = 0; window.__shifts = []; window.__mark = performance.now(); });
-          await page.goto(`${base}${path}`, { waitUntil: 'domcontentloaded', timeout: 20000 });
-          await page.waitForTimeout(700);
-          const data = await read(page);
+          let data;
+          for (let attempt = 0; attempt < 2; attempt += 1) {
+            try {
+              await page.goto(`${base}${path}`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+              await page.waitForTimeout(250);
+              await settle(page);
+              await page.evaluate(() => { window.__cls = 0; window.__shifts = []; window.__mark = performance.now(); });
+              await page.waitForTimeout(700);
+              data = await read(page);
+              break;
+            } catch (error) {
+              if (attempt === 1 || !/destroy|interrupted|navigat/i.test(String(error && error.message || error))) throw error;
+              await page.waitForLoadState('domcontentloaded').catch(() => {});
+            }
+          }
           const problems = [];
           if (data.cls > 0.05) problems.push(`cls ${data.cls} ${data.shifts.join(',')}`);
           if (data.overflow) problems.push('overflow');

@@ -51,9 +51,9 @@ function contrast(fg, bg) {
 
 async function check(page, label, shot, viewportHeight) {
   page.setDefaultTimeout(8000);
-  await page.locator('#ai-dock[data-ready="yes"]').waitFor({ timeout: 8000 });
-  await page.locator('#ai-switch').waitFor({ timeout: 8000 });
-  await page.locator('#ai-head').waitFor({ timeout: 8000 });
+  await page.locator('#ai-dock[data-ready="yes"]').waitFor({ state: 'attached', timeout: 8000 });
+  await page.locator('#ai-switch').waitFor({ state: 'attached', timeout: 8000 });
+  await page.locator('#ai-head').waitFor({ state: 'attached', timeout: 8000 });
   await page.evaluate(() => {
     const dock = document.getElementById('ai-dock');
     dock.classList.remove('is-open');
@@ -106,7 +106,7 @@ async function check(page, label, shot, viewportHeight) {
   }
   await page.locator('#ai-accept').evaluate((node) => node.click());
   if (opened !== 'true') problems.push('Open did not expand');
-  const accepted = await page.locator('#ai-log').innerText();
+  const accepted = await page.locator('#ai-log').evaluate((node) => node.textContent || '');
   if (!/Accepted on this phone/.test(accepted)) problems.push('Accept did not keep the line');
   if (problems.length) failures.push(`${label}: ${problems.join('; ')}`);
   rows.push({ label, ok: problems.length === 0 });

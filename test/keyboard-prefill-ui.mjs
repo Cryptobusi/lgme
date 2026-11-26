@@ -89,6 +89,7 @@ await desk.addInitScript(() => {
 });
 const wide = await desk.newPage();
 await wide.goto(`${base}/gym#/ididit`, { waitUntil: 'domcontentloaded' });
+if (!(await wide.locator('#ai-dock').isVisible())) await wide.locator('#hand-ai').click();
 await wide.locator('#gym-ididit-activity').click();
 const choice = wide.locator('.ai-yes').first();
 await choice.waitFor();

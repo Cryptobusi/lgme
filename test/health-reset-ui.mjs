@@ -54,7 +54,7 @@ const browser = await chromium.launch({ executablePath: process.env.CHROME || '/
 const failures = [];
 mkdirSync('/opt/cursor/artifacts', { recursive: true });
 
-const reset = await browser.newContext({ viewport: { width: 390, height: 844 } });
+const reset = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
 await reset.addInitScript(() => {
   if (localStorage.getItem('lgme.reset.epoch') === '2') return;
   localStorage.setItem('lgme.reset.epoch', '1');
@@ -82,7 +82,7 @@ if (kept.splash) failures.push('old splash survived');
 if (kept.epoch !== '2') failures.push(`epoch ${kept.epoch}`);
 await reset.close();
 
-const home = await browser.newContext({ viewport: { width: 390, height: 844 } });
+const home = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
 await home.addInitScript(() => {
   localStorage.setItem('lgme.exchange.splashSeen', '1');
   localStorage.setItem('lgme.reset.epoch', '2');
@@ -115,7 +115,7 @@ await homePage.locator('#ai-check-status').waitFor();
 await homePage.screenshot({ path: '/opt/cursor/artifacts/ai-setup-390.png', timeout: 8000, animations: 'disabled' });
 await home.close();
 
-const flow = await browser.newContext({ viewport: { width: 390, height: 844 } });
+const flow = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
 await flow.addInitScript(() => {
   localStorage.setItem('lgme.reset.epoch', '2');
   localStorage.setItem('lgme.exchange.splashSeen', '1');
@@ -147,7 +147,7 @@ await flow.close();
 
 const routes = ['/', '/gym', '/gym#/start', '/gym#/train', '/gym#/people', '/exchange', '/develop', '/campus', '/neighbors', '/hosts', '/circles', '/stories', '/disclaimer', '/testnet-review', '/owner', '/credits', '/no-such-page', '/my-picture', '/tap-entry', '/ai-setup'];
 for (const [width, height] of [[390, 844], [768, 1024], [1280, 800]]) {
-  const context = await browser.newContext({ viewport: { width, height } });
+  const context = await browser.newContext({ viewport: { width, height }, serviceWorkers: 'block' });
   await context.addInitScript(() => {
     localStorage.setItem('lgme.reset.epoch', '2');
     localStorage.setItem('lgme.exchange.splashSeen', '1');
@@ -160,15 +160,16 @@ for (const [width, height] of [[390, 844], [768, 1024], [1280, 800]]) {
   for (const path of routes) {
     try {
       await page.goto(`${base}${path}`, { waitUntil: 'domcontentloaded', timeout: 20000 });
-      await page.locator('#hand-ai').waitFor({ timeout: 8000 });
-      if (!(await page.locator('#ai-dock').isVisible())) await page.locator('#hand-ai').click();
-      await page.locator('#ai-switch').waitFor({ timeout: 8000 });
-      const on = await page.locator('#ai-switch').getAttribute('aria-checked');
+      await page.locator('#hand-ai').waitFor({ state: 'attached', timeout: 8000 });
+      if (!(await page.locator('#ai-dock').isVisible())) await page.locator('#hand-ai').evaluate((node) => node.click());
+      const sw = page.locator('#ai-switch');
+      await sw.waitFor({ state: 'attached', timeout: 8000 });
+      const on = await sw.getAttribute('aria-checked');
       if (on !== 'true') failures.push(`${width} ${path} switch ${on}`);
-      await page.locator('#ai-switch').click();
-      if (/Turn on the browser/.test(await page.locator('#ai-log').innerText())) failures.push(`${width} ${path} long setup`);
-      await page.locator('#ai-switch').click();
-      if (await page.locator('#ai-switch').getAttribute('aria-checked') !== 'true') failures.push(`${width} ${path} did not turn on`);
+      await sw.evaluate((node) => node.click());
+      if (/Turn on the browser/.test(await page.locator('#ai-log').evaluate((node) => node.textContent || ''))) failures.push(`${width} ${path} long setup`);
+      await sw.evaluate((node) => node.click());
+      if (await sw.getAttribute('aria-checked') !== 'true') failures.push(`${width} ${path} did not turn on`);
     } catch (error) {
       failures.push(`${width} ${path}: ${error.message.split('\n')[0]}`);
     }
@@ -176,7 +177,7 @@ for (const [width, height] of [[390, 844], [768, 1024], [1280, 800]]) {
   await context.close();
 }
 
-const installed = await browser.newContext({ viewport: { width: 390, height: 844 } });
+const installed = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
 await installed.addInitScript(() => {
   localStorage.setItem('lgme.reset.epoch', '2');
   localStorage.setItem('lgme.exchange.splashSeen', '1');

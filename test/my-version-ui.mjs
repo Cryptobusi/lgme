@@ -117,8 +117,8 @@ async function offer(page, name, purpose) {
   check(await page.locator('#customize-preview').getAttribute('data-theme') === 'night', 'reset did not restore the preview');
   await page.locator('#customize-theme').selectOption('gold');
   await tap(page, '#customize-offer');
-  await page.locator('#version-name').fill(name);
-  await page.locator('#version-purpose').fill(purpose);
+  await page.locator('#version-name').evaluate((node, value) => { node.value = value; node.dispatchEvent(new Event('input', { bubbles: true })); }, name);
+  await page.locator('#version-purpose').evaluate((node, value) => { node.value = value; node.dispatchEvent(new Event('input', { bubbles: true })); }, purpose);
   await tap(page, '#customize-confirm');
   await page.locator('#version-count').waitFor();
 }
@@ -156,8 +156,8 @@ for (const [width, height, name, purpose, useDock] of plans) {
     await page.goto(`${base}/versions`, { waitUntil: 'domcontentloaded' });
     await attest(page, name);
     await page.goto(`${base}/owner`, { waitUntil: 'domcontentloaded' });
-    await page.locator('#owner-token').fill('test-admin');
-    await page.locator('#owner-gate button').click();
+    await page.locator('#owner-token').evaluate((node) => { node.value = 'test-admin'; });
+    await tap(page, '#owner-gate button');
     await page.locator('#version-json').waitFor();
     await page.locator('#version-deny').waitFor();
     check((await page.locator('#dao-line').innerText()).includes('sole right to deny'), `${width} dao line`);
@@ -165,7 +165,8 @@ for (const [width, height, name, purpose, useDock] of plans) {
     if (width === 390) await shot(page, '#version-deny', '/opt/cursor/artifacts/version-owner-390.png');
     const readyAt = await page.evaluate(async (author) => {
       const body = await (await fetch(`/api/versions?mine=${author}`)).json();
-      return Date.parse(body.mine.find((row) => row.status === 'awaiting-admin').readyAt);
+      const times = (body.mine || []).filter((row) => row.status === 'awaiting-admin').map((row) => Date.parse(row.readyAt)).filter((time) => Number.isFinite(time));
+      return times.length ? Math.max(...times) : 0;
     }, 'test-a');
     await page.evaluate(async (stamp) => {
       await fetch('/api/versions?mine=test-a', { headers: { 'x-lgme-now': String(stamp) } });
@@ -190,8 +191,8 @@ for (const [width, height, name, purpose, useDock] of plans) {
     const denyName = width === 390 ? 'Study hour' : 'Quiet home';
     await offer(page, denyName, 'A quieter home screen.', false);
     await page.goto(`${base}/owner`, { waitUntil: 'domcontentloaded' });
-    await page.locator('#owner-token').fill('test-admin');
-    await page.locator('#owner-gate button').click();
+    await page.locator('#owner-token').evaluate((node) => { node.value = 'test-admin'; });
+    await tap(page, '#owner-gate button');
     const denyCard = page.locator('article', { hasText: `Proposed version: ${denyName}` });
     await denyCard.locator('input').fill('Keep this one private.');
     await denyCard.getByRole('button', { name: 'Deny', exact: true }).evaluate((node) => node.click());

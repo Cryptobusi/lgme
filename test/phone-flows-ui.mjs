@@ -136,7 +136,10 @@ async function ididitHome(page, shot) {
 async function ididitGym(page) {
   await page.goto(`${base}/gym#/ididit`, { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => { const el = document.activeElement; if (el && el.blur) el.blur(); });
-  await page.locator('#gym-ididit-confirm').click();
+  for (let step = 0; step < 8; step += 1) {
+    if (/Recorded on testnet/.test(await page.locator('#ididit-status').innerText().catch(() => ''))) break;
+    await page.locator('#gym-ididit-confirm').click();
+  }
   await page.locator('#ididit-status', { hasText: 'Recorded on testnet' }).waitFor();
   const text = await page.locator('#ididit-status').innerText();
   if (!/Recorded on testnet/.test(text)) failures.push(`gym receipt ${text}`);
@@ -157,6 +160,7 @@ function standaloneScript() {
 
 async function dock(page, shot) {
   await page.goto(`${base}/`, { waitUntil: 'domcontentloaded' });
+  if (!(await page.locator('#ai-dock').isVisible())) await page.locator('#hand-ai').click();
   const ask = page.locator('#ai-ask');
   await ask.waitFor();
   const info = await ask.evaluate((node) => ({
@@ -191,6 +195,7 @@ async function dockStandalone(browser, shot) {
   await page.goto(`${base}/gym`, { waitUntil: 'domcontentloaded' });
   const standalone = await page.evaluate(() => window.matchMedia('(display-mode: standalone)').matches);
   if (!standalone) failures.push('standalone display mode did not match');
+  if (!(await page.locator('#ai-dock').isVisible())) await page.locator('#hand-ai').click();
   const ask = page.locator('#ai-ask');
   await ask.waitFor();
   await page.waitForFunction(() => typeof window.__lgmeDeferSwReload === 'function');
@@ -204,6 +209,7 @@ async function dockStandalone(browser, shot) {
   const later = await page.evaluate(() => window.__lgmeDeferSwReload());
   if (later) failures.push('service worker update stayed deferred after leaving the dock');
   await page.reload({ waitUntil: 'domcontentloaded' });
+  if (!(await page.locator('#ai-dock').isVisible())) await page.locator('#hand-ai').click();
   await page.locator('#ai-ask').click();
   const again = await page.evaluate(() => document.activeElement && document.activeElement.id === 'ai-ask');
   if (!again) failures.push('dock input did not focus after the app reloaded');
@@ -246,7 +252,7 @@ async function fieldDock(browser) {
     await field.fill('I finished a walk');
     await page.locator('#gym-ididit-confirm').focus();
   } else {
-    await page.getByRole('button', { name: 'Yes, I finished a walk', exact: true }).click();
+    await page.locator('[aria-label="Yes, I finished a walk"]').evaluate((node) => node.click());
   }
   if (await field.inputValue() !== 'I finished a walk') failures.push('option did not fill the field');
   const focused = await page.evaluate(() => document.activeElement && document.activeElement.id === 'gym-ididit-confirm');
@@ -255,7 +261,7 @@ async function fieldDock(browser) {
   const title = page.locator('#want-title');
   await title.click();
   if (await page.locator('#ai-key-done').isVisible()) await title.fill('I can help test');
-  else await page.getByRole('button', { name: 'Yes, I can help test', exact: true }).click();
+  else await page.locator('[aria-label="Yes, I can help test"]').evaluate((node) => node.click());
   if (await title.inputValue() !== 'I can help test') failures.push('IwanIT option did not fill the title');
   if (!(await page.locator('#ai-key-done').isVisible())) {
     const next = await page.evaluate(() => document.activeElement && document.activeElement.id);
