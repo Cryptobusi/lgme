@@ -30,6 +30,7 @@ jobs:
       - run: node test/demo-onboard-ui.mjs
         timeout-minutes: 10
       - run: node test/stable-screens.mjs
+      - run: node test/layout-hold-ui.mjs
         timeout-minutes: 10
       - run: node test/local-ai-scope.mjs
         timeout-minutes: 10
