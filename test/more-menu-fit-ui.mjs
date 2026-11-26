@@ -42,21 +42,22 @@ await context.addInitScript(() => {
 const failures = [];
 const page = await context.newPage();
 await page.goto(`${base}/`, { waitUntil: 'domcontentloaded' });
-await page.locator('#one-more').waitFor();
-await page.waitForFunction(() => document.documentElement.classList.contains('is-easy') && document.getElementById('ai-dock')?.classList.contains('is-open'));
-if (!(await page.locator('#ai-dock').evaluate((node) => node.classList.contains('is-open')))) await page.locator('#ai-expand').click();
-await page.locator('#one-more').click();
+await page.locator('#page-gear').waitFor();
+await page.locator('#one-more').waitFor({ state: 'attached' });
+if (await page.locator('#one-more').isVisible()) failures.push('More is visible');
+await page.waitForFunction(() => document.documentElement.classList.contains('is-easy'));
+await page.locator('#page-gear').click();
 await page.waitForFunction(() => document.getElementById('one-menu')?.hidden === false);
 const fit = await page.evaluate(() => {
   const menu = document.getElementById('one-menu');
-  const dock = document.getElementById('ai-dock');
+  const hand = document.getElementById('hand-bar');
   const view = window.visualViewport;
   menu.scrollTop = 0;
   const menuBox = menu.getBoundingClientRect();
   const visible = () => [...menu.querySelectorAll('a, button')].filter((el) => !el.closest('[hidden]'));
   const firstEl = visible()[0];
   const first = firstEl.getBoundingClientRect();
-  const dockBox = dock.getBoundingClientRect();
+  const handBox = hand.getBoundingClientRect();
   menu.scrollTop = menu.scrollHeight;
   const items = visible();
   const lastEl = items[items.length - 1];
@@ -64,8 +65,6 @@ const fit = await page.evaluate(() => {
   const menuAfter = menu.getBoundingClientRect();
   return {
     parent: menu.parentElement === document.body,
-    z: Number(getComputedStyle(menu).zIndex),
-    dockZ: Number(getComputedStyle(dock).zIndex),
     overflow: getComputedStyle(menu).overflowY,
     menu: { top: menuBox.top, bottom: menuBox.bottom, left: menuBox.left, right: menuBox.right },
     firstTop: first.top,
@@ -73,8 +72,7 @@ const fit = await page.evaluate(() => {
     lastBottom: last.bottom,
     lastTop: last.top,
     lastName: lastEl.textContent,
-    dockTop: dockBox.top,
-    dockRatio: dockBox.height / view.height,
+    handTop: handBox.top,
     viewH: view.height,
     viewW: view.width,
     scrolls: menu.scrollHeight > menu.clientHeight + 4,
@@ -82,24 +80,22 @@ const fit = await page.evaluate(() => {
   };
 });
 if (!fit.parent) failures.push('menu is not portaled to the body');
-if (!(fit.z > fit.dockZ)) failures.push(`menu z ${fit.z} dock ${fit.dockZ}`);
 if (fit.overflow !== 'auto' && fit.overflow !== 'scroll') failures.push(`overflow ${fit.overflow}`);
 if (fit.menu.top < -1 || fit.menu.left < -1 || fit.menu.right > fit.viewW + 1 || fit.menu.bottom > fit.viewH + 1) failures.push(`menu off screen ${JSON.stringify(fit.menu)} view ${fit.viewW}x${fit.viewH}`);
-if (fit.menu.bottom > fit.dockTop + 1) failures.push(`menu under dock ${fit.menu.bottom} ${fit.dockTop}`);
-if (fit.dockRatio < 0.45 || fit.dockRatio > 0.58) failures.push(`dock ratio ${fit.dockRatio}`);
+if (fit.menu.bottom > fit.handTop + 1) failures.push(`menu under hand bar ${fit.menu.bottom} ${fit.handTop}`);
 if (fit.firstTop < fit.menu.top - 2 || fit.firstTop >= fit.menu.bottom) failures.push(`first item unreachable ${fit.firstTop}`);
 if (fit.lastBottom > fit.menuAfterBottom + 2 || fit.lastTop >= fit.menuAfterBottom) failures.push(`last item unreachable ${fit.lastName} ${fit.lastTop}-${fit.lastBottom}`);
 if (!fit.scrolls) failures.push('menu does not scroll');
 await page.keyboard.press('Escape');
 await page.waitForFunction(() => document.getElementById('one-menu')?.hidden === true);
 await page.waitForTimeout(500);
-await page.locator('#one-more').click();
+await page.locator('#page-gear').click();
 await page.waitForFunction(() => document.getElementById('one-menu')?.hidden === false);
 await page.mouse.click(8, 200);
 await page.waitForFunction(() => document.getElementById('one-menu')?.hidden === true);
 await page.waitForTimeout(500);
-await page.locator('#one-more').click();
-await page.locator('#tape-sound').click();
+await page.locator('#page-gear').click();
+await page.locator('#one-menu').getByRole('button', { name: 'Voice off' }).click();
 await page.waitForFunction(() => document.getElementById('one-menu')?.hidden === true);
 await browser.close();
 server.close();

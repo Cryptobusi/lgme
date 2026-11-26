@@ -52,15 +52,19 @@ for (const [width, height] of [[390, 844], [768, 1024], [1280, 800]]) {
     await page.locator('#help-develop-open').waitFor();
     await page.locator('#demo-signin').waitFor();
     assert(await page.locator('#demo-email').count() === 0, 'sign-in flashed');
-    await page.locator('#site-home').waitFor();
-    await page.locator('#site-back').waitFor();
+    await page.locator('#site-home').waitFor({ state: 'attached' });
+    await page.locator('#site-back').waitFor({ state: 'attached' });
+    assert(!(await page.locator('#site-home').isVisible()), 'old home link stays in the hidden bar');
+    assert(!(await page.locator('#site-back').isVisible()), 'old back link stays in the hidden bar');
+    await page.locator('#hand-home').waitFor();
+    await page.locator('#hand-prev').waitFor();
     if (width === 390) {
       mkdirSync('/opt/cursor/artifacts', { recursive: true });
       await page.screenshot({ path: '/opt/cursor/artifacts/category-first-390.png' });
     }
     if (width === 1280) await page.screenshot({ path: '/opt/cursor/artifacts/category-first-1280.png' });
-    await page.locator('#one-more').click();
-    await page.locator('a[href="/campus"]').first().click();
+    await page.locator('#page-gear').click();
+    await page.locator('a.tile-open[href="/campus"]').click();
     await page.waitForURL(/\/campus/);
     assert(await page.evaluate(() => localStorage.getItem('lgme.demo.member')) === null, 'browse stored an account');
     await page.goto(`${base}/`, { waitUntil: 'domcontentloaded' });
@@ -81,9 +85,11 @@ for (const [width, height] of [[390, 844], [768, 1024], [1280, 800]]) {
     assert(/new/.test(badge), badge);
     if (width === 390) await page.screenshot({ path: '/opt/cursor/artifacts/demo-dashboard-390.png' });
     await page.goto(`${base}/campus`, { waitUntil: 'domcontentloaded' });
-    await page.locator('#site-home').waitFor();
-    await page.locator('#site-back').click();
-    assert(page.url().includes(base), 'back left the site');
+    await page.locator('#site-home').waitFor({ state: 'attached' });
+    assert(!(await page.locator('#site-home').isVisible()), 'old home link stays in the hidden bar');
+    await page.locator('#hand-home').click();
+    await page.waitForURL(/\?home=1/);
+    assert(page.url().includes(base), 'home left the site');
     console.log(`PASS ${width} taps ${taps}`);
     assert(taps <= 6, `taps ${taps}`);
   } catch (error) {

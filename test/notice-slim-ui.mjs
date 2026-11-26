@@ -40,11 +40,11 @@ await context.addInitScript(() => {
 const failures = [];
 const page = await context.newPage();
 await page.goto(`${base}/`, { waitUntil: 'domcontentloaded' });
-await page.locator('#notice-x').click();
-const text = await page.locator('#notice-text').innerText();
+await page.locator('#testnet-notice').waitFor({ state: 'attached' });
+if (await page.locator('#testnet-notice').isVisible()) failures.push('notice is on');
+if (await page.locator('#notice-x').isVisible()) failures.push('notice close is on');
+const text = await page.locator('#notice-text').evaluate((node) => node.textContent);
 if (!text.includes('Notice: back in testnet for troubleshooting. Keep learning, earning, never boring.')) failures.push('notice text missing');
-const height = await page.locator('#testnet-notice').evaluate((node) => node.getBoundingClientRect().height);
-if (height > 48) failures.push(`notice not slim ${height}`);
 if (await page.locator('#notice-smaller, #notice-larger').count()) failures.push('notice still has text size');
 if (!(await page.locator('#ai-dock').evaluate((node) => node.classList.contains('is-compact')))) failures.push('dock not compact');
 await page.screenshot({ path: '/opt/cursor/artifacts/sovereign-slim-390.png', animations: 'disabled' });

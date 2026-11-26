@@ -49,6 +49,7 @@ await context.addInitScript(() => {
 const page = await context.newPage();
 const failures = [];
 await page.goto(`${base}/`, { waitUntil: 'domcontentloaded' });
+if (!(await page.locator('#ai-dock').isVisible())) await page.locator('#hand-ai').click();
 await page.locator('#ai-switch').waitFor();
 const chip = await page.locator('#ai-switch').innerText();
 if (chip !== 'AI on - unavailable') failures.push(`chip ${chip}`);

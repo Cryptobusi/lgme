@@ -117,7 +117,7 @@ for (const [width, height] of [[390, 844], [1280, 800]]) {
   const { context, page } = await open(browser, width, height);
   try {
     await page.goto(`${base}/gym`, { waitUntil: 'domcontentloaded' });
-    await page.locator('#one-more').click();
+    await page.locator('#page-gear').click();
     const actions = page.locator('#category-board .category-actions');
     const idid = actions.getByRole('button', { name: /^IdidIt/ });
     const want = actions.getByRole('button', { name: /^IwantIT/ });
@@ -155,12 +155,8 @@ for (const [width, height] of [[390, 844], [1280, 800]]) {
     await tap(page, '#category-create');
     const nameOption = width === 390 ? 'Tool library' : 'Study hour';
     const lineOption = width === 390 ? 'A place to trade tools' : 'A study hour';
-    await page.locator('#evolve-name').click();
-    if (await page.locator('#ai-key-done').isVisible()) await page.locator('#evolve-name').fill(nameOption);
-    else await page.getByRole('button', { name: `Yes, ${nameOption}`, exact: true }).click();
-    await page.locator('#evolve-line').click();
-    if (await page.locator('#ai-key-done').isVisible()) await page.locator('#evolve-line').fill(lineOption);
-    else await page.getByRole('button', { name: `Yes, ${lineOption}`, exact: true }).click();
+    await page.locator('#evolve-name').fill(nameOption);
+    await page.locator('#evolve-line').fill(lineOption);
     await tap(page, '#evolve-send');
     await page.locator('#evolve-count').waitFor();
     const count = await page.locator('#evolve-count').innerText();
@@ -172,7 +168,7 @@ for (const [width, height] of [[390, 844], [1280, 800]]) {
     for (const [member, label] of steps) {
       await page.evaluate((id) => localStorage.setItem('lgme.member', id), member);
       await page.reload({ waitUntil: 'domcontentloaded' });
-      await page.locator('#one-more').click();
+      await page.locator('#page-gear').click();
       await tap(page, `#category-chips button:has-text("${nameOption}")`);
       await tap(page, '#evolve-attest');
       await page.waitForFunction((next) => document.getElementById('evolve-count')?.textContent === next, label);

@@ -109,7 +109,7 @@ async function shot(page, selector, file) {
   await page.screenshot({ path: file, timeout: 8000, animations: 'disabled' });
 }
 
-async function offer(page, name, purpose, useDock) {
+async function offer(page, name, purpose) {
   await page.locator('#customize-theme').selectOption('gold');
   await page.locator('#customize-preview').waitFor();
   check(await page.locator('#customize-preview').getAttribute('data-theme') === 'gold', 'preview did not follow the theme');
@@ -117,17 +117,8 @@ async function offer(page, name, purpose, useDock) {
   check(await page.locator('#customize-preview').getAttribute('data-theme') === 'night', 'reset did not restore the preview');
   await page.locator('#customize-theme').selectOption('gold');
   await tap(page, '#customize-offer');
-  if (useDock) {
-    await page.locator('#version-name').click();
-    if (await page.locator('#ai-key-done').isVisible()) await page.locator('#version-name').fill(name);
-    else await page.getByRole('button', { name: `Yes, ${name}`, exact: true }).click();
-    await page.locator('#version-purpose').click();
-    if (await page.locator('#ai-key-done').isVisible()) await page.locator('#version-purpose').fill(purpose);
-    else await page.getByRole('button', { name: `Yes, ${purpose}`, exact: true }).click();
-  } else {
-    await page.locator('#version-name').fill(name);
-    await page.locator('#version-purpose').fill(purpose);
-  }
+  await page.locator('#version-name').fill(name);
+  await page.locator('#version-purpose').fill(purpose);
   await tap(page, '#customize-confirm');
   await page.locator('#version-count').waitFor();
 }

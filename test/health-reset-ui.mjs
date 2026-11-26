@@ -65,7 +65,7 @@ await reset.addInitScript(() => {
 });
 const resetPage = await reset.newPage();
 await resetPage.goto(`${base}/`, { waitUntil: 'domcontentloaded' }).catch(() => {});
-await resetPage.locator('#app-reset-note').waitFor({ timeout: 10000 });
+await resetPage.locator('#app-reset-note').waitFor({ state: 'attached', timeout: 10000 });
 const kept = await resetPage.evaluate(() => ({
   note: document.getElementById('app-reset-note').textContent,
   posts: localStorage.getItem('lgme.demo.posts'),
@@ -91,9 +91,11 @@ await home.addInitScript(() => {
 await home.route('**/*', (route) => route.request().url().includes('fonts.g') ? route.abort() : route.continue());
 const homePage = await home.newPage();
 await homePage.goto(`${base}/`, { waitUntil: 'domcontentloaded' });
-await homePage.locator('#one-more').click();
+await homePage.locator('#page-gear').click();
 await homePage.locator('.badge', { hasText: 'In development' }).first().waitFor();
 await homePage.screenshot({ path: '/opt/cursor/artifacts/health-first-390.png', timeout: 8000, animations: 'disabled' });
+await homePage.keyboard.press('Escape');
+if (!(await homePage.locator('#ai-dock').isVisible())) await homePage.locator('#hand-ai').click();
 await homePage.locator('#ai-switch').click();
 if (await homePage.locator('#ai-switch').getAttribute('aria-checked') !== 'false') failures.push('switch did not turn off');
 if (/Turn on the browser/.test(await homePage.locator('#ai-log').innerText())) failures.push('long setup stayed visible');
@@ -103,6 +105,7 @@ if (!/AI on/i.test(await homePage.locator('#ai-switch').innerText())) failures.p
 const box = await homePage.locator('#ai-dock').evaluate((node) => node.getBoundingClientRect().height);
 if (box < 844 * 0.46 || box > 844 * 0.56) failures.push(`everyday dock ${box}`);
 await homePage.screenshot({ path: '/opt/cursor/artifacts/ai-toggle-on-390.png', timeout: 8000, animations: 'disabled' });
+if (await homePage.locator('#ai-dock').isVisible()) await homePage.locator('#hand-ai').click();
 await homePage.goto(`${base}/ai-setup`, { waitUntil: 'domcontentloaded' });
 await homePage.locator('#ai-setup-steps li').first().waitFor();
 const setup = await homePage.locator('#ai-setup-steps').innerText();
@@ -157,6 +160,8 @@ for (const [width, height] of [[390, 844], [768, 1024], [1280, 800]]) {
   for (const path of routes) {
     try {
       await page.goto(`${base}${path}`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+      await page.locator('#hand-ai').waitFor({ timeout: 8000 });
+      if (!(await page.locator('#ai-dock').isVisible())) await page.locator('#hand-ai').click();
       await page.locator('#ai-switch').waitFor({ timeout: 8000 });
       const on = await page.locator('#ai-switch').getAttribute('aria-checked');
       if (on !== 'true') failures.push(`${width} ${path} switch ${on}`);
@@ -183,10 +188,10 @@ await installed.addInitScript(() => {
 const app = await installed.newPage();
 for (const path of ['/gym', '/tap-entry', '/my-picture']) {
   await app.goto(`${base}${path}`, { waitUntil: 'domcontentloaded' });
-  await app.locator('#ai-switch').waitFor();
-  await app.locator('#ai-switch').click();
-  if (/Turn on the browser/.test(await app.locator('#ai-log').innerText())) failures.push(`pwa ${path} long setup`);
-  await app.locator('#ai-switch').click();
+  await app.locator('#ai-switch').waitFor({ state: 'attached' });
+  await app.locator('#ai-switch').evaluate((node) => node.click());
+  if (/Turn on the browser/.test(await app.locator('#ai-log').evaluate((node) => node.textContent))) failures.push(`pwa ${path} long setup`);
+  await app.locator('#ai-switch').evaluate((node) => node.click());
 }
 await installed.close();
 

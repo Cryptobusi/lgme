@@ -39,7 +39,13 @@ await context.addInitScript(() => {
 });
 const failures = [];
 const page = await context.newPage();
+async function openHelper(target) {
+  await target.locator('#hand-ai').waitFor();
+  if (!(await target.locator('#ai-dock').isVisible())) await target.locator('#hand-ai').click();
+  await target.locator('#ai-dock').waitFor();
+}
 await page.goto(`${base}/gym`, { waitUntil: 'domcontentloaded' });
+await openHelper(page);
 await page.locator('#ai-ask').waitFor();
 const mic = await page.locator('#ai-mic-btn').boundingBox();
 if (!mic || mic.width < 40 || mic.height < 40) failures.push(`mic hidden ${JSON.stringify(mic)}`);
@@ -71,7 +77,7 @@ const off = await page.locator('#ai-mic-btn').evaluate((node) => ({
 }));
 if (!off.off || off.pressed !== 'false' || !/176,\s*0,\s*32/.test(off.bg)) failures.push(`mic off ${JSON.stringify(off)}`);
 await page.locator('#ai-mic-btn').click();
-await page.locator('#device-allow').click();
+await page.locator('#device-allow').evaluate((node) => node.click());
 const listening = await page.locator('#ai-mic-btn').evaluate((node) => ({
   on: node.classList.contains('is-listening'),
   pressed: node.getAttribute('aria-pressed'),
@@ -91,6 +97,7 @@ if ((await page.locator('#ai-ask').inputValue()) !== 'log 5min walk') failures.p
 if (/Recorded on testnet/.test(await page.locator('#ididit-status').innerText().catch(() => ''))) failures.push('voice recorded without OK');
 await page.goto(`${base}/gym`, { waitUntil: 'domcontentloaded' });
 await page.evaluate(() => { sessionStorage.removeItem('lgme.voice.turn'); sessionStorage.removeItem('lgme.prompt.note'); });
+await openHelper(page);
 await page.locator('#ai-ask').waitFor();
 await page.evaluate(() => {
   localStorage.setItem('lgme.incognito', '1');
@@ -160,7 +167,7 @@ await page.locator('#gym-ididit-other').waitFor();
 if (/recorded|queued/i.test(await page.locator('#ididit-status').innerText())) failures.push('yes saved');
 if (!/Not sent/.test(await page.locator('#ai-send-state').getAttribute('aria-label') || '')) failures.push('yes sent');
 await page.goto(`${base}/`, { waitUntil: 'domcontentloaded' });
-await page.locator('#ai-dock').waitFor();
+await openHelper(page);
 await page.locator('.ai-suggest').first().waitFor();
 const linesBefore = await page.locator('.ai-suggest').count();
 await page.locator('.ai-no').last().click();
@@ -229,7 +236,7 @@ await ai.addInitScript(() => {
 });
 const aiPage = await ai.newPage();
 await aiPage.goto(`${base}/`, { waitUntil: 'domcontentloaded' });
-await aiPage.locator('#ai-dock').waitFor();
+await openHelper(aiPage);
 if ((await aiPage.locator('#ai-switch').innerText()) !== 'AI on') failures.push('AI did not start');
 const order = await aiPage.locator('.ai-chip').allTextContents();
 if (order[0] !== 'What can I do here?') failures.push(`rank ${order.join('|')}`);

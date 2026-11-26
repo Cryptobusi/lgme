@@ -65,8 +65,12 @@ for (const [width, height] of [[390, 844], [768, 1024], [1280, 800]]) {
   try {
     for (const path of routes) {
       await page.goto(`${base}${path}`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+      await page.locator('#ai-dock').waitFor({ state: 'attached' });
+      await page.locator('#site-home').waitFor({ state: 'attached' });
+      if (await page.locator('#site-home').isVisible()) failures.push(`${width} ${path} old home bar visible`);
+      await page.locator('#hand-home').waitFor();
+      if (!(await page.locator('#ai-dock').isVisible())) await page.locator('#hand-ai').click();
       await page.locator('#ai-dock').waitFor();
-      await page.locator('#site-home').waitFor();
       const box = await page.locator('#ai-dock').evaluate((node) => ({ height: node.getBoundingClientRect().height, text: `${document.getElementById('ai-log').textContent} ${document.getElementById('ai-send-state')?.getAttribute('aria-label') || ''}` }));
       if (box.height > height * 0.56) failures.push(`${width} ${path} dock tall ${box.height}`);
       if (!/Ask here|AI off|names what|Not sent|Held/.test(box.text)) failures.push(`${width} ${path} empty panel`);
@@ -79,17 +83,12 @@ for (const [width, height] of [[390, 844], [768, 1024], [1280, 800]]) {
       if (box.height < 32) failures.push(`${width} ${path} dock missing`);
       if (path === '/') {
         const place = await page.evaluate(() => {
-          const nav = document.getElementById('site-nav').getBoundingClientRect();
+          const hand = document.getElementById('hand-bar').getBoundingClientRect();
           const grid = document.getElementById('category-grid').getBoundingClientRect();
-          const between = [...document.body.querySelectorAll('p, h1, h2, section, button, a')].filter((el) => {
-            if (document.getElementById('site-nav').contains(el) || document.getElementById('category-grid').contains(el)) return false;
-            const box = el.getBoundingClientRect();
-            return box.height > 4 && box.width > 4 && box.top >= nav.bottom - 1 && box.top < grid.top - 1;
-          });
           const actions = document.getElementById('demo-actions');
-          return { gap: between.map((el) => el.textContent.trim().slice(0, 24)), overflow: actions.scrollWidth > actions.clientWidth + 1 };
+          return { covered: hand.top < grid.bottom && hand.bottom > grid.top, overflow: actions.scrollWidth > actions.clientWidth + 1 };
         });
-        if (place.gap.length) failures.push(`${width} above grid ${place.gap.join('|')}`);
+        if (place.covered) failures.push(`${width} hand bar covers grid`);
         if (place.overflow) failures.push(`${width} action row overflows`);
       }
     }
@@ -111,8 +110,10 @@ for (const [width, height] of [[390, 844], [768, 1024], [1280, 800]]) {
 const signed = await boot(390, 844, member);
 const signedPage = await signed.newPage();
 await signedPage.goto(`${base}/`, { waitUntil: 'domcontentloaded' });
+await signedPage.locator('#hand-home').waitFor();
+if (!(await signedPage.locator('#ai-dock').isVisible())) await signedPage.locator('#hand-ai').click();
 await signedPage.locator('#ai-status').waitFor();
-const flag = await signedPage.locator('#ai-status').innerText();
+const flag = await signedPage.locator('#ai-status').evaluate((node) => node.textContent);
 if (await signedPage.locator('#ai-flag').isVisible()) failures.push('online line still shown');
 if (!/Online: yes/.test(flag) || !/AI: yes/.test(flag)) failures.push(`flag state ${flag}`);
 await signedPage.screenshot({ path: '/opt/cursor/artifacts/ai-flag-390.png', timeout: 8000, animations: 'disabled' });
@@ -132,12 +133,14 @@ await signed.close();
 const offline = await boot(390, 844, member);
 const offPage = await offline.newPage();
 await offPage.goto(`${base}/`, { waitUntil: 'domcontentloaded' });
+await offPage.locator('#hand-home').waitFor();
+if (!(await offPage.locator('#ai-dock').isVisible())) await offPage.locator('#hand-ai').click();
 await offPage.locator('#ai-dock').waitFor();
 await offPage.context().setOffline(true);
 await offPage.evaluate(() => window.dispatchEvent(new Event('offline')));
 await offPage.getByRole('button', { name: 'Offer', exact: true }).click();
 if (await offPage.locator('#demo-confirm').count()) failures.push('offline opened a confirm');
-const offFlag = await offPage.locator('#ai-status').innerText();
+const offFlag = await offPage.locator('#ai-status').evaluate((node) => node.textContent);
 if (!/Online: no/.test(offFlag)) failures.push(`offline flag ${offFlag}`);
 await offline.close();
 

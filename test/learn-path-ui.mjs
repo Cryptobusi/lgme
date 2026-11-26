@@ -36,6 +36,7 @@ await context.addInitScript(() => {
 const page = await context.newPage();
 const failures = [];
 await page.goto(`${base}/`, { waitUntil: 'domcontentloaded' });
+if (!(await page.locator('#ai-dock').isVisible())) await page.locator('#hand-ai').click();
 await page.locator('#ai-path-line').waitFor();
 if (await page.locator('#ai-intents').count()) failures.push('intent tabs remain');
 if ((await page.evaluate(() => localStorage.getItem('lgme.ask.tab'))) !== null) failures.push('tab pref remains');
