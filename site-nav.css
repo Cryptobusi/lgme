@@ -1123,10 +1123,11 @@ header.gym-head {
   padding-bottom: 0.35rem !important;
 }
 #device-can-host,
-#category-board,
+#category-board[data-compact],
 #health-floor:empty {
   min-height: 0 !important;
 }
+/* Category pages keep the board height from category-board.css so they do not jump while it fills. */
 #gym-panel { min-height: 0 !important; padding-bottom: 8.5rem !important; }
 
 /* The notice stops before sz. The last row clears More and the icon bar. */
