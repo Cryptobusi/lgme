@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#0c100c" />
+  <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+  <title>Prompt-Mediated Agency · Doctoral dissertation draft · lgme</title>
+  <meta name="description" content="Doctoral dissertation draft. Prompt-Mediated Agency: Individual Sovereignty and Self-Actualization in Generative Interfaces. A mixed-methods HCI investigation of cognitive offloading, metacognitive scaffolding, and provenance-bound interaction." />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" />
+  <link rel="stylesheet" href="/menu.css" />
+  <style>
+    :root { --bg:#0c100c; --fg:#f4f1e8; --muted:#c5d0c2; --gold:#c6a15b; --line:#2c352b; --card:#151a15; }
+    body { background:var(--bg); color:var(--fg); font-family:Figtree,sans-serif; font-size:1.05rem; line-height:1.65; max-width:46rem; margin:0 auto; padding:1.25rem max(1rem, env(safe-area-inset-right)) 4rem max(1rem, env(safe-area-inset-left)); }
+    .kicker { margin:0; font-size:0.72rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--gold); }
+    h1,h2,h3 { font-family:Newsreader,serif; font-weight:500; letter-spacing:-0.02em; }
+    h1 { font-size:clamp(1.7rem, 6.5vw, 2.45rem); line-height:1.12; margin:0.4rem 0 0.6rem; }
+    h2 { font-size:clamp(1.35rem, 4vw, 1.7rem); line-height:1.2; margin:2rem 0 0.45rem; }
+    h3 { font-size:1.15rem; line-height:1.3; margin:1.35rem 0 0.35rem; }
+    p { margin:0.7rem 0; overflow-wrap:anywhere; }
+    .muted { color:var(--muted); }
+    a { color:var(--fg); }
+    nav.deskmenu a, .pdf-link, .toc a { min-height:44px; display:inline-flex; align-items:center; }
+    .pdf-link { margin:0.4rem 0.6rem 0.4rem 0; padding:0.35rem 0.85rem; border:1px solid var(--line); text-decoration:none; }
+    .pdf-link:hover, nav.deskmenu a:hover, .toc a:hover { color:var(--gold); }
+    aside.editorial { border:1px solid var(--gold); background:var(--card); padding:0.9rem 1rem; margin:1rem 0 1.5rem; }
+    aside.editorial p { margin:0.4rem 0; }
+    .doc-label { margin:0; font-size:0.72rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--gold); }
+    .toc { margin:0.4rem 0 1.2rem; padding:0; list-style:none; }
+    .toc li { margin:0; }
+    .toc a { text-decoration:none; }
+    article.source ul { margin:0.4rem 0 0.8rem; padding-left:1.2rem; }
+    article.source li { margin:0.45rem 0; }
+    .table-wrap { overflow-x:auto; margin:1rem 0 0.35rem; border:1px solid var(--line); }
+    table { width:100%; border-collapse:collapse; font-size:0.95rem; }
+    th, td { text-align:left; vertical-align:top; padding:0.65rem 0.7rem; border-bottom:1px solid var(--line); }
+    th { color:var(--fg); font-weight:600; background:var(--card); }
+    ol.refs { margin:0.4rem 0 0.8rem; padding-left:1.4rem; }
+    ol.refs li { margin:0.55rem 0; padding-left:0.25rem; }
+    :focus-visible { outline:2px solid var(--gold); outline-offset:3px; }
+  </style>
+</head>
+<body>
+  <nav class="deskmenu" aria-label="Desk">
+    <a href="/">Desk</a>
+    <a href="/study">Study</a>
+    <a href="/prompt-mediated-agency" aria-current="page">Prompt-Mediated Agency</a>
+    <a href="/whitepaper">Whitepaper</a>
+    <a href="/technical">Technical</a>
+  </nav>
+  <aside class="editorial" aria-label="Editorial note">
+    <p class="kicker">Editorial note</p>
+    <p>This note is separate from the draft below. The draft is a doctoral dissertation draft. It is not a description of functions that lgme.app already runs.</p>
+    <p><a class="pdf-link" href="/Prompt_Mediated_Agency.pdf" type="application/pdf" download>Original PDF</a></p>
+    <p class="muted">The PDF is the source file, unchanged. The HTML below is the same text for reading on a phone or a desk. Page-number lines from the PDF are not repeated here.</p>
+  </aside>
+  <nav class="toc" aria-label="Contents">
+    <p class="kicker">Contents</p>
+    <ol class="toc">
+      <li><a href="#title">Title</a></li>
+      <li><a href="#abstract">Abstract</a></li>
+      <li><a href="#introduction">1. Introduction and Problem Statement</a></li>
+      <li><a href="#literature">2. Literature Review and Conceptual Foundations</a></li>
+      <li><a href="#taxonomy">3. Theoretical Framework and Prompt Posture Taxonomy</a></li>
+      <li><a href="#questions">4. Research Questions and Empirical Methodology</a></li>
+      <li><a href="#contributions">5. Expected Contributions and Ethical Considerations</a></li>
+      <li><a href="#references">References</a></li>
+    </ol>
+  </nav>
+  <article class="source" id="document">
+    <header id="title">
+      <p class="doc-label">DOCTORAL DISSERTATION DRAFT • HUMAN-COMPUTER INTERACTION</p>
+      <h1>Prompt-Mediated Agency: Individual Sovereignty and Self-Actualization in Generative Interfaces</h1>
+      <p>A Mixed-Methods Investigation of Cognitive Offloading, Metacognitive Scaffolding, and Provenance-Bound Interaction</p>
+    </header>
+    <section id="abstract" aria-labelledby="abstract-heading">
+      <h2 id="abstract-heading">Abstract</h2>
+      <p>Generative artificial intelligence interfaces increasingly mediate human reasoning, decision-making, and long-term goal pursuit through natural-language prompts. Prevailing Human-Computer Interaction (HCI) paradigms prioritize frictionless task completion and fluent synthesis, yet these design choices can encourage cognitive offloading, epistemic passivity, and algorithmic heteronomy. This dissertation investigates how prompt structure and interface affordances govern individual sovereignty—defined here as epistemic and decisional autonomy—and self-actualization, operationalized through Self-Determination Theory as sustained competence growth, autonomous endorsement, and authentic authorship. Drawing on metacognitive scaffolding, dual-process reasoning, and provenance-oriented systems design, this work formulates a four-part taxonomy of prompt postures and proposes Sovereign Prompting Interfaces that require explicit intent specification, counterfactual examination, and verifiable provenance separation before commitment. A mixed-methods research program is outlined to evaluate effects on subjective workload, metacognitive calibration, unassisted skill transfer, resistance to sycophancy, and longitudinal perceptions of authorship.</p>
+    </section>
+    <section id="introduction" aria-labelledby="introduction-heading">
+      <h2 id="introduction-heading">1. Introduction and Problem Statement</h2>
+      <p>Natural-language prompting has become a primary cognitive and socio-technical boundary between human intention and automated execution. Unlike deterministic graphical user interfaces or explicit command pipelines, where system states and transitions are inspectable, generative chat interfaces often obscure model priors, optimization objectives, and epistemic uncertainty behind authoritative prose.</p>
+      <p>Empirical studies of AI-assisted work point to an effort–time dissociation and a speedup illusion: generative tools frequently reduce perceived mental effort even when overall task duration remains comparable or shifts toward verification and revision Bastani et al. (2024); Kosmyna et al. (2025). When individuals rely on open-ended, delegative prompts without structured verification or constraint-setting, three interrelated risks arise:</p>
+      <ul>
+        <li>Cognitive Offloading and Transfer Loss: Bypassing productive analytical struggle can weaken schema formation and reduce performance when individuals later work without model assistance Risko and Gilbert (2016); Bastani et al. (2024).</li>
+        <li>Epistemic and Value Heteronomy: Model sycophancy, persuasive framing, and unexamined system defaults can subtly shift a user’s judgments and priorities toward model tendencies rather than self-authored criteria Perez et al. (2022); Sharma et al. (2024).</li>
+        <li>Collapsed Provenance: Unstructured conversational histories often blend user intent, model inference, and unverified claims into a single stream, making auditability and independent verification difficult.</li>
+      </ul>
+      <p>This dissertation examines how HCI can re-design prompt workflows and interface guardrails so that generative systems support individual sovereignty and self-actualization rather than replacing human judgment.</p>
+    </section>
+    <section id="literature" aria-labelledby="literature-heading">
+      <h2 id="literature-heading">2. Literature Review and Conceptual Foundations</h2>
+      <h3>2.1 Self-Actualization and Self-Determination Theory</h3>
+      <p>In humanistic psychology, self-actualization denotes the realization of personal potential, autonomy, and purposeful growth Maslow (1943). Within contemporary motivation research, Self-Determination Theory (SDT) provides an empirically testable framework for flourishing through three basic psychological needs: autonomy (acting with volition and self-endorsement), competence (experiencing mastery through optimal challenge), and relatedness Ryan and Deci (2000). For HCI, SDT implies that interfaces supporting self-actualization must preserve volitional control and calibrated challenge rather than eliminating all cognitive friction.</p>
+      <h3>2.2 Cognitive Offloading, Metacognition, and Productive Struggle</h3>
+      <p>Cognitive offloading refers to the use of external tools or actions to reduce internal cognitive demand Risko and Gilbert (2016). While offloading routine memory or calculation can free executive capacity for higher-order reasoning, offloading core synthesis or critical evaluation carries metacognitive hazards. Learners and practitioners may overestimate their mastery when fluent outputs are readily generated, leading to miscalibrated confidence and reduced transfer to unassisted settings Bastani et al. (2024). Metacognitive scaffolding in interactive systems—such as prompting learners to articulate assumptions, justify steps, or test counterexamples—helps counter premature closure Azevedo (2005).</p>
+      <h3>2.3 Individual Sovereignty, Sycophancy, and Provenance</h3>
+      <p>In socio-technical and political theory, sovereignty concerns authority over boundaries, rules, and self-governance without external domination. Applied to personal AI use, individual sovereignty entails maintaining independent evaluative standards, inspecting evidentiary grounding, and retaining clear refusal or revision control. Research on large language models highlights two pressures that challenge this stance: sycophantic alignment with user phrasing even when flawed Perez et al. (2022); Sharma et al. (2024), and persuasive fluency that can induce over-reliance. Provenance-oriented design addresses opacity by recording origin, transformations, and verification status across information workflows Buneman et al. (2001).</p>
+    </section>
+    <section id="taxonomy" aria-labelledby="taxonomy-heading">
+      <h2 id="taxonomy-heading">3. Theoretical Framework and Prompt Posture Taxonomy</h2>
+      <p>To analyze how prompt structure shapes human agency, this dissertation defines three operational constructs:</p>
+      <ul>
+        <li>Individual Sovereignty (Cognitive and Epistemic): The user’s capacity to set independent evaluation criteria, distinguish verified claims from model inference, and exercise explicit refusal or override control over system proposals.</li>
+        <li>Self-Actualization (Processual Trajectory): Ongoing development of competence, self-endorsed decision-making, and traceable authorship across meaningful tasks, grounded in SDT autonomy and competence constructs Ryan and Deci (2000).</li>
+        <li>Sovereign Prompting Interface: An interaction design pattern that requires users to declare intent, constraints, or verification rules before or alongside generation, separating drafting support from human commitment.</li>
+      </ul>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Prompt Posture</th>
+              <th scope="col">Interaction Pattern</th>
+              <th scope="col">Primary Agency and Cognitive Profile</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">1. Delegative</th>
+              <td>Requests a finished answer, draft, or recommendation with minimal user constraints.</td>
+              <td>High cognitive offloading; elevated risk of uncritical adoption, sycophancy effects, and lower unassisted transfer.</td>
+            </tr>
+            <tr>
+              <th scope="row">2. Transactional</th>
+              <td>Iterative back-and-forth edits aimed at quick output polish without explicit criteria.</td>
+              <td>Moderate user steering; susceptible to incremental drift from original goals and local rather than global evaluation.</td>
+            </tr>
+            <tr>
+              <th scope="row">3. Socratic / Adversarial</th>
+              <td>Requires the model to surface assumptions, alternative framings, and counterarguments first.</td>
+              <td>Promotes metacognitive monitoring and critical scrutiny at the cost of higher upfront interaction steps.</td>
+            </tr>
+            <tr>
+              <th scope="row">4. Provenance-Bound</th>
+              <td>Separates facts, inferences, and user commitments while requiring explicit human sign-off or refusal.</td>
+              <td>Supports epistemic auditability, clear authorship boundaries, and deliberate decision ownership.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <section id="questions" aria-labelledby="questions-heading">
+      <h2 id="questions-heading">4. Research Questions and Empirical Methodology</h2>
+      <p>This dissertation is structured around three research questions linking prompt interface design to cognitive and motivational outcomes:</p>
+      <ul>
+        <li>RQ1 (Metacognition and Transfer): How do Socratic and Provenance-Bound prompt structures influence perceived workload, confidence calibration, and performance on subsequent unassisted tasks compared with Delegative prompting?</li>
+        <li>RQ2 (Epistemic Vigilance): How do explicit pre-commitment constraints and provenance separation affect detection of planted inaccuracies, unsupported leaps, or framing bias in model outputs?</li>
+        <li>RQ3 (Autonomy and Longitudinal Authorship): How do structured interface frictions—such as assumption checks and explicit refusal or edit gates—shape perceived autonomy, competence, and authorship over multi-week use?</li>
+      </ul>
+      <h3>4.1 Proposed Study Program</h3>
+      <p>Study 1 (Controlled Within-Subjects Experiment): Participants complete analytical synthesis and decision-tradeoff tasks across three counterbalanced conditions—Delegative Baseline, Socratic Scaffold, and Provenance-Bound Workspace—followed by an unassisted transfer probe. Core measures include subjective workload (NASA-TLX) Hart and Staveland (1988), confidence calibration accuracy, error/bias detection rates, and transfer task scores.</p>
+      <p>Study 2 (Longitudinal Field Study): Participants use an instrumented prompting workspace across real writing, analysis, or design tasks over several weeks. Data sources combine weekly autonomy and competence survey items informed by SDT, interaction logs (constraint completeness, edits, refusals), and semi-structured interviews on perceived authorship and sovereignty.</p>
+    </section>
+    <section id="contributions" aria-labelledby="contributions-heading">
+      <h2 id="contributions-heading">5. Expected Contributions and Ethical Considerations</h2>
+      <p>This work aims to contribute (1) a conceptual bridge between SDT, metacognitive scaffolding, and prompt interface design; (2) empirical evidence on the trade-offs between frictionless generation, epistemic vigilance, and skill retention; and (3) open interface patterns for provenance-aware prompting. Ethical safeguards in human-subjects studies will emphasize transparent disclosure of synthetic or planted test items, mitigation of participant fatigue during multi-condition tasks, and privacy-preserving logging of interaction artifacts.</p>
+    </section>
+    <section id="references" aria-labelledby="references-heading">
+      <h2 id="references-heading">References</h2>
+      <ol class="refs">
+        <li>Azevedo, R. (2005). Computer environments as metacognitive tools for enhancing learning. Educational Psychologist, 40(4), 193–197.</li>
+        <li>Bastani, H., Bastani, O., Sungu, A., et al. (2024). Generative AI can harm learning. The Wharton School Research Paper.</li>
+        <li>Buneman, P., Khanna, S., &amp; Tan, W. C. (2001). Why and where: A characterization of data provenance. In Database Theory — ICDT 2001 (pp. 316–330). Springer.</li>
+        <li>Hart, S. G., &amp; Staveland, L. E. (1988). Development of NASA-TLX (Task Load Index): Results of empirical and theoretical research. Advances in Psychology, 52, 139–183.</li>
+        <li>Kosmyna, N., Hauptmann, E., Yuan, Y. T., et al. (2025). Your brain on ChatGPT: Accumulation of cognitive debt when using an AI assistant for essay writing task. arXiv preprint.</li>
+        <li>Maslow, A. H. (1943). A theory of human motivation. Psychological Review, 50(4), 370–396.</li>
+        <li>Perez, E., Ringer, S., Lukošiūtė, K., et al. (2022). Discovering language model behaviors with model-written evaluations. arXiv preprint.</li>
+        <li>Risko, E. F., &amp; Gilbert, S. J. (2016). Cognitive offloading. Trends in Cognitive Sciences, 20(9), 676–688.</li>
+        <li>Ryan, R. M., &amp; Deci, E. L. (2000). Self-determination theory and the facilitation of intrinsic motivation, social development, and well-being. American Psychologist, 55(1), 68–78.</li>
+        <li>Sharma, M., Tong, M., Korbak, T., et al. (2024). Towards understanding sycophancy in language models. In International Conference on Learning Representations (ICLR).</li>
+      </ol>
+    </section>
+  </article>
+  <p class="muted"><a href="/">Desk</a> · <a href="/study">Study</a> · <a href="/whitepaper">Whitepaper</a> · <a href="/disclosures">Disclosures</a> · Doctoral dissertation draft. Not an offer. Not an investment.</p>
+  <script src="/js/register-sw.js"></script>
+  <script src="/js/site-nav.js"></script>
+</body>
+</html>

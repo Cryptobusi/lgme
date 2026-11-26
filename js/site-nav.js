@@ -1349,7 +1349,7 @@
     var flowMenu = document.createElement('nav');
     flowMenu.id = 'flow-menu';
     flowMenu.hidden = true;
-    flowMenu.innerHTML = '<p>Workflows</p><a href="/gym#/ididit">IdidIt</a><a href="/gym">Health</a><a href="/lgme-coin#give">soBeIT</a><a href="/gym#/">IwantIT</a><a href="/ihavit">IhavIT</a><a href="/ihelpit">IhelpIT</a><a href="/exchange">Exchange</a><details><summary>Documentation</summary><p>Desk</p><a href="/help">Help</a><a href="/glossary">Glossary</a><a href="/plain-english">Plain English</a><a href="/gym/covenant">Covenant</a><a href="/disclaimer">Disclaimer</a><p>Learn</p><a href="/how-it-works">How it works</a><a href="/the-third-seat">Third seat</a><a href="/whitepaper">Whitepaper</a><a href="/sop">SOP</a><a href="/study">Study</a><a href="/technical">Technical</a></details>';
+    flowMenu.innerHTML = '<p>Workflows</p><a href="/gym#/ididit">IdidIt</a><a href="/gym">Health</a><a href="/lgme-coin#give">soBeIT</a><a href="/gym#/">IwantIT</a><a href="/ihavit">IhavIT</a><a href="/ihelpit">IhelpIT</a><a href="/exchange">Exchange</a><details><summary>Documentation</summary><p>Desk</p><a href="/help">Help</a><a href="/glossary">Glossary</a><a href="/plain-english">Plain English</a><a href="/gym/covenant">Covenant</a><a href="/disclaimer">Disclaimer</a><p>Learn</p><a href="/how-it-works">How it works</a><a href="/the-third-seat">Third seat</a><a href="/whitepaper">Whitepaper</a><a href="/prompt-mediated-agency">Prompt-Mediated Agency</a><a href="/sop">SOP</a><a href="/study">Study</a><a href="/technical">Technical</a></details>';
     flowMenu.addEventListener('click', function (event) {
       var link = event.target && event.target.closest ? event.target.closest('a') : null;
       if (!link || !flowMenu.contains(link)) return;
