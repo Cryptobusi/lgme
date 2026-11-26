@@ -49,7 +49,7 @@
     else document.addEventListener('DOMContentLoaded', showVersionSheet);
   }
   var EPOCH = '2';
-  var CURRENT = { 'lgme-v269': 1, 'lgme-gym-v81': 1 };
+  var CURRENT = { 'lgme-v270': 1, 'lgme-gym-v81': 1 };
   function keep(name) {
     if (!name) return true;
     if (name === 'lgme.reset.epoch' || name === 'lgme.reset.note' || name === 'lgme.device.key' || name === 'lgme.display.step' || name === 'lgme.display.easy' || name === 'lgme.text.tip' || name === 'lgme.ui.mode' || name === 'lgme.dock.shown' || name === 'lgme.version' || name === 'lgme.ui.uses' || name === 'lgme.ui.offer' || name === 'lgme.ui.shortcuts' || name === 'lgme.learn.path' || name === 'lgme-gym.seat' || name === 'lgme.health.book' || name === 'lgme.health.email' || name === 'lgme.health.plan' || name === 'lgme.health.contact' || name === 'lgme.health.contactGrants' || name === 'lgme.health.consent' || name === 'lgme.demo.member') return true;
@@ -1456,47 +1456,63 @@
   var homeLead = function () {
     if (location.pathname !== '/' && location.pathname !== '/index.html') return;
     var grid = document.getElementById('category-grid');
-    if (!grid || document.getElementById('give-now')) return;
-  var give = document.createElement('section');
-  give.id = 'give-now';
-  give.innerHTML = '<p>Give now</p><span>A short gift keeps the floor. soBeIT. Your wallet signs it. Start small.</span><a href="/lgme-coin#give">Give</a>';
-  var health = document.createElement('section');
-  health.id = 'health-dash';
-  health.setAttribute('aria-label', 'Health');
+    if (!grid) return;
+    var health = document.getElementById('health-dash');
+    if (health && health.dataset.ready) return;
   var tiles = [
     ['consent', 'Health', 'dash-consent-figure', 'Consent stays on this phone.'],
     ['creo', 'Creo', 'dash-creo-figure', 'Creo is value you create. It is not $lgme.'],
     ['today', 'Today', 'dash-today-figure', 'What this phone logged today.'],
     ['receipt', 'Receipt', 'dash-receipt-figure', 'The last taped receipt.']
   ];
-  var preview = document.createElement('p');
-  preview.id = 'health-preview';
-  preview.hidden = true;
+  // The gift line and Health marks are in index.html so the home screen does not jump.
+  // Build them here only if a page without that markup reaches this code.
+  if (!document.getElementById('give-now')) {
+    var give = document.createElement('section');
+    give.id = 'give-now';
+    give.innerHTML = '<p>Give now</p><span>A short gift keeps the floor. soBeIT. Your wallet signs it. Start small.</span><a href="/lgme-coin#give">Give</a>';
+    grid.insertBefore(give, grid.firstChild);
+  }
+  if (!health) {
+    health = document.createElement('section');
+    health.id = 'health-dash';
+    health.setAttribute('aria-label', 'Health');
+    var give0 = document.getElementById('give-now');
+    grid.insertBefore(health, give0 && give0.parentNode === grid ? give0.nextSibling : grid.firstChild);
+  }
+  health.dataset.ready = '1';
+  var preview = document.getElementById('health-preview');
+  if (!preview) {
+    preview = document.createElement('p');
+    preview.id = 'health-preview';
+    preview.hidden = true;
+    health.appendChild(preview);
+  }
   tiles.forEach(function (item) {
-    var button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'health-mark';
-    button.dataset.key = item[0];
-    var icon = document.createElement('i');
-    icon.textContent = item[1].slice(0, 1);
-    var count = document.createElement('b');
+    var button = health.querySelector('.health-mark[data-key="' + item[0] + '"]');
+    if (!button) {
+      button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'health-mark';
+      button.dataset.key = item[0];
+      var icon = document.createElement('i');
+      icon.textContent = item[1].slice(0, 1);
+      button.appendChild(icon);
+      button.appendChild(document.createElement('b'));
+      health.insertBefore(button, preview);
+    }
+    var count = button.querySelector('b');
     var source = document.getElementById(item[2]);
     var figure = source && source.textContent.trim() ? source.textContent.trim() : '0';
     if (figure === 'None yet' || figure === 'None') figure = '0';
     count.textContent = figure;
-    button.appendChild(icon);
-    button.appendChild(count);
     button.addEventListener('click', function () {
       var open = preview.hidden || preview.dataset.key !== item[0];
       preview.dataset.key = item[0];
       preview.textContent = item[1] + ': ' + count.textContent + '. ' + item[3];
       preview.hidden = !open;
     });
-    health.appendChild(button);
   });
-  health.appendChild(preview);
-  grid.insertBefore(health, grid.firstChild);
-  grid.insertBefore(give, grid.firstChild);
   var dash = document.getElementById('home-board');
   if (dash) dash.hidden = true;
   window.setTimeout(function () {
