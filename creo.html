@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Daily Creo Tape · lgme</title>
+  <meta name="theme-color" content="#0c100c" />
+  <style>
+    :root { --bg:#0c100c; --fg:#f4f1e8; --gold:#c6a15b; --line:#2c352b; }
+    body { margin:0; background:var(--bg); color:var(--fg); font-family:ui-sans-serif,system-ui,sans-serif; }
+    #root { min-height:100vh; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script type="text/babel" data-presets="react">
+import React, { useEffect, useMemo, useState } from "react";
+
+const STORAGE_KEY = "lgme_creo_tape_v1";
+const DAILY_PAIR_CAP_CREO = 150;
+
+const PRESETS = [
+  { id: "move_30", mode: "Moved / Learned", pillar: "Did", label: "30-min walk or workout", creo: 30 },
+  { id: "read_study", mode: "Moved / Learned", pillar: "Did", label: "Chapter read & discussed", creo: 25 },
+  { id: "peer_help", mode: "Helped / Shared", pillar: "Duty", label: "Peer tutoring or neighbor help", creo: 40 },
+  { id: "swap_offer", mode: "Offered / Needed", pillar: "Sell", label: "Light tool/book/skill swap", creo: 20 },
+];
+
+function todayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function encodePayload(obj) {
+  const json = JSON.stringify(obj);
+  if (typeof TextEncoder !== "undefined") {
+    const bytes = new TextEncoder().encode(json);
+    let binary = "";
+    for (let i = 0; i < bytes.length; i += 1) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+  }
+  return btoa(unescape(encodeURIComponent(json)));
+}
+
+function decodePayload(raw) {
+  if (typeof TextDecoder !== "undefined") {
+    const binary = atob(raw);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return JSON.parse(new TextDecoder().decode(bytes));
+  }
+  return JSON.parse(decodeURIComponent(escape(atob(raw))));
+}
+
+function buildCoSignUrl(receipt) {
+  const base =
+    typeof window !== "undefined"
+      ? `${window.location.origin}${window.location.pathname}`
+      : "https://lgme.app/";
+  const payload = encodePayload({
+    id: receipt.id,
+    day: receipt.day,
+    mode: receipt.mode,
+    pillar: receipt.pillar,
+    summary: receipt.summary,
+    partner: receipt.partner,
+    creo: receipt.creo,
+  });
+  return `${base}?cosign=${encodeURIComponent(payload)}`;
+}
+
+function parseIncomingCoSign() {
+  if (typeof window === "undefined") return null;
+  const params = new URLSearchParams(window.location.search);
+  const raw = params.get("cosign");
+  if (!raw) return null;
+  try {
+    const parsed = decodePayload(raw);
+    if (!parsed || !parsed.id || !parsed.summary) return null;
+    return {
+      id: String(parsed.id),
+      day: parsed.day || todayKey(),
+      mode: parsed.mode || "Peer Co-Sign",
+      pillar: parsed.pillar || "Did",
+      summary: String(parsed.summary),
+      partner: String(parsed.partner || "peer-partner"),
+      creo: Number(parsed.creo || 0),
+      capped: false,
+      status: "PENDING_COSIGN",
+      createdAt: new Date().toISOString(),
+    };
+  } catch {
+    return null;
+  }
+}
+
+export default function LowFrictionDeedDeck() {
+  const [unlocked, setUnlocked] = useState(false);
+  const [pin, setPin] = useState("");
+  const [partnerHandle, setPartnerHandle] = useState("");
+  const [selectedPreset, setSelectedPreset] = useState(PRESETS[0]);
+  const [customNote, setCustomNote] = useState("");
+  const [showFloorNote, setShowFloorNote] = useState(false);
+  const [activeShareId, setActiveShareId] = useState(null);
+  const [copiedId, setCopiedId] = useState(null);
+  const [entries, setEntries] = useState(() => {
+    let saved = [];
+    try {
+      saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    } catch {
+      saved = [];
+    }
+    const incoming = parseIncomingCoSign();
+    if (incoming && !saved.some((item) => item.id === incoming.id)) {
+      return [incoming, ...saved];
+    }
+    return saved;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+    } catch {
+      // Ignore storage quota errors on restricted devices
+    }
+  }, [entries]);
+
+  const todayPairCreo = useMemo(() => {
+    const cleanPartner = partnerHandle.trim().toLowerCase();
+    if (!cleanPartner) return 0;
+    return entries
+      .filter(
+        (e) =>
+          e.day === todayKey() &&
+          e.partner.toLowerCase() === cleanPartner &&
+          e.status !== "REFUSED"
+      )
+      .reduce((sum, e) => sum + e.creo, 0);
+  }, [entries, partnerHandle]);
+
+  const totalCreo = useMemo(
+    () =>
+      entries
+        .filter((e) => e.status === "CO_SIGNED")
+        .reduce((sum, e) => sum + e.creo, 0),
+    [entries]
+  );
+
+  function unlockWithPasskeyOrPin() {
+    if (pin.trim().length >= 4 || typeof window.PublicKeyCredential !== "undefined") {
+      setUnlocked(true);
+    }
+  }
+
+  function createCoSignReceipt(e) {
+    e.preventDefault();
+    const cleanPartner = partnerHandle.trim() || "peer-partner";
+    const allowedCreo = Math.max(
+      0,
+      Math.min(selectedPreset.creo, DAILY_PAIR_CAP_CREO - todayPairCreo)
+    );
+    const receipt = {
+      id: `deed_${Date.now()}`,
+      day: todayKey(),
+      mode: selectedPreset.mode,
+      pillar: selectedPreset.pillar,
+      summary: customNote.trim() || selectedPreset.label,
+      partner: cleanPartner,
+      creo: allowedCreo,
+      capped: allowedCreo < selectedPreset.creo,
+      status: "PENDING_COSIGN",
+      createdAt: new Date().toISOString(),
+    };
+    setEntries((prev) => [receipt, ...prev]);
+    setActiveShareId(receipt.id);
+    setCustomNote("");
+  }
+
+  function updateReceiptStatus(id, status) {
+    setEntries((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, status } : item))
+    );
+  }
+
+  async function shareOrCopyCoSignLink(entry) {
+    const link = buildCoSignUrl(entry);
+    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+      try {
+        await navigator.share({
+          title: "Creo Co-Sign Receipt",
+          text: `${entry.summary} (+${entry.creo} Creo) — tap to co-sign`,
+          url: link,
+        });
+        setCopiedId(entry.id);
+        setTimeout(() => setCopiedId(null), 2000);
+        return;
+      } catch {
+        // Fall through to clipboard copy if user dismisses native share sheet
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopiedId(entry.id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch {
+      setActiveShareId(entry.id);
+    }
+  }
+
+  function exportTapeJson() {
+    const blob = new Blob([JSON.stringify(entries, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `lgme-creo-v1-${todayKey()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  if (!unlocked) {
+    return (
+      <section className="lgme-card" style={{ maxWidth: 460, margin: "1rem auto", padding: 16 }}>
+        <h2>Quick Unlock (Device-First)</h2>
+        <p>Log exercise, reading, or study deeds locally and earn Creo—no coin or wallet required.</p>
+        <input
+          type="password"
+          inputMode="numeric"
+          placeholder="Quick PIN (4+ digits)"
+          value={pin}
+          onChange={(e) => setPin(e.target.value)}
+          style={{ width: "100%", padding: 12, marginBottom: 10, fontSize: 16 }}
+        />
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            type="button"
+            onClick={unlockWithPasskeyOrPin}
+            style={{ flex: 1, padding: 14, fontWeight: 600 }}
+          >
+            Passkey / Quick Unlock
+          </button>
+        </div>
+      
+
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<LowFrictionDeedDeck />);
+</script>
+</body>
+</html>
