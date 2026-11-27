@@ -3,7 +3,7 @@
   [role="button"]:not(:disabled) {
     cursor: pointer;
   }
-}
+
 
 .lgme {
   --color-bg: #10140f;
