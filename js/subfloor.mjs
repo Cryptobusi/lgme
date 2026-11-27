@@ -33,7 +33,7 @@ export function round2(value) {
 export function lockDeedUnit(spec = {}) {
   const price = Number(spec.priceUsdPerLgme);
   const valueUsd = round2(spec.valueUsd);
-  if (!(price > 0)) return { ok: false, error: 'A deed unit needs the $lgme price at commitment.' };
+  if (!(price > 0)) return { ok: false, error: 'A deed unit needs the  price at commitment.' };
   if (!(valueUsd > 0)) return { ok: false, error: 'A deed unit needs a US$ value at commitment.' };
   return {
     ok: true,
@@ -96,7 +96,7 @@ export function projectSubfloors(peers) {
     const payload = entry.payload || {};
     if (entry.type === 'THIRD_SEAT_VETO') continue;
     if (entry.type === 'WISDOM_SUPPORT' || entry.type === 'COMMONS_WITHHOLD') {
-      if (payload.unit === '$lgme') {
+      if (payload.unit === '') {
         floorReserve = round2(floorReserve + round2(payload.floorShare || 0));
         appFund = round2(appFund + round2(payload.appShare || 0));
       }

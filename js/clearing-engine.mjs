@@ -86,7 +86,7 @@ export const SPECS = {
     stage: "STAGE 01 · FIVE PILLARS",
     paragraphs: [
       "This card is a picture of a proposed design. The five rows are sample vectors, not a live ledger.",
-      "On lgme.app a person logs a deed, an offer, a wish, or a duty. Campus Creo is created only when the recipient confirms the deed. It is non-convertible to $lgme or US$, it is capped, and unused Creo is designed to fade. A deed creates it. Spending cancels it. It cannot be bought.",
+      "On lgme.app a person logs a deed, an offer, a wish, or a duty. Campus Creo is created only when the recipient confirms the deed. It is non-convertible to  or US$, it is capped, and unused Creo is designed to fade. A deed creates it. Spending cancels it. It cannot be bought.",
       "WANT is a demand: missing tools, supplies, or a physical dependency. DID is past proof: hours and work a person says they did, still waiting on the other person's confirmation. SELL is an offer of surplus or time. WISH is a longer shared aim. DUTY / RESPONSIBLE is a pledge to clear a mutual-credit balance and to steward a commons.",
       "The five pillars feed the on-device assistant only after consent. If the person says not now, the rule-based moves still work. Nothing on this card is published."
     ]
@@ -106,14 +106,14 @@ export const SPECS = {
       THIRD_SEAT,
       "The nonprofit is never an arbiter. A member may decline an exchange. Disputes go to peer review first, with legal recourse intact. A private hearing is not a court judgment.",
       "Campus Creo is value a confirmed deed creates, not credit you lend. Spending it extinguishes it. The proposal aims at zero interest and at a cap so one participant cannot corner the book. Anything above the cap, in the proposal, is redirected toward the commons. Those limits are design rules. This site does not run them as a live contract.",
-      "Komunitin is named only as a comparable mutual-credit pattern. It is not a live integration. A failed sample attestation would go to peer review with the hash the parties already hold. $lgme cannot buy a softer cap, a waiver, or a favorable ruling. Holders receive no yield in this design."
+      "Komunitin is named only as a comparable mutual-credit pattern. It is not a live integration. A failed sample attestation would go to peer review with the hash the parties already hold.  cannot buy a softer cap, a waiver, or a favorable ruling. Holders receive no yield in this design."
     ]
   },
   c4: {
     stage: "STAGE 04 · PROVENANCE",
     paragraphs: [
       "Every name, hash, and topic on this card is SAMPLE. The dual signature is a sample label, not a real Ed25519 key. The Merkle line is a sample SHA-256 leaf, not a production root. The consensus anchor reads “sample topic”. It is not a Hedera topic id.",
-      "Hedera shared listings are PLANNED (testnet). They are not live. $lgme payments on Solana are the live beta, and they use the member's own wallet on a separate ledger from any future listing record. This page does not claim a finality time.",
+      "Hedera shared listings are PLANNED (testnet). They are not live.  payments on  are the live beta, and they use the member's own wallet on a separate ledger from any future listing record. This page does not claim a finality time.",
       "CLPR is to be verified. This page claims no public CLPR specification. Hiero and Chainlink oracles / CCIP are names for a later stack. The local book is designed to keep working if that network is down. A later Hedera copy would mirror hashes and counts. Private details stay off that record.",
       "Counsel still has to read any real pilot before a public network write. This card is not that write."
     ]
@@ -150,7 +150,7 @@ export function specDocument() {
       sum: clearing.sum
     },
     status: [
-      { piece: "$lgme payments on Solana", status: "Live beta", note: "Your own wallet. A separate ledger from listings." },
+      { piece: " payments on ", status: "Live beta", note: "Your own wallet. A separate ledger from listings." },
       { piece: "Hedera shared listings", status: "PLANNED (testnet)", note: "Not live." },
       { piece: "CLPR", status: "to be verified", note: "No confirmed public specification." },
       { piece: "On-device AI", status: "Opt-in", note: "Consent first. AI suggests, you decide." }
@@ -290,7 +290,7 @@ export function cardInner(card) {
     return `<p>${THIRD_SEAT} Peer review comes first. Legal recourse stays intact.</p><div class="quad"><article><h3>Komunitin-style engine</h3><p>SAMPLE comparison. Peer reciprocity and credit lines from attested duty. Not a live integration.</p></article><article><h3>Anti-monopoly limiter</h3><p>SAMPLE rule. A threshold would halt cornering. Excess, in the proposal, redirects to the commons.</p></article><article><h3>Zero-debt parity</h3><p>SAMPLE accounting. Creo comes from productive labor and are extinguished on consumption. Zero interest in this design.</p></article><article><h3>Peer review first</h3><p>SAMPLE path. Failed attestations go to peer review with the hash evidence. Courts and other legal recourse remain open.</p></article></div><p class="card-foot"><span>Enforcement: published rule, proposed</span><span>Hedera copy of hashes: PLANNED →</span></p>`;
   }
   if (card.id === "c4") {
-    return `<p>SAMPLE attestations only. A later phase could hash them into a Merkle tree and anchor a digest. Hedera shared listings are PLANNED (testnet). $lgme payments on Solana are the Live beta.</p><ol class="steps"><li><span>1. Local dual-sign</span><strong>SAMPLE · Ed25519 (Alice) + Ed25519 (Bob)</strong></li><li><span>2. Merkle attestation</span><strong>SAMPLE · SHA-256 state root leaf</strong></li><li><span>3. Consensus anchor</span><strong>sample topic</strong></li><li><span>4. Settlement parity</span><strong>SAMPLE · Hederica Charter (proposed)</strong></li></ol><p class="card-foot"><span>Finality time: not claimed · CLPR to be verified</span><span>Tamper-evident copy is a design aim</span></p>`;
+    return `<p>SAMPLE attestations only. A later phase could hash them into a Merkle tree and anchor a digest. Hedera shared listings are PLANNED (testnet).  payments on  are the Live beta.</p><ol class="steps"><li><span>1. Local dual-sign</span><strong>SAMPLE · Ed25519 (Alice) + Ed25519 (Bob)</strong></li><li><span>2. Merkle attestation</span><strong>SAMPLE · SHA-256 state root leaf</strong></li><li><span>3. Consensus anchor</span><strong>sample topic</strong></li><li><span>4. Settlement parity</span><strong>SAMPLE · Hederica Charter (proposed)</strong></li></ol><p class="card-foot"><span>Finality time: not claimed · CLPR to be verified</span><span>Tamper-evident copy is a design aim</span></p>`;
   }
   return `<p>A two-person trade stalls when each person wants what a third person holds. This SAMPLE ring clears inside Campus Creo. No US$ is needed for this loop.</p><div class="peers" data-peers><article data-peer="A"><b>YOU</b><strong>SAMPLE · You</strong><span>Sovereign Node</span><em>Offers SAMPLE · Carpentry</em><em>Needs SAMPLE · 10 kWh battery</em></article><article data-peer="B"><b>EL</b><strong>SAMPLE · Elena</strong><span>Elena's Commons</span><em>Offers SAMPLE · Heirloom garden</em><em>Needs SAMPLE · Timber greenhouse</em></article><article data-peer="C"><b>MA</b><strong>SAMPLE · Marcus</strong><span>Marcus Microgrid</span><em>Offers SAMPLE · 10 kWh storage</em><em>Needs SAMPLE · Fresh produce / honey</em></article></div><ol class="ring-steps" data-ring-steps><li>Step 1 · SAMPLE · You frame Elena's greenhouse (SAMPLE · 3.50 HRS Creo issued).</li><li>Step 2 · SAMPLE · Elena delivers produce and compost to Marcus (SAMPLE · 3.50 HRS transferred).</li><li>Step 3 · SAMPLE · Marcus charges the home battery (loop closes, SAMPLE debt balance 0).</li></ol><p class="equation" data-equation>ΔA + ΔB + ΔC = 0</p><button type="button" data-run-clearing>Run sample clearing</button><p class="card-foot"><span>Result waits on the sample run</span><span>Cleared in Campus Creo, no US$ needed for this loop</span></p>`;
 }

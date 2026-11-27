@@ -158,7 +158,7 @@ function confirmRate(state, handle, payload) {
   item.amount = amount;
   item.author = split.author;
   item.skim = split.skim;
-  item.note = 'Both sides confirmed. The entry is recorded. Credit is the suggested deed amount, not $lgme moved by itself.';
+  item.note = 'Both sides confirmed. The entry is recorded. Credit is the suggested deed amount, not  moved by itself.';
   return { ok: true, item, recorded: true, pending: false };
 }
 

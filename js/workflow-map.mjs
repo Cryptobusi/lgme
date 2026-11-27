@@ -181,8 +181,8 @@ export const NODES = [
     y: 1780,
     w: 400,
     h: 130,
-    t: "$lgme payments",
-    s: ["Solana, your own wallet", "a separate ledger from listings"],
+    t: " payments",
+    s: [", your own wallet", "a separate ledger from listings"],
     pill: { label: "Live beta", live: true }
   },
   {
@@ -192,7 +192,7 @@ export const NODES = [
     w: 840,
     h: 100,
     t: "Walls hold here too",
-    s: ["the Floor stays senior · a refusal moves nothing", "$lgme cannot buy CC, standing, or Floor access"]
+    s: ["the Floor stays senior · a refusal moves nothing", " cannot buy CC, standing, or Floor access"]
   },
   { id: "k1", x: 2220, y: 1660, w: 430, h: 86, t: "Hedera HCS", s: ["time-ordered hashes (planned)"] },
   { id: "k2", x: 2680, y: 1660, w: 430, h: 86, t: "Hiero", s: ["open governance of the code"] },
@@ -292,13 +292,13 @@ export const ZONE_KEY = [
   "Three seats: the State (US$, tax boundary, sovereignty), the Individual / Floor (Campus Creo), and the Third Seat, your seat, held by you alone. The nonprofit is never an arbiter. Each seat limits the other two.",
   "Right of refusal: the right to say no, and the ordinary limits that make a paper right differ from a real one.",
   "The Floor's defaults: transparency, a UBI-like earned Floor, and commoditized AI faculties, made durable through laws, mandates, and tax incentives; IdidIt is hypothesized to balance stress between state and firm and between debit and credit.",
-  "Exchange: $lgme payments on Solana are a live beta; shared listings on Hedera testnet are planned and not yet live.",
+  "Exchange:  payments on  are a live beta; shared listings on Hedera testnet are planned and not yet live.",
   "Tech substrate: Hedera HCS, Hiero, Chainlink oracles / CCIP, and CLPR (to be verified), all serving individual sovereignty under the Constitution.",
   "Public Tape and audit: issuance, cancellation, and rulings as hashes and counts; each seat audits the others, and the results flow back to the person and the seats."
 ];
 
 export const LIVE_ROWS = [
-  ["$lgme payments on Solana", "Live beta", "Your own wallet; the page holds no seed phrase"],
+  [" payments on ", "Live beta", "Your own wallet; the page holds no seed phrase"],
   ["My Picture and Sovereign App views", "Live prototype", "Sample data only; nothing is published"],
   ["Shared listings on Hedera testnet", "Planned", "Needs a backend and new lgme infrastructure first"],
   ["Hedera HCS, Hiero, Chainlink", "Proposed", "Named for a later stack"],

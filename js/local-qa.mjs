@@ -41,11 +41,11 @@ const INTENTS = [
   },
   {
     test: /what is creo|creo\b/,
-    answer: pack('Creo is value you create. It is not cash and it is not $lgme. A confirmed IdidIt can earn a small Creo amount on this phone. Debit means you owe. Credit means you lend. Only you see your own Creo.', ['ididit', 'help'])
+    answer: pack('Creo is value you create. It is not cash and it is not . A confirmed IdidIt can earn a small Creo amount on this phone. Debit means you owe. Credit means you lend. Only you see your own Creo.', ['ididit', 'help'])
   },
   {
-    test: /\$lgme|lgme coin|what is the coin/,
-    answer: pack('$lgme is a separate coin, not Creo. A deed does not mint it. Paying in $lgme needs your own wallet and stays off until you confirm. Testnet only. Nothing is paid until you tap OK.', ['exchange', 'help'])
+    test: /\|lgme coin|what is the coin/,
+    answer: pack(' is a separate coin, not Creo. A deed does not mint it. Paying in  needs your own wallet and stays off until you confirm. Testnet only. Nothing is paid until you tap OK.', ['exchange', 'help'])
   },
   {
     test: /ididit|i did it|verified receipt/,

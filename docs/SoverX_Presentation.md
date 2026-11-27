@@ -19,11 +19,11 @@ Most people do not read the order first. SoverX walks them through it with plain
 1. Choose an input (act, receipt, contract, promise, claim, refusal).
 2. Add a short comment you can share.
 3. See the dashboard: public, residual, Floor, refusal.
-4. Complete the cycle → mock 1 $lgme recorded.
+4. Complete the cycle → mock 1  recorded.
 
 ## What it does not do
 
-- Does not issue real $lgme.
+- Does not issue real .
 - Does not enroll you.
 - Does not move value.
 - Completions are mock only.

@@ -8,13 +8,13 @@
 
 ## Disclaimer — trial only
 
-SoverX is a temporary educational trial under lgme.app. It does not issue real $lgme, does not move real value, and does not constitute an enrollment, claim, or vote under the protocol. Completions are mock records only. The 1 $lgme reward is simulated for learning. Real rewards, if any, require a future published amendment and Floor-compliant accounting. An unpublished change is not a change.
+SoverX is a temporary educational trial under lgme.app. It does not issue real , does not move real value, and does not constitute an enrollment, claim, or vote under the protocol. Completions are mock records only. The 1  reward is simulated for learning. Real rewards, if any, require a future published amendment and Floor-compliant accounting. An unpublished change is not a change.
 
 ---
 
 ## Purpose
 
-An educational agent app that walks a person through the third-seat role on lgme.app. It accepts varied inputs (acts, receipts, contracts, promises, claims, refusals), shows clear dashboards, explains each step in plain language, and records successful cycles on the tape. Each completed cycle that meets the public criteria receives 1 $lgme, contributing to the Floor and development.
+An educational agent app that walks a person through the third-seat role on lgme.app. It accepts varied inputs (acts, receipts, contracts, promises, claims, refusals), shows clear dashboards, explains each step in plain language, and records successful cycles on the tape. Each completed cycle that meets the public criteria receives 1 , contributing to the Floor and development.
 
 SoverX is “LGME for dummies” made practical: the person keeps the book by seeing what must be shown. It runs as a trial under lgme.app.
 
@@ -47,13 +47,13 @@ Each input produces a showable tape entry. The comment is optional but encourage
    - What is residual (including zero)
    - What the Floor requires
    - Whether the line would be refused
-5. On success the cycle is recorded and 1 $lgme is allocated (Floor-constrained).
+5. On success the cycle is recorded and 1  is allocated (Floor-constrained).
 
 ---
 
 ## Reward rule
 
-- Fixed: 1 $lgme per successful completed cycle.
+- Fixed: 1  per successful completed cycle.
 - Paid only after Floor seniority is satisfied in the same cycle or from pre-named surplus.
 - The reward itself is written to the tape (recipient, cycle ID, rule reference).
 - No private path. Same rules bind the agent.

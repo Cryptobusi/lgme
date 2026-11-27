@@ -125,8 +125,8 @@ function moneyNote(peer, week) {
   let usd = 0;
   for (const entry of tapeIn(peer, week)) {
     const payload = entry.payload || {};
-    if (entry.type === 'transfer' && payload.unit === '$lgme' && payload.direction === 'in' && payload.toId === peer.id) lgmeIn += Number(payload.amount || 0);
-    if (entry.type === 'transfer' && payload.unit === '$lgme' && payload.direction === 'out' && payload.fromId === peer.id) lgmeOut += Number(payload.amount || 0);
+    if (entry.type === 'transfer' && payload.unit === '' && payload.direction === 'in' && payload.toId === peer.id) lgmeIn += Number(payload.amount || 0);
+    if (entry.type === 'transfer' && payload.unit === '' && payload.direction === 'out' && payload.fromId === peer.id) lgmeOut += Number(payload.amount || 0);
     if (entry.type === 'WISDOM_SUPPORT' && payload.unit === 'USD' && payload.toId === peer.id) usd += Number(payload.usd || payload.amount || 0);
   }
   return { lgmeIn: round1(lgmeIn), lgmeOut: round1(lgmeOut), usd: round1(usd) };

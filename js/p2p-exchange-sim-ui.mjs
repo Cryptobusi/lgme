@@ -182,7 +182,7 @@ function solanaCluster() {
   return localStorage.getItem(CLUSTER_KEY) === 'devnet' ? 'devnet' : 'mainnet-beta';
 }
 
-function showSolanaPay(spec) {
+function showPay(spec) {
   document.getElementById('solana-pay')?.remove();
   const overlay = h('div', { id: 'solana-pay', class: 'walk', role: 'dialog' });
   const recipient = h('input', { value: spec.recipient || '' });
@@ -212,7 +212,7 @@ function showSolanaPay(spec) {
   }
   function paint() {
     if (!lock) return;
-    preview.textContent = `US$ ${lock.usdAmount} · ${lock.lgmeAmount} $lgme · ${lock.priceSource} · ${lock.price} US$ per $lgme.`;
+    preview.textContent = `US$ ${lock.usdAmount} · ${lock.lgmeAmount}  · ${lock.priceSource} · ${lock.price} US$ per .`;
     const parts = [sim.PEG_NOTE];
     if (lock.history === 'history unavailable') parts.push('history unavailable');
     if (lock.clamped) parts.push(`Raw price ${lock.rawPrice}. Locked price ${lock.price}. Bands ${(lock.bounded || []).join(', ')}.`);
@@ -292,13 +292,13 @@ function showSolanaPay(spec) {
     );
   }
   overlay.append(h('article', { class: 'card' }, [
-    h('h2', {}, ['Confirm $lgme payment']),
-    h('p', {}, ['Beta. Real tokens. Irreversible. Start small. This page does not hold a Solana key.']),
+    h('h2', {}, ['Confirm  payment']),
+    h('p', {}, ['Beta. Real tokens. Irreversible. Start small. This page does not hold a  key.']),
     h('p', { id: 'peg-label' }, [sim.PEG_LABEL]),
     h('p', { id: 'peg-note' }, [sim.PEG_NOTE]),
     h('p', { class: 'legend' }, [`Mint ${MINT}`]),
     field('Amount in US$', usd),
-    field(spec.donation ? 'Floor wallet @EgonAnon' : 'Payee Solana address', recipient),
+    field(spec.donation ? 'Floor wallet @EgonAnon' : 'Payee  address', recipient),
     field('Network', cluster),
     preview,
     countdown,
@@ -333,7 +333,7 @@ function showSolanaPay(spec) {
       h('button', { type: 'button', class: 'primary', id: 'solana-confirm', onClick: async () => {
         if (!lock) { countdown.hidden = false; countdown.textContent = 'Wait for the price.'; return; }
         localStorage.setItem(CLUSTER_KEY, cluster.value);
-        const issued = await sim.issueSolanaRequest(store, spec.seat, { lockId: lock.lockId, navigator });
+        const issued = await sim.issueRequest(store, spec.seat, { lockId: lock.lockId, navigator });
         if (!issued.ok) {
           if (issued.requote) {
             countdown.hidden = false;
@@ -359,7 +359,7 @@ function showSolanaPay(spec) {
           message: `US$ ${issued.usdAmount}`
         });
         if (!built.ok) { preview.textContent = built.error; return; }
-        preview.textContent = `US$ ${issued.usdAmount} is ${issued.lgmeAmount} $lgme. Your wallet signs it. Nothing is sent until then.`;
+        preview.textContent = `US$ ${issued.usdAmount} is ${issued.lgmeAmount} . Your wallet signs it. Nothing is sent until then.`;
         link.href = built.url;
         link.hidden = false;
         qrHost.replaceChildren();
@@ -386,7 +386,7 @@ function showSolanaPay(spec) {
             lockId: lock.lockId,
             navigator
           })
-          : await sim.recordSolanaTx(store, spec.seat, {
+          : await sim.recordTx(store, spec.seat, {
             signature: found.signature,
             reference,
             mint: MINT,
@@ -407,7 +407,7 @@ function showSolanaPay(spec) {
           : 'Pending attestation. The payee still has to sign on their own seat. No invoice is paid yet.';
         setStatus(preview.textContent, 'ok');
         if (spec.purpose !== 'rebate') {
-          const carried = await sim.sealSolanaHandoff(store, spec.seat, found.signature);
+          const carried = await sim.sealHandoff(store, spec.seat, found.signature);
           if (carried.ok) {
             carryCode = carried.encoded;
             carryAddress = '';
@@ -419,7 +419,7 @@ function showSolanaPay(spec) {
       h('button', { type: 'button', onClick: async () => {
         const owner = recipient.value.trim();
         const balance = await readTokenBalance(cluster.value, owner);
-        preview.textContent = balance.ok ? `Read-only wallet balance: ${balance.amount} $lgme on ${cluster.value}.` : balance.error;
+        preview.textContent = balance.ok ? `Read-only wallet balance: ${balance.amount}  on ${cluster.value}.` : balance.error;
       } }, ['Read wallet balance']),
       h('button', { type: 'button', onClick: () => { stopClock(); overlay.remove(); } }, ['Close'])
     ])
@@ -441,7 +441,7 @@ async function attestPayment(seat, sample) {
   });
   if (!found.ok) { setStatus(found.error, 'bad'); return; }
   if (found.signature !== sample.signature) { setStatus('The finalized signature does not match this payment.', 'bad'); return; }
-  const result = await sim.attestSolanaTx(store, seat, {
+  const result = await sim.attestTx(store, seat, {
     ...sample,
     signature: found.signature,
     mint: MINT,
@@ -450,13 +450,13 @@ async function attestPayment(seat, sample) {
   if (!result.ok) { setStatus(result.error, 'bad'); return; }
   if (result.encoded) carryCode = result.encoded;
   setStatus(result.status === 'settled'
-    ? 'Both parties signed. The invoice is paid. The Solana signature is final. Beta.'
+    ? 'Both parties signed. The invoice is paid. The  signature is final. Beta.'
     : 'Your attestation is signed. The other tape is final when that seat imports it. Beta.', result.status === 'settled' ? 'ok' : 'ok');
   await render();
 }
 
 async function refusePayment(seat, sample) {
-  const result = await sim.refuseSolanaTx(store, seat, sample, 'REFUSAL');
+  const result = await sim.refuseTx(store, seat, sample, 'REFUSAL');
   setStatus(result.ok ? 'Refusal recorded. No penalty. The invoice is not paid. Beta.' : result.error, result.ok ? 'ok' : 'bad');
   if (result.ok) await render();
 }
@@ -500,7 +500,7 @@ async function solanaCards(seat) {
     }
     if (sample.payerId === seat && status === 'pending-attestation') {
       actions.push(h('button', { type: 'button', onClick: async () => {
-        const carried = await sim.sealSolanaHandoff(store, seat, signature);
+        const carried = await sim.sealHandoff(store, seat, signature);
         if (!carried.ok) { setStatus(carried.error, 'bad'); return; }
         carryCode = carried.encoded;
         location.hash = 'devices';
@@ -512,8 +512,8 @@ async function solanaCards(seat) {
         ? 'Refusal recorded. No penalty. The invoice is not paid.'
         : 'Pending attestation. Each party signs on their own seat.';
     cards.push(h('article', { class: 'card', id: 'solana-payment' }, [
-      h('h3', {}, [`$lgme ${status}`]),
-      h('p', {}, [`${sample.amount} $lgme to ${sample.recipient}. ${sentence}`]),
+      h('h3', {}, [` ${status}`]),
+      h('p', {}, [`${sample.amount}  to ${sample.recipient}. ${sentence}`]),
       h('div', { class: 'actions' }, actions)
     ]));
   }
@@ -635,7 +635,7 @@ async function floorRebateSection(seat) {
   for (const row of dues) {
     if (!row?.invoiceId || seen.has(row.invoiceId) || paid.has(row.invoiceId)) continue;
     seen.add(row.invoiceId);
-    const wallet = h('input', { value: row.payerWallet || '', maxlength: '64', placeholder: 'Payer Solana address' });
+    const wallet = h('input', { value: row.payerWallet || '', maxlength: '64', placeholder: 'Payer  address' });
     const preview = h('p', { class: 'legend' }, [sim.FLOOR_REBATE_LABEL]);
     cards.push(h('article', { class: 'card', id: 'floor-rebate-due' }, [
       h('h3', {}, [`Rebate due US$ ${row.usdAmount || row.amount}`]),
@@ -662,9 +662,9 @@ async function floorRebateSection(seat) {
             return;
           }
           if (!priced.ok) { preview.textContent = priced.error; return; }
-          if (!isValidPublicKey(wallet.value.trim())) { preview.textContent = 'Enter the payer Solana address.'; return; }
-          preview.textContent = `Floor balance ${balance.amount} $lgme. Rebate US$ ${review.amount}. ${sim.PEG_NOTE}`;
-          showSolanaPay({
+          if (!isValidPublicKey(wallet.value.trim())) { preview.textContent = 'Enter the payer  address.'; return; }
+          preview.textContent = `Floor balance ${balance.amount} . Rebate US$ ${review.amount}. ${sim.PEG_NOTE}`;
+          showPay({
             seat,
             amount: review.amount,
             invoiceId: row.invoiceId,
@@ -883,7 +883,7 @@ function renderSeats(peers, seat) {
       'aria-pressed': peer.id === seat ? 'true' : 'false'
     }, [
       peer.name,
-      h('small', {}, [`${peer.balance} $lgme · floor ${peer.floor}${peer.locked ? ' · locked' : ''}`]),
+      h('small', {}, [`${peer.balance}  · floor ${peer.floor}${peer.locked ? ' · locked' : ''}`]),
       h('span', { class: peer.kyc === 'VERIFIED' ? 'badge badge-verified' : 'badge badge-unverified' }, [peer.kyc === 'VERIFIED' ? 'Verified' : 'Unverified'])
     ]);
     button.addEventListener('click', () => {
@@ -893,7 +893,7 @@ function renderSeats(peers, seat) {
     });
     bar.append(button);
   }
-  bar.append(h('button', { type: 'button', class: 'seat', onClick: () => renderAddPeer(peers) }, ['Register', h('small', {}, ['Opening grant of 100 $lgme'])]));
+  bar.append(h('button', { type: 'button', class: 'seat', onClick: () => renderAddPeer(peers) }, ['Register', h('small', {}, ['Opening grant of 100 '])]));
   bar.append(h('button', { type: 'button', class: 'seat', onClick: resetDemo }, ['Reset', h('small', {}, ['Clears local books on this device'])]));
 }
 
@@ -967,7 +967,7 @@ function renderAddPeer(peers) {
       const opened = await sim.unlockWallet(stored, passphrase.value, code, Math.floor(Date.now() / 1000));
       if (opened.ok) sessionKeys.set(id, opened.privateKeyJwk);
       rememberSeat(id);
-      setStatus(`${name.value.trim()} has an opening grant of 100 $lgme on a GENESIS line. The key is locked. Scan the wallet code, then unlock with the passphrase and the 6-digit code.`, 'ok');
+      setStatus(`${name.value.trim()} has an opening grant of 100  on a GENESIS line. The key is locked. Scan the wallet code, then unlock with the passphrase and the 6-digit code.`, 'ok');
       location.hash = 'wallet';
       await render();
     } finally {
@@ -976,14 +976,14 @@ function renderAddPeer(peers) {
   });
   panel.replaceChildren(
     h('h2', {}, ['Register']),
-    h('p', { class: 'muted' }, ['A new peer receives a local grant of 100 on this book. It is written as a GENESIS line. It is not Solana $lgme. The book key is then encrypted with the passphrase.']),
+    h('p', { class: 'muted' }, ['A new peer receives a local grant of 100 on this book. It is written as a GENESIS line. It is not  . The book key is then encrypted with the passphrase.']),
     form
   );
 }
 
 async function resetDemo() {
   if (busy) return;
-  if (!confirm('Reset? This clears the local books on this device. It does not move Solana $lgme.')) return;
+  if (!confirm('Reset? This clears the local books on this device. It does not move  .')) return;
   busy = true;
   try {
     await sim.resetAndSeed(store);
@@ -1065,7 +1065,7 @@ async function goodDeedPanel(peers, me) {
     field('Category', category),
     field('Post', postType),
     field('US$ value', list),
-    field('$lgme price in US$', price),
+    field(' price in US$', price),
     field('Discount US$', discount),
     field('Their handle', who),
     field('Passphrase', pass),
@@ -1100,7 +1100,7 @@ async function goodDeedPanel(peers, me) {
     await render();
   });
   const rows = ranked.length
-    ? ranked.map((row) => h('p', { class: 'legend' }, [`${row.category}: ${row.requests} requests, ${row.completed} deeds, pool ${row.balance} $lgme`]))
+    ? ranked.map((row) => h('p', { class: 'legend' }, [`${row.category}: ${row.requests} requests, ${row.completed} deeds, pool ${row.balance} `]))
     : [h('p', { class: 'legend' }, ['No category pool yet. A sale skims 1%. Donations fill the rest.'])];
   return h('section', { id: 'good-deeds-desk' }, [
     h('h3', {}, ['Good deeds']),
@@ -1172,7 +1172,7 @@ function campusDeedPanel(peers, me, full) {
     if (deed.status === 'pending' && deed.receiverId === me.id) {
       actions.push(h('button', { type: 'button', class: 'primary', onClick: async () => {
         const result = await sim.attestCampusDeed(store, me.id, deed.deedId, { passphrase: pass.value, code: code.value, unixSeconds: Math.floor(Date.now() / 1000) });
-        setStatus(result.ok ? 'IdidIt (verified receipt). 1 campus Creo. Not $lgme. Not on Hedera.' : result.error, result.ok ? 'ok' : 'bad');
+        setStatus(result.ok ? 'IdidIt (verified receipt). 1 campus Creo. Not . Not on Hedera.' : result.error, result.ok ? 'ok' : 'bad');
         if (result.ok) await render();
       } }, ['Attest']));
     }
@@ -1204,13 +1204,13 @@ function campusDeedPanel(peers, me, full) {
         code: code.value,
         unixSeconds: Math.floor(Date.now() / 1000)
       });
-      setStatus(result.ok ? '1 campus Creo used once. Not $lgme.' : result.error, result.ok ? 'ok' : 'bad');
+      setStatus(result.ok ? '1 campus Creo used once. Not .' : result.error, result.ok ? 'ok' : 'bad');
       if (result.ok) await render();
     } }, [`Redeem 1 Creo · ${row.kind}`])
   ]));
   return h('section', { id: 'campus-deed' }, [
     h('h3', {}, ['Campus deed']),
-    h('p', { class: 'legend' }, [campusGroup() === 'health-club' ? 'You are in the health club community. One verified deed is one club Creo. Not $lgme. Not on Hedera.' : campusGroup() === 'campus' ? 'You are in the campus pilot. One verified deed is one campus Creo. Not $lgme. Not on Hedera.' : 'Log a deed for the health club, or open the campus pilot from Other pilots.']),
+    h('p', { class: 'legend' }, [campusGroup() === 'health-club' ? 'You are in the health club community. One verified deed is one club Creo. Not . Not on Hedera.' : campusGroup() === 'campus' ? 'You are in the campus pilot. One verified deed is one campus Creo. Not . Not on Hedera.' : 'Log a deed for the health club, or open the campus pilot from Other pilots.']),
     emailHost(),
     form,
     h('p', { class: 'legend' }, ['Redeem inside the pilot']),
@@ -1696,7 +1696,7 @@ async function renderBooks(peers, seat) {
         const payload = (await store.get(seat)).tape.find((entry) => entry.type === 'INVOICE' && entry.payload?.invoiceId === row.invoiceId)?.payload;
         const sealed = await sim.sealMessage(await store.get(seat), 'invoice', payload);
         if (!sealed.ok) { setStatus(sealed.error, 'bad'); return; }
-        const href = sim.shareHrefs(row.payerPhone, `Beta lgme. Invoice ${row.amount} $lgme. This page does not send it.\n${sim.encodeMessage(sealed.message)}`).sms;
+        const href = sim.shareHrefs(row.payerPhone, `Beta lgme. Invoice ${row.amount} . This page does not send it.\n${sim.encodeMessage(sealed.message)}`).sms;
         event.currentTarget.href = href;
         window.location.href = href;
       } }, ['Remind by SMS']));
@@ -1704,24 +1704,24 @@ async function renderBooks(peers, seat) {
       actions.push(h('button', { type: 'button', id: 'loyalty-decline', onClick: () => consentInvoiceLoyalty(seat, row, true) }, ['Decline discount']));
     }
     if (row.role === 'AP' && row.remaining > 0 && row.status !== 'refused') {
-      actions.push(h('button', { type: 'button', class: 'primary', id: 'pay-solana', onClick: () => showSolanaPay({
+      actions.push(h('button', { type: 'button', class: 'primary', id: 'pay-solana', onClick: () => showPay({
         seat,
         amount: payAmount.value || row.remaining,
         invoiceId: row.invoiceId,
         otherId: row.workerId,
         recipient: '',
         donation: false
-      }) }, ['Settle in $lgme']));
+      }) }, ['Settle in ']));
       actions.push(h('button', { type: 'button', id: 'loyalty-agree', onClick: () => consentInvoiceLoyalty(seat, row, false) }, ['Agree loyalty discount']));
       actions.push(h('button', { type: 'button', id: 'loyalty-decline', onClick: () => consentInvoiceLoyalty(seat, row, true) }, ['Decline discount']));
-      actions.push(h('button', { type: 'button', onClick: () => showSolanaPay({
+      actions.push(h('button', { type: 'button', onClick: () => showPay({
         seat,
         amount: payAmount.value || row.remaining,
         invoiceId: row.invoiceId,
         otherId: '',
         recipient: DONATION_ADDRESS,
         donation: true
-      }) }, ['Pay donation in $lgme']));
+      }) }, ['Pay donation in ']));
       actions.push(h('button', { type: 'button', id: 'pay-zelle', onClick: () => showOffchainPay({
         seat, method: 'zelle', amount: payAmount.value || row.remaining, invoiceId: row.invoiceId, otherId: row.workerId
       }) }, ['Pay with Zelle']));
@@ -1730,7 +1730,7 @@ async function renderBooks(peers, seat) {
       }) }, ['Pay with cash']));
       actions.push(h('button', { type: 'button', class: 'primary', id: 'pay-invoice', onClick: async () => {
         const result = await sim.payInvoice(store, seat, row.invoiceId, { amount: payAmount.value, passphrase: pass.value, code: code.value });
-        setStatus(result.ok ? `Paid ${result.amount} $lgme. Remaining ${result.remaining}. Reward ${result.reward}. Beta.` : result.error, result.ok ? 'ok' : 'bad');
+        setStatus(result.ok ? `Paid ${result.amount} . Remaining ${result.remaining}. Reward ${result.reward}. Beta.` : result.error, result.ok ? 'ok' : 'bad');
         if (result.ok) await render();
       } }, ['Pay with code']));
       actions.push(h('button', { type: 'button', onClick: async () => {
@@ -1740,13 +1740,13 @@ async function renderBooks(peers, seat) {
       } }, ['Refuse']));
     }
     return h('article', { class: 'card', id: row.role === 'AR' ? 'invoice-ar' : 'invoice-ap' }, [
-      h('h3', {}, [`IdidIt (verified receipt) · ${row.role} · ${row.status} · ${row.amount} $lgme`]),
+      h('h3', {}, [`IdidIt (verified receipt) · ${row.role} · ${row.status} · ${row.amount} `]),
       Number(row.amount) > 100 ? h('p', { id: 'attestation-count' }, [`Needs 3 attestations (over $100). Pending attestations: ${pendingCountFor(peer, row.invoiceId)}.`]) : null,
       Number(row.amount) > 100 ? h('p', {}, ['Suggested third attester: group administrator']) : null,
       h('p', { class: 'muted' }, [`Paid ${row.paid}. Remaining ${row.remaining}. Bucket ${row.bucket}. Due ${String(row.dueAt).slice(0, 10)}. Phone ${row.payerPhone}. Hash ${String(row.payerKycHash || '').slice(0, 12)}.`]),
       h('p', { class: 'legend' }, [`Day root ${dayRoot.slice(0, 16)}. Not written to Hedera.`]),
       row.thanks ? h('p', { class: 'legend' }, [row.thanks]) : null,
-      row.role === 'AP' && row.remaining > 0 ? h('div', {}, [field('Amount', payAmount), field('Passphrase', pass), field('6-digit code', code), field('Refusal note', note), field('Solana address for a floor rebate', h('input', { id: `rebate-wallet-${row.invoiceId}`, maxlength: '64', placeholder: 'Your address, not a seed phrase' }))]) : null,
+      row.role === 'AP' && row.remaining > 0 ? h('div', {}, [field('Amount', payAmount), field('Passphrase', pass), field('6-digit code', code), field('Refusal note', note), field(' address for a floor rebate', h('input', { id: `rebate-wallet-${row.invoiceId}`, maxlength: '64', placeholder: 'Your address, not a seed phrase' }))]) : null,
       h('div', { class: 'actions' }, actions)
     ]);
   });
@@ -1774,9 +1774,9 @@ async function renderBooks(peers, seat) {
     ]),
     h('section', { id: 'offers' }, offerCards(peer, seat)),
     h('section', { id: 'solana-payments' }, [
-      h('h3', {}, ['Solana attestation']),
+      h('h3', {}, [' attestation']),
       ...solana,
-      solana.length ? null : h('p', { class: 'empty' }, ['No Solana payment is waiting on this seat.'])
+      solana.length ? null : h('p', { class: 'empty' }, ['No  payment is waiting on this seat.'])
     ]),
     h('section', { id: 'offchain-payments' }, [
       h('h3', {}, ['Cash and Zelle']),
@@ -2001,7 +2001,7 @@ async function renderWallet(peers, seat) {
   }
   const blocks = [
     h('h2', {}, [`Wallet · ${summary.name} `, h('span', { class: sim.kycStatus(peer) === 'VERIFIED' ? 'badge badge-verified' : 'badge badge-unverified' }, [sim.kycStatus(peer) === 'VERIFIED' ? 'Verified' : 'Unverified'])]),
-    h('p', { class: 'muted' }, ['Beta. The book key is local. The passphrase and the 6-digit code unlock that book. They are not a Solana seed. A $lgme payment is signed by your wallet.']),
+    h('p', { class: 'muted' }, ['Beta. The book key is local. The passphrase and the 6-digit code unlock that book. They are not a  seed. A  payment is signed by your wallet.']),
     h('div', { class: 'balance-hero' }, [
       coinMark(),
       h('div', {}, [h('strong', {}, [String(sim.replay(peer).balance)]), 'Book balance']),
@@ -2078,7 +2078,7 @@ function kycCard(peer, peers) {
   }
   const body = [
     h('h3', {}, ['Become verified']),
-    h('p', { class: 'muted' }, ['Unverified members can receive, and can send up to 20 $lgme. This check stays on this device.']),
+    h('p', { class: 'muted' }, ['Unverified members can receive, and can send up to 20 . This check stays on this device.']),
     steps
   ];
   if (!started) {
@@ -2277,13 +2277,13 @@ async function renderDevices(peers, seat) {
   const peer = await store.get(seat);
   const toId = h('input', { placeholder: 'peer id on the other device' });
   const amount = h('input', { type: 'number', min: '0.01', step: '0.01', value: '10', inputmode: 'decimal' });
-  const note = h('input', { maxlength: '160', value: '$lgme' });
+  const note = h('input', { maxlength: '160', value: '' });
   const address = h('input', { placeholder: 'phone or email, optional', autocomplete: 'off' });
   const pass = peer.wallet?.ciphertext ? h('input', { type: 'password', autocomplete: 'current-password', required: true }) : null;
   const code = peer.wallet?.ciphertext ? h('input', { inputmode: 'numeric', autocomplete: 'one-time-code', maxlength: '8', required: true }) : null;
   const shareHost = h('div', {});
   const form = h('form', { class: 'grid two' }, [
-    field('Send $lgme to peer id', toId),
+    field('Send  to peer id', toId),
     field('Amount', amount),
     pass ? field('Passphrase', pass) : null,
     code ? field('6-digit code', code) : null,
@@ -2291,9 +2291,9 @@ async function renderDevices(peers, seat) {
     field('Note', note),
     field('Their phone or email, if you want a draft', address),
     h('p', { class: 'legend' }, [peer.wallet?.ciphertext
-      ? 'Auto-send stays on this device. A valid code delivers the signed note into the other book. A wrong code sends nothing. Solana $lgme still needs your wallet.'
+      ? 'Auto-send stays on this device. A valid code delivers the signed note into the other book. A wrong code sends nothing.   still needs your wallet.'
       : 'This book has no authenticator yet. Signing prepares a code you can carry. Set up 2FA on the wallet to auto-deliver on this device.']),
-    sim.kycStatus(peer) === 'VERIFIED' ? null : h('p', { class: 'legend' }, ['Unverified members can send up to 20 $lgme. Receiving is open.'])
+    sim.kycStatus(peer) === 'VERIFIED' ? null : h('p', { class: 'legend' }, ['Unverified members can send up to 20 . Receiving is open.'])
   ]);
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -2361,7 +2361,7 @@ async function renderDevices(peers, seat) {
     h('h2', {}, [`Another device · ${peer.name}`]),
     h('p', { class: 'muted' }, ['There is no server. Copy the code, open the share link, scan the QR, or save a .json file. On the other device, verify the signature and the hash before anything is appended. sms: and mailto: only open your own app. This page never sends the message.']),
     h('div', { class: 'actions' }, [h('button', { type: 'button', onClick: async () => download(`${seat}-tape.json`, JSON.stringify(await sim.exportRecords(peer, clearingRulesNow()), null, 2), 'application/json') }, ['Export tape JSON'])]),
-    h('h3', {}, ['Send $lgme']),
+    h('h3', {}, ['Send ']),
     form,
     shareHost,
     h('h3', {}, ['Receive']),
@@ -2434,7 +2434,7 @@ async function acceptIncoming(seat, raw) {
   if (!result.ok) { setStatus(result.error, 'bad'); return; }
   pendingImport = '';
   setStatus(result.status === 'pending-attestation'
-    ? 'Pending attestation. Verify the signature on Solana, then tap Attest. Nothing is settled yet. Beta.'
+    ? 'Pending attestation. Verify the signature on , then tap Attest. Nothing is settled yet. Beta.'
     : result.status === 'settled'
       ? 'Both parties signed. The invoice is paid. Beta.'
       : result.balance == null ? 'Imported. Beta.' : `Imported. Balance ${result.balance}. Beta.`, 'ok');
@@ -2496,7 +2496,7 @@ function profileCard(profile) {
     ]),
     h('p', { class: 'legend' }, ['The third seat can veto a line that skipped the order. ', h('a', { href: 'https://www.egonomicanonymous.live/' }, ['Egonomic Anonymous']), '.']),
     h('p', { class: 'muted' }, [
-      `${profile.balance} $lgme · floor ${profile.floor} · ${profile.aboveFloor} above the floor. Credit use versus the floor ${Math.round(profile.utilization * 100)}%. Rewards ${profile.rewards || 0} $lgme.${profile.held ? ` Held ${profile.held} $lgme.` : ''}`
+      `${profile.balance}  · floor ${profile.floor} · ${profile.aboveFloor} above the floor. Credit use versus the floor ${Math.round(profile.utilization * 100)}%. Rewards ${profile.rewards || 0} .${profile.held ? ` Held ${profile.held} .` : ''}`
     ])
   ]);
 }
@@ -2523,19 +2523,19 @@ function contributionMethods() {
   return h('section', { class: 'contrib', id: 'sobeit-give' }, [
     h('h3', {}, ['soBeIT contributions']),
     h('p', {}, [h('a', { class: 'btn primary', href: '/lgme-coin#give' }, ['Give via soBeIT'])]),
-    h('p', { class: 'legend' }, ['Real token on Solana. Not financial advice. High risk; you may lose everything. Always verify the mint address. Transfers are irreversible. Never share a seed phrase. This page never asks for one. A wallet balance is read from Solana. The local tape records signatures and is not a second mint.']),
+    h('p', { class: 'legend' }, ['Real token on . Not financial advice. High risk; you may lose everything. Always verify the mint address. Transfers are irreversible. Never share a seed phrase. This page never asks for one. A wallet balance is read from . The local tape records signatures and is not a second mint.']),
     h('p', {}, ['THANK YOU FOR YOUR SUPPORT.']),
     h('article', { class: 'card pump-wallet' }, [
-      h('h3', {}, ['Option A. $lgme or SOL']),
+      h('h3', {}, ['Option A.  or SOL']),
       h('p', {}, ['Pump.fun wallet. Wallet name ', h('span', { class: 'wallet-name' }, ['@EgonAnon'])]),
       h('ol', {}, [
         h('li', {}, ['Install Phantom or Solflare.']),
-        h('li', {}, ['Buy or hold $lgme. Mint ', MINT, '. ', h('a', { href: `https://pump.fun/coin/${MINT}` }, ['Open the coin on pump.fun']), '.']),
+        h('li', {}, ['Buy or hold . Mint ', MINT, '. ', h('a', { href: `https:///coin/${MINT}` }, ['Open the coin on ']), '.']),
         h('li', {}, ['Tap Send, or scan the QR.']),
         h('li', {}, ['Check the address. It starts with 6SYz and ends with okLY.']),
         h('li', {}, ['Confirm. The transfer is irreversible.'])
       ]),
-      h('p', {}, ['Solana address']),
+      h('p', {}, [' address']),
       h('p', { class: 'addr donate-address' }, [DONATE_ADDRESS]),
       h('div', { class: 'actions' }, [
         copy,
@@ -2546,7 +2546,7 @@ function contributionMethods() {
     h('article', { class: 'card x-money' }, [
       h('h3', {}, ['Option B. X Money']),
       h('p', {}, ['Send via X Money to ', h('a', { href: 'https://x.com/Trancesage' }, ['@Trancesage'])]),
-      h('p', {}, ['This is a separate account from the Solana wallet.']),
+      h('p', {}, ['This is a separate account from the  wallet.']),
       h('ol', {}, [
         h('li', {}, ['Open the X app.']),
         h('li', {}, ['Open Money.']),
@@ -2561,7 +2561,7 @@ function contributionMethods() {
 
 function coinPanel() {
   return h('article', { class: 'card', id: 'coin-panel' }, [
-    h('div', { class: 'balance-hero' }, [coinMark(), h('div', {}, [h('strong', {}, ['$lgme']), 'Real token, separate from this book'])]),
+    h('div', { class: 'balance-hero' }, [coinMark(), h('div', {}, [h('strong', {}, ['']), 'Real token, separate from this book'])]),
     h('p', {}, [h('a', { href: '/lgme-coin' }, ['Mint and buy steps are on the coin page.'])]),
     contributionMethods()
   ]);
@@ -2597,19 +2597,19 @@ function soBeItCard(peers, seat) {
   const reason = h('input', { maxlength: '160', placeholder: 'Why this grant' });
   const form = h('form', { id: 'sobeit-form' }, [
     field('Member', member),
-    field('Amount in $lgme', amount),
+    field('Amount in ', amount),
     field('Reason', reason),
     h('div', { class: 'actions' }, [h('button', { class: 'primary', type: 'submit' }, ['soBeIT'])])
   ]);
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     const result = await sim.soBeItGrant(store, seat, member.value, { amount: amount.value, reason: reason.value });
-    setStatus(result.ok ? `Grant recorded on this book. Balance ${result.balance}. Solana $lgme did not move.` : result.error, result.ok ? 'ok' : 'bad');
+    setStatus(result.ok ? `Grant recorded on this book. Balance ${result.balance}.   did not move.` : result.error, result.ok ? 'ok' : 'bad');
     if (result.ok) await render();
   });
   return h('article', { class: 'card', id: 'sobeit' }, [
     h('h3', {}, ['soBeIT']),
-    h('p', { class: 'muted' }, ['A local grant on this tape. The grantor signs it. It is attested on the member book. It is not the Solana token.']),
+    h('p', { class: 'muted' }, ['A local grant on this tape. The grantor signs it. It is attested on the member book. It is not the  token.']),
     form,
     contributionMethods()
   ]);
@@ -2989,7 +2989,7 @@ function offerForm(seat, target, serviceList = []) {
     option('service', 'IprovIT service only', false),
     option('zelle', 'Zelle', false),
     option('cash', 'Cash in person', false),
-    option('lgme', 'Pay in $lgme', false)
+    option('lgme', 'Pay in ', false)
   ]);
   const preview = h('p', { class: 'legend' }, ['']);
   const rules = paymentMethods.loyalty || sim.LOYALTY_DEFAULTS;
@@ -3012,8 +3012,8 @@ function offerForm(seat, target, serviceList = []) {
         : choice === 'cash'
           ? `Cash is in person only. Do not mail cash. It is not counted until the payee attests the receipt. This app does not process it. ${sim.FIAT_FEE_NOTE} Cash and Zelle get no loyalty discount.`
           : choice === 'lgme'
-            ? `Pay the full price in $lgme. Suggested loyalty discount ${percent.value || rules.defaultPercent}%. Both parties sign it, or either can decline. ${sim.FLOOR_REBATE_LABEL}`
-            : `Pick one or more IprovIT services. A $lgme payment is signed by your wallet. ${loyaltyBox.checked ? `Suggested loyalty discount ${percent.value || rules.defaultPercent}%. ${sim.FLOOR_REBATE_LABEL}` : 'Cash and Zelle get no loyalty discount.'}`;
+            ? `Pay the full price in . Suggested loyalty discount ${percent.value || rules.defaultPercent}%. Both parties sign it, or either can decline. ${sim.FLOOR_REBATE_LABEL}`
+            : `Pick one or more IprovIT services. A  payment is signed by your wallet. ${loyaltyBox.checked ? `Suggested loyalty discount ${percent.value || rules.defaultPercent}%. ${sim.FLOOR_REBATE_LABEL}` : 'Cash and Zelle get no loyalty discount.'}`;
   }
   mode.addEventListener('change', paint);
   amount.addEventListener('input', paint);
@@ -3024,7 +3024,7 @@ function offerForm(seat, target, serviceList = []) {
     field('Amount', amount),
     field('How to pay', mode),
     field('Loyalty discount percent', percent),
-    h('label', { class: 'row' }, [loyaltyBox, ' Suggest the $lgme loyalty discount on this IprovIT deal']),
+    h('label', { class: 'row' }, [loyaltyBox, ' Suggest the  loyalty discount on this IprovIT deal']),
     services.box,
     preview,
     h('div', { class: 'actions' }, [h('button', { class: 'primary', type: 'submit' }, [target.external ? 'Copy draft offer' : 'Sign consent'])])
@@ -3068,14 +3068,14 @@ function offerForm(seat, target, serviceList = []) {
 function catalogServices(list) {
   const boxes = (list || []).map((item) => {
     const box = h('input', { type: 'checkbox', value: item.id });
-    return { box, id: item.id, title: `${item.title} · ${item.amount} $lgme` };
+    return { box, id: item.id, title: `${item.title} · ${item.amount} ` };
   });
   return {
     selected: () => boxes.filter((row) => row.box.checked).map((row) => row.id),
     box: h('fieldset', {}, [
       h('legend', {}, ['IprovIT services']),
       boxes.length
-        ? h('p', { class: 'legend', id: 'iprov-services' }, ['Services listed as IprovIT can be offered in place of cash. A $lgme payment is signed by your wallet.'])
+        ? h('p', { class: 'legend', id: 'iprov-services' }, ['Services listed as IprovIT can be offered in place of cash. A  payment is signed by your wallet.'])
         : h('p', { class: 'legend', id: 'iprov-services' }, ['No IprovIT services are listed yet.']),
       ...boxes.map((row) => h('label', { class: 'row' }, [row.box, ` ${row.title}`]))
     ])
@@ -3137,7 +3137,7 @@ function tailoredActions(item, channel, openLabel) {
     option('4', '4 month terms', saved?.pay === '4'),
     option('5', '5 month terms', saved?.pay === '5'),
     option('6', '6 month terms', saved?.pay === '6'),
-    option('service', '$lgme services (IprovIT)', saved?.pay === 'service'),
+    option('service', ' services (IprovIT)', saved?.pay === 'service'),
     option('zelle', 'Zelle', saved?.pay === 'zelle'),
     option('cash', 'Cash in person', saved?.pay === 'cash')
   ]);
@@ -3446,7 +3446,7 @@ async function renderMarket(peers, seat) {
       const wantedPin = card.title === sim.STANDING_WANTED.title;
       const repairPin = card.title === sim.STANDING_REPAIR.title;
       if (card.pinned && !wantedPin && !repairPin) {
-        actions.push(h('a', { class: 'btn primary', id: 'donation-link', href: card.href || '/lgme-coin' }, [card.action || 'Receive / send $lgme']));
+        actions.push(h('a', { class: 'btn primary', id: 'donation-link', href: card.href || '/lgme-coin' }, [card.action || 'Receive / send ']));
       } else if (card.sellerId === seat && !wantedPin && !repairPin) {
         actions.push(h('button', { type: 'button', class: 'primary', onClick: async () => {
           const refreshed = await sim.refreshListing(store, seat, card.id);
@@ -3470,9 +3470,9 @@ async function renderMarket(peers, seat) {
         card.pinned && !wantedPin ? h('p', { id: 'donation-copy' }, [card.description]) : null,
         wantedPin || repairPin ? h('p', { id: wantedPin ? 'wanted-copy' : 'repair-copy' }, [card.description]) : null,
         wantedPin || repairPin ? h('ul', { id: wantedPin ? 'wanted-payments' : 'repair-payments' }, (wantedPin ? sim.STANDING_WANTED : sim.STANDING_REPAIR).payments.map((item) => h('li', {}, [item]))) : null,
-        !card.pinned ? h('p', { class: 'price' }, [`${card.amount} $lgme`]) : null,
+        !card.pinned ? h('p', { class: 'price' }, [`${card.amount} `]) : null,
         card.pinned && !wantedPin ? h('p', { class: 'legend' }, ['Beta. A soBeIT grant below stays on this tape. The link above is the real token page.']) : null,
-        wantedPin || repairPin ? h('p', { class: 'legend' }, ['Beta. A concluded match is closed on this book. A $lgme payment is signed by your wallet. Reconcile as donation to the floor needs both consents.']) : null,
+        wantedPin || repairPin ? h('p', { class: 'legend' }, ['Beta. A concluded match is closed on this book. A  payment is signed by your wallet. Reconcile as donation to the floor needs both consents.']) : null,
         card.pinned && !wantedPin && !repairPin ? soBeItCard(peers, seat) : null,
         wantedPin ? wantedMatchSection(seat) : null,
         repairPin ? thumbtackSection(seat) : null,
@@ -3523,8 +3523,8 @@ async function renderMarket(peers, seat) {
     field('Condition', condition),
     field('Pickup', pickup),
     field('Circle', circle),
-    field('Min $lgme', min),
-    field('Max $lgme', max),
+    field('Min ', min),
+    field('Max ', max),
     h('div', { class: 'actions' }, [
       h('button', { class: 'primary', type: 'submit' }, ['Filter']),
       h('button', { type: 'button', onClick: () => { marketQuery = { q: '', kind: '', category: '', condition: '', pickup: '', circle: '', min: '', max: '' }; render(); } }, ['Clear'])
@@ -3567,9 +3567,9 @@ async function renderMarket(peers, seat) {
   }, [
     h('img', { alt: card.title === sim.STANDING_REPAIR_PRO.title ? 'Person exercising on a treadmill: The Repair Extraordinaire, equipment repair' : '', src: myThumb(card, card.title === sim.STANDING_REPAIR_PRO.title ? '/assets/img/repair-extraordinaire.webp' : (card.photo || '')), width: '224', height: '224', loading: 'lazy' }),
     h('h3', {}, [card.title]),
-    card.pinned ? h('p', { class: 'muted' }, [card.description]) : h('div', { class: 'price' }, [`${card.amount} $lgme`]),
+    card.pinned ? h('p', { class: 'muted' }, [card.description]) : h('div', { class: 'price' }, [`${card.amount} `]),
     card.title === sim.STANDING_WANTED.title || card.title === sim.STANDING_REPAIR.title ? h('p', { class: 'legend' }, [(card.title === sim.STANDING_REPAIR.title ? sim.STANDING_REPAIR : sim.STANDING_WANTED).payments.join(' · ')]) : null,
-    card.pinned ? h('span', { class: 'badge badge-verified' }, [card.action || 'Receive / send $lgme']) : null,
+    card.pinned ? h('span', { class: 'badge badge-verified' }, [card.action || 'Receive / send ']) : null,
     h('div', {}, [h('span', { class: card.verified ? 'badge badge-verified' : 'badge badge-unverified' }, [card.verified ? 'Verified' : 'Unverified'])]),
     h('small', { class: 'meta' }, [`${card.circle} · Peer standing ${card.standing}`])
   ])));
@@ -4001,7 +4001,7 @@ async function renderList(seat) {
   reference.addEventListener('change', paintHint);
   paintHint();
   const form = h('form', {}, [
-    field('Value in $lgme', amount),
+    field('Value in ', amount),
     field('Optional $ reference', reference),
     h('p', { id: 'hedera-media-preview' }, [(listDraft.mediaHashes || []).length ? `Hedera would receive only ${JSON.stringify((listDraft.mediaHashes || []).map(publicMedia))}. Nothing is posted until you sign.` : 'No extra files. A floor listing is not penalized.']),
     hint,
@@ -4042,7 +4042,7 @@ async function renderList(seat) {
       busy = false;
     }
   });
-  panel.replaceChildren(h('h2', {}, ['List']), steps, h('p', { class: 'muted' }, ['The value is in $lgme. A dollar figure is only a suggestion from the reference list.']), referenceCatalogCard(), form);
+  panel.replaceChildren(h('h2', {}, ['List']), steps, h('p', { class: 'muted' }, ['The value is in . A dollar figure is only a suggestion from the reference list.']), referenceCatalogCard(), form);
 }
 
 async function takeChatToken(seat, raw) {
@@ -4193,7 +4193,7 @@ async function renderChats(seat) {
         onClick: () => { openThreadId = thread.id; matchNote = ''; render(); }
       }, [
         h('h3', {}, [thread.title || 'Listing']),
-        h('p', { class: 'muted' }, [`${thread.amount} $lgme · ${thread.status}`])
+        h('p', { class: 'muted' }, [`${thread.amount}  · ${thread.status}`])
       ]))) : null,
       ...extras.filter((item) => !known.has(item.id)).map((item) => h('button', {
         type: 'button',
@@ -4218,7 +4218,7 @@ async function renderChats(seat) {
   }
   const thread = threads.find((item) => item.id === openThreadId);
   const mine = thread.buyerId === seat;
-  const offer = h('input', { inputmode: 'decimal', value: String(thread.amount || ''), 'aria-label': 'Amount in $lgme' });
+  const offer = h('input', { inputmode: 'decimal', value: String(thread.amount || ''), 'aria-label': 'Amount in ' });
   const note = h('input', { maxlength: '160', placeholder: 'Note' });
   const paste = h('textarea', { class: 'codebox', placeholder: 'Paste a handoff code' });
   const video = h('video', { class: 'cam', playsinline: true, muted: true });
@@ -4227,7 +4227,7 @@ async function renderChats(seat) {
   const nodes = [
     h('button', { type: 'button', class: 'quiet', onClick: () => { openThreadId = ''; render(); } }, ['All chats']),
     h('h2', {}, [thread.title || 'Chat']),
-    h('p', { class: 'muted' }, [`${thread.amount} $lgme · ${thread.status}. Beta.`]),
+    h('p', { class: 'muted' }, [`${thread.amount}  · ${thread.status}. Beta.`]),
     await phoneCard(seat, mine ? thread.sellerId : thread.buyerId, thread.id),
     ...thread.messages.map((line) => h('div', { class: 'bubble' }, [`${nameById[line.fromId] || line.fromId}: ${line.text}`]))
   ];
@@ -4241,7 +4241,7 @@ async function renderChats(seat) {
       chip('Make an offer', false, () => { offer.focus(); })
     ]));
     const form = h('form', {}, [
-      field(mine ? 'Offer in $lgme' : 'Counter in $lgme', offer),
+      field(mine ? 'Offer in ' : 'Counter in ', offer),
       field('Note', note),
       h('div', { class: 'actions' }, [
         h('button', { class: 'primary', type: 'submit' }, [mine ? 'Offer' : 'Counter']),
@@ -4511,7 +4511,7 @@ function renderHelp() {
     ['Third Seat · your seat', 'The Third Seat is your seat, held by you alone, with equal standing beside the state and the firm. You may decline any exchange at no cost, no unpublished rule can bind you, and any hold on your exchange must give a reason and can be challenged, decided within 7 days or it lapses. Holds the law requires are cited, recorded, and kept no broader or longer than the law demands. The veto stays on the tape. Nothing moves. There is no penalty.'],
     ['Tape · public ledger', 'An immutable proof of completed work everyone can inspect. Each book is append-only. Every entry names the previous hash and is signed with that peer’s key. Export the JSON and verify it.'],
     ['Issue · peer promise', 'A non-cash IOU directly tied to human effort, not speculative debt. It is recorded as pending. The balance moves only when the named counterparty signs. A refusal leaves the balance put.'],
-    ['Local book', 'Registration writes a GENESIS entry for a local grant of 100. It is not Solana $lgme. Your wallet signs a real payment.'],
+    ['Local book', 'Registration writes a GENESIS entry for a local grant of 100. It is not  . Your wallet signs a real payment.'],
     ['Authenticator', 'A passphrase encrypts the key at rest with AES-GCM and PBKDF2. A 6-digit TOTP, RFC 6238, is checked with WebCrypto HMAC. The setup QR can be scanned by an authenticator app. This page generates the same code while the secret is still on screen. It never sends the code. A wrong code leaves the wallet locked.'],
     ['Another device', 'There is no server. Sign a proposal, countersign, refusal, transfer, attestation, or handoff, then carry the lgme1. code by copy, by a link whose data sits in the URL fragment, by a QR, or by a .json file. On the other device, verification runs before anything is appended. A QR is for an in-person handoff. To text or email a draft, the page opens sms: or mailto: so you send it from your own app. The outbox and inbox are a local log of that.'],
     ['Phone chat', 'A text is signed here, then Open SMS hands it to your phone’s own messages app. The link or the pasted token is checked for the sender’s signature and the member hash. A call button opens tel: on your phone. The tape records the start, the end, the other member’s hash, and a note you type. No audio is stored. Match sends the chat root by SMS and says Matched, or names the first message that differs. This page does not send the text and does not place the call. The other person’s signup details stay on their phone. You keep the phone number and the hash.'],
@@ -4528,7 +4528,7 @@ function renderHelp() {
   panel.replaceChildren(
     h('h2', {}, ['Help']),
     h('p', { class: 'muted', id: 'barrier-rule' }, [RULE_SHORT]),
-    h('p', { class: 'muted' }, ['Beta. Real $lgme moves only when your Solana wallet signs. This page does not send a message for you and does not write to Hedera.']),
+    h('p', { class: 'muted' }, ['Beta. Real  moves only when your  wallet signs. This page does not send a message for you and does not write to Hedera.']),
     h('p', {}, [h('a', { href: '/marketing' }, ['Marketing & Adoption'])]),
     h('p', {}, [h('a', { href: '/good-deeds' }, ['Every good deed deserves another'])]),
     h('p', {}, [h('a', { href: '/examine' }, ['Examine'])]),
@@ -4643,11 +4643,11 @@ function showSplash() {
 }
 
 const WALK = [
-  ['Beta', 'This desk settles agreed $lgme from your own Solana wallet. It does not hold a seed phrase or send email. Nothing on this page is anchored or written to Hedera. You confirm a draft before it is posted.'],
+  ['Beta', 'This desk settles agreed  from your own  wallet. It does not hold a seed phrase or send email. Nothing on this page is anchored or written to Hedera. You confirm a draft before it is posted.'],
   ['Separate books', 'Alice, Bob, and Charlie each keep their own tape. On one device you switch seats. On two devices you carry a signed message. There is no central ledger.'],
   ['Floor · basic needs reserve', 'Food, shelter, and essentials secured prior to speculative spending. A line that would spend that reserve is blocked and the block stays on the tape.'],
   ['Third Seat · your seat', 'The Third Seat is your seat, held by you alone, with equal standing beside the state and the firm. You may decline any exchange at no cost, no unpublished rule can bind you, and any hold on your exchange must give a reason and can be challenged, decided within 7 days or it lapses. Holds the law requires are cited, recorded, and kept no broader or longer than the law demands. Nothing moves. There is no penalty.'],
-  ['100 $lgme', 'Register a new peer and the GENESIS line grants 100 $lgme on this book. Then the key is locked behind a passphrase and a 6-digit code.'],
+  ['100 ', 'Register a new peer and the GENESIS line grants 100  on this book. Then the key is locked behind a passphrase and a 6-digit code.'],
   ['Carry the signature', 'Copy the code, open the share link, scan the QR, or save the JSON. The other device checks the signature and the hash link before it appends.']
 ];
 
@@ -4845,7 +4845,7 @@ deliveryChannel?.addEventListener('message', async (event) => {
   if (opened.message.kind !== 'transfer') return;
   const result = await sim.acceptAutoDelivery(store, opened.message.body.toId, encoded);
   if (!result.ok || result.duplicate) return;
-  toast(`Received ${opened.message.body.amount} $lgme. Beta.`);
+  toast(`Received ${opened.message.body.amount} . Beta.`);
   await render();
 });
 

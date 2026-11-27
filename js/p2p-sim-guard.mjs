@@ -23,7 +23,7 @@ export function ackFresh(exp, at) {
 
 export function coSignReason(amount, thirdSeatSig) {
   if (Number(amount) > CO_SIGN_ABOVE && !thirdSeatSig) {
-    return `Amounts above ${CO_SIGN_ABOVE} $lgme need a third-seat co-sign.`;
+    return `Amounts above ${CO_SIGN_ABOVE}  need a third-seat co-sign.`;
   }
   return '';
 }

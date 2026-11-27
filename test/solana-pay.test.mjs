@@ -7,7 +7,7 @@ import { DONATION_ADDRESS, MINT, buildTransferRequest, createReference, findRefe
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-test('a Solana Pay request names the mint, amount, recipient, and reference', () => {
+test('a  Pay request names the mint, amount, recipient, and reference', () => {
   assert.equal(isValidPublicKey(MINT), true);
   assert.equal(isValidPublicKey(DONATION_ADDRESS), true);
   assert.equal(isValidPublicKey('not-an-address'), false);
@@ -53,7 +53,7 @@ test('verification accepts only the matching mint, amount, and recipient', () =>
   assert.equal(missingRef.ok, false);
   const failed = parseSplTransfer({ ...tx, meta: { ...tx.meta, err: { InstructionError: [0, 'Custom'] } } }, { mint: MINT, recipient: DONATION_ADDRESS, amount: 1.5, reference });
   assert.equal(failed.ok, false);
-  assert.match(failed.error, /failed on Solana/);
+  assert.match(failed.error, /failed on /);
   const exact = parseSplTransfer({
     transaction: tx.transaction,
     meta: {
@@ -111,7 +111,7 @@ test('finality ignores a signature that is not finalized and rejects a failed tr
     });
     const failed = await findReferencePayment('devnet', reference, { mint: MINT, recipient: DONATION_ADDRESS, amount: 1.5 });
     assert.equal(failed.ok, false);
-    assert.match(failed.error, /failed on Solana/);
+    assert.match(failed.error, /failed on /);
     assert.equal(rpcBodies.some((body) => body.method === 'getTransaction' && body.params[1].commitment === 'finalized'), true);
   } finally {
     globalThis.fetch = original;

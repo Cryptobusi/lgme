@@ -48,7 +48,7 @@ export function windowTotal(rows, pair, at) {
 export function evaluateHold(rows, entry) {
   const usd = usdOf(entry);
   if (usd == null) {
-    return { ok: false, error: entry.samples ? PRICE_UNAVAILABLE : 'Store the GeckoTerminal price for this $lgme entry.' };
+    return { ok: false, error: entry.samples ? PRICE_UNAVAILABLE : 'Store the GeckoTerminal price for this  entry.' };
   }
   const pair = pairKey(entry.fromId, entry.toId);
   const priorRows = (rows || []).filter((row) => row.id !== entry.id);

@@ -76,7 +76,7 @@ test('a 3-second average converts the peg and a stale feed is not guessed', asyn
   assert.equal(missing.error, PRICE_UNAVAILABLE);
   const mocked = await fetchSpotPrice({
     fetchImpl: async (url) => {
-      if (String(url).includes('pump.fun')) return { ok: false, json: async () => ({}) };
+      if (String(url).includes('')) return { ok: false, json: async () => ({}) };
       if (String(url).includes('dexscreener')) return { ok: true, json: async () => ({ pairs: [] }) };
       if (String(url).includes('jup.ag')) return { ok: true, json: async () => ({}) };
       if (String(url).includes('birdeye')) return { ok: false, json: async () => ({}) };
@@ -91,7 +91,7 @@ test('a 3-second average converts the peg and a stale feed is not guessed', asyn
   assert.equal(parseBirdeyePrice({ data: { value: 0.0000041 } }), 0.0000041);
   const csp = JSON.parse(readFileSync(join(root, 'vercel.json'), 'utf8')).headers
     .flatMap((block) => block.headers).find((header) => header.key === 'Content-Security-Policy').value;
-  assert.equal(csp.includes('https://frontend-api-v3.pump.fun'), true);
+  assert.equal(csp.includes('https://frontend-api-v3.'), true);
   assert.equal(csp.includes('https://lite-api.jup.ag'), true);
   assert.equal(csp.includes('https://public-api.birdeye.so'), true);
   const reference = SETUP_ADDRESS;

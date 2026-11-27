@@ -8,7 +8,7 @@ export const SETUP_TITLE = 'Setup fee $1 - due when inclined';
 export const SETUP_OWED_TO = 'EgonAnon';
 export const SETUP_ADDRESS = DONATION_ADDRESS;
 export const SETUP_MINT = MINT;
-export const PUMP_URL = `https://pump.fun/coin/${MINT}`;
+export const PUMP_URL = `https:///coin/${MINT}`;
 export const REMINDER_MS = 30 * 24 * 60 * 60 * 1000;
 export const SETUP_COPY = 'The fee is voluntary. Use of the app stays 100% voluntary. The fee never blocks access to Health. It is non-refundable and not an investment.';
 
@@ -123,7 +123,7 @@ export function publicSetupReceivable(spec = {}) {
 }
 
 function transferDelta(tx, recipient, mint) {
-  if (tx?.meta?.err) return { ok: false, error: 'The transaction failed on Solana.' };
+  if (tx?.meta?.err) return { ok: false, error: 'The transaction failed on .' };
   const post = (tx?.meta?.postTokenBalances || []).find((row) => row.mint === mint && row.owner === recipient);
   if (!post?.uiTokenAmount?.amount) return { ok: false, error: 'The recipient did not receive this mint.' };
   const before = (tx?.meta?.preTokenBalances || []).find((row) => row.accountIndex === post.accountIndex);

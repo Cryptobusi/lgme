@@ -21,7 +21,7 @@ test('section 2 is five short steps and the helper only explains', () => {
   const refused = explainJoin('Please sign me up');
   assert.match(refused.text, /cannot sign you up/);
   assert.equal(refused.sent, false);
-  const money = explainJoin('What about $lgme?');
+  const money = explainJoin('What about ?');
   assert.match(money.text, /pegged to US\$/);
   assert.match(explainJoin('Do I earn coins?').text, /Creo, not coins/);
   assert.equal(/\b(testnet|hedera|attester|third seat|\$trust)\b/i.test(explainJoin('').text), false);

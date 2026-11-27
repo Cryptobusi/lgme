@@ -1461,7 +1461,7 @@
     if (health && health.dataset.ready) return;
   var tiles = [
     ['consent', 'Health', 'dash-consent-figure', 'Consent stays on this phone.'],
-    ['creo', 'Creo', 'dash-creo-figure', 'Creo is value you create. It is not $lgme.'],
+    ['creo', 'Creo', 'dash-creo-figure', 'Creo is value you create. It is not .'],
     ['today', 'Today', 'dash-today-figure', 'What this phone logged today.'],
     ['receipt', 'Receipt', 'dash-receipt-figure', 'The last taped receipt.']
   ];

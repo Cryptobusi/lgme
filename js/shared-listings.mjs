@@ -37,7 +37,7 @@ export function withinRate(stamps, now, limit = 10, windowMs = 60 * 60 * 1000) {
   return { ok: recent.length < limit, recent };
 }
 
-export const OPERATOR_RULES = 'Hedera testnet only. No names, emails, phones, health details, or location. Balances and keys stay off the topic. Solana settlement is unchanged. At most 10 listing messages an hour for each author.';
+export const OPERATOR_RULES = 'Hedera testnet only. No names, emails, phones, health details, or location. Balances and keys stay off the topic.  settlement is unchanged. At most 10 listing messages an hour for each author.';
 
 export async function mountSharedListingNote(host) {
   if (!host) return;

@@ -71,7 +71,7 @@ export async function renderSetupFee({ storage, go, mine, invite } = {}) {
     }
     const amount = latest.lgmeAmount;
     const price = latest.price;
-    amountLine.textContent = `${amount} $lgme for US$1.`;
+    amountLine.textContent = `${amount}  for US$1.`;
     priceLine.textContent = `${latest.plain || 'Up to $20 uses the 3-second average.'} ${latest.source || ''}`.trim();
     const link = payNowQuote(price, reference);
     if (link.ok) wallet.setAttribute('href', link.url);
@@ -119,12 +119,12 @@ export async function renderSetupFee({ storage, go, mine, invite } = {}) {
         catch { status.textContent = SETUP_ADDRESS; }
       } }, ['Copy address']),
       qr,
-      el('p', {}, [el('a', { id: 'setup-pump', href: PUMP_URL }, [`Buy $lgme on pump.fun (creator @${SETUP_OWED_TO})`])]),
+      el('p', {}, [el('a', { id: 'setup-pump', href: PUMP_URL }, [`Buy  on  (creator @${SETUP_OWED_TO})`])]),
       el('p', {}, [el('a', { href: link.url }, ['Pay with my wallet'])]),
       el('p', { class: 'muted' }, ['The quote is locked for 60 seconds. Your wallet signs the payment. Nothing is taken from this app.'])
     );
     queueMicrotask(() => { if (globalThis.QRCode) new globalThis.QRCode(qr, { text: link.url, width: 180, height: 180 }); });
-    status.textContent = `Locked ${held.lgmeAmount} $lgme.`;
+    status.textContent = `Locked ${held.lgmeAmount} .`;
   }
 
   const preset = feePreset(invite, {});

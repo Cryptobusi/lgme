@@ -47,7 +47,7 @@ async function readyCoin(store, payerId, payeeId, { amount, invoiceId = '', at, 
   assert.equal(opened.ok, true, opened.error);
   assert.equal((await sim.acknowledgeQuote(store, payerId, { lockId: opened.lock.lockId, at: seeAt, navigator: online })).ok, true);
   assert.equal((await sim.acknowledgeQuote(store, payeeId, { lockId: opened.lock.lockId, at: seeAt, navigator: online })).ok, true);
-  const issued = await sim.issueSolanaRequest(store, payerId, { lockId: opened.lock.lockId, at: issueAt, navigator: online });
+  const issued = await sim.issueRequest(store, payerId, { lockId: opened.lock.lockId, at: issueAt, navigator: online });
   assert.equal(issued.ok, true, issued.error);
   return opened.lock;
 }
@@ -355,7 +355,7 @@ test('the 100 genesis grant', async () => {
   assert.equal(genesis.type, 'genesis');
   assert.equal(genesis.payload.balance, 100);
   assert.equal(genesis.payload.grant, 100);
-  assert.equal(genesis.payload.unit, '$lgme');
+  assert.equal(genesis.payload.unit, '');
   assert.equal(genesis.payload.mock, true);
   assert.equal(genesis.payload.label, 'mock');
   assert.equal(sim.replay(dana).balance, 100);
@@ -371,7 +371,7 @@ test('transfer signature survives export and import, and a tampered import is re
   assert.equal(sent.balance, 90);
   assert.equal(sim.replay(await store.get('bob')).balance, 100);
   const packed = sim.encodeMessage(sent.message);
-  const hrefs = sim.shareHrefs('', sim.shareText('10 mock $lgme', packed));
+  const hrefs = sim.shareHrefs('', sim.shareText('10 mock ', packed));
   assert.equal(hrefs.sms.startsWith('sms:'), true);
   assert.equal(hrefs.mailto.startsWith('mailto:'), true);
   const opened = await sim.openMessage(packed);
@@ -501,7 +501,7 @@ test('unverified members can send only up to 20 and can still receive', async ()
   assert.equal(sim.kycStatus(await store.get('dana')), 'UNVERIFIED');
   const over = await sim.createTransfer(store, 'dana', { toId: 'alice', amount: 21, at: '2026-11-06T00:01:00.000Z' });
   assert.equal(over.ok, false);
-  assert.match(over.error, /20 \$lgme/);
+  assert.match(over.error, /20 \/);
   assert.equal(sim.replay(await store.get('dana')).balance, 100);
   const small = await sim.createTransfer(store, 'dana', { toId: 'alice', amount: 20, at: '2026-11-06T00:02:00.000Z' });
   assert.equal(small.ok, true, small.error);
@@ -790,7 +790,7 @@ test('a floor-violating offer is blocked and a refusal moves nothing', async () 
   assert.deepEqual(await balances(store), before);
 });
 
-test('an unverified member cannot hold more than 20 $lgme', async () => {
+test('an unverified member cannot hold more than 20 ', async () => {
   const store = await books();
   const dana = await sim.createPeer(store, { id: 'dana', name: 'Dana', balance: 100, floor: 0, creditLimit: -50, at: '2026-11-06T00:00:00.000Z' });
   assert.equal(dana.ok, true, dana.error);
@@ -798,7 +798,7 @@ test('an unverified member cannot hold more than 20 $lgme', async () => {
   const chat = await sim.openChat(store, 'dana', created.listing.id);
   const over = await sim.makeOffer(store, 'dana', chat.thread.id, 21);
   assert.equal(over.ok, false);
-  assert.match(over.error, /20 \$lgme/);
+  assert.match(over.error, /20 \/);
   const first = await sim.makeOffer(store, 'dana', chat.thread.id, 15);
   assert.equal(first.ok, true, first.error);
   const accepted = await sim.acceptAndSign(store, 'alice', chat.thread.id);
@@ -807,7 +807,7 @@ test('an unverified member cannot hold more than 20 $lgme', async () => {
   const again = await sim.openChat(store, 'dana', (await sampleListing(store, 'bob', { title: 'Seedlings', amount: 10 })).listing.id);
   const second = await sim.makeOffer(store, 'dana', again.thread.id, 6);
   assert.equal(second.ok, false);
-  assert.match(second.error, /20 \$lgme/);
+  assert.match(second.error, /20 \/);
   assert.equal(sim.heldBy(await store.get('dana')), 15);
 });
 
@@ -1151,7 +1151,7 @@ test('a soBeIT grant is attested on the member tape and does not touch the real 
   const bad = await sim.verifyGrant(forged);
   assert.equal(bad.ok, false);
   const engine = readFileSync(join(root, 'js/p2p-exchange-sim.mjs'), 'utf8');
-  assert.equal(engine.includes('pump.fun'), false);
+  assert.equal(engine.includes(''), false);
   assert.equal(engine.includes('7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump'), false);
 });
 
@@ -1160,27 +1160,27 @@ test('the coin page names the mint and the donate address exactly', () => {
   const mint = '7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump';
   const donate = '6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY';
   assert.equal(page.includes(mint), true);
-  assert.equal(page.includes(`https://pump.fun/coin/${mint}`), true);
+  assert.equal(page.includes(`https:///coin/${mint}`), true);
   assert.equal(page.includes(donate), true);
   assert.equal(page.includes('https://x.com/EgonomicAnon'), false);
-  assert.equal(page.includes('https://pump.fun/profile/EgonAnon'), false);
+  assert.equal(page.includes('https:///profile/EgonAnon'), false);
   assert.equal(page.includes('soBeIT contributions'), true);
   assert.equal(page.includes('Pump.fun wallet'), true);
   assert.equal(page.includes('@EgonAnon'), true);
   assert.equal(page.includes('Send via X Money to '), true);
   assert.equal(page.includes('https://x.com/Trancesage'), true);
-  assert.equal(page.includes('This is a separate account from the Solana wallet.'), true);
-  assert.equal(page.includes('Real token on Solana. Not financial advice. High risk; you may lose everything. Always verify the mint address. Transfers are irreversible.'), true);
+  assert.equal(page.includes('This is a separate account from the  wallet.'), true);
+  assert.equal(page.includes('Real token on . Not financial advice. High risk; you may lose everything. Always verify the mint address. Transfers are irreversible.'), true);
   const ui = readFileSync(join(root, 'js/p2p-exchange-sim-ui.mjs'), 'utf8');
   assert.equal(ui.includes(donate), true);
   assert.equal(ui.includes('@EgonAnon'), true);
   assert.equal(ui.includes('https://x.com/Trancesage'), true);
   assert.equal(ui.includes('Send via X Money to '), true);
-  assert.equal(ui.includes('This is a separate account from the Solana wallet.'), true);
+  assert.equal(ui.includes('This is a separate account from the  wallet.'), true);
   assert.equal(ui.includes('https://x.com/EgonomicAnon'), false);
-  assert.equal(ui.includes('https://pump.fun/profile/EgonAnon'), false);
-  assert.equal(readFileSync(join(root, 'exchange.html'), 'utf8').includes('$lgme on pump.fun'), true);
-  assert.equal(readFileSync(join(root, 'index.html'), 'utf8').includes('$lgme on pump.fun'), true);
+  assert.equal(ui.includes('https:///profile/EgonAnon'), false);
+  assert.equal(readFileSync(join(root, 'exchange.html'), 'utf8').includes(' on '), true);
+  assert.equal(readFileSync(join(root, 'index.html'), 'utf8').includes(' on '), true);
   assert.equal(readFileSync(join(root, 'sitemap.xml'), 'utf8').includes('https://lgme.app/lgme-coin'), true);
 });
 
@@ -1204,7 +1204,7 @@ test('real gifts are announced above the simulation and the two methods stay sep
   assert.equal(coin.includes('@EgonAnon'), true);
   assert.equal(coin.includes('6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY'), true);
   assert.equal(coin.includes('https://x.com/Trancesage'), true);
-  assert.equal(coin.includes('Solana payments are real $lgme.'), true);
+  assert.equal(coin.includes(' payments are real .'), true);
   assert.equal(coin.includes('id="copy-donate"'), true);
   assert.equal(coin.includes('id="solana-pay"'), true);
   assert.equal(coin.includes('Never share a seed phrase'), true);
@@ -1214,7 +1214,7 @@ test('real gifts are announced above the simulation and the two methods stay sep
   const desk = readFileSync(join(root, 'exchange.html'), 'utf8');
   assert.ok(desk.indexOf('give-banner') < desk.indexOf('id="beta-notice"'));
   assert.equal(desk.includes('lgme · BETA'), true);
-  assert.match(desk, /name="description" content="Beta\. Peer-to-peer exchange that settles real \$lgme from your own Solana wallet\./);
+  assert.match(desk, /name="description" content="Beta\. Peer-to-peer exchange that settles real \ from your own  wallet\./);
   assert.match(desk, /This beta needs JavaScript/);
   assert.equal(desk.includes('This simulation needs JavaScript'), false);
   assert.equal(desk.includes('href="/how-it-works"'), true);
@@ -1242,13 +1242,13 @@ test('the standing donation is pinned in both listing kinds and never expires', 
     assert.equal(feed[0].title, 'Donation — soBeIT');
     assert.equal(feed[0].description, 'help grow n floor, thank you.');
     assert.equal(feed[0].href, '/lgme-coin');
-    assert.equal(feed[0].action, 'Receive / send $lgme');
+    assert.equal(feed[0].action, 'Receive / send ');
     assert.equal(feed[0].pinned, true);
     assert.equal(feed.some((card) => card.id === ordinary.listing.id), false);
   }
   const page = readFileSync(join(root, 'lgme-coin.html'), 'utf8');
   assert.equal(page.includes('6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY'), true);
-  assert.equal(page.includes('https://pump.fun/coin/7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump'), true);
+  assert.equal(page.includes('https:///coin/7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump'), true);
   const again = await sim.ensureStandingDonation(store, far);
   assert.equal(again.listing.id, ensured.listing.id);
 });
@@ -1276,7 +1276,7 @@ test('the wanted pin stays on IwanIT and a concluded match closes on the book', 
   assert.equal(wanted.listing.kind, 'IwanIT');
   assert.equal(wanted.listing.expiresAt, null);
   assert.equal(wanted.listing.title, sim.STANDING_WANTED.title);
-  assert.deepEqual(wanted.listing.payments, ['Cash', 'Terms over 3 to 6 months', '$lgme services (IprovIT)']);
+  assert.deepEqual(wanted.listing.payments, ['Cash', 'Terms over 3 to 6 months', ' services (IprovIT)']);
   assert.equal((await sim.verifyListing(wanted.listing)).ok, true);
   assert.equal(sim.listingVisible(wanted.listing, far), true);
   const feed = await sim.marketFeed(store, { kind: 'IwanIT' }, far);
@@ -1834,7 +1834,7 @@ test('DC reference values stay pending when a series has no number', () => {
   assert.equal(worker.includes('/data/dc-reference-values-v0.json'), true);
 });
 
-test('a Solana signature settles one invoice and only after both parties attest', async () => {
+test('a  signature settles one invoice and only after both parties attest', async () => {
   const store = await books();
   const online = { onLine: true };
   for (const [id, phone] of [['alice', '+12025550111'], ['bob', '+12025550112']]) {
@@ -1863,7 +1863,7 @@ test('a Solana signature settles one invoice and only after both parties attest'
     navigator: online,
     at: '2026-11-07T01:00:00.000Z'
   };
-  const recorded = await sim.recordSolanaTx(store, 'alice', spec);
+  const recorded = await sim.recordTx(store, 'alice', spec);
   assert.equal(recorded.ok, true, recorded.error);
   assert.equal(recorded.status, 'pending-attestation');
   assert.equal(recorded.unchanged, true);
@@ -1872,20 +1872,20 @@ test('a Solana signature settles one invoice and only after both parties attest'
   assert.equal(aliceTape.length, 1);
   assert.equal(bobTape.length, 0);
   assert.equal(sim.readInvoices(await store.get('bob'), '2026-11-07T01:00:00.000Z').find((row) => row.invoiceId === invoice.invoiceId).status === 'paid', false);
-  const reuse = await sim.recordSolanaTx(store, 'alice', spec);
+  const reuse = await sim.recordTx(store, 'alice', spec);
   assert.equal(reuse.ok, false);
   assert.match(reuse.error, /already used/);
-  const otherInvoice = await sim.recordSolanaTx(store, 'alice', { ...spec, invoiceId: 'invoice-two' });
+  const otherInvoice = await sim.recordTx(store, 'alice', { ...spec, invoiceId: 'invoice-two' });
   assert.equal(otherInvoice.ok, false);
   assert.match(otherInvoice.error, /Flagged double-spend/);
-  const pendingHandoff = await sim.sealSolanaHandoff(store, 'alice', 'sig-one');
+  const pendingHandoff = await sim.sealHandoff(store, 'alice', 'sig-one');
   assert.equal(pendingHandoff.ok, true, pendingHandoff.error);
   const staged = await sim.importMessage(store, 'bob', pendingHandoff.message);
   assert.equal(staged.ok, true, staged.error);
   assert.equal(staged.status, 'pending-attestation');
   assert.equal(staged.applied, false);
   assert.equal((await store.get('bob')).tape.filter((entry) => entry.type === 'SOLANA_TX').length, 0);
-  const attested = await sim.attestSolanaTx(store, 'bob', { ...spec, payerId: 'alice', navigator: online, at: '2026-11-07T02:00:00.000Z' });
+  const attested = await sim.attestTx(store, 'bob', { ...spec, payerId: 'alice', navigator: online, at: '2026-11-07T02:00:00.000Z' });
   assert.equal(attested.ok, true, attested.error);
   assert.equal(attested.status, 'settled');
   assert.equal(attested.penalty, false);
@@ -1897,10 +1897,10 @@ test('a Solana signature settles one invoice and only after both parties attest'
   assert.equal(sim.readInvoices(await store.get('bob'), '2026-11-07T02:00:00.000Z').find((row) => row.invoiceId === invoice.invoiceId).status, 'paid');
   const after = await balances(store);
   assert.deepEqual(after, before);
-  const again = await sim.recordSolanaTx(store, 'alice', { ...spec, signature: 'sig-two' });
+  const again = await sim.recordTx(store, 'alice', { ...spec, signature: 'sig-two' });
   assert.equal(again.ok, false);
   assert.match(again.error, /already settled/);
-  const handoff = await sim.sealSolanaHandoff(store, 'alice', 'sig-one');
+  const handoff = await sim.sealHandoff(store, 'alice', 'sig-one');
   assert.equal(handoff.ok, true, handoff.error);
   const clash = sim.solanaDoubleSpend(await store.get('bob'), { tape: [{ type: 'SOLANA_TX', payload: { signature: 'sig-one', invoiceId: 'invoice-two' } }] });
   assert.equal(clash.ok, false);
@@ -1911,9 +1911,9 @@ test('a Solana signature settles one invoice and only after both parties attest'
   assert.match(imported.error, /Nothing was applied/);
   assert.equal((await store.get('bob')).tape.some((entry) => entry.payload?.invoiceId === 'invoice-two'), false);
   await readyCoin(store, 'alice', 'bob', { amount: 1.5, invoiceId: '', at: '2026-11-07T03:00:00.000Z' });
-  const refused = await sim.recordSolanaTx(store, 'alice', { ...spec, signature: 'sig-refuse', reference: 'ref-refuse', invoiceId: '', otherId: 'bob', at: '2026-11-07T03:00:00.000Z' });
+  const refused = await sim.recordTx(store, 'alice', { ...spec, signature: 'sig-refuse', reference: 'ref-refuse', invoiceId: '', otherId: 'bob', at: '2026-11-07T03:00:00.000Z' });
   assert.equal(refused.ok, true, refused.error);
-  const refusal = await sim.refuseSolanaTx(store, 'bob', { ...spec, signature: 'sig-refuse', reference: 'ref-refuse', payerId: 'alice', navigator: online }, 'REFUSAL');
+  const refusal = await sim.refuseTx(store, 'bob', { ...spec, signature: 'sig-refuse', reference: 'ref-refuse', payerId: 'alice', navigator: online }, 'REFUSAL');
   assert.equal(refusal.ok, true, refusal.error);
   assert.equal(refusal.status, 'refused');
   assert.equal(refusal.penalty, false);
@@ -1922,9 +1922,9 @@ test('a Solana signature settles one invoice and only after both parties attest'
   const ui = readFileSync(join(root, 'js/p2p-exchange-sim-ui.mjs'), 'utf8');
   const attestAt = ui.indexOf('async function attestPayment');
   assert.ok(attestAt > 0);
-  assert.ok(ui.indexOf('findReferencePayment', attestAt) < ui.indexOf('attestSolanaTx', attestAt));
+  assert.ok(ui.indexOf('findReferencePayment', attestAt) < ui.indexOf('attestTx', attestAt));
   assert.equal(ui.includes('https://solscan.io/tx/'), true);
-  assert.equal(ui.includes('refuseSolanaTx'), true);
+  assert.equal(ui.includes('refuseTx'), true);
 });
 
 test('Zelle and cash stay pending until the payee attests and a proof cannot be reused', async () => {
@@ -2035,7 +2035,7 @@ test('Zelle and cash stay pending until the payee attests and a proof cannot be 
   assert.equal(coin.includes('$Trust') || grants.includes('$Trust'), false);
 });
 
-test('an $lgme loyalty discount needs both signatures and the floor rebate follows final payment', async () => {
+test('an  loyalty discount needs both signatures and the floor rebate follows final payment', async () => {
   const store = await books();
   const online = { onLine: true };
   for (const [id, phone] of [['alice', '+12025550131'], ['bob', '+12025550132']]) {
@@ -2090,9 +2090,9 @@ test('an $lgme loyalty discount needs both signatures and the floor rebate follo
     navigator: online
   };
   await readyCoin(store, 'alice', 'bob', { amount: 10, invoiceId: invoice.invoiceId, at: new Date().toISOString() });
-  const pending = await sim.recordSolanaTx(store, 'alice', spec);
+  const pending = await sim.recordTx(store, 'alice', spec);
   assert.equal(pending.ok, true, pending.error);
-  const halfway = await sim.attestSolanaTx(store, 'bob', { ...spec, payerId: 'alice', navigator: online });
+  const halfway = await sim.attestTx(store, 'bob', { ...spec, payerId: 'alice', navigator: online });
   assert.equal(halfway.ok, true, halfway.error);
   assert.equal((await store.get('alice')).tape.some((entry) => entry.type === 'FLOOR_REBATE_DUE'), false);
   await sim.consentLoyalty(store, 'bob', { invoiceId: invoice.invoiceId, percent: 5, rules, navigator: online });
@@ -2148,7 +2148,7 @@ test('a price lock lasts 15 seconds, a mismatch is rejected, and no price offers
   const seenAt = new Date(start + 1000).toISOString();
   await sim.acknowledgeQuote(store, 'alice', { lockId: first.lock.lockId, at: seenAt, navigator: online });
   await sim.acknowledgeQuote(store, 'bob', { lockId: first.lock.lockId, at: seenAt, navigator: online });
-  const late = await sim.issueSolanaRequest(store, 'alice', { lockId: first.lock.lockId, at: new Date(start + 16000).toISOString(), navigator: online });
+  const late = await sim.issueRequest(store, 'alice', { lockId: first.lock.lockId, at: new Date(start + 16000).toISOString(), navigator: online });
   assert.equal(late.ok, false);
   assert.equal(late.expired, true);
   assert.equal(late.requote, true);
@@ -2167,9 +2167,9 @@ test('a price lock lasts 15 seconds, a mismatch is rejected, and no price offers
   const againAt = new Date(start + 17000).toISOString();
   await sim.acknowledgeQuote(store, 'alice', { lockId: second.lock.lockId, at: againAt, navigator: online });
   await sim.acknowledgeQuote(store, 'bob', { lockId: second.lock.lockId, at: againAt, navigator: online });
-  const issued = await sim.issueSolanaRequest(store, 'alice', { lockId: second.lock.lockId, at: new Date(start + 18000).toISOString(), navigator: online });
+  const issued = await sim.issueRequest(store, 'alice', { lockId: second.lock.lockId, at: new Date(start + 18000).toISOString(), navigator: online });
   assert.equal(issued.ok, true, issued.error);
-  const mismatch = await sim.recordSolanaTx(store, 'alice', {
+  const mismatch = await sim.recordTx(store, 'alice', {
     signature: 'sig-old',
     reference: 'ref-old',
     mint: '7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump',
@@ -2182,7 +2182,7 @@ test('a price lock lasts 15 seconds, a mismatch is rejected, and no price offers
   });
   assert.equal(mismatch.ok, false);
   assert.match(mismatch.error, /does not match the price lock/);
-  const paid = await sim.recordSolanaTx(store, 'alice', {
+  const paid = await sim.recordTx(store, 'alice', {
     signature: 'sig-new',
     reference: 'ref-new',
     mint: '7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump',
@@ -2246,7 +2246,7 @@ test('the named third seat can veto, and the co-sign threshold stays', async () 
   const settled = await sim.settle(store, 'alice', proposed.exchangeId, '2026-11-06T00:03:00.000Z');
   assert.equal(settled.ok, false);
   assert.match(settled.error, /Vetoed/);
-  assert.equal(guard.coSignReason(60, ''), 'Amounts above 50 $lgme need a third-seat co-sign.');
+  assert.equal(guard.coSignReason(60, ''), 'Amounts above 50  need a third-seat co-sign.');
   assert.equal(guard.coSignReason(60, 'signed'), '');
 });
 

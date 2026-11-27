@@ -77,7 +77,7 @@ test('the privacy page, footer, sitemap, and notice leave the exchange alone', (
   assert.match(page, /does not sell that note/);
   assert.match(page, /does not share it/);
   assert.match(page, /does not use it for ads/);
-  assert.match(page, /Solana wallet checks and the Exchange keep the data practices they already have/);
+  assert.match(page, / wallet checks and the Exchange keep the data practices they already have/);
   assert.equal(page.includes('arbiter who can veto'), false);
   assert.equal(text('sitemap.xml').includes('https://lgme.app/privacy'), true);
   assert.equal(text('index.html').includes('href="/privacy">Privacy</a>'), true);

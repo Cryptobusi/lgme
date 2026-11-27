@@ -65,9 +65,9 @@ export function createReference() {
 }
 
 export function buildTransferRequest({ recipient, amount, reference, mint = MINT, label = 'lgme beta', message = '' } = {}) {
-  if (!isValidPublicKey(recipient)) return { ok: false, error: 'The recipient address is not a Solana address.' };
-  if (!isValidPublicKey(reference)) return { ok: false, error: 'The reference is not a Solana address.' };
-  if (!isValidPublicKey(mint)) return { ok: false, error: 'The mint address is not a Solana address.' };
+  if (!isValidPublicKey(recipient)) return { ok: false, error: 'The recipient address is not a  address.' };
+  if (!isValidPublicKey(reference)) return { ok: false, error: 'The reference is not a  address.' };
+  if (!isValidPublicKey(mint)) return { ok: false, error: 'The mint address is not a  address.' };
   const figure = Number(amount);
   if (!Number.isFinite(figure) || figure <= 0) return { ok: false, error: 'Enter an amount greater than zero.' };
   const params = new URLSearchParams();
@@ -86,7 +86,7 @@ function tokenAmount(row) {
 }
 
 export function parseSplTransfer(tx, expected = {}) {
-  if (tx?.meta?.err) return { ok: false, error: 'The transaction failed on Solana.' };
+  if (tx?.meta?.err) return { ok: false, error: 'The transaction failed on .' };
   const keys = tx?.transaction?.message?.accountKeys || [];
   const listed = keys.map((key) => (typeof key === 'string' ? key : key?.pubkey)).filter(Boolean);
   if (expected.reference && !listed.includes(expected.reference)) {
@@ -144,7 +144,7 @@ export async function rpc(cluster, method, params) {
     return { ok: true, result: body.result };
   } catch (error) {
     const aborted = error && error.name === 'AbortError';
-    return { ok: false, error: aborted ? 'The Solana network did not answer in time.' : 'The Solana network did not answer.' };
+    return { ok: false, error: aborted ? 'The  network did not answer in time.' : 'The  network did not answer.' };
   } finally {
     clearTimeout(timer);
   }
@@ -174,15 +174,15 @@ export async function findReferencePayment(cluster, reference, expected) {
     }
     const parsed = parseSplTransfer(tx.result, { ...expected, reference });
     if (parsed.ok) return { ok: true, signature: row.signature, delta: parsed.delta, commitment: 'finalized' };
-    if (parsed.error === 'The transaction failed on Solana.') sawFailed = true;
+    if (parsed.error === 'The transaction failed on .') sawFailed = true;
   }
-  if (sawFailed) return { ok: false, error: 'The transaction failed on Solana.' };
+  if (sawFailed) return { ok: false, error: 'The transaction failed on .' };
   if (sawUnfinalized) return { ok: false, error: 'The payment is not finalized yet.' };
   return { ok: false, error: 'A transaction was found, but the mint, amount, or recipient did not match.' };
 }
 
 export async function readTokenBalance(cluster, owner, mint = MINT) {
-  if (!isValidPublicKey(owner)) return { ok: false, error: 'The wallet address is not a Solana address.' };
+  if (!isValidPublicKey(owner)) return { ok: false, error: 'The wallet address is not a  address.' };
   const found = await rpc(cluster, 'getTokenAccountsByOwner', [owner, { mint }, { encoding: 'jsonParsed' }]);
   if (!found.ok) return found;
   const accounts = found.result?.value || [];

@@ -20,8 +20,8 @@ export function explainJoin(question = '') {
   if (/\b(yes|agree|confirm)\b/i.test(q)) {
     return { ok: true, sent: false, text: 'They tap yes on their own phone. Until then, the note is only a draft.' };
   }
-  if (/\$lgme|\bpeg\b|dollar|us\$/i.test(q)) {
-    return { ok: true, sent: false, text: '$lgme is pegged to US$. This step does not take any money.' };
+  if (/\|\bpeg\b|dollar|us\$/i.test(q)) {
+    return { ok: true, sent: false, text: ' is pegged to US$. This step does not take any money.' };
   }
   if (/\bcoins?\b/i.test(q)) {
     return { ok: true, sent: false, text: 'A good deed earns Creo, not coins.' };

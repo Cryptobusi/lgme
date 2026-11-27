@@ -62,7 +62,7 @@
         paintGift(payUrl('', reference));
         return;
       }
-      if (eq) eq.textContent = quote.plain + ' ' + quote.lgmeAmount + ' $lgme for US$' + usd + '.';
+      if (eq) eq.textContent = quote.plain + ' ' + quote.lgmeAmount + '  for US$' + usd + '.';
       if (clock) {
         clock.hidden = true;
         clock.textContent = '';

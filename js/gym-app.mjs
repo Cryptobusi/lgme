@@ -144,7 +144,7 @@ function todayLine() {
 async function renderClub() {
   const mine = await seat();
   const panel = el('div', {}, [banner(), todayLine()]);
-  panel.append(el('p', {}, ['A workout mints no Creo. Support comes from another member, a barter, or the front desk. A $lgme gift keeps 5% for the Floor and 5% for the App development fund.']));
+  panel.append(el('p', {}, ['A workout mints no Creo. Support comes from another member, a barter, or the front desk. A  gift keeps 5% for the Floor and 5% for the App development fund.']));
   if (!mine && mode === 'real') {
     panel.append(el('p', {}, [el('a', { href: '#/register' }, ['Join Health'])]));
     panel.append(el('button', { type: 'button', id: 'gym-ididit', onClick: () => go('/ididit') }, [IDIDIT_NAME]));
@@ -368,7 +368,7 @@ async function renderProgress(peer, editable) {
       el('p', {}, [`${row.unit} this week`]),
       el('p', { class: 'muted' }, [`${row.change >= 0 ? '+' : ''}${row.change} vs last week`]),
       row.selfReported ? el('p', { class: 'muted' }, [row.health ? 'Self-reported. Not medical.' : 'Self-reported.']) : null,
-      row.money ? el('p', { class: 'muted' }, [`$lgme in ${row.money.lgmeIn}. $lgme out ${row.money.lgmeOut}. US$ noted ${row.money.usd}.`]) : null
+      row.money ? el('p', { class: 'muted' }, [` in ${row.money.lgmeIn}.  out ${row.money.lgmeOut}. US$ noted ${row.money.usd}.`]) : null
     ]);
     const chart = el('div', { class: 'chart' });
     chart.innerHTML = barsSvg(row.series, row.label);
@@ -524,7 +524,7 @@ async function renderMember(id, shareOnly) {
   const maximValues = Object.values(stats.maxims);
   if (maximValues.length && (!shareOnly || card.sessions != null)) view.append(chartBlock('Maxims chosen', maximValues, 'Maxims chosen'));
   if (!shareOnly) {
-    view.append(el('p', {}, [`Supports given ${stats.given}. Supports received ${stats.received}. Deed Creo ${stats.deedCredits}. $lgme balance ${sim.replay(peer).balance}.`]));
+    view.append(el('p', {}, [`Supports given ${stats.given}. Supports received ${stats.received}. Deed Creo ${stats.deedCredits}.  balance ${sim.replay(peer).balance}.`]));
     view.append(el('h3', {}, ['Receipts']));
     for (const session of Object.values(peer.exerciseSessions || {})) {
       view.append(el('article', { class: 'card' }, [
@@ -728,18 +728,18 @@ async function renderGroups() {
             status(result.ok ? 'Verified. You cannot verify yourself.' : result.error);
             if (result.ok) render();
           } }, ['Verify']),
-          el('p', { class: 'muted' }, [`1 $lgme pays ${commonsSplit(1).floor} to the Floor and ${commonsSplit(1).app} to the App development fund. ${commonsSplit(1).author} goes to ${peer.name}.`]),
+          el('p', { class: 'muted' }, [`1  pays ${commonsSplit(1).floor} to the Floor and ${commonsSplit(1).app} to the App development fund. ${commonsSplit(1).author} goes to ${peer.name}.`]),
           el('button', { type: 'button', onClick: async () => {
             const offer = await sim.offerExerciseSupport(store, mine.id, session.sessionId, { authorId: session.authorId, kind: 'contribute-lgme', amount: 1, ...signing(pass.value, totp.value) });
             if (!offer.ok) { status(offer.error); return; }
             const accepted = await sim.acceptExerciseSupport(store, session.authorId, offer.supportId, signing(pass.value, totp.value));
             status(accepted.ok ? 'Support recorded. The session minted no Creo.' : accepted.error);
-          } }, ['Confirm 1 $lgme']),
+          } }, ['Confirm 1 ']),
           el('button', { type: 'button', onClick: async () => {
             const offer = await sim.offerExerciseSupport(store, mine.id, session.sessionId, { authorId: session.authorId, kind: 'barter', amount: 0, barter: 'Spotting', ...signing(pass.value, totp.value) });
             if (!offer.ok) { status(offer.error); return; }
             await sim.acceptExerciseSupport(store, session.authorId, offer.supportId, signing(pass.value, totp.value));
-            status('Barter offered. No $lgme moved.');
+            status('Barter offered. No  moved.');
           } }, ['Barter a spot'])
         ]));
       }

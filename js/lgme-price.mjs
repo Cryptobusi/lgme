@@ -16,7 +16,7 @@ export const DEFAULT_CLAMP_BAND = 0.05;
 export const PEG_LABEL = 'Pegged to US$ at time of transaction. Values are set in US$ and converted at the live 3-second average.';
 export const PEG_NOTE = 'Pegged to US$. The price used never moves more than 5% from recent reference prices, for stable value.';
 export const HISTORY_UNAVAILABLE = 'history unavailable';
-export const NO_COIN = 'No $lgme price is available. Coin settlement is closed. Pay in terms or barter. Both parties consent.';
+export const NO_COIN = 'No  price is available. Coin settlement is closed. Pay in terms or barter. Both parties consent.';
 export const ALT_CHOICES = Object.freeze(['terms', 'barter']);
 
 const GECKO_ORIGIN = 'https://api.geckoterminal.com';
@@ -435,8 +435,8 @@ export function pegQuote({ usd, samples, quotes, now = Date.now() } = {}) {
   const plain = samePrice(short.price, long.price)
     ? 'Over $20. The 3-second and 5-minute averages match.'
     : useShort
-      ? 'Over $20. The 3-second average asked for more $lgme, so that price was used.'
-      : 'Over $20. The 5-minute average asked for more $lgme, so that price was used.';
+      ? 'Over $20. The 3-second average asked for more , so that price was used.'
+      : 'Over $20. The 5-minute average asked for more , so that price was used.';
   return {
     ok: true,
     price: picked.price,
@@ -601,7 +601,7 @@ export async function fetchLgmePrice({ fetchImpl = globalThis.fetch, timeoutMs =
 
 function spotSources(mint) {
   return [
-    { id: 'pump', url: `https://frontend-api-v3.pump.fun/coins/${mint}`, parse: parsePumpCoin },
+    { id: 'pump', url: `https://frontend-api-v3./coins/${mint}`, parse: parsePumpCoin },
     { id: 'dexscreener', url: `https://api.dexscreener.com/latest/dex/tokens/${mint}`, parse: parseDexPairs },
     { id: 'jupiter', url: `https://lite-api.jup.ag/price/v3?ids=${mint}`, parse: (body) => parseJupiterPrice(body, mint) },
     { id: 'birdeye', url: `https://public-api.birdeye.so/defi/price?address=${mint}`, parse: parseBirdeyePrice },

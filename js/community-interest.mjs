@@ -2,7 +2,7 @@ import { sha256Hex, canonicalDevice } from './device-sign.mjs';
 import { LISTINGS_OPERATOR, LISTINGS_TOPIC } from './exchange-listing.mjs';
 
 export const EXPLAINER_TITLE = 'Upcoming communities';
-export const EXPLAINER = 'A circle is the people: a small group of members who trade help and exercise together. A host is the place, such as a church or faith group, a library, a community center, a veterans post, senior living, or a club, that gives them somewhere to meet. One host can hold several circles, and a circle can move from one host to another. These are not open yet. Joining a team or offering a host does not create a ranking and does not move $lgme.';
+export const EXPLAINER = 'A circle is the people: a small group of members who trade help and exercise together. A host is the place, such as a church or faith group, a library, a community center, a veterans post, senior living, or a club, that gives them somewhere to meet. One host can hold several circles, and a circle can move from one host to another. These are not open yet. Joining a team or offering a host does not create a ranking and does not move .';
 
 export const DEVELOPER_STATUS = 'Volunteer - pending review';
 export const HOST_STATUS = 'Host interest - pending review';

@@ -132,7 +132,7 @@ async function renderMembers() {
 function supportControls(item) {
   const wrap = document.createElement('div');
   const kind = document.createElement('select');
-  for (const [value, label] of [['credit', 'Deed credit'], ['lgme', '$lgme'], ['usd', 'US$'], ['barter', 'Barter']]) {
+  for (const [value, label] of [['credit', 'Deed credit'], ['lgme', ''], ['usd', 'US$'], ['barter', 'Barter']]) {
     const option = document.createElement('option');
     option.value = value;
     option.textContent = label;
@@ -145,7 +145,7 @@ function supportControls(item) {
   amount.value = '1';
   const terms = document.createElement('input');
   terms.maxLength = 80;
-  terms.placeholder = 'Terms or barter, if there is no $lgme quote';
+  terms.placeholder = 'Terms or barter, if there is no  quote';
   const preview = document.createElement('p');
   const show = document.createElement('button');
   show.type = 'button';
@@ -161,7 +161,7 @@ function supportControls(item) {
     ready = null;
     const selected = kind.value;
     if (selected === 'barter') {
-      preview.textContent = 'Barter moves no $lgme. Deed credit keeps the 1% Health and fitness skim. The 10% split applies only to $lgme or US$ support. Confirm to sign it.';
+      preview.textContent = 'Barter moves no . Deed credit keeps the 1% Health and fitness skim. The 10% split applies only to  or US$ support. Confirm to sign it.';
       ready = { kind: 'barter', barter: terms.value };
       confirm.hidden = false;
       return;
@@ -172,11 +172,11 @@ function supportControls(item) {
       return;
     }
     if (selected === 'credit') {
-      preview.textContent = `${split.skim} Creo skim to Health and fitness. ${split.author} to the author. No $lgme moves. Confirm to sign.`;
+      preview.textContent = `${split.skim} Creo skim to Health and fitness. ${split.author} to the author. No  moves. Confirm to sign.`;
       if (split.amount > 100) preview.textContent += ' Needs 3 attestations (over $100). Suggested third attester: group administrator.';
       ready = { kind: 'credit', amount: split.amount };
     } else if (selected === 'lgme') {
-      preview.textContent = `${split.floor} $lgme to the Floor. ${split.app} $lgme to the App development fund. ${split.author} $lgme to the author. You pay ${split.amount}. Confirm to sign.`;
+      preview.textContent = `${split.floor}  to the Floor. ${split.app}  to the App development fund. ${split.author}  to the author. You pay ${split.amount}. Confirm to sign.`;
       if (split.amount > 100) preview.textContent += ' Needs 3 attestations (over $100). Suggested third attester: group administrator.';
       ready = { kind: 'lgme', amount: split.amount };
     } else {
@@ -186,7 +186,7 @@ function supportControls(item) {
         if (quote?.ok && quote.price > 0) price = quote.price;
       } catch { price = 0; }
       if (!(price > 0)) {
-        preview.textContent = `No $lgme quote. ${split.floor} US$ is noted for the Floor and ${split.app} US$ for the App development fund. ${split.author} US$ is noted for the author. This is pay-in-terms or barter. No $lgme moves. Confirm to sign.`;
+        preview.textContent = `No  quote. ${split.floor} US$ is noted for the Floor and ${split.app} US$ for the App development fund. ${split.author} US$ is noted for the author. This is pay-in-terms or barter. No  moves. Confirm to sign.`;
         ready = { kind: 'usd', amount: split.amount, terms: terms.value, barter: terms.value };
       } else {
         const settled = wisdomSplit(Math.round((split.amount / price) * 100) / 100);
@@ -194,7 +194,7 @@ function supportControls(item) {
           preview.textContent = settled.error;
           return;
         }
-        preview.textContent = `${settled.floor} $lgme to the Floor. ${settled.app} $lgme to the App development fund. ${settled.author} $lgme to the author. That is 5%, 5%, and 90% of ${split.amount} US$ at the current quote. Confirm to sign.`;
+        preview.textContent = `${settled.floor}  to the Floor. ${settled.app}  to the App development fund. ${settled.author}  to the author. That is 5%, 5%, and 90% of ${split.amount} US$ at the current quote. Confirm to sign.`;
         ready = { kind: 'usd', amount: split.amount, lgmePrice: price };
       }
     }

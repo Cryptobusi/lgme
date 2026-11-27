@@ -1,7 +1,7 @@
 {
   "name": "lgme",
   "short_name": "lgme",
-  "description": "Beta. Peer-to-peer exchange that settles real $lgme from your own Solana wallet.",
+  "description": "Beta. Peer-to-peer exchange that settles real  from your own  wallet.",
   "id": "/exchange",
   "start_url": "/exchange",
   "scope": "/",

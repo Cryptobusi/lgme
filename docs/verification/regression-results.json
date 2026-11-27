@@ -56,7 +56,7 @@
       "detail": "{\"mint\":\"7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump\",\"donate\":\"6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY\",\"name\":\"@EgonAnon\",\"phrase\":true,\"href\":\"https://x.com/Trancesage\",\"separate\":true,\"install\":\"Install & launch\"}"
     },
     {
-      "name": "donate QR decodes to the Solana address",
+      "name": "donate QR decodes to the  address",
       "pass": true,
       "detail": "6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY"
     },
@@ -66,7 +66,7 @@
       "detail": "true"
     },
     {
-      "name": "100 $lgme GENESIS grant",
+      "name": "100  GENESIS grant",
       "pass": true,
       "detail": "mock grant of 100"
     },
@@ -198,12 +198,12 @@
     {
       "name": "overdue invoice is labeled and aged",
       "pass": true,
-      "detail": "Receivable and payable\n\nOpen, due, and overdue stay off the balance until a coded payment. Ageing 0 in 0-30, 0 in 31-60, 10 in 60+.\n\nAR · overdue · 10 $lgme\n\nPaid 0. Remaining 10. "
+      "detail": "Receivable and payable\n\nOpen, due, and overdue stay off the balance until a coded payment. Ageing 0 in 0-30, 0 in 31-60, 10 in 60+.\n\nAR · overdue · 10 \n\nPaid 0. Remaining 10. "
     },
     {
       "name": "partial payment leaves the invoice open",
       "pass": true,
-      "detail": "Paid 4 $lgme. Remaining 6. Reward 0. SIMULATION."
+      "detail": "Paid 4 . Remaining 6. Reward 0. SIMULATION."
     },
     {
       "name": "invoice refusal has no penalty and no reward",
@@ -218,7 +218,7 @@
     {
       "name": "full payment reward is capped at 2 percent and 5",
       "pass": true,
-      "detail": "Paid 300 $lgme. Remaining 0. Reward 5. SIMULATION."
+      "detail": "Paid 300 . Remaining 0. Reward 5. SIMULATION."
     },
     {
       "name": "both tapes record the paid invoice",

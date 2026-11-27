@@ -54,8 +54,8 @@ Headless Chrome against the live origin. Phone viewport 390×844. Desktop viewpo
 | Check | Viewport | Result | Evidence |
 | --- | --- | --- | --- |
 | Splash, then skip | Phone | Pass | Shown, then hidden. [phone-splash.png](verification/phone-splash.png) |
-| Simulation banner and `$lgme on pump.fun` → `/lgme-coin` | Phone | Pass | Banner present. Link text and href exact. No `$Trust`. [phone-pin.png](verification/phone-pin.png) |
-| Pinned Donation — soBeIT in ihavIT and IwanIT | Phone | Pass | Copy `help grow n floor, thank you.` Action `Receive / send $lgme` href `/lgme-coin`. Simulation legend present. [phone-donation-market.png](verification/phone-donation-market.png) [phone-donation-detail.png](verification/phone-donation-detail.png) |
+| Simulation banner and ` on ` → `/lgme-coin` | Phone | Pass | Banner present. Link text and href exact. No `$Trust`. [phone-pin.png](verification/phone-pin.png) |
+| Pinned Donation — soBeIT in ihavIT and IwanIT | Phone | Pass | Copy `help grow n floor, thank you.` Action `Receive / send ` href `/lgme-coin`. Simulation legend present. [phone-donation-market.png](verification/phone-donation-market.png) [phone-donation-detail.png](verification/phone-donation-detail.png) |
 | Listing → offer → accept → handoff settle | Phone | Pass | Tomato starts, offer 8, accept, same-device settle. Status: `Settled. Buyer 112 · seller 88. SIMULATION.` [phone-handoff.png](verification/phone-handoff.png) |
 | SMS token verify and match | Phone | Pass | Same-device record of the signed token, then root-hash match. [phone-chat-match.png](verification/phone-chat-match.png) |
 | Media file pick and verify | Phone | Pass | File input, then `Verified. The file matches the tape.` [phone-media-preview.png](verification/phone-media-preview.png) [phone-media-verify.png](verification/phone-media-verify.png) |
@@ -76,12 +76,12 @@ Checked on the live coin page, including the buy link:
 
 | String | Where | Result |
 | --- | --- | --- |
-| `7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump` | Mint, buy steps, and `https://pump.fun/coin/7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump` | Exact |
+| `7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump` | Mint, buy steps, and `https:///coin/7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump` | Exact |
 | `6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY` | Donate address | Exact |
-| Notice | “Real token on Solana. Not financial advice. High risk; you may lose everything. Always verify the mint address. The in-app $lgme balances are a simulation and are not this token.” | Present |
+| Notice | “Real token on . Not financial advice. High risk; you may lose everything. Always verify the mint address. The in-app  balances are a simulation and are not this token.” | Present |
 | `$Trust` | Crawled HTML and the browser text of the desk and coin page | Absent |
 
-The practice engine does not embed the mint or the donate address. The desk points at `/lgme-coin` with the pin `$lgme on pump.fun`.
+The practice engine does not embed the mint or the donate address. The desk points at `/lgme-coin` with the pin ` on `.
 
 ## Fixes found, then re-checked live
 
@@ -97,7 +97,7 @@ The first live pass exposed three desk bugs. They shipped in `0fcf8ef` and the t
 - No second physical phone and no carrier SMS or voice call. Chat was the `sms:` draft plus a same-device token record and a root-hash match. The call control is a `tel:` link. The app does not send the message.
 - No physical camera. Media used the file picker, then a hash check against the tape.
 - The deep transaction sequence ran at 390×844. Desktop covered the splash, market, wallet, and Resources.
-- pump.fun and x.com were not loaded. Only the outbound links were checked.
+-  and x.com were not loaded. Only the outbound links were checked.
 - The donate QR is drawn by the vendored library. The address string was compared exactly. The QR image was not decoded pixel by pixel.
 
 ## Addendum — soBeIT contribution methods
@@ -107,9 +107,9 @@ Checked live after the contribution cards shipped, at a 390×844 phone viewport 
 | Check | Result |
 | --- | --- |
 | Heading `soBeIT contributions` | Pass on the coin page, the pinned Donation listing, the soBeIT panel, and the in-app coin panel |
-| Pump.fun wallet | Pass. Wallet name `@EgonAnon` is plain text. Solana address `6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY` is exact. Copy button and QR are present. |
-| pump.fun profile | `https://pump.fun/profile/EgonAnon` returned 403, so the name is not a link |
-| X Money | Pass. The card reads `Send via X Money to @Trancesage` and links to `https://x.com/Trancesage` (HTTP 200). It states this is a separate account from the Solana wallet. |
+| Pump.fun wallet | Pass. Wallet name `@EgonAnon` is plain text.  address `6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY` is exact. Copy button and QR are present. |
+|  profile | `https:///profile/EgonAnon` returned 403, so the name is not a link |
+| X Money | Pass. The card reads `Send via X Money to @Trancesage` and links to `https://x.com/Trancesage` (HTTP 200). It states this is a separate account from the  wallet. |
 | Risk notice | Present, unchanged |
 | `X @EgonomicAnon` | Removed from the coin page |
 
@@ -151,7 +151,7 @@ Headless Chromium at 390×844. Two browser contexts kept separate books and carr
 | Install & launch on `/`, the desk, and `/lgme-coin` | Pass. Prompt stays when dismissed. Otherwise it opens the desk. Hidden in standalone |
 | Splash video, manifest, service worker | Pass. Video source `/legomiego-coin.mp4`, muted. Worker active at `https://lgme.app/` |
 | Offline reload | Pass. The desk still opened |
-| Sign-up, 100 $lgme GENESIS grant, TOTP, wallet unlock | Pass. A wrong code is rejected |
+| Sign-up, 100  GENESIS grant, TOTP, wallet unlock | Pass. A wrong code is rejected |
 | Unverified send limit 20, then vouch plus 2FA to Verified | Pass |
 | Signed file from peer A into peer B, `sms:` and `mailto:` | Pass. Bob imported balance 84 |
 | Tape verify, export, and import on the other peer | Pass |
@@ -167,9 +167,9 @@ Headless Chromium at 390×844. Two browser contexts kept separate books and carr
 | SMS token and KYC-hash match | Pass. `Matched` |
 | `tel:` call log, no audio | Pass |
 | Camera capture verify, and a changed file | Pass. `Verified. The file matches the tape.` then `Not authentic` |
-| Overdue invoice, partial pay, refusal | Pass. Partial: `Paid 4 $lgme. Remaining 6. Reward 0.` Refusal has no reward |
+| Overdue invoice, partial pay, refusal | Pass. Partial: `Paid 4 . Remaining 6. Reward 0.` Refusal has no reward |
 | soBeIT grant | Pass. Balance 524. No real funds moved |
-| Full payment, 2% reward capped at 5, both tapes | Pass. `Paid 300 $lgme. Remaining 0. Reward 5.` |
+| Full payment, 2% reward capped at 5, both tapes | Pass. `Paid 300 . Remaining 0. Reward 5.` |
 | Resources magazine and orange `#F97316` | Pass |
 | Console errors | Pass. None |
 

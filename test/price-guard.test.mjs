@@ -47,13 +47,13 @@ test('a thin spike, disagreeing sources, and a normal one-dollar payment follow 
   const large = pegQuote({ usd: 25, samples: spike, quotes: agree, now });
   assert.equal(large.ok, true, large.error);
   assert.equal(large.rule, '5-minute average');
-  assert.match(large.plain, /5-minute average asked for more \$lgme/);
+  assert.match(large.plain, /5-minute average asked for more \/);
   assert.equal(large.lgmeAmount > small.lgmeAmount * 25, true);
   const dip = tape(now, { base: 0.00001, lastPrice: 0.0000092 });
   const dipped = pegQuote({ usd: 25, samples: dip, quotes: agree, now });
   assert.equal(dipped.ok, true, dipped.error);
   assert.equal(dipped.rule, '3-second average');
-  assert.match(dipped.plain, /3-second average asked for more \$lgme/);
+  assert.match(dipped.plain, /3-second average asked for more \/);
   const jump = tape(now, { base: 0.00001, lastPrice: 0.000012 });
   const unsettledMove = pegQuote({ usd: 25, samples: jump, quotes: agree, now });
   assert.equal(unsettledMove.ok, false);

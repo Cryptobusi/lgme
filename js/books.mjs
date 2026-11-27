@@ -5,7 +5,7 @@ export const CONTRIB_LIVE = 'off';
 
 export const ACCOUNTS = Object.freeze([
   { code: '1000', name: 'Creo held', type: 'asset' },
-  { code: '1100', name: '$lgme clearing', type: 'asset' },
+  { code: '1100', name: ' clearing', type: 'asset' },
   { code: '2100', name: 'Health Floor', type: 'equity' },
   { code: '2200', name: 'Collective fund', type: 'equity' },
   { code: '4000', name: 'Creo earned', type: 'income' },

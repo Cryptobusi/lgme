@@ -37,7 +37,7 @@ function txFor(amount, reference) {
   };
 }
 
-test('credit, a mocked $lgme gift, one draw, and a direct sponsor follow the pool rules', async () => {
+test('credit, a mocked  gift, one draw, and a direct sponsor follow the pool rules', async () => {
   const credit = await donateCredit(emptyPool(), { handle: 'mina', credit: 3, amount: 1, at, nonce: 'credit-1' });
   assert.equal(credit.ok, true, credit.error);
   assert.equal(credit.pending, false);

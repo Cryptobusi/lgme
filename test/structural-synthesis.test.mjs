@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const text = (path) => readFileSync(join(root, path), 'utf8');
 
-const SENTENCE = "Members mint credit on verified delivery; the Third Seat — the $lgme self-regulating nonprofit — audits and is the arbiter who can veto; it holds $lgme only in trust for the Floor's posterity and takes no seigniorage.";
+const SENTENCE = "Members mint credit on verified delivery; the Third Seat — the  self-regulating nonprofit — audits and is the arbiter who can veto; it holds  only in trust for the Floor's posterity and takes no seigniorage.";
 
 test('the structural synthesis route, sitemap, and navigation are present', () => {
   const page = text('structural-synthesis.html');

@@ -44,7 +44,7 @@
       document.getElementById('residual').textContent = '3. Residual: titled (including zero)';
       document.getElementById('floor').textContent = '4. Floor: acknowledged first';
       document.getElementById('refusal').textContent = '5. Refusal check: no private path detected';
-      document.getElementById('reward').textContent = '6. Mock reward: 1 $lgme (simulated) — comment: ' + comment;
+      document.getElementById('reward').textContent = '6. Mock reward: 1  (simulated) — comment: ' + comment;
 
       renderHistory();
     }

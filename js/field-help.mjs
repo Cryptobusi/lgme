@@ -4,10 +4,10 @@ const LAST_KEY = 'lgme.field.last';
 const LAST_PRIVATE = 'lgme.field.last.incognito';
 
 const CUSTOM = {
-  'donate-kind': ['What you are giving.', 'Item, Creo, or $lgme.', 'Nothing is saved until you tap OK. Testnet only.', ['Item', 'Creo', '$lgme']],
+  'donate-kind': ['What you are giving.', 'Item, Creo, or .', 'Nothing is saved until you tap OK. Testnet only.', ['Item', 'Creo', '']],
   'donate-name': ['The name of the gift.', 'A short title.', 'This names the gift, not a person. Nothing is saved until you tap OK.', ['A spare lamp', 'Garden tools', 'A book']],
   'donate-amount': ['How much you are giving.', 'A number in US$ or Creo, matching what you chose.', 'The Floor split is 50/50. Nothing is paid until you tap OK. Testnet only.', ['1', '5', '10']],
-  'contrib-usd': ['A $lgme contribution counted in US$.', 'US$.', 'The Floor split is 50/50. $lgme is temporary until the DAO. OK is required.', ['1', '5', '10']],
+  'contrib-usd': ['A  contribution counted in US$.', 'US$.', 'The Floor split is 50/50.  is temporary until the DAO. OK is required.', ['1', '5', '10']],
   'item-name': ['The inventory name.', 'A short title.', 'This stays on this phone. Nothing is kept until you tap OK.', ['Lamp', 'Bicycle', 'Toolbox']],
   'item-category': ['The inventory category.', 'A short word.', 'Health is the only open category. Nothing is kept until you tap OK.', ['Home', 'Tools', 'Kitchen']],
   'item-qty': ['How many you have.', 'A whole number.', 'This stays on this phone until you tap OK.', ['1', '2', '4']],
@@ -75,7 +75,7 @@ function genericGuide(spec) {
     return pack(`${label} is ${kind}.`, kind === 'an email address' ? 'name@example.com' : kind === 'a phone number' ? 'A phone number' : 'Letters you type yourself.', 'Nothing is filled in until you tap an example. Nothing is emailed. OK is still required to save.', kind === 'an email address' ? ['ada@example.com', 'bo@example.com'] : kind === 'a phone number' ? ['2025550100', '4155550100'] : ['Ada', 'Bo']);
   }
   if (type === 'date') return pack(`${label} is a date.`, 'A calendar date.', 'It stays on this phone until you tap OK.', ['2026-11-01', '2026-11-18']);
-  if (type === 'number' || spec.inputmode === 'decimal' || spec.inputmode === 'numeric' || /amount|price|usd|\$lgme|creo/i.test(`${label} ${spec.placeholder} ${spec.id}`)) {
+  if (type === 'number' || spec.inputmode === 'decimal' || spec.inputmode === 'numeric' || /amount|price|usd|\|creo/i.test(`${label} ${spec.placeholder} ${spec.id}`)) {
     return pack(`${label} is an amount.`, /creo/i.test(label) ? 'Creo.' : 'US$.', 'The Floor split is 50/50 when a contribution is recorded. Nothing is paid until you tap OK. Testnet only.', ['1', '5', '10']);
   }
   if (type === 'select' && spec.options.length) return pack(`${label} is a choice.`, 'One of the listed choices.', 'Nothing is saved until you tap OK.', spec.options);

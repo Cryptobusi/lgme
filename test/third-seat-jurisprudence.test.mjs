@@ -42,7 +42,7 @@ test('the page keeps the analogy label, the mappings, and the corrected wording'
     'Attested provenance',
     'Precedent',
     'public tape',
-    'holds $lgme only in trust',
+    'holds  only in trust',
     'takes no seigniorage',
     'Floor Seniority',
     'Bankruptcy priority',
@@ -58,7 +58,7 @@ test('the page keeps the analogy label, the mappings, and the corrected wording'
     'modelling metaphors',
     'adjunction',
     'colimit',
-    'owns nothing it adjudicates and holds $lgme only in trust',
+    'owns nothing it adjudicates and holds  only in trust',
     'SAMPLE / unverified'
   ]) {
     assert.equal(page.includes(phrase), true, phrase);

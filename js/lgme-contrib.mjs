@@ -46,7 +46,7 @@ export async function contribute({ lgme = 0, rules, confirmed = false, gate = fa
     simulated: !transfer,
     recorded: true,
     hash,
-    error: transfer ? '' : 'Nothing was transferred. $lgme is temporary until the DAO.'
+    error: transfer ? '' : 'Nothing was transferred.  is temporary until the DAO.'
   };
 }
 

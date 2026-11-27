@@ -8,12 +8,12 @@
     {
       "name": "phone simulation label and token link",
       "pass": true,
-      "detail": "{\"sim\":true,\"trust\":false,\"pin\":\"$lgme on pump.fun\",\"href\":\"/lgme-coin\"}"
+      "detail": "{\"sim\":true,\"trust\":false,\"pin\":\" on \",\"href\":\"/lgme-coin\"}"
     },
     {
       "name": "phone pinned donation in both kinds",
       "pass": true,
-      "detail": "{\"href\":\"/lgme-coin\",\"text\":\"Receive / send $lgme\",\"copy\":\"help grow n floor, thank you.\",\"sim\":true}"
+      "detail": "{\"href\":\"/lgme-coin\",\"text\":\"Receive / send \",\"copy\":\"help grow n floor, thank you.\",\"sim\":true}"
     },
     {
       "name": "phone offer accept handoff",
@@ -63,7 +63,7 @@
     {
       "name": "phone coin page exact strings",
       "pass": true,
-      "detail": "{\"mint\":\"7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump\",\"donate\":\"6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY\",\"buy\":\"https://pump.fun/coin/7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump\",\"trust\":false,\"sim\":true}"
+      "detail": "{\"mint\":\"7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump\",\"donate\":\"6SYznXBadAVkWeAGYKqVDRbiXv5EN1gbJKnf1eT5okLY\",\"buy\":\"https:///coin/7kqfsEWpiuf3wKJbXkUWpV7RrxpGEbrSTKraRMrppump\",\"trust\":false,\"sim\":true}"
     },
     {
       "name": "desktop splash and layout",

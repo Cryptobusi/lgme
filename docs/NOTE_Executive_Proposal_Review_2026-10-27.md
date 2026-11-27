@@ -34,7 +34,7 @@ The brief maps philosophical themes from the video essay on *What the Bleep Do W
 ### Architecture Sketch (from proposal)
 
 ```
-[ DePIN Smartphone Sensors ] → [ lgme.app Timebank / SOBEIT Credit ] → [ Hedera HCS ] → [ $lgme / SPP Ledger ]
+[ DePIN Smartphone Sensors ] → [ lgme.app Timebank / SOBEIT Credit ] → [ Hedera HCS ] → [  / SPP Ledger ]
 ```
 
 ---

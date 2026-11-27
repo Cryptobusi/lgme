@@ -19,7 +19,7 @@ const TERMS = [
   ['sharing', 'Sharing levels are Only me, My groups, and Shared community board. Only me is the default. Stop sharing is one tap.'],
   ['group', 'A group is invite-only. Share the code with the people in it. Group content is not public.'],
   ['start', 'Tap Start, then Finish. Duration comes from those two taps. GPS, camera, and motion are optional.'],
-  ['app development', 'A $lgme or US$ gift keeps 5% for the Floor and 5% for the App development fund. 90% goes to the author.']
+  ['app development', 'A  or US$ gift keeps 5% for the Floor and 5% for the App development fund. 90% goes to the author.']
 ];
 
 export function isOn(storage) {

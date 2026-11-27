@@ -75,7 +75,7 @@ export function spendCredit(book, member, amount, why, when) {
 export const QUIZZES = Object.freeze({
   'help-start': Object.freeze([
     { q: 'Where does the book stay?', a: 'On this device' },
-    { q: 'Is a deed the same as $lgme?', a: 'No' },
+    { q: 'Is a deed the same as ?', a: 'No' },
     { q: 'Who confirms a deed?', a: 'Two people' }
   ])
 });

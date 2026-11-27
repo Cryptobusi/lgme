@@ -16,7 +16,7 @@ export const DISCLAIMER = Object.freeze([
   'This is a demo on the test network.',
   'Nothing here has real money value yet.',
   'You confirm every step. The helper only drafts.',
-  '$lgme is pegged to US$ when a price is shown.'
+  ' is pegged to US$ when a price is shown.'
 ]);
 
 export function readDemo(storage, now = Date.now()) {

@@ -1,5 +1,5 @@
 /**
- * Peer-to-peer beta desk. Agreed $lgme settles from the member's own Solana wallet.
+ * Peer-to-peer beta desk. Agreed  settles from the member's own  wallet.
  * Each peer's book lives only in that peer's own store key.
  * Signing is local ECDSA. Links are SHA-256. Nothing here opens a network.
  */
@@ -55,27 +55,27 @@ export const STANDING_DONATION = Object.freeze({
   title: 'Donation — soBeIT',
   description: 'help grow n floor, thank you.',
   href: '/lgme-coin',
-  action: 'Receive / send $lgme',
+  action: 'Receive / send ',
   kinds: Object.freeze(['ihavIT', 'IwanIT']),
   photo: '/icons/icon-512.png'
 });
 export const STANDING_WANTED = Object.freeze({
   title: 'Wanted: working treadmill and elliptical, under $500 total budget, Washington DC area',
-  description: 'Cash, terms over 3 to 6 months, or $lgme services (IprovIT). Beta. A payment is real $lgme from your wallet.',
+  description: 'Cash, terms over 3 to 6 months, or  services (IprovIT). Beta. A payment is real  from your wallet.',
   href: '',
   action: 'Wanted',
   kinds: Object.freeze(['IwanIT']),
   photo: '/icons/icon-512.png',
-  payments: Object.freeze(['Cash', 'Terms over 3 to 6 months', '$lgme services (IprovIT)'])
+  payments: Object.freeze(['Cash', 'Terms over 3 to 6 months', ' services (IprovIT)'])
 });
 export const STANDING_REPAIR = Object.freeze({
   title: 'Wanted: exercise equipment repair/service (treadmill, elliptical), Washington DC area',
-  description: 'Beta. A Thumbtack pro is not affiliated with this desk. A payment is real $lgme from your wallet.',
+  description: 'Beta. A Thumbtack pro is not affiliated with this desk. A payment is real  from your wallet.',
   href: '',
   action: 'Wanted',
   kinds: Object.freeze(['IwanIT']),
   photo: '/icons/icon-512.png',
-  payments: Object.freeze(['Cash', 'Terms over 3 to 6 months', '$lgme services (IprovIT)'])
+  payments: Object.freeze(['Cash', 'Terms over 3 to 6 months', ' services (IprovIT)'])
 });
 export const STANDING_REPAIR_PRO = Object.freeze({
   title: 'The Repair Extraordinaire: equipment repair, phone/online support (tcare4me@gmail.com) or in-person via Thumbtack',
@@ -401,12 +401,12 @@ export function entryDetail(entry, names = {}) {
   const payload = entry.payload || {};
   const name = (id) => names[id] || id;
   if (entry.type === 'genesis') {
-    const grant = payload.mock ? `Opening grant ${payload.balance} $lgme. ` : `Opening ${payload.balance}. `;
+    const grant = payload.mock ? `Opening grant ${payload.balance} . ` : `Opening ${payload.balance}. `;
     return `${grant}Floor ${payload.floor} ${payload.floorNote || ''}`.trim();
   }
   if (entry.type === 'transfer') {
     const way = payload.direction === 'in' ? 'in' : 'out';
-    return `$lgme ${way} ${payload.amount} ${name(payload.fromId)} → ${name(payload.toId)} ${payload.note || ''}`.trim();
+    return ` ${way} ${payload.amount} ${name(payload.fromId)} → ${name(payload.toId)} ${payload.note || ''}`.trim();
   }
   if (entry.type === 'iou') return `IOU pending ${payload.amount} ${name(payload.debtorId)} → ${name(payload.creditorId)} ${payload.reference || ''}`.trim();
   if (entry.type === 'attested') return `IOU attested ${payload.amount} ${name(payload.debtorId)} → ${name(payload.creditorId)} ${payload.reference || ''}`.trim();
@@ -417,9 +417,9 @@ export function entryDetail(entry, names = {}) {
   if (entry.type === 'CAMPUS_DEED') return `${payload.receiptName || 'Deed'} ${payload.status || ''} ${payload.kind || ''}`.trim();
   if (entry.type === 'CAMPUS_CREDIT') return `Campus credit ${payload.status || ''} ${payload.amount || 1}`.trim();
   if (entry.type === 'CAMPUS_REDEEM') return `Campus credit redeemed ${payload.offerId || ''}`.trim();
-  if (entry.type === 'SUBFLOOR_SKIM') return `Category skim ${payload.amount} $lgme to ${payload.category || ''}`.trim();
-  if (entry.type === 'SUBFLOOR_DONATION') return `Category donation ${payload.amount} $lgme to ${payload.category || ''}`.trim();
-  if (entry.type === 'SUBFLOOR_PAYOUT') return `Subfloor payout ${payload.amount} $lgme`.trim();
+  if (entry.type === 'SUBFLOOR_SKIM') return `Category skim ${payload.amount}  to ${payload.category || ''}`.trim();
+  if (entry.type === 'SUBFLOOR_DONATION') return `Category donation ${payload.amount}  to ${payload.category || ''}`.trim();
+  if (entry.type === 'SUBFLOOR_PAYOUT') return `Subfloor payout ${payload.amount} `.trim();
   if (entry.type === 'ZERO_PRICE_SPLIT') return `Zero-price split ${payload.subfloor} subfloor, ${payload.floor} main floor`.trim();
   if (entry.type === 'DEED_ATTESTED') return `${payload.receiptName || 'Deed'} ${payload.category || ''}`.trim();
   if (entry.type === 'EXERCISE_SESSION') return `IdidIt (verified receipt) ${payload.day || ''} ${payload.category || ''} ${payload.evidence || ''}${payload.intent ? ' · ' + payload.intent : ''}`.trim();
@@ -427,7 +427,7 @@ export function entryDetail(entry, names = {}) {
   if (entry.type === 'WISDOM_CONCUR') return 'Wisdom concurrence. No Creo minted.';
   if (entry.type === 'WISDOM_NO') return 'No. Wisdom concurrence declined.';
   if (entry.type === 'WISDOM_SUPPORT') {
-    if (payload.unit === 'barter') return 'Wisdom barter. No $lgme moved.';
+    if (payload.unit === 'barter') return 'Wisdom barter. No  moved.';
     if (payload.unit === 'deed-credit') return `Wisdom Creo ${payload.authorShare} to the author, ${payload.skim} skim to Health and fitness`.trim();
     return `Wisdom support ${payload.authorShare} to the author, ${payload.floorShare} to the Floor, ${payload.appShare} to the App development fund`.trim();
   }
@@ -436,38 +436,38 @@ export function entryDetail(entry, names = {}) {
   if (entry.type === 'KYC_STARTED') return 'KYC started. Details stay on this device.';
   if (entry.type === 'KYC_2FA_OK') return 'KYC code confirmed.';
   if (entry.type === 'KYC_VOUCHED' || entry.type === 'VERIFIED') return 'Verified. A member vouched.';
-  if (entry.type === 'listing') return `Listing ${payload.title || ''} ${payload.amount ?? ''} $lgme`.trim();
+  if (entry.type === 'listing') return `Listing ${payload.title || ''} ${payload.amount ?? ''} `.trim();
   if (entry.type === 'heartbeat') return `Listing refreshed ${payload.listingId ? String(payload.listingId).slice(0, 12) : ''}`.trim();
-  if (entry.type === 'HOLD') return `Hold pending ${payload.amount} $lgme ${name(payload.buyerId)} → ${name(payload.sellerId)}`.trim();
+  if (entry.type === 'HOLD') return `Hold pending ${payload.amount}  ${name(payload.buyerId)} → ${name(payload.sellerId)}`.trim();
   if (entry.type === 'HOLD_RELEASE') return 'Hold released. Nothing settled.';
-  if (entry.type === 'HANDOFF') return `Handoff settled ${payload.amount} $lgme`.trim();
+  if (entry.type === 'HANDOFF') return `Handoff settled ${payload.amount} `.trim();
   if (entry.type === 'CHAT') return `Chat ${payload.seq} ${payload.senderKycHash ? String(payload.senderKycHash).slice(0, 12) : ''}`.trim();
   if (entry.type === 'CHAT_MATCHED') return `Chat matched ${payload.root ? String(payload.root).slice(0, 12) : ''}`.trim();
   if (entry.type === 'CALL') return `Call ${payload.start || ''} → ${payload.end || ''}`.trim();
   if (entry.type === 'INVOICE') return `IdidIt (verified receipt) US$ ${payload.amount} due ${payload.dueAt || ''}`.trim();
   if (entry.type === 'INVOICE_PAID') return `IdidIt (verified receipt) paid US$ ${payload.amount}`.trim();
-  if (entry.type === 'PRICE_LOCK') return `Price lock US$ ${payload.usdAmount} · ${payload.lgmeAmount} $lgme`.trim();
+  if (entry.type === 'PRICE_LOCK') return `Price lock US$ ${payload.usdAmount} · ${payload.lgmeAmount} `.trim();
   if (entry.type === 'PRICE_SEEN') return `Saw price lock ${payload.lockId ? String(payload.lockId).slice(0, 12) : ''}`.trim();
-  if (entry.type === 'PRICE_REQUEST') return `Wallet request ${payload.lgmeAmount} $lgme`.trim();
+  if (entry.type === 'PRICE_REQUEST') return `Wallet request ${payload.lgmeAmount} `.trim();
   if (entry.type === 'PRICE_CLAMP') return `Price clamp ${payload.rawPrice} to ${payload.clampedPrice}`.trim();
   if (entry.type === 'ALT_SETTLEMENT' || entry.type === 'ALT_AGREED') return `${payload.choice || 'Alternate'} settlement ${payload.status || ''}`.trim();
   if (entry.type === 'INVOICE_REFUSED') return payload.statement || 'INVOICE_REFUSED';
-  if (entry.type === 'REWARD') return `In-app points ${payload.amount}, not $lgme tokens`.trim();
-  if (entry.type === 'SOLANA_TX') return `Solana ${payload.status || 'pending-attestation'} ${payload.cluster || ''} ${payload.signature ? String(payload.signature).slice(0, 12) : ''}`.trim();
-  if (entry.type === 'SOLANA_FINAL') return `Solana settled ${payload.signature ? String(payload.signature).slice(0, 12) : ''}`.trim();
-  if (entry.type === 'SOLANA_REFUSAL') return 'Solana refusal. No penalty.';
+  if (entry.type === 'REWARD') return `In-app points ${payload.amount}, not  tokens`.trim();
+  if (entry.type === 'SOLANA_TX') return ` ${payload.status || 'pending-attestation'} ${payload.cluster || ''} ${payload.signature ? String(payload.signature).slice(0, 12) : ''}`.trim();
+  if (entry.type === 'SOLANA_FINAL') return ` settled ${payload.signature ? String(payload.signature).slice(0, 12) : ''}`.trim();
+  if (entry.type === 'SOLANA_REFUSAL') return ' refusal. No penalty.';
   if (entry.type === 'OFFCHAIN_TX') return `${payload.method || 'Off-chain'} ${payload.status || 'pending-attestation'} ${payload.amount ?? ''}`.trim();
   if (entry.type === 'OFFCHAIN_FINAL') return `${payload.method || 'Off-chain'} settled ${payload.amount ?? ''}`.trim();
   if (entry.type === 'OFFCHAIN_REFUSAL') return 'Off-chain refusal. No penalty.';
   if (entry.type === 'LOYALTY_CONSENT') return `Loyalty ${payload.loyaltyDecision || ''} ${payload.percent ?? 0}%`.trim();
-  if (entry.type === 'FLOOR_REBATE_DUE') return `Floor rebate due ${payload.amount} $lgme`.trim();
+  if (entry.type === 'FLOOR_REBATE_DUE') return `Floor rebate due ${payload.amount} `.trim();
   if (entry.type === 'FLOOR_REBATE_DEFERRED') return 'Floor rebate deferred. No penalty.';
-  if (entry.type === 'FLOOR_REBATE_PAID') return `Floor rebate paid ${payload.amount} $lgme`.trim();
+  if (entry.type === 'FLOOR_REBATE_PAID') return `Floor rebate paid ${payload.amount} `.trim();
   if (entry.type === 'THIRD_SEAT_VETO') return `Third seat veto ${payload.reason || ''}`.trim();
   if (entry.type === 'WINDOW_OPEN') return `Window ${payload.windowId || ''} open`.trim();
   if (entry.type === 'WINDOW_CLOSE') return `Window ${payload.windowId || ''} close ${payload.merkleRoot ? String(payload.merkleRoot).slice(0, 12) : ''}`.trim();
   if (entry.type === 'NETTING') return `Netting ${payload.status || ''} offset ${payload.offset ?? ''}`.trim();
-  if (entry.type === 'GRANT') return `soBeIT grant ${payload.amount} $lgme ${payload.reason || ''}`.trim();
+  if (entry.type === 'GRANT') return `soBeIT grant ${payload.amount}  ${payload.reason || ''}`.trim();
   if (entry.type === 'MEDIA' || entry.type === 'MEDIA_RECEIVED') return `${entry.type === 'MEDIA_RECEIVED' ? 'Received' : 'Media'} ${payload.mime || ''} ${payload.hash ? String(payload.hash).slice(0, 12) : ''}`.trim();
   if (entry.type === 'countersign') {
     return `${name(payload.by)} countersigned ${payload.exchangeId ? payload.exchangeId.slice(0, 12) : ''}`.trim();
@@ -549,7 +549,7 @@ export async function createPeer(store, spec) {
   };
   if (spec.mock) {
     genesis.mock = true;
-    genesis.unit = '$lgme';
+    genesis.unit = '';
     genesis.grant = balance;
     genesis.label = 'mock';
   }
@@ -1036,7 +1036,7 @@ export async function postDeed(store, peerId, spec = {}) {
       fromId: peerId,
       toId: `subfloor:${category}`,
       amount: post.payLgme,
-      unit: '$lgme',
+      unit: '',
       direction: 'out',
       note: 'Category donation'
     }, at);
@@ -1088,7 +1088,7 @@ export async function donateToSubfloor(store, peerId, spec = {}) {
     fromId: peerId,
     toId: `subfloor:${category}`,
     amount,
-    unit: '$lgme',
+    unit: '',
     direction: 'out',
     note: 'Category donation'
   }, at);
@@ -1124,7 +1124,7 @@ export async function fundZeroPrice(store, donorId, postId, spec = {}) {
     fromId: donorId,
     toId: 'floor-and-subfloor',
     amount,
-    unit: '$lgme',
+    unit: '',
     direction: 'out',
     note: 'Zero-price donation'
   }, at);
@@ -1216,10 +1216,10 @@ export async function attestDeedReceipt(store, peerId, postId, spec = {}) {
   }
   if (post.payLgme > 0) {
     await appendEntry(buyer, 'transfer', {
-      fromId: buyerId, toId: providerId, amount: post.payLgme, unit: '$lgme', direction: 'out', note: 'Deed price'
+      fromId: buyerId, toId: providerId, amount: post.payLgme, unit: '', direction: 'out', note: 'Deed price'
     }, at);
     await appendEntry(provider, 'transfer', {
-      fromId: buyerId, toId: providerId, amount: post.providerLgme, unit: '$lgme', direction: 'in', note: 'Deed price'
+      fromId: buyerId, toId: providerId, amount: post.providerLgme, unit: '', direction: 'in', note: 'Deed price'
     }, at);
   }
   if (post.skimLgme > 0) {
@@ -1232,7 +1232,7 @@ export async function attestDeedReceipt(store, peerId, postId, spec = {}) {
   }
   if (post.coverLgme > 0 && post.holdId) {
     await appendEntry(provider, 'transfer', {
-      fromId: 'subfloor', toId: providerId, amount: post.coverLgme, unit: '$lgme', direction: 'in', note: 'Subfloor payout'
+      fromId: 'subfloor', toId: providerId, amount: post.coverLgme, unit: '', direction: 'in', note: 'Subfloor payout'
     }, at);
     const payout = {
       entryId: `payout:${postId}`,
@@ -2406,7 +2406,7 @@ async function ensureSerialBundle(peer, at) {
   if (!(amount > 0)) return;
   const id = await sha256(canonicalJSON({ kind: 'serial', ownerId: peer.id, amount, at, parent: '' }));
   peer.serials = peer.serials || {};
-  peer.serials[id] = { id, amount, ownerId: peer.id, parentId: '', nextOwnerId: '', depth: 0, unit: '$lgme' };
+  peer.serials[id] = { id, amount, ownerId: peer.id, parentId: '', nextOwnerId: '', depth: 0, unit: '' };
   await appendEntry(peer, 'SERIAL_MINT', { id, amount, ownerId: peer.id, depth: 0, mock: true, label: 'mock' }, at);
 }
 
@@ -2418,7 +2418,7 @@ async function commitSerials(peer, amount, toId, at) {
   const have = round2(owned.reduce((sum, serial) => sum + serial.amount, 0));
   if (have + 1e-9 < need) {
     const id = await sha256(canonicalJSON({ kind: 'serial', ownerId: peer.id, amount: round2(need - have), at, label: 'cover' }));
-    peer.serials[id] = { id, amount: round2(need - have), ownerId: peer.id, parentId: '', nextOwnerId: '', depth: 0, unit: '$lgme', label: 'cover' };
+    peer.serials[id] = { id, amount: round2(need - have), ownerId: peer.id, parentId: '', nextOwnerId: '', depth: 0, unit: '', label: 'cover' };
     await appendEntry(peer, 'SERIAL_MINT', { id, amount: round2(need - have), ownerId: peer.id, depth: 0, mock: true, label: 'cover' }, at);
     owned = unspentSerials(peer).sort((a, b) => b.amount - a.amount);
   }
@@ -2437,7 +2437,7 @@ async function commitSerials(peer, amount, toId, at) {
       parentId: serial.id,
       nextOwnerId: '',
       depth: reissue ? 0 : depth,
-      unit: '$lgme',
+      unit: '',
       reissued: reissue
     };
     if (serial.amount - take > 1e-9) {
@@ -2449,7 +2449,7 @@ async function commitSerials(peer, amount, toId, at) {
         parentId: serial.id,
         nextOwnerId: '',
         depth: reissue ? 0 : depth,
-        unit: '$lgme',
+        unit: '',
         reissued: reissue
       };
       moved.push(changeId);
@@ -2597,7 +2597,7 @@ export async function createTransfer(store, fromId, spec) {
     fromId,
     toId,
     amount,
-    unit: '$lgme',
+    unit: '',
     note: String(spec.note || '').trim(),
     mock: true,
     nonce,
@@ -2660,7 +2660,7 @@ export async function autoDeliverTransfer(store, fromId, spec) {
     fromId,
     toId,
     amount,
-    unit: '$lgme',
+    unit: '',
     note: String(spec.note || '').trim(),
     mock: true,
     auto: true,
@@ -2738,7 +2738,7 @@ export async function importMessage(store, peerId, input, at = nowIso()) {
   const peer = await store.get(peerId);
   if (!peer) return fail('Unknown peer.');
   if (!peer.privateKeyJwk) return fail('Wallet is locked.');
-  if (message.kind === 'solana') return importSolanaHandoff(store, peer, message, at);
+  if (message.kind === 'solana') return importHandoff(store, peer, message, at);
   if (message.kind === 'offchain') return importOffchainHandoff(store, peer, message, at);
   const known = message.fromId ? await store.get(message.fromId) : null;
   if (known && canonicalJSON(known.publicKeyJwk) !== canonicalJSON(message.publicKeyJwk)) {
@@ -3063,7 +3063,7 @@ export function sendLimitReason(peer, amount) {
   const figure = round2(amount);
   if (!Number.isFinite(figure)) return 'Enter an amount greater than zero.';
   if (figure > UNVERIFIED_SEND_LIMIT + 1e-9 || round2(outboundSent(peer) + heldBy(peer) + figure) > UNVERIFIED_SEND_LIMIT + 1e-9) {
-    return `Unverified members can send up to ${UNVERIFIED_SEND_LIMIT} $lgme.`;
+    return `Unverified members can send up to ${UNVERIFIED_SEND_LIMIT} .`;
   }
   return '';
 }
@@ -3285,7 +3285,7 @@ export function listingCore(spec) {
     ...(Array.isArray(spec.mediaHashes) && spec.mediaHashes.length ? { mediaHashes: spec.mediaHashes.map((item) => ({ hash: String(item.hash || '').toLowerCase(), mime: String(item.mime || '').slice(0, 80) })).filter((item) => /^[0-9a-f]{64}$/.test(item.hash)) } : {}),
     kind: spec.kind === 'IwanIT' || spec.kind === 'IprovIT' ? spec.kind : 'ihavIT',
     description: String(spec.description || '').trim(),
-    unit: '$lgme'
+    unit: ''
   };
 }
 
@@ -3484,7 +3484,7 @@ export async function acceptExerciseSupport(store, authorId, supportId, spec = {
   if (offer.kind === 'contribute-lgme' && !(priceUsd > 0) && offer.amount > 100) {
     releaseLockedKey(author);
     await store.set(authorId, author);
-    return fail('Store the GeckoTerminal price for this $lgme entry.');
+    return fail('Store the GeckoTerminal price for this  entry.');
   }
   if (offer.kind === 'contribute-credit' || (offer.kind === 'contribute-lgme' && priceUsd > 0)) {
     const valueKind = offer.kind === 'contribute-credit' ? 'credit' : 'lgme';
@@ -3518,9 +3518,9 @@ export async function acceptExerciseSupport(store, authorId, supportId, spec = {
       await store.set(authorId, author);
       return split;
     }
-    await appendEntry(giver, 'transfer', { fromId: giver.id, toId: author.id, amount: offer.amount, unit: '$lgme', direction: 'out', note: 'Exercise support' }, at);
-    await appendEntry(author, 'transfer', { fromId: giver.id, toId: author.id, amount: split.author, unit: '$lgme', direction: 'in', note: 'Exercise support' }, at);
-    const withheld = { entryId: `commons:exercise:${supportId}`, supportId, unit: '$lgme', floorShare: split.floor, appShare: split.app, authorShare: split.author, hedera: false };
+    await appendEntry(giver, 'transfer', { fromId: giver.id, toId: author.id, amount: offer.amount, unit: '', direction: 'out', note: 'Exercise support' }, at);
+    await appendEntry(author, 'transfer', { fromId: giver.id, toId: author.id, amount: split.author, unit: '', direction: 'in', note: 'Exercise support' }, at);
+    const withheld = { entryId: `commons:exercise:${supportId}`, supportId, unit: '', floorShare: split.floor, appShare: split.app, authorShare: split.author, hedera: false };
     await appendEntry(giver, 'COMMONS_WITHHOLD', withheld, at);
     await appendEntry(author, 'COMMONS_WITHHOLD', withheld, at);
   } else if (offer.kind === 'contribute-credit') {
@@ -3663,13 +3663,13 @@ export async function supportWisdom(store, supporterId, submissionId, spec = {})
   if (supporterId === author.id) return fail('Someone else supports this wisdom.');
   if (item.groupCode && !supporter.clubGroups?.[item.groupCode]) return fail('A private group excerpt is supported by a member of that group.');
   const kind = String(spec.kind || '');
-  if (!['lgme', 'credit', 'usd', 'barter'].includes(kind)) return fail('Choose Creo, $lgme, US$, or barter.');
+  if (!['lgme', 'credit', 'usd', 'barter'].includes(kind)) return fail('Choose Creo, , US$, or barter.');
   const keyed = await unlockDeed(supporter, spec);
   if (!keyed.ok) return keyed;
   const at = spec.at || nowIso();
   const beforeSupporter = replay(supporter).balance;
   const beforeAuthor = replay(author).balance;
-  let unit = '$lgme';
+  let unit = '';
   let amount = 0;
   let floorShare = 0;
   let appShare = 0;
@@ -3707,7 +3707,7 @@ export async function supportWisdom(store, supporterId, submissionId, spec = {})
     if (!terms && !barter) {
       releaseLockedKey(supporter);
       await store.set(supporterId, supporter);
-      return fail('No $lgme quote. Name the terms or the barter.');
+      return fail('No  quote. Name the terms or the barter.');
     }
     unit = 'USD';
     amount = split.amount;
@@ -3736,7 +3736,7 @@ export async function supportWisdom(store, supporterId, submissionId, spec = {})
       await store.set(supporterId, supporter);
       return fail(blocked);
     }
-    unit = '$lgme';
+    unit = '';
     amount = split.amount;
     floorShare = split.floor;
     appShare = split.app;
@@ -3749,7 +3749,7 @@ export async function supportWisdom(store, supporterId, submissionId, spec = {})
   if (valueKind === 'lgme' && !(priceUsd > 0) && valueAmount > 100) {
     releaseLockedKey(supporter);
     await store.set(supporterId, supporter);
-    return fail('Store the GeckoTerminal price for this $lgme entry.');
+    return fail('Store the GeckoTerminal price for this  entry.');
   }
   if (valueKind && !(valueKind === 'lgme' && !(priceUsd > 0))) {
     const hold = evaluateHold(supporter.highValue || [], { id: `wisdom:${submissionId}:${at}`, fromId: supporterId, toId: author.id, kind: valueKind, amount: valueAmount, price: priceUsd, at });
@@ -3790,8 +3790,8 @@ export async function supportWisdom(store, supporterId, submissionId, spec = {})
     creditMinted: false
   };
   if (lgmeAmount > 0) {
-    await appendEntry(supporter, 'transfer', { fromId: supporter.id, toId: author.id, amount: lgmeAmount, unit: '$lgme', direction: 'out', note: 'Wisdom support' }, at);
-    await appendEntry(author, 'transfer', { fromId: supporter.id, toId: author.id, amount: authorShare, unit: '$lgme', direction: 'in', note: 'Wisdom support' }, at);
+    await appendEntry(supporter, 'transfer', { fromId: supporter.id, toId: author.id, amount: lgmeAmount, unit: '', direction: 'out', note: 'Wisdom support' }, at);
+    await appendEntry(author, 'transfer', { fromId: supporter.id, toId: author.id, amount: authorShare, unit: '', direction: 'in', note: 'Wisdom support' }, at);
   }
   await appendEntry(supporter, 'WISDOM_SUPPORT', payload, at);
   if (author.privateKeyJwk || author.signingKey) await appendEntry(author, 'WISDOM_SUPPORT', payload, at);
@@ -3868,7 +3868,7 @@ function standingCore(listing) {
     action: listing.action,
     kinds: listing.kinds,
     photoHash: listing.photoHash,
-    unit: '$lgme'
+    unit: ''
   };
   if (Array.isArray(listing.payments)) core.payments = listing.payments;
   return core;
@@ -4166,12 +4166,12 @@ export function wantedInquiry(item) {
   if (item?.inquiry) return item.inquiry;
   const title = item?.title || 'item';
   const price = item?.price || 'your price';
-  return `Hi! Is your ${title} still available and fully working? I'd offer ${price} after a quick demonstration. What pickup or delivery works? We can continue here on OfferUp, or use lgme.app to record our agreed terms (a $lgme payment is signed by your wallet).`;
+  return `Hi! Is your ${title} still available and fully working? I'd offer ${price} after a quick demonstration. What pickup or delivery works? We can continue here on OfferUp, or use lgme.app to record our agreed terms (a  payment is signed by your wallet).`;
 }
 
 export function tailoredDraft(item, spec = {}) {
   const pay = spec.pay === 'service'
-    ? '$lgme services (IprovIT). A payment is real $lgme from your wallet.'
+    ? ' services (IprovIT). A payment is real  from your wallet.'
     : spec.pay === 'zelle'
       ? `Zelle. Not counted until the payee attests the confirmation. This app does not process it. ${FIAT_FEE_NOTE}`
       : spec.pay === 'cash'
@@ -4235,8 +4235,8 @@ export function wantedMatchDraft(match) {
     match?.price || '',
     match?.city || '',
     match?.url || '',
-    'Cash, terms over 3 to 6 months, or $lgme services (IprovIT).',
-    'A payment is real $lgme from your wallet.'
+    'Cash, terms over 3 to 6 months, or  services (IprovIT).',
+    'A payment is real  from your wallet.'
   ].filter(Boolean).join('\n');
 }
 
@@ -4245,7 +4245,7 @@ export function inviteSellerText(match) {
     'Nothing was sent.',
     `You listed ${match?.title || 'an item'} on OfferUp.`,
     `The exchange is here: ${INVITE_URL}`,
-    'A payment is real $lgme from your wallet.'
+    'A payment is real  from your wallet.'
   ].join('\n');
 }
 
@@ -4286,7 +4286,7 @@ function dealTerms(thread, amount) {
     buyerId: thread.buyerId,
     sellerId: thread.sellerId,
     amount: round2(amount),
-    unit: '$lgme'
+    unit: ''
   };
 }
 
@@ -4384,7 +4384,7 @@ export async function makeOffer(store, buyerId, threadId, amount, at = nowIso())
   thread.buyerSig = signed.sig;
   thread.sellerSig = '';
   thread.status = 'offered';
-  thread.messages.push({ fromId: buyerId, text: `Offer ${signed.terms.amount} $lgme`, at, kind: 'offer' });
+  thread.messages.push({ fromId: buyerId, text: `Offer ${signed.terms.amount} `, at, kind: 'offer' });
   thread.updatedAt = at;
   await saveThread(store, thread);
   return { ok: true, thread, held: heldBy(buyer) };
@@ -4406,7 +4406,7 @@ export async function counterOffer(store, sellerId, threadId, amount, at = nowIs
   thread.sellerSig = signed.sig;
   thread.buyerSig = '';
   thread.status = 'countered';
-  thread.messages.push({ fromId: sellerId, text: `Counter ${signed.terms.amount} $lgme`, at, kind: 'counter' });
+  thread.messages.push({ fromId: sellerId, text: `Counter ${signed.terms.amount} `, at, kind: 'counter' });
   thread.updatedAt = at;
   await saveThread(store, thread);
   return { ok: true, thread };
@@ -4446,7 +4446,7 @@ async function writeHold(store, thread, at) {
   thread.status = 'pending';
   thread.expiresAt = addDays(at, LISTING_DAYS);
   thread.updatedAt = at;
-  thread.messages.push({ fromId: 'desk', text: `Pending hold ${thread.amount} $lgme. Final balances have not moved.`, at, kind: 'hold' });
+  thread.messages.push({ fromId: 'desk', text: `Pending hold ${thread.amount} . Final balances have not moved.`, at, kind: 'hold' });
   await saveThread(store, thread);
   return { ok: true, thread, holdId };
 }
@@ -4635,7 +4635,7 @@ export async function sellerHandoff(store, sellerId, encoded, at = nowIso()) {
     fromId: thread.buyerId,
     toId: thread.sellerId,
     amount: thread.amount,
-    unit: '$lgme',
+    unit: '',
     note: thread.title || 'Market handoff',
     direction: 'out',
     mock: true,
@@ -4648,7 +4648,7 @@ export async function sellerHandoff(store, sellerId, encoded, at = nowIso()) {
     fromId: thread.buyerId,
     toId: thread.sellerId,
     amount: thread.amount,
-    unit: '$lgme',
+    unit: '',
     note: thread.title || 'Market handoff',
     direction: 'in',
     mock: true,
@@ -4658,7 +4658,7 @@ export async function sellerHandoff(store, sellerId, encoded, at = nowIso()) {
   thread.status = 'settled';
   thread.handoffUsed = true;
   thread.sellerHandoffSig = sellerSig;
-  thread.messages.push({ fromId: sellerId, text: `Settled ${thread.amount} $lgme.`, at, kind: 'settled' });
+  thread.messages.push({ fromId: sellerId, text: `Settled ${thread.amount} .`, at, kind: 'settled' });
   thread.updatedAt = at;
   await saveThread(store, thread);
   const buyerAfter = await store.get(thread.buyerId);
@@ -5297,7 +5297,7 @@ export function invoiceCore(spec) {
     referenceAvg,
     dueAt: spec.dueAt,
     mediaHashes: Array.isArray(spec.mediaHashes) ? spec.mediaHashes : [],
-    unit: '$lgme'
+    unit: ''
   };
 }
 
@@ -5517,7 +5517,7 @@ export async function payInvoice(store, payerId, invoiceId, spec = {}) {
     amount: figure,
     payerId,
     workerId: invoice.workerId,
-    unit: '$lgme'
+    unit: ''
   };
   const signer = { ...payer, privateKeyJwk: key };
   const moved = await commitSerials(signer, figure, invoice.workerId, at);
@@ -5526,7 +5526,7 @@ export async function payInvoice(store, payerId, invoiceId, spec = {}) {
     fromId: payerId,
     toId: invoice.workerId,
     amount: figure,
-    unit: '$lgme',
+    unit: '',
     note: `Invoice ${invoiceId.slice(0, 12)}`,
     direction: 'out',
     mock: true,
@@ -5541,7 +5541,7 @@ export async function payInvoice(store, payerId, invoiceId, spec = {}) {
     fromId: payerId,
     toId: invoice.workerId,
     amount: figure,
-    unit: '$lgme',
+    unit: '',
     note: `Invoice ${invoiceId.slice(0, 12)}`,
     direction: 'in',
     mock: true,
@@ -5595,9 +5595,9 @@ export async function payInvoice(store, payerId, invoiceId, spec = {}) {
   };
 }
 
-const SOLANA_REUSE = 'This Solana signature was already used. A signature settles one invoice.';
+const SOLANA_REUSE = 'This  signature was already used. A signature settles one invoice.';
 const SOLANA_REFERENCE = 'This reference was already settled.';
-const SOLANA_DOUBLE = 'Flagged double-spend. This Solana signature is on two invoices. Nothing was applied.';
+const SOLANA_DOUBLE = 'Flagged double-spend. This  signature is on two invoices. Nothing was applied.';
 
 function solanaPayloads(peer) {
   const rows = [];
@@ -5697,7 +5697,7 @@ function rejectKnownSignature(peers, claim) {
   return { ok: true };
 }
 
-async function finalizeSolana(store, payload, at) {
+async function finalize(store, payload, at) {
   const ids = [...new Set([payload.payerId, payload.payeeId].filter(Boolean))];
   for (const id of ids) {
     const peer = await store.get(id);
@@ -5915,14 +5915,14 @@ export async function recordFloorRebate(store, actorId, spec = {}) {
       const seen = entry.payload?.signature;
       if (!seen || seen !== signature) continue;
       if (entry.type === 'SOLANA_TX' || entry.type === 'SOLANA_FINAL' || entry.type === 'FLOOR_REBATE_PAID') {
-        return fail('This Solana signature was already used. A signature settles one rebate.');
+        return fail('This  signature was already used. A signature settles one rebate.');
       }
     }
   }
   const due = rebateEntries(peers).find((entry) => entry.type === 'FLOOR_REBATE_DUE' && entry.payload?.invoiceId === invoiceId);
   if (!due) return fail('No floor rebate is due for this payment.');
   if (spec.amount != null && spec.amount !== '') {
-    const match = matchSolanaRequest(peers, { invoiceId, amount: spec.amount, lockId: spec.lockId || '', purpose: 'rebate' });
+    const match = matchRequest(peers, { invoiceId, amount: spec.amount, lockId: spec.lockId || '', purpose: 'rebate' });
     if (!match.ok) return match;
   }
   const at = spec.at || nowIso();
@@ -5958,7 +5958,7 @@ function findLock(peers, lockId) {
   return priceRows(peers, 'PRICE_LOCK').find((row) => row.lockId === lockId) || null;
 }
 
-export function matchSolanaRequest(peers, claim) {
+export function matchRequest(peers, claim) {
   const rows = priceRows(peers, 'PRICE_REQUEST').filter((row) => {
     if ((row.invoiceId || '') !== (claim.invoiceId || '')) return false;
     if (claim.lockId && row.lockId !== claim.lockId) return false;
@@ -6091,7 +6091,7 @@ export async function acknowledgeQuote(store, peerId, spec = {}) {
   return { ok: true, lock, expired: false };
 }
 
-export async function issueSolanaRequest(store, peerId, spec = {}) {
+export async function issueRequest(store, peerId, spec = {}) {
   const peer = await store.get(peerId);
   if (!peer?.privateKeyJwk && !peer?.signingKey) return fail(peer ? 'Wallet is locked.' : 'Unknown peer.');
   const gate = assertOnline(spec.navigator);
@@ -6190,7 +6190,7 @@ export async function consentAltSettlement(store, peerId, spec = {}) {
   return { ok: true, consented: true, choice: proposal.choice, status: 'agreed', coin: false, schedule: proposal.schedule || [] };
 }
 
-export async function recordSolanaTx(store, peerId, spec = {}) {
+export async function recordTx(store, peerId, spec = {}) {
   const peer = await store.get(peerId);
   if (!peer?.privateKeyJwk && !peer?.signingKey) return fail(peer ? 'Wallet is locked.' : 'Unknown peer.');
   const gate = assertOnline(spec.navigator);
@@ -6201,7 +6201,7 @@ export async function recordSolanaTx(store, peerId, spec = {}) {
   const peers = await peersIn(store, [peerId, claim.payeeId]);
   const known = rejectKnownSignature(peers, claim);
   if (!known.ok) return known;
-  const match = matchSolanaRequest(peers, { ...claim, amount: spec.amount, lockId: String(spec.lockId || ''), purpose: spec.purpose || 'settlement' });
+  const match = matchRequest(peers, { ...claim, amount: spec.amount, lockId: String(spec.lockId || ''), purpose: spec.purpose || 'settlement' });
   if (!match.ok) return match;
   const quote = match.request;
   const before = replay(peer).balance;
@@ -6224,7 +6224,7 @@ export async function recordSolanaTx(store, peerId, spec = {}) {
   return { ok: true, status: 'pending-attestation', payload, unchanged: replay(await store.get(peerId)).balance === before };
 }
 
-export async function attestSolanaTx(store, payeeId, spec = {}) {
+export async function attestTx(store, payeeId, spec = {}) {
   const payee = await store.get(payeeId);
   if (!payee?.privateKeyJwk && !payee?.signingKey) return fail(payee ? 'Wallet is locked.' : 'Unknown peer.');
   const gate = assertOnline(spec.navigator);
@@ -6264,7 +6264,7 @@ export async function attestSolanaTx(store, payeeId, spec = {}) {
   await store.set(payeeId, payee);
   const after = await peersIn(store, [payeeId, payload.payerId]);
   const status = solanaStatus(after, signature);
-  if (status === 'settled') await finalizeSolana(store, payload, at);
+  if (status === 'settled') await finalize(store, payload, at);
   const fresh = await store.get(payeeId);
   const sealed = await sealMessage(fresh, 'solana', { ...payload, status });
   return {
@@ -6277,7 +6277,7 @@ export async function attestSolanaTx(store, payeeId, spec = {}) {
   };
 }
 
-export async function refuseSolanaTx(store, peerId, spec = {}, statement = 'REFUSAL') {
+export async function refuseTx(store, peerId, spec = {}, statement = 'REFUSAL') {
   const peer = await store.get(peerId);
   if (!peer?.privateKeyJwk && !peer?.signingKey) return fail(peer ? 'Wallet is locked.' : 'Unknown peer.');
   const gate = assertOnline(spec.navigator);
@@ -6305,7 +6305,7 @@ export async function refuseSolanaTx(store, peerId, spec = {}, statement = 'REFU
   return { ok: true, status: 'refused', penalty: false, unchanged: replay(await store.get(peerId)).balance === before };
 }
 
-export async function sealSolanaHandoff(store, peerId, signature) {
+export async function sealHandoff(store, peerId, signature) {
   const peer = await store.get(peerId);
   if (!peer?.privateKeyJwk && !peer?.signingKey) return fail(peer ? 'Wallet is locked.' : 'Unknown peer.');
   const entry = (peer.tape || []).find((row) => row.type === 'SOLANA_TX' && row.payload?.signature === signature);
@@ -6315,7 +6315,7 @@ export async function sealSolanaHandoff(store, peerId, signature) {
   return { ok: true, encoded: encodeMessage(sealed.message), message: sealed.message };
 }
 
-async function importSolanaHandoff(store, peer, message, at) {
+async function importHandoff(store, peer, message, at) {
   const body = message.body || {};
   const signature = String(body.signature || '').trim();
   if (!signature) return fail('The transaction signature is missing.');
@@ -6329,7 +6329,7 @@ async function importSolanaHandoff(store, peer, message, at) {
     if ((peer.tape || []).some((entry) => entry.type === 'SOLANA_FINAL' && entry.payload?.signature === signature)) {
       return { ok: true, status: 'settled', duplicate: true, applied: false };
     }
-    await finalizeSolana(store, { ...mine.payload, ...body, payerId: peer.id }, at);
+    await finalize(store, { ...mine.payload, ...body, payerId: peer.id }, at);
     return { ok: true, status: 'settled', applied: true, penalty: false };
   }
   if (body.payeeId && body.payeeId !== peer.id) return fail('This payment is for a different payee.');
@@ -6759,7 +6759,7 @@ function grantCore(spec) {
     kind: 'grant',
     mock: true,
     label: 'mock',
-    unit: '$lgme',
+    unit: '',
     memberId: spec.memberId,
     grantorId: spec.grantorId,
     amount: round2(spec.amount),
@@ -6886,8 +6886,8 @@ export function offerupDraft(offer) {
     lines.push(`Term plan: ${cash.amount} over ${cash.months} months`);
     for (const row of cash.schedule || []) lines.push(`  ${row.n}. ${row.amount} due ${String(row.dueAt).slice(0, 10)}`);
   }
-  for (const service of services) lines.push(`IprovIT service: ${service.title} (${service.amount} $lgme, signed by your wallet)`);
-  lines.push('A $lgme payment is signed by your wallet. Paste this on OfferUp yourself.');
+  for (const service of services) lines.push(`IprovIT service: ${service.title} (${service.amount} , signed by your wallet)`);
+  lines.push('A  payment is signed by your wallet. Paste this on OfferUp yourself.');
   return lines.filter(Boolean).join('\n');
 }
 
@@ -7016,7 +7016,7 @@ export async function signOffer(store, peerId, spec = {}) {
     services,
     loyalty,
     penalty: false,
-    unit: '$lgme'
+    unit: ''
   };
   const offerId = await sha256(canonicalJSON(core));
   const consentBody = {

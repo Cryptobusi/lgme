@@ -57,7 +57,7 @@ test('every field gets a guide, and an example fills only after a tap', () => {
   assert.match(amount.text, /50\/50/);
   assert.match(amount.text, /US\$|Creo/);
   assert.equal(amount.options.length >= 2 && amount.options.length <= 3, true);
-  const gift = fieldMeta(fakeField({ id: 'contrib-usd', label: '$lgme US$' }));
+  const gift = fieldMeta(fakeField({ id: 'contrib-usd', label: ' US$' }));
   assert.match(gift.text, /50\/50/);
   assert.match(gift.text, /temporary until the DAO/);
   const deed = fieldMeta(fakeField({ id: 'ididit-input', type: 'textarea', label: 'IdidIt' }));

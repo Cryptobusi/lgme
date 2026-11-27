@@ -528,7 +528,7 @@ export function summaryMarkup(state) {
     </section>
     <section class="tile" aria-labelledby="wallet-heading">
       <p class="kicker">Sample</p>
-      <h2 id="wallet-heading">$lgme wallet</h2>
+      <h2 id="wallet-heading"> wallet</h2>
       <p class="big">Not connected</p>
       <button type="button" class="soon" data-soon="wallet" aria-disabled="true">Wallet placeholder</button>
       <p class="fine">This prototype does not connect a wallet.</p>
